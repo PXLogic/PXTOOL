@@ -1718,3 +1718,366 @@ QLabel#options_hint_label {
     color: #555555;
     font-size: 10px;
 }
+
+/* ============================================================
+   Sidebar panel content — shadcn-dark style
+   ============================================================ */
+
+/* Panel scroll areas and backgrounds */
+QWidget#sidebar QScrollArea,
+QWidget#sidebar QScrollArea > QWidget,
+QWidget#sidebar QScrollArea > QWidget > QWidget,
+QWidget#measureWidget,
+QWidget#triggerWidget {
+    background: #141414;
+    border: none;
+}
+
+QSplitter#protocolWidget,
+QSplitter#protocolWidget > QWidget {
+    background: #141414;
+    border: none;
+}
+
+/* GroupBox → fieldset style */
+QWidget#sidebar QGroupBox {
+    background: transparent;
+    border: 1px solid #2e2e2e;
+    border-radius: 4px;
+    margin-top: 14px;
+    padding: 6px 6px 6px 6px;
+    color: #666666;
+    font-size: 9px;
+    font-weight: bold;
+}
+
+QWidget#sidebar QGroupBox::title {
+    subcontrol-origin: margin;
+    subcontrol-position: top left;
+    left: 8px;
+    padding: 0 4px;
+    color: #555555;
+    font-size: 9px;
+    font-weight: bold;
+}
+
+QWidget#sidebar QGroupBox:disabled {
+    border-color: #222222;
+    color: #333333;
+}
+
+/* Labels */
+QWidget#sidebar QLabel {
+    color: #aaaaaa;
+    font-size: 11px;
+    background: transparent;
+    border: none;
+    min-height: 0px;
+    padding: 0px;
+}
+
+QWidget#sidebar QLabel:disabled {
+    color: #444444;
+}
+
+/* Radio buttons & checkboxes */
+QWidget#sidebar QRadioButton,
+QWidget#sidebar QCheckBox {
+    color: #aaaaaa;
+    font-size: 11px;
+    spacing: 5px;
+    background: transparent;
+}
+
+QWidget#sidebar QRadioButton:checked,
+QWidget#sidebar QCheckBox:checked {
+    color: #e5e5e5;
+}
+
+QWidget#sidebar QRadioButton:disabled,
+QWidget#sidebar QCheckBox:disabled {
+    color: #444444;
+}
+
+/* Buttons inside panels */
+QWidget#sidebar QPushButton {
+    background: #1e1e1e;
+    border: 1px solid #2e2e2e;
+    border-radius: 4px;
+    color: #aaaaaa;
+    font-size: 11px;
+    padding: 3px 8px;
+    min-height: 22px;
+}
+
+QWidget#sidebar QPushButton:hover {
+    background: #282828;
+    border-color: #3e3e3e;
+    color: #cccccc;
+}
+
+QWidget#sidebar QPushButton:pressed {
+    background: #141414;
+}
+
+QWidget#sidebar QPushButton:disabled {
+    background: #181818;
+    border-color: #222222;
+    color: #444444;
+}
+
+/* ComboBox */
+QWidget#sidebar QComboBox {
+    background: #1e1e1e;
+    border: 1px solid #2e2e2e;
+    border-radius: 4px;
+    color: #aaaaaa;
+    font-size: 11px;
+    padding: 2px 6px;
+    min-height: 22px;
+}
+
+QWidget#sidebar QComboBox:hover {
+    border-color: #3e3e3e;
+    color: #cccccc;
+}
+
+QWidget#sidebar QComboBox:disabled {
+    background: #181818;
+    color: #444444;
+}
+
+QWidget#sidebar QComboBox::drop-down {
+    border: none;
+    width: 18px;
+}
+
+/* LineEdit / SpinBox */
+QWidget#sidebar QLineEdit,
+QWidget#sidebar QSpinBox {
+    background: #1e1e1e;
+    border: 1px solid #2e2e2e;
+    border-radius: 4px;
+    color: #cccccc;
+    font-size: 11px;
+    padding: 2px 6px;
+    min-height: 22px;
+}
+
+QWidget#sidebar QLineEdit:focus,
+QWidget#sidebar QSpinBox:focus {
+    border-color: #9333ea;
+}
+
+QWidget#sidebar QLineEdit:disabled,
+QWidget#sidebar QSpinBox:disabled {
+    background: #181818;
+    color: #444444;
+}
+
+/* Slider */
+QWidget#sidebar QSlider::groove:horizontal {
+    height: 2px;
+    background: #2e2e2e;
+    border-radius: 1px;
+    margin: 0px;
+    left: 0px;
+    right: 0px;
+}
+
+QWidget#sidebar QSlider::handle:horizontal {
+    border-image: none;
+    width: 12px;
+    height: 12px;
+    margin: -5px -6px;
+    border-radius: 6px;
+    background: #9333ea;
+    border: none;
+}
+
+QWidget#sidebar QSlider::sub-page:horizontal {
+    background: #9333ea;
+    height: 2px;
+    border-radius: 1px;
+}
+
+QWidget#sidebar QSlider::add-page:horizontal {
+    background: #2e2e2e;
+    height: 2px;
+    border-radius: 1px;
+}
+
+/* Tab widget (trigger advanced mode) */
+QWidget#sidebar QTabWidget::pane {
+    border: 1px solid #2e2e2e;
+    background: #141414;
+    border-radius: 0px;
+}
+
+QWidget#sidebar QTabBar::tab {
+    background: #1a1a1a;
+    color: #666666;
+    border: 1px solid #2e2e2e;
+    border-bottom: none;
+    padding: 4px 12px;
+    font-size: 10px;
+    min-width: 40px;
+}
+
+QWidget#sidebar QTabBar::tab:selected {
+    background: #141414;
+    color: #e5e5e5;
+    border-bottom: 2px solid #9333ea;
+}
+
+QWidget#sidebar QTabBar::tab:hover:!selected {
+    background: #222222;
+    color: #aaaaaa;
+}
+
+/* Table view (Decode panel) */
+QWidget#sidebar QTableView {
+    background: #141414;
+    alternate-background-color: #1a1a1a;
+    border: 1px solid #2e2e2e;
+    color: #aaaaaa;
+    font-size: 11px;
+    gridline-color: #222222;
+    selection-background-color: rgba(147, 51, 234, 40);
+    selection-color: #e5e5e5;
+}
+
+QWidget#sidebar QTableView::item:hover {
+    background: #202020;
+}
+
+QWidget#sidebar QHeaderView::section {
+    background: #1a1a1a;
+    color: #666666;
+    border: none;
+    border-bottom: 1px solid #2e2e2e;
+    border-right: 1px solid #2e2e2e;
+    padding: 3px 6px;
+    font-size: 10px;
+}
+
+/* Splitter handle (protocol panel) */
+QWidget#sidebar QSplitter::handle {
+    background: #2e2e2e;
+    height: 1px;
+}
+
+/* Thin scrollbars inside panels */
+QWidget#sidebar QScrollBar:vertical {
+    width: 5px;
+    background: transparent;
+    margin: 0px;
+    border: none;
+}
+
+QWidget#sidebar QScrollBar::handle:vertical {
+    background: #2e2e2e;
+    border-radius: 2px;
+    min-height: 20px;
+}
+
+QWidget#sidebar QScrollBar::handle:vertical:hover {
+    background: #3e3e3e;
+}
+
+QWidget#sidebar QScrollBar::add-line:vertical,
+QWidget#sidebar QScrollBar::sub-line:vertical,
+QWidget#sidebar QScrollBar::add-page:vertical,
+QWidget#sidebar QScrollBar::sub-page:vertical {
+    height: 0px;
+    background: transparent;
+}
+
+QWidget#sidebar QScrollBar:horizontal {
+    height: 5px;
+    background: transparent;
+    margin: 0px;
+    border: none;
+}
+
+QWidget#sidebar QScrollBar::handle:horizontal {
+    background: #2e2e2e;
+    border-radius: 2px;
+    min-width: 20px;
+}
+
+QWidget#sidebar QScrollBar::add-line:horizontal,
+QWidget#sidebar QScrollBar::sub-line:horizontal,
+QWidget#sidebar QScrollBar::add-page:horizontal,
+QWidget#sidebar QScrollBar::sub-page:horizontal {
+    width: 0px;
+    background: transparent;
+}
+
+/* ── Decode Panel (dark) ────────────────────────────────────────── */
+QWidget#sidebar QPushButton#decode_add_btn,
+QWidget#sidebar QPushButton#decode_del_btn,
+QWidget#sidebar QPushButton#decode_search_btn,
+QWidget#sidebar QPushButton#decode_settings_btn,
+QWidget#sidebar QPushButton#decode_save_btn,
+QWidget#sidebar QPushButton#decode_nav_btn,
+QWidget#sidebar QPushButton#decode_prev_btn,
+QWidget#sidebar QPushButton#decode_next_btn,
+QWidget#sidebar QPushButton#decode_ann_search_icon {
+    background: transparent;
+    border: 1px solid #444444;
+    border-radius: 3px;
+    padding: 0px;
+}
+
+QWidget#sidebar QPushButton#decode_add_btn:hover {
+    border-color: #7c3aed;
+    color: #a78bfa;
+}
+QWidget#sidebar QPushButton#decode_del_btn:hover {
+    border-color: #dc2626;
+    color: #f87171;
+}
+QWidget#sidebar QPushButton#decode_nav_btn {
+    border-color: #7c3aed;
+    color: #a78bfa;
+}
+QWidget#sidebar QPushButton#decode_nav_btn:hover {
+    background: rgba(124, 58, 237, 0.15);
+}
+QWidget#sidebar QPushButton#decode_prev_btn:hover,
+QWidget#sidebar QPushButton#decode_next_btn:hover {
+    border-color: #7c3aed;
+    color: #a78bfa;
+}
+QWidget#sidebar QPushButton#decode_settings_btn:hover,
+QWidget#sidebar QPushButton#decode_save_btn:hover {
+    border-color: #555555;
+    color: #cccccc;
+}
+QWidget#sidebar QPushButton#decode_search_btn:hover {
+    border-color: #7c3aed;
+    color: #a78bfa;
+}
+
+QWidget#sidebar QLineEdit#decode_keyword_edit,
+QWidget#sidebar QLineEdit#decode_ann_search_edit {
+    background: transparent;
+    border: none;
+    color: #cccccc;
+    selection-background-color: #7c3aed;
+}
+
+QWidget#sidebar QLabel#decode_title_label {
+    color: #888888;
+    font-size: 11px;
+    padding-left: 4px;
+}
+QWidget#sidebar QLabel#decode_matchs_title,
+QWidget#sidebar QLabel#decode_matchs_count {
+    color: #888888;
+    font-size: 11px;
+}
+QWidget#sidebar QLabel#decode_matchs_count {
+    color: #cccccc;
+}
