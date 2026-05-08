@@ -67,6 +67,7 @@ class TriggerDock;
 class DsoTriggerDock;
 class MeasureDock;
 class SearchDock;
+class SideBar;
 }
 
 namespace view {
@@ -216,16 +217,8 @@ private:
     toolbars::TitleBar      *_title_bar;
 
 
-    QDockWidget             *_protocol_dock;
-    dock::ProtocolDock      *_protocol_widget;
-    QDockWidget             *_trigger_dock;
-    QDockWidget             *_dso_trigger_dock;
-    dock::TriggerDock       *_trigger_widget;
-    dock::DsoTriggerDock    *_dso_trigger_widget;
-    QDockWidget             *_measure_dock;
-    dock::MeasureDock       *_measure_widget;
-    QDockWidget             *_search_dock;
-    dock::SearchDock        *_search_widget;
+    QDockWidget             *_sidebar_dock;
+    dock::SideBar           *_sidebar_widget;
 
     QTranslator     _qtTrans;
     QTranslator     _myTrans;

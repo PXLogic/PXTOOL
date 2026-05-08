@@ -72,6 +72,7 @@
 #include "dock/measuredock.h"
 #include "dock/searchdock.h"
 #include "dock/protocoldock.h"
+#include "dock/sidebar.h"
 
 #include "view/view.h"
 #include "view/trace.h"
@@ -165,27 +166,23 @@ namespace pv
         _logo_bar = new toolbars::LogoBar(_session, this);
         _logo_bar->setObjectName("logo_bar");
 
-        // trigger dock
-        _trigger_dock = new QDockWidget(L_S(STR_PAGE_DLG, S_ID(IDS_DLG_TRIGGER_DOCK_TITLE), "Trigger Setting..."), this);
-        _trigger_dock->setObjectName("trigger_dock");
-        _trigger_dock->setFeatures(QDockWidget::DockWidgetMovable);
-        _trigger_dock->setAllowedAreas(Qt::RightDockWidgetArea);
-        _trigger_dock->setVisible(false);
-        _trigger_widget = new dock::TriggerDock(_trigger_dock, _session);        
-        _trigger_dock->setWidget(_trigger_widget);
-
-        _dso_trigger_dock = new QDockWidget(L_S(STR_PAGE_DLG, S_ID(IDS_DLG_TRIGGER_DOCK_TITLE), "Trigger Setting..."), this);
-        _dso_trigger_dock->setObjectName("dso_trigger_dock");
-        _dso_trigger_dock->setFeatures(QDockWidget::DockWidgetMovable);
-        _dso_trigger_dock->setAllowedAreas(Qt::RightDockWidgetArea);
-        _dso_trigger_dock->setVisible(false);
-        _dso_trigger_widget = new dock::DsoTriggerDock(_dso_trigger_dock, _session);
-        _dso_trigger_dock->setWidget(_dso_trigger_widget);
-
         // Setup _view widget
         _view = new pv::view::View(_session, _sampling_bar, this);
         _vertical_layout->addWidget(_view);
 
+        // Unified sidebar (replaces individual trigger/protocol/measure/search docks)
+        _sidebar_dock = new QDockWidget(this);
+        _sidebar_dock->setObjectName("sidebar_dock");
+        _sidebar_dock->setFeatures(QDockWidget::NoDockWidgetFeatures);
+        _sidebar_dock->setTitleBarWidget(new QWidget(_sidebar_dock));
+        _sidebar_dock->setAllowedAreas(Qt::RightDockWidgetArea);
+
+        _sidebar_widget = new dock::SideBar(_sidebar_dock, *_view, _session);
+        _sidebar_dock->setWidget(_sidebar_widget);
+
+        _session->set_decoder_pannel(_sidebar_widget->protocol_widget());
+
+        addDockWidget(Qt::RightDockWidgetArea, _sidebar_dock);
 
         setIconSize(QSize(40, 40));
         addToolBar(_sampling_bar);
@@ -193,54 +190,13 @@ namespace pv
         addToolBar(_file_bar);
         addToolBar(_logo_bar);
 
-        // Setup the dockWidget
-        _protocol_dock = new QDockWidget(L_S(STR_PAGE_DLG, S_ID(IDS_DLG_PROTOCOL_DOCK_TITLE), "Decode Protocol"), this);
-        _protocol_dock->setObjectName("protocol_dock");
-        _protocol_dock->setFeatures(QDockWidget::DockWidgetMovable);
-        _protocol_dock->setAllowedAreas(Qt::RightDockWidgetArea);
-        _protocol_dock->setVisible(false);
-        _protocol_widget = new dock::ProtocolDock(_protocol_dock, *_view, _session);
-        _protocol_dock->setWidget(_protocol_widget);
-
-        _session->set_decoder_pannel(_protocol_widget);
-
-        // measure dock
-        _measure_dock = new QDockWidget(L_S(STR_PAGE_DLG, S_ID(IDS_DLG_MEASURE_DOCK_TITLE), "Measurement"), this);
-        _measure_dock->setObjectName("measure_dock");
-        _measure_dock->setFeatures(QDockWidget::DockWidgetMovable);
-        _measure_dock->setAllowedAreas(Qt::RightDockWidgetArea);
-        _measure_dock->setVisible(false);
-        _measure_widget = new dock::MeasureDock(_measure_dock, *_view, _session);
-        _measure_dock->setWidget(_measure_widget);
-
-        // search dock
-        _search_dock = new QDockWidget(L_S(STR_PAGE_DLG, S_ID(IDS_DLG_SEARCH_DOCK_TITLE), "Search..."), this);
-        _search_dock->setObjectName("search_dock");
-        _search_dock->setFeatures(QDockWidget::NoDockWidgetFeatures);
-        _search_dock->setTitleBarWidget(new QWidget(_search_dock));
-        _search_dock->setAllowedAreas(Qt::BottomDockWidgetArea);
-        _search_dock->setVisible(false);
-
-        _search_widget = new dock::SearchDock(_search_dock, *_view, _session);
-        _search_dock->setWidget(_search_widget);
-
-        addDockWidget(Qt::RightDockWidgetArea, _protocol_dock);
-        addDockWidget(Qt::RightDockWidgetArea, _trigger_dock);
-        addDockWidget(Qt::RightDockWidgetArea, _dso_trigger_dock);
-        addDockWidget(Qt::RightDockWidgetArea, _measure_dock);
-        addDockWidget(Qt::BottomDockWidgetArea, _search_dock);
-
         // event filter
         _view->installEventFilter(this);
         _sampling_bar->installEventFilter(this);
         _trig_bar->installEventFilter(this);
         _file_bar->installEventFilter(this);
         _logo_bar->installEventFilter(this);
-        _dso_trigger_dock->installEventFilter(this);
-        _trigger_dock->installEventFilter(this);
-        _protocol_dock->installEventFilter(this);
-        _measure_dock->installEventFilter(this);
-        _search_dock->installEventFilter(this);
+        _sidebar_dock->installEventFilter(this);
 
         // defaut language
         AppConfig &app = AppConfig::Instance();
@@ -262,11 +218,12 @@ namespace pv
         connect(&_event, SIGNAL(trigger_message(int)), this, SLOT(on_trigger_message(int)));
 
         // view
-        connect(_view, SIGNAL(cursor_update()), _measure_widget, SLOT(cursor_update()));
-        connect(_view, SIGNAL(cursor_moving()), _measure_widget, SLOT(cursor_moving()));
-        connect(_view, SIGNAL(cursor_moved()), _measure_widget, SLOT(reCalc()));
+        connect(_view, SIGNAL(cursor_update()), _sidebar_widget->measure_widget(), SLOT(cursor_update()));
+        connect(_view, SIGNAL(cursor_moving()), _sidebar_widget->measure_widget(), SLOT(cursor_moving()));
+        connect(_view, SIGNAL(cursor_moved()), _sidebar_widget->measure_widget(), SLOT(reCalc()));
         connect(_view, SIGNAL(prgRate(int)), this, SIGNAL(prgRate(int)));
-        connect(_view, SIGNAL(auto_trig(int)), _dso_trigger_widget, SLOT(auto_trig(int)));
+        connect(_view, SIGNAL(auto_trig(int)), _sidebar_widget->dso_trigger_widget(), SLOT(auto_trig(int)));
+        connect(_sidebar_widget, SIGNAL(sig_search_visible(bool)), _view, SLOT(show_search_cursor(bool)));
 
         // trig_bar
         connect(_trig_bar, SIGNAL(sig_protocol(bool)), this, SLOT(on_protocol(bool)));
@@ -287,13 +244,13 @@ namespace pv
         // logobar
         connect(_logo_bar, SIGNAL(sig_open_doc()), this, SLOT(on_open_doc()));
 
-        connect(_protocol_widget, SIGNAL(protocol_updated()), this, SLOT(on_signals_changed()));
+        connect(_sidebar_widget->protocol_widget(), SIGNAL(protocol_updated()), this, SLOT(on_signals_changed()));
 
         // SamplingBar
         connect(_sampling_bar, SIGNAL(sig_store_session_data()), this, SLOT(on_save()));
 
         //
-        connect(_dso_trigger_widget, SIGNAL(set_trig_pos(int)), _view, SLOT(set_trig_pos(int)));
+        connect(_sidebar_widget->dso_trigger_widget(), SIGNAL(set_trig_pos(int)), _view, SLOT(set_trig_pos(int)));
 
         _delay_prop_msg_timer.SetCallback(std::bind(&MainWindow::on_delay_prop_msg, this));
  
@@ -333,11 +290,7 @@ namespace pv
 
     void MainWindow::retranslateUi()
     {
-        _trigger_dock->setWindowTitle(L_S(STR_PAGE_DLG, S_ID(IDS_DLG_TRIGGER_DOCK_TITLE), "Trigger Setting..."));
-        _dso_trigger_dock->setWindowTitle(L_S(STR_PAGE_DLG, S_ID(IDS_DLG_TRIGGER_DOCK_TITLE), "Trigger Setting..."));
-        _protocol_dock->setWindowTitle(L_S(STR_PAGE_DLG, S_ID(IDS_DLG_PROTOCOL_DOCK_TITLE), "Decode Protocol"));
-        _measure_dock->setWindowTitle(L_S(STR_PAGE_DLG, S_ID(IDS_DLG_MEASURE_DOCK_TITLE), "Measurement"));
-        _search_dock->setWindowTitle(L_S(STR_PAGE_DLG, S_ID(IDS_DLG_SEARCH_DOCK_TITLE), "Search..."));
+        (void)0; // sidebar has no visible title bar
     }
 
     void MainWindow::on_load_file(QString file_name)
@@ -480,7 +433,7 @@ namespace pv
 
     void MainWindow::on_protocol(bool visible)
     {
-        _protocol_dock->setVisible(visible);
+        _sidebar_widget->showTab(dock::SideBar::TabDecodes, visible);
 
         if (!visible)
             _view->setFocus();
@@ -488,18 +441,9 @@ namespace pv
 
     void MainWindow::on_trigger(bool visible)
     {
-        if (_device_agent->get_work_mode() != DSO)
-        {
-            _trigger_widget->update_view();
-            _trigger_dock->setVisible(visible);
-            _dso_trigger_dock->setVisible(false);
-        }
-        else
-        {
-            _dso_trigger_widget->update_view();
-            _trigger_dock->setVisible(false);
-            _dso_trigger_dock->setVisible(visible);
-        }
+        bool isDso = (_device_agent->get_work_mode() == DSO);
+        _sidebar_widget->setDsoMode(isDso);
+        _sidebar_widget->showTab(dock::SideBar::TabTrigger, visible);
 
         if (!visible)
             _view->setFocus();
@@ -507,7 +451,7 @@ namespace pv
 
     void MainWindow::on_measure(bool visible)
     {
-        _measure_dock->setVisible(visible);
+        _sidebar_widget->showTab(dock::SideBar::TabMeasures, visible);
 
         if (!visible)
             _view->setFocus();
@@ -515,8 +459,7 @@ namespace pv
 
     void MainWindow::on_search(bool visible)
     {
-        _search_dock->setVisible(visible);
-        _view->show_search_cursor(visible);
+        _sidebar_widget->showTab(dock::SideBar::TabSearch, visible);
 
         if (!visible)
             _view->setFocus();
@@ -641,7 +584,7 @@ namespace pv
             assert(false);
         }
 
-        _protocol_widget->del_all_protocol();
+        _sidebar_widget->protocol_widget()->del_all_protocol();
 
         std::string file_name = pv::path::ToUnicodePath(file);
         dsv_info("Load device profile: \"%s\"", file_name.c_str());
@@ -668,7 +611,7 @@ namespace pv
 
         if (ret && _device_agent->get_work_mode() == DSO)
         {
-            _dso_trigger_widget->update_view();
+            _sidebar_widget->dso_trigger_widget()->update_view();
         }
 
         if (_device_agent->is_hardware()){
@@ -788,7 +731,7 @@ namespace pv
 
         if (_device_agent->get_work_mode() == LOGIC)
         {
-            sessionVar["trigger"] = _trigger_widget->get_session();
+            sessionVar["trigger"] = _sidebar_widget->trigger_widget()->get_session();
         }
 
         StoreSession ss(_session);
@@ -1078,13 +1021,13 @@ namespace pv
 
         // update UI settings
         _sampling_bar->update_sample_rate_list();
-        _trigger_widget->device_updated();
+        _sidebar_widget->trigger_widget()->device_updated();
         _view->header_updated();
 
         // load trigger settings
         if (sessionObj.contains("trigger"))
         {
-            _trigger_widget->set_session(sessionObj["trigger"].toObject());
+            _sidebar_widget->trigger_widget()->set_session(sessionObj["trigger"].toObject());
         }
 
         // load decoders
@@ -1095,7 +1038,7 @@ namespace pv
             {
                 haveDecoder = true;
                 StoreSession ss(_session);
-                ss.load_decoders(_protocol_widget, deArray);
+                ss.load_decoders(_sidebar_widget->protocol_widget(), deArray);
                 _view->update_all_trace_postion();
             }
         }
@@ -1196,21 +1139,34 @@ namespace pv
     }
 
     void MainWindow::restore_dock()
-    { 
+    {
         // default dockwidget size
         AppConfig &app = AppConfig::Instance();
         QByteArray st = app.frameOptions.windowState;
         if (!st.isEmpty())
         {
-            try
+            // Skip restoring state from before the unified sidebar was introduced —
+            // old state mentions the removed individual docks and would hide sidebar_dock.
+            if (st.contains("sidebar_dock"))
             {
-                restoreState(st);
+                try
+                {
+                    restoreState(st);
+                }
+                catch (...)
+                {
+                    MsgBox::Show(NULL, L_S(STR_PAGE_MSG, S_ID(IDS_MSG_RESTORE_WINDOW_ERROR), "restore window status error!"));
+                }
             }
-            catch (...)
+            else
             {
-                MsgBox::Show(NULL, L_S(STR_PAGE_MSG, S_ID(IDS_MSG_RESTORE_WINDOW_ERROR), "restore window status error!"));
+                // Stale state from old layout — discard it
+                app.frameOptions.windowState.clear();
             }
         }
+
+        // Ensure the sidebar dock is always visible regardless of saved state
+        _sidebar_dock->setVisible(true);
 
         // Resotre the dock pannel.
         if (_device_agent->have_instance())
@@ -1423,7 +1379,7 @@ namespace pv
 
     void MainWindow::on_data_updated()
     {
-        _measure_widget->reCalc();
+        _sidebar_widget->measure_widget()->reCalc();
         _view->data_updated();
     }
 
@@ -1453,7 +1409,7 @@ namespace pv
 
     void MainWindow::on_cur_snap_samplerate_changed()
     {
-        _measure_widget->reCalc();
+        _sidebar_widget->measure_widget()->reCalc();
     }
 
     /*------------------on event end-------*/
@@ -1521,7 +1477,7 @@ namespace pv
 
     void MainWindow::on_decode_done()
     {
-        _protocol_widget->update_model();
+        _sidebar_widget->protocol_widget()->update_model();
     }
 
     void MainWindow::receive_data_len(quint64 len)
@@ -1585,11 +1541,11 @@ namespace pv
         _view->status_clear();
         _view->reload();
         _view->set_device();
-        _trigger_widget->update_view();
-        _trigger_widget->device_updated();
-        _trig_bar->reload(); 
-        _dso_trigger_widget->update_view();
-        _measure_widget->reload();
+        _sidebar_widget->trigger_widget()->update_view();
+        _sidebar_widget->trigger_widget()->device_updated();
+        _trig_bar->reload();
+        _sidebar_widget->dso_trigger_widget()->update_view();
+        _sidebar_widget->measure_widget()->reload();
 
         if (_device_agent->get_work_mode() == ANALOG)
             _view->get_viewstatus()->setVisible(false);
@@ -1795,9 +1751,9 @@ namespace pv
             case DSV_MSG_START_COLLECT_WORK_PREV:
             {
                 if (_device_agent->get_work_mode() == LOGIC)
-                    _trigger_widget->try_commit_trigger();
+                    _sidebar_widget->trigger_widget()->try_commit_trigger();
                 else if (_device_agent->get_work_mode() == DSO)
-                    _dso_trigger_widget->check_setting();
+                    _sidebar_widget->dso_trigger_widget()->check_setting();
 
                 _view->capture_init();
                 _view->on_state_changed(false);
@@ -1807,7 +1763,7 @@ namespace pv
             {
                 update_toolbar_view_status();
                 _view->on_state_changed(false);
-                _protocol_widget->update_view_status();
+                _sidebar_widget->protocol_widget()->update_view_status();
                 break;
             }        
             case DSV_MSG_COLLECT_END:
@@ -1820,7 +1776,7 @@ namespace pv
             case DSV_MSG_END_COLLECT_WORK:
             {
                 update_toolbar_view_status();
-                _protocol_widget->update_view_status();   
+                _sidebar_widget->protocol_widget()->update_view_status();   
                 break;
             }
             case DSV_MSG_CURRENT_DEVICE_CHANGE_PREV:
@@ -1831,7 +1787,7 @@ namespace pv
                 }
                 _view->hide_calibration();
 
-                _protocol_widget->del_all_protocol();
+                _sidebar_widget->protocol_widget()->del_all_protocol();
                 _view->reload();
                 break;
             }
@@ -1872,8 +1828,8 @@ namespace pv
 
                         if (bLoadSuccess){
                             StoreSession ss(_session);
-                            ss.load_decoders(_protocol_widget, deArray);
-                        }                    
+                            ss.load_decoders(_sidebar_widget->protocol_widget(), deArray);
+                        }
                     }
 
                     _view->update_all_trace_postion();                
@@ -1886,7 +1842,7 @@ namespace pv
                     if(_device_agent->get_work_mode() == LOGIC)
                     {
                         _pattern_mode = _device_agent->get_demo_operation_mode();
-                        _protocol_widget->del_all_protocol();
+                        _sidebar_widget->protocol_widget()->del_all_protocol();
                         _view->auto_set_max_scale();
 
                         if(_pattern_mode != "random"){
@@ -1905,14 +1861,14 @@ namespace pv
             }
             case DSV_MSG_DEVICE_OPTIONS_UPDATED:
             {
-                _trigger_widget->device_updated();
-                _measure_widget->reload();
+                _sidebar_widget->trigger_widget()->device_updated();
+                _sidebar_widget->measure_widget()->reload();
                 _view->check_calibration();                      
                 break;
             }
             case DSV_MSG_DEVICE_DURATION_UPDATED:
             {
-                _trigger_widget->device_updated();
+                _sidebar_widget->trigger_widget()->device_updated();
                 _view->timebase_changed();
                 break;
             }
@@ -1936,7 +1892,7 @@ namespace pv
                 if(_device_agent->is_demo())
                 {
                     _pattern_mode = _device_agent->get_demo_operation_mode();
-                    _protocol_widget->del_all_protocol();
+                    _sidebar_widget->protocol_widget()->del_all_protocol();
 
                     if(_device_agent->get_work_mode() == LOGIC)
                     {
@@ -2061,7 +2017,7 @@ namespace pv
             case DSV_MSG_CLEAR_DECODE_DATA:
             {
                 if (_device_agent->get_work_mode() == LOGIC)
-                    _protocol_widget->reset_view();
+                    _sidebar_widget->protocol_widget()->reset_view();
                 break;
             }            
             case DSV_MSG_STORE_CONF_PREV:
@@ -2078,7 +2034,7 @@ namespace pv
                     _pattern_mode = _device_agent->get_demo_operation_mode();
                 }
                 if (msg == DSV_MSG_COLLECT_MODE_CHANGED){
-                    _trigger_widget->device_updated();
+                    _sidebar_widget->trigger_widget()->device_updated();
                     _view->update();
                 }           
                 break;
@@ -2098,7 +2054,7 @@ namespace pv
                         _session->init_signals();
                         update_toolbar_view_status();
                         _sampling_bar->update_sample_rate_list();
-                        _protocol_widget->del_all_protocol();
+                        _sidebar_widget->protocol_widget()->del_all_protocol();
                             
                         if(_pattern_mode != "random"){
                             _session->set_collect_mode(COLLECT_SINGLE);
@@ -2195,7 +2151,7 @@ namespace pv
 
         if (bLoadSurccess){
             StoreSession ss(_session);
-            ss.load_decoders(_protocol_widget, deArray);
+            ss.load_decoders(_sidebar_widget->protocol_widget(), deArray);
         }
 
         QJsonDocument doc = get_config_json_from_data_file(file, bLoadSurccess);

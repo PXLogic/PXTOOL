@@ -1,6 +1,11 @@
 <RCC>
     <qresource prefix="/">
     	<file>icons/win_title_logo.svg</file>
+        <file>icons/sidebar/zap.svg</file>
+        <file>icons/sidebar/layers.svg</file>
+        <file>icons/sidebar/ruler.svg</file>
+        <file>icons/sidebar/search.svg</file>
+        <file>icons/sidebar/settings-2.svg</file>
         <file>icons/Blackman.png</file>
         <file>icons/Flat_top.png</file>
         <file>icons/Hamming.png</file>

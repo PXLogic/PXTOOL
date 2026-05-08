@@ -1655,3 +1655,66 @@ QLineEdit#PathLine{
 QTextEdit#PathLine{
     color:#eff0f1;
 }
+
+/* ============================================================
+   Sidebar (right panel, shadcn-dark style)
+   ============================================================ */
+
+QDockWidget#sidebar_dock {
+    border: none;
+    background: #1a1a1a;
+}
+
+QDockWidget#sidebar_dock::title {
+    background: transparent;
+    max-height: 0px;
+    padding: 0px;
+}
+
+QWidget#sidebar {
+    background: #1a1a1a;
+}
+
+QWidget#icon_strip {
+    background: #1a1a1a;
+    border-left: 1px solid #333333;
+}
+
+QToolButton#sidebar_tab_btn {
+    background: transparent;
+    border: none;
+    border-left: 2px solid transparent;
+    color: #666666;
+    font-size: 8px;
+    font-weight: bold;
+    padding: 4px 0px 2px 0px;
+    margin: 0px;
+    text-align: center;
+}
+
+QToolButton#sidebar_tab_btn:hover:!checked {
+    background: #252525;
+    color: #aaaaaa;
+    border-left: 2px solid transparent;
+}
+
+QToolButton#sidebar_tab_btn:checked {
+    background: rgba(147, 51, 234, 30);
+    border-left: 2px solid #9333ea;
+    color: #e5e5e5;
+}
+
+QWidget#options_panel {
+    background: #1a1a1a;
+}
+
+QLabel#options_title_label {
+    color: #888888;
+    font-size: 9px;
+    font-weight: bold;
+}
+
+QLabel#options_hint_label {
+    color: #555555;
+    font-size: 10px;
+}
