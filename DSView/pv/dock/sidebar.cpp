@@ -53,6 +53,23 @@ SideBar::SideBar(QWidget *parent, view::View &view, SigSession *session)
     _measure_widget  = new MeasureDock(this, view, session);
     _search_widget   = new SearchDock(this, view, session);
 
+    // Decode tab: fixed "Decode Protocol" header above the scrollable protocol dock
+    auto *decode_wrap = new QWidget(this);
+    decode_wrap->setObjectName("decode_wrap");
+    auto *dw_layout = new QVBoxLayout(decode_wrap);
+    dw_layout->setContentsMargins(0, 0, 0, 0);
+    dw_layout->setSpacing(0);
+    auto *dw_header = new QWidget(decode_wrap);
+    dw_header->setObjectName("decode_header_bar");
+    auto *dw_hlay = new QHBoxLayout(dw_header);
+    dw_hlay->setContentsMargins(12, 8, 12, 8);
+    auto *dw_title = new QLabel(tr("Decode Protocol"), dw_header);
+    dw_title->setObjectName("decode_panel_title");
+    dw_hlay->addWidget(dw_title);
+    dw_hlay->addStretch();
+    dw_layout->addWidget(dw_header);
+    dw_layout->addWidget(_protocol_widget, 1);
+
     _options_widget = new QWidget(this);
     _options_widget->setObjectName("options_panel");
     auto *optLayout = new QVBoxLayout(_options_widget);
@@ -70,12 +87,12 @@ SideBar::SideBar(QWidget *parent, view::View &view, SigSession *session)
     // Outer content stack: one page per tab
     _stack = new QStackedWidget(this);
     _stack->addWidget(_trigger_stack);   // page 0: trigger
-    _stack->addWidget(_protocol_widget); // page 1: decodes
+    _stack->addWidget(decode_wrap);      // page 1: decodes (header + protocol dock)
     _stack->addWidget(_measure_widget);  // page 2: measures
     _stack->addWidget(_search_widget);   // page 3: search
     _stack->addWidget(_options_widget);  // page 4: options
     _stack->setVisible(false);
-    _stack->setMinimumWidth(280);
+    _stack->setMinimumWidth(200);
 
     // Icon strip (52px, far right)
     _icon_strip = new QWidget(this);
@@ -135,6 +152,13 @@ SideBar::~SideBar()
 
 void SideBar::onButtonClicked(int tab)
 {
+    // Options opens a modal dialog instead of a side panel
+    if (tab == TabOptions) {
+        _btns[TabOptions]->setChecked(false);
+        emit sig_show_display_options();
+        return;
+    }
+
     if (_active_tab == tab && _panel_visible) {
         // Toggle off: hide the panel
         _panel_visible = false;

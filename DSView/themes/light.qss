@@ -1973,10 +1973,20 @@ QWidget#sidebar QScrollBar::sub-page:horizontal {
     background: transparent;
 }
 
-/* ── Decode Panel (light) ───────────────────────────────────────── */
+/* ── Decode Panel header bar (light) ────────────────────────────── */
+QWidget#decode_header_bar {
+    background: #f5f5f5;
+    border-bottom: 1px solid #dddddd;
+}
+QWidget#decode_header_bar QLabel#decode_panel_title {
+    color: #222222;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+/* ── Decode Panel toolbar buttons (light) ───────────────────────── */
 QWidget#sidebar QPushButton#decode_add_btn,
 QWidget#sidebar QPushButton#decode_del_btn,
-QWidget#sidebar QPushButton#decode_search_btn,
 QWidget#sidebar QPushButton#decode_settings_btn,
 QWidget#sidebar QPushButton#decode_save_btn,
 QWidget#sidebar QPushButton#decode_nav_btn,
@@ -1986,57 +1996,71 @@ QWidget#sidebar QPushButton#decode_ann_search_icon {
     background: transparent;
     border: 1px solid #cccccc;
     border-radius: 3px;
-    padding: 0px;
+    padding: 5px;
+}
+QWidget#sidebar QToolButton#decode_search_btn {
+    background: transparent;
+    border: none;
+    padding: 5px;
 }
 
 QWidget#sidebar QPushButton#decode_add_btn:hover {
     border-color: #7c3aed;
-    color: #7c3aed;
+    background: rgba(124, 58, 237, 0.08);
 }
 QWidget#sidebar QPushButton#decode_del_btn:hover {
     border-color: #dc2626;
-    color: #dc2626;
+    background: rgba(220, 38, 38, 0.08);
 }
 QWidget#sidebar QPushButton#decode_nav_btn {
     border-color: #7c3aed;
-    color: #7c3aed;
 }
 QWidget#sidebar QPushButton#decode_nav_btn:hover {
-    background: rgba(124, 58, 237, 0.10);
+    background: rgba(124, 58, 237, 0.12);
 }
 QWidget#sidebar QPushButton#decode_prev_btn:hover,
 QWidget#sidebar QPushButton#decode_next_btn:hover {
     border-color: #7c3aed;
-    color: #7c3aed;
+    background: rgba(124, 58, 237, 0.08);
 }
 QWidget#sidebar QPushButton#decode_settings_btn:hover,
 QWidget#sidebar QPushButton#decode_save_btn:hover {
     border-color: #999999;
-    color: #333333;
+    background: #eeeeee;
 }
-QWidget#sidebar QPushButton#decode_search_btn:hover {
-    border-color: #7c3aed;
-    color: #7c3aed;
+QWidget#sidebar QToolButton#decode_search_btn:hover {
+    background: rgba(124, 58, 237, 0.08);
 }
 
-QWidget#sidebar QLineEdit#decode_keyword_edit,
-QWidget#sidebar QLineEdit#decode_ann_search_edit {
+/* ── Decode Panel inputs (light) ────────────────────────────────── */
+QWidget#sidebar QLineEdit#decode_keyword_edit {
     background: transparent;
     border: none;
+    color: #555555;
+    font-size: 12px;
+    selection-background-color: #7c3aed;
+}
+QWidget#sidebar QLineEdit#decode_ann_search_edit {
+    background: #eeeeee;
+    border: 1px solid #cccccc;
+    border-radius: 3px;
     color: #333333;
+    font-size: 12px;
+    padding: 3px 6px;
     selection-background-color: #7c3aed;
 }
 
+/* ── Decode Panel labels (light) ────────────────────────────────── */
 QWidget#sidebar QLabel#decode_title_label {
     color: #666666;
-    font-size: 11px;
+    font-size: 12px;
     padding-left: 4px;
 }
-QWidget#sidebar QLabel#decode_matchs_title,
-QWidget#sidebar QLabel#decode_matchs_count {
+QWidget#sidebar QLabel#decode_matchs_title {
     color: #666666;
-    font-size: 11px;
+    font-size: 12px;
 }
 QWidget#sidebar QLabel#decode_matchs_count {
-    color: #333333;
+    color: #222222;
+    font-size: 12px;
 }
