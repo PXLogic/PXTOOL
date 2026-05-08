@@ -24,6 +24,7 @@
 #include <assert.h>
 #include <QRegularExpressionValidator>
 #include <QTimer>
+#include <QPushButton>
 #include "../ui/langresource.h"
  
 
@@ -48,27 +49,54 @@ Search::Search(QWidget *parent, SigSession *session, std::map<uint16_t, QString>
     DSDialog(parent),
     _session(session)
 {
+    setObjectName("searchDialog");
+    setMinimumWidth(320);
 
-    QFont font("Monaco");
-    font.setStyleHint(QFont::Monospace);
-    font.setFixedPitch(true);
-    //this->setMinimumWidth(350);
+    QFont monoFont("Monaco");
+    monoFont.setStyleHint(QFont::Monospace);
+    monoFont.setFixedPitch(true);
 
     QRegularExpression value_rx("[10XRFCxrfc]+");
     QValidator *value_validator = new QRegularExpressionValidator(value_rx, this);
 
     search_buttonBox.addButton(QDialogButtonBox::Ok);
     search_buttonBox.addButton(QDialogButtonBox::Cancel);
+    if (auto *ok = search_buttonBox.button(QDialogButtonBox::Ok))
+        ok->setObjectName("search_ok_btn");
+    if (auto *cancel = search_buttonBox.button(QDialogButtonBox::Cancel))
+        cancel->setObjectName("search_cancel_btn");
+
+    // Remove left/right margins from _main_layout so dividers span full width;
+    // content areas carry their own padding via setContentsMargins.
+    layout()->setContentsMargins(0, 5, 0, 0);
+    layout()->setSpacing(0);
+
+    // Keep 8px gap below TitleBar to give the title area visual breathing room
+    SetTitleSpace(8);
+    auto *top_sep = new QWidget(this);
+    top_sep->setObjectName("search_divider");
+    top_sep->setFixedHeight(1);
+    layout()->addWidget(top_sep);
 
     QGridLayout *search_layout = new QGridLayout();
-    search_layout->setVerticalSpacing(0);
+    search_layout->setVerticalSpacing(4);
+    search_layout->setHorizontalSpacing(8);
+    search_layout->setContentsMargins(12, 12, 12, 12);
 
     int index = 0;
 
-    for(auto s :  _session->get_signals()) {
+    for(auto s : _session->get_signals()) {
         if (s->signal_type() == SR_CHANNEL_LOGIC) {
             view::LogicSignal *logicSig = (view::LogicSignal*)s;
-            QLineEdit *search_lineEdit = new SearchEdgeFlagEdit(this);
+
+            auto *name_lbl = new QLabel(logicSig->get_name()+":", this);
+            name_lbl->setObjectName("search_ch_name");
+
+            auto *idx_lbl = new QLabel(QString::number(logicSig->get_index()), this);
+            idx_lbl->setObjectName("search_ch_idx");
+
+            SearchEdgeFlagEdit *search_lineEdit = new SearchEdgeFlagEdit(this);
+            search_lineEdit->setObjectName("search_ch_edit");
             if (pattern.find(logicSig->get_index()) != pattern.end())
                 search_lineEdit->setText(pattern[logicSig->get_index()]);
             else
@@ -76,27 +104,41 @@ Search::Search(QWidget *parent, SigSession *session, std::map<uint16_t, QString>
             search_lineEdit->setValidator(value_validator);
             search_lineEdit->setMaxLength(1);
             search_lineEdit->setInputMask("X");
-            search_lineEdit->setFont(font);
+            search_lineEdit->setFont(monoFont);
+            search_lineEdit->setFixedWidth(80);
+            search_lineEdit->setAlignment(Qt::AlignCenter);
             _search_lineEdit_vec.push_back(search_lineEdit);
 
-            search_layout->addWidget(new QLabel(logicSig->get_name()+":"), index, 0, Qt::AlignRight);
-            search_layout->addWidget(new QLabel(QString::number(logicSig->get_index())), index, 1, Qt::AlignRight);
+            search_layout->addWidget(name_lbl, index, 0, Qt::AlignRight | Qt::AlignVCenter);
+            search_layout->addWidget(idx_lbl,  index, 1, Qt::AlignRight | Qt::AlignVCenter);
             search_layout->addWidget(search_lineEdit, index, 2);
 
             connect(search_lineEdit, SIGNAL(editingFinished()), this, SLOT(format()));
-
             index++;
         }
     }
 
-    search_layout->addWidget(new QLabel(" "), index,0);
-    //tr
-    search_layout->addWidget(new QLabel(L_S(STR_PAGE_DLG, S_ID(IDS_DLG_SEARCH_LABEL), 
-                            "X: Don't care\n0: Low level\n1: High level\nR: Rising edge\nF: Falling edge\nC: Rising/Falling edge")), 0, 3, index, 1);
-    search_layout->addWidget(&search_buttonBox, index+1, 3);
+    auto *legend_lbl = new QLabel(L_S(STR_PAGE_DLG, S_ID(IDS_DLG_SEARCH_LABEL),
+                            "X: Don't care\n0: Low level\n1: High level\nR: Rising edge\nF: Falling edge\nC: Rising/Falling edge"), this);
+    legend_lbl->setObjectName("search_legend");
+    search_layout->addWidget(legend_lbl, 0, 3, index, 1, Qt::AlignTop);
     search_layout->setColumnStretch(3, 100);
 
     layout()->addLayout(search_layout);
+
+    // Divider above footer buttons
+    auto *bot_sep = new QWidget(this);
+    bot_sep->setObjectName("search_divider");
+    bot_sep->setFixedHeight(1);
+    layout()->addWidget(bot_sep);
+
+    // Footer button row (right-aligned, with padding)
+    auto *btn_lay = new QHBoxLayout();
+    btn_lay->setContentsMargins(12, 10, 12, 10);
+    btn_lay->addStretch();
+    btn_lay->addWidget(&search_buttonBox);
+    layout()->addLayout(btn_lay);
+
     setTitle(L_S(STR_PAGE_DLG, S_ID(IDS_DLG_SEARCH_OPTIONS), "Search Options"));
 
     connect(&search_buttonBox, SIGNAL(accepted()), this, SLOT(accept()));

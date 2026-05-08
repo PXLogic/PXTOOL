@@ -189,7 +189,7 @@ void SideBar::onButtonClicked(int tab)
     // Options opens a modal dialog instead of a side panel
     if (tab == TabOptions) {
         _btns[TabOptions]->setChecked(false);
-        emit sig_show_display_options();
+        emit sig_show_device_options();
         return;
     }
 

@@ -107,6 +107,7 @@ private slots:
     void on_trigger(bool visible);
     void on_measure(bool visible);
     void on_search(bool visible);
+    void on_display_options();
     void on_screenShot();
     void on_save();
 

@@ -79,6 +79,7 @@ public:
 
 signals:
     void sig_search_visible(bool visible);
+    void sig_show_device_options();
 
 private slots:
     void onButtonClicked(int tab);
