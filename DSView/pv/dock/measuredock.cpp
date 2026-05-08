@@ -64,6 +64,7 @@ MeasureDock::MeasureDock(QWidget *parent, View &view, SigSession *session) :
     _mouse_groupBox = new QGroupBox(_widget);
     _fen_checkBox = new QCheckBox(_widget);
     _fen_checkBox->setChecked(true);
+    _fen_checkBox->setObjectName("measure_fen_checkbox");
     _width_label = new QLabel(_widget);
     _period_label = new QLabel(_widget);
     _freq_label = new QLabel(_widget);
@@ -89,12 +90,13 @@ MeasureDock::MeasureDock(QWidget *parent, View &view, SigSession *session) :
     mouse_layout->addWidget(_freq_label, 2, 4);    
  
     _mouse_groupBox->setLayout(mouse_layout);
-    mouse_layout->setContentsMargins(5, 15, 5, 5);
+    mouse_layout->setContentsMargins(8, 8, 8, 8);
 
     /* cursor distance group */
     _dist_groupBox = new QGroupBox(_widget);
-    _dist_groupBox->setMinimumWidth(300);
-    _dist_add_btn = new XToolButton(_widget);   
+    _dist_add_btn = new XToolButton(_widget);
+    _dist_add_btn->setObjectName("measure_add_btn");
+    _dist_add_btn->setFixedSize(24, 24);
 
     _dist_layout = new QGridLayout(_widget);
     _dist_layout->setVerticalSpacing(5);
@@ -106,12 +108,13 @@ MeasureDock::MeasureDock(QWidget *parent, View &view, SigSession *session) :
     _dist_layout->setColumnStretch(1, 50);
     _dist_layout->setColumnStretch(6, 100);
     _dist_groupBox->setLayout(_dist_layout);
-    _dist_layout->setContentsMargins(5, 15, 5, 5);
+    _dist_layout->setContentsMargins(8, 8, 8, 8);
 
     /* cursor edges group */
     _edge_groupBox = new QGroupBox(_widget);
-    _edge_groupBox->setMinimumWidth(300);
     _edge_add_btn = new XToolButton(_widget);
+    _edge_add_btn->setObjectName("measure_add_btn");
+    _edge_add_btn->setFixedSize(24, 24);
 
     _channel_label = new QLabel(_widget);
     _edge_label = new QLabel(_widget);
@@ -123,7 +126,7 @@ MeasureDock::MeasureDock(QWidget *parent, View &view, SigSession *session) :
     _edge_layout->addWidget(_edge_label, 0, 6);
     _edge_layout->setColumnStretch(1, 50);
     _edge_groupBox->setLayout(_edge_layout);
-    _edge_layout->setContentsMargins(5, 15, 5, 5);
+    _edge_layout->setContentsMargins(8, 8, 8, 8);
 
     /* cursors group */
     _time_label = new QLabel(_widget);
@@ -135,9 +138,11 @@ MeasureDock::MeasureDock(QWidget *parent, View &view, SigSession *session) :
     _cursor_layout->setAlignment(Qt::AlignLeft | Qt::AlignTop);
 
     _cursor_groupBox->setLayout(_cursor_layout);
-    _cursor_layout->setContentsMargins(5, 15, 5, 5);
+    _cursor_layout->setContentsMargins(8, 8, 8, 8);
 
     QVBoxLayout *layout = new QVBoxLayout(_widget);
+    layout->setContentsMargins(8, 8, 8, 8);
+    layout->setSpacing(12);
     layout->addWidget(_mouse_groupBox);
     layout->addWidget(_dist_groupBox);
     layout->addWidget(_edge_groupBox);
@@ -192,26 +197,25 @@ void MeasureDock::retranslateUi()
 
 void MeasureDock::reStyle()
 {
-    QString iconPath = GetIconPath();
-
-    _dist_add_btn->setIcon(QIcon(iconPath+"/add.svg"));
-    _edge_add_btn->setIcon(QIcon(iconPath+"/add.svg"));
+    QSize iconSz(14, 14);
+    _dist_add_btn->setIcon(QIcon(":/icons/sidebar/plus.svg"));
+    _dist_add_btn->setIconSize(iconSz);
+    _edge_add_btn->setIcon(QIcon(":/icons/sidebar/plus.svg"));
+    _edge_add_btn->setIconSize(iconSz);
 
     auto mode_rows = get_mode_rows();
 
-    for (auto it = mode_rows->_dist_row_list.begin(); it != mode_rows->_dist_row_list.end(); it++)
-    {
-        (*it).del_bt->setIcon(QIcon(iconPath+"/del.svg"));
+    for (auto it = mode_rows->_dist_row_list.begin(); it != mode_rows->_dist_row_list.end(); it++) {
+        (*it).del_bt->setIcon(QIcon(":/icons/sidebar/x.svg"));
+        (*it).del_bt->setIconSize(iconSz);
     }
-
-    for (auto it = mode_rows->_edge_row_list.begin(); it != mode_rows->_edge_row_list.end(); it++)
-    {
-        (*it).del_bt->setIcon(QIcon(iconPath+"/del.svg"));
+    for (auto it = mode_rows->_edge_row_list.begin(); it != mode_rows->_edge_row_list.end(); it++) {
+        (*it).del_bt->setIcon(QIcon(":/icons/sidebar/x.svg"));
+        (*it).del_bt->setIconSize(iconSz);
     }
-
-    for (auto it = mode_rows->_opt_row_list.begin(); it != mode_rows->_opt_row_list.end(); it++)
-    {
-        (*it).del_bt->setIcon(QIcon(iconPath+"/del.svg"));
+    for (auto it = mode_rows->_opt_row_list.begin(); it != mode_rows->_opt_row_list.end(); it++) {
+        (*it).del_bt->setIcon(QIcon(":/icons/sidebar/x.svg"));
+        (*it).del_bt->setIconSize(iconSz);
     }
 
     update_dist();
@@ -286,9 +290,11 @@ void MeasureDock::build_dist_pannel()
         row_layout->setSpacing(0);
         row_widget->setLayout(row_layout);
 
-        QString iconPath = GetIconPath();
         XToolButton *del_btn = new XToolButton(row_widget);
-        del_btn->setIcon(QIcon(iconPath+"/del.svg"));
+        del_btn->setIcon(QIcon(":/icons/sidebar/x.svg"));
+        del_btn->setIconSize(QSize(14, 14));
+        del_btn->setObjectName("measure_del_btn");
+        del_btn->setFixedSize(20, 20);
         del_btn->setCheckable(true);
         //tr
         QPushButton *s_btn = new QPushButton("", row_widget);
@@ -423,9 +429,11 @@ void MeasureDock::build_edge_pannel()
         row_layout->setSpacing(0);
         row_widget->setLayout(row_layout);
 
-        QString iconPath = GetIconPath();
         XToolButton *del_btn = new XToolButton(row_widget);
-        del_btn->setIcon(QIcon(iconPath+"/del.svg"));
+        del_btn->setIcon(QIcon(":/icons/sidebar/x.svg"));
+        del_btn->setIconSize(QSize(14, 14));
+        del_btn->setObjectName("measure_del_btn");
+        del_btn->setFixedSize(20, 20);
         del_btn->setCheckable(true);
         //tr
         QPushButton *s_btn = new QPushButton(" ", row_widget);
@@ -886,7 +894,6 @@ void MeasureDock::build_cursor_pannel()
 
     int index = 1;
     int cursor_dex = 0;
-    QString iconPath = GetIconPath();
     auto &cursor_list = _view.get_cursorList();
 
     if (cursor_list.size() == 0){
@@ -895,7 +902,10 @@ void MeasureDock::build_cursor_pannel()
 
     for(auto it = cursor_list.begin(); it != cursor_list.end(); it++) {
         XToolButton *del_btn = new XToolButton(_widget);
-        del_btn->setIcon(QIcon(iconPath+"/del.svg"));
+        del_btn->setIcon(QIcon(":/icons/sidebar/x.svg"));
+        del_btn->setIconSize(QSize(14, 14));
+        del_btn->setObjectName("measure_del_btn");
+        del_btn->setFixedSize(20, 20);
         del_btn->setCheckable(true);
         QPushButton *cursor_pushButton = new QPushButton(QString::number(index), _widget);
         set_cursor_btn_color(cursor_pushButton);

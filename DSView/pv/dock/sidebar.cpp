@@ -70,6 +70,23 @@ SideBar::SideBar(QWidget *parent, view::View &view, SigSession *session)
     dw_layout->addWidget(dw_header);
     dw_layout->addWidget(_protocol_widget, 1);
 
+    // Measure tab wrapper: fixed "Measurement" header above the scrollable MeasureDock
+    auto *measure_wrap = new QWidget(this);
+    measure_wrap->setObjectName("measure_wrap");
+    auto *mw_layout = new QVBoxLayout(measure_wrap);
+    mw_layout->setContentsMargins(0, 0, 0, 0);
+    mw_layout->setSpacing(0);
+    auto *mw_header = new QWidget(measure_wrap);
+    mw_header->setObjectName("measure_header_bar");
+    auto *mw_hlay = new QHBoxLayout(mw_header);
+    mw_hlay->setContentsMargins(12, 8, 12, 8);
+    auto *mw_title = new QLabel(tr("Measurement"), mw_header);
+    mw_title->setObjectName("measure_panel_title");
+    mw_hlay->addWidget(mw_title);
+    mw_hlay->addStretch();
+    mw_layout->addWidget(mw_header);
+    mw_layout->addWidget(_measure_widget, 1);
+
     _options_widget = new QWidget(this);
     _options_widget->setObjectName("options_panel");
     auto *optLayout = new QVBoxLayout(_options_widget);
@@ -88,7 +105,7 @@ SideBar::SideBar(QWidget *parent, view::View &view, SigSession *session)
     _stack = new QStackedWidget(this);
     _stack->addWidget(_trigger_stack);   // page 0: trigger
     _stack->addWidget(decode_wrap);      // page 1: decodes (header + protocol dock)
-    _stack->addWidget(_measure_widget);  // page 2: measures
+    _stack->addWidget(measure_wrap);      // page 2: measures (header + measure dock)
     _stack->addWidget(_search_widget);   // page 3: search
     _stack->addWidget(_options_widget);  // page 4: options
     _stack->setVisible(false);

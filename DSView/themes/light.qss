@@ -1773,13 +1773,13 @@ QSplitter#protocolWidget > QWidget {
 
 QWidget#sidebar QGroupBox {
     background: transparent;
-    border: 1px solid #e0e0e0;
+    border: 1px solid #dddddd;
     border-radius: 4px;
-    margin-top: 14px;
-    padding: 6px 6px 6px 6px;
-    color: #999999;
-    font-size: 9px;
-    font-weight: bold;
+    margin-top: 16px;
+    padding: 8px 8px 8px 8px;
+    color: #666666;
+    font-size: 12px;
+    font-weight: normal;
 }
 
 QWidget#sidebar QGroupBox::title {
@@ -1787,9 +1787,9 @@ QWidget#sidebar QGroupBox::title {
     subcontrol-position: top left;
     left: 8px;
     padding: 0 4px;
-    color: #aaaaaa;
-    font-size: 9px;
-    font-weight: bold;
+    color: #888888;
+    font-size: 12px;
+    font-weight: normal;
 }
 
 QWidget#sidebar QLabel {
@@ -2094,4 +2094,69 @@ QWidget#sidebar QLabel#decode_title_label {
     color: #666666;
     font-size: 12px;
     padding-left: 4px;
+}
+
+/* ── Measure Panel header bar (light) ───────────────────────────── */
+QWidget#measure_header_bar {
+    background: #f5f5f5;
+    border-bottom: 1px solid #dddddd;
+}
+QWidget#measure_header_bar QLabel#measure_panel_title {
+    color: #222222;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+/* ── Measure Panel add button (light) ───────────────────────────── */
+QWidget#sidebar QToolButton#measure_add_btn {
+    background-color: transparent;
+    border: 1px solid #7c3aed;
+    border-radius: 4px;
+    min-width: 24px;
+    max-width: 24px;
+    min-height: 24px;
+    max-height: 24px;
+    padding: 0px;
+}
+QWidget#sidebar QToolButton#measure_add_btn:hover {
+    background-color: rgba(124, 58, 237, 0.12);
+}
+
+/* ── Measure Panel delete button (light) ────────────────────────── */
+QWidget#sidebar QToolButton#measure_del_btn {
+    background-color: transparent;
+    border: none;
+    padding: 0px;
+    min-width: 20px;
+    max-width: 20px;
+    min-height: 20px;
+    max-height: 20px;
+}
+QWidget#sidebar QToolButton#measure_del_btn:hover {
+    background-color: rgba(220, 38, 38, 0.10);
+    border-radius: 3px;
+}
+
+/* ── Measure Panel checkbox (light) ─────────────────────────────── */
+QWidget#sidebar QCheckBox#measure_fen_checkbox {
+    color: #555555;
+    font-size: 12px;
+    spacing: 6px;
+}
+QWidget#sidebar QCheckBox#measure_fen_checkbox::indicator {
+    width: 14px;
+    height: 14px;
+    background-color: #f0f0f0;
+    border: 1px solid #cccccc;
+    border-radius: 3px;
+}
+QWidget#sidebar QCheckBox#measure_fen_checkbox::indicator:checked {
+    background-color: #7c3aed;
+    border-color: #7c3aed;
+}
+
+/* ── Measure Panel labels (light) ───────────────────────────────── */
+QWidget#measureWidget QLabel {
+    color: #555555;
+    font-size: 12px;
 }
