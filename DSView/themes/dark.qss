@@ -2199,13 +2199,12 @@ QWidget#measureWidget QLabel {
     font-size: 12px;
 }
 
-/* ── Cursor position readonly input (dark) ──────────────────────── */
-QWidget#measureWidget QLineEdit#cursor_pos_edit {
+/* ── Cursor position label (dark) ───────────────────────────────── */
+QWidget#measureWidget QLabel#cursor_pos_label {
     background-color: #2a2a2a;
     border: 1px solid #444444;
     border-radius: 3px;
     color: #cccccc;
     font-size: 12px;
     padding: 1px 4px;
-    selection-background-color: #7c3aed;
 }

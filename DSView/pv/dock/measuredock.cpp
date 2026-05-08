@@ -38,7 +38,6 @@
 #include "../ui/msgbox.h"
 #include <QObject>
 #include <QPainter>
-#include <QLineEdit>
 #include "../appcontrol.h"
 #include "../ui/fn.h"
 #include "../log.h"
@@ -901,9 +900,8 @@ void MeasureDock::build_cursor_pannel()
 
         QString cur_pos = _view.get_cm_time(cursor_dex) + "/"
                     + QString::number(_view.get_cursor_samples(cursor_dex));
-        QLineEdit *curpos_label = new QLineEdit(cur_pos, _widget);
-        curpos_label->setReadOnly(true);
-        curpos_label->setObjectName("cursor_pos_edit");
+        QLabel *curpos_label = new QLabel(cur_pos, _widget);
+        curpos_label->setObjectName("cursor_pos_label");
         curpos_label->setFont(font);
 
         _cursor_layout->addWidget(del_btn, 1+index, 0);

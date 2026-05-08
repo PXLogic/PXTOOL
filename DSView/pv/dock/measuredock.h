@@ -25,7 +25,6 @@
 #include <QDockWidget>
 #include <QPushButton>
 #include <QLabel>
-#include <QLineEdit>
 #include <QRadioButton>
 #include <QSlider>
 #include <QSpinBox>
@@ -71,7 +70,7 @@ struct cursor_opt_info
 {
     XToolButton     *del_bt;
     QPushButton     *goto_bt;
-    QLineEdit       *info_label;
+    QLabel          *info_label;
     view::Cursor    *cursor;
 };
 
