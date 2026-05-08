@@ -1785,8 +1785,8 @@ QWidget#sidebar QGroupBox {
 QWidget#sidebar QGroupBox::title {
     subcontrol-origin: margin;
     subcontrol-position: top left;
-    left: 8px;
-    padding: 0 4px;
+    left: 6px;
+    padding: 0 2px;
     color: #888888;
     font-size: 12px;
     font-weight: normal;
@@ -2103,7 +2103,7 @@ QWidget#measure_header_bar {
 }
 QWidget#measure_header_bar QLabel#measure_panel_title {
     color: #222222;
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 600;
 }
 
@@ -2146,17 +2146,25 @@ QWidget#sidebar QCheckBox#measure_fen_checkbox {
 QWidget#sidebar QCheckBox#measure_fen_checkbox::indicator {
     width: 14px;
     height: 14px;
-    background-color: #f0f0f0;
-    border: 1px solid #cccccc;
-    border-radius: 3px;
+    image: url(:/icons/sidebar/checkbox-unchecked.svg);
 }
 QWidget#sidebar QCheckBox#measure_fen_checkbox::indicator:checked {
-    background-color: #7c3aed;
-    border-color: #7c3aed;
+    image: url(:/icons/sidebar/checkbox-checked.svg);
 }
 
 /* ── Measure Panel labels (light) ───────────────────────────────── */
 QWidget#measureWidget QLabel {
     color: #555555;
     font-size: 12px;
+}
+
+/* ── Cursor position readonly input (light) ─────────────────────── */
+QWidget#measureWidget QLineEdit#cursor_pos_edit {
+    background-color: #f0f0f0;
+    border: 1px solid #cccccc;
+    border-radius: 3px;
+    color: #333333;
+    font-size: 12px;
+    padding: 1px 4px;
+    selection-background-color: #7c3aed;
 }

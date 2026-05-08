@@ -37,7 +37,8 @@
 #include "../ui/langresource.h"
 #include "../ui/msgbox.h"
 #include <QObject>
-#include <QPainter> 
+#include <QPainter>
+#include <QLineEdit>
 #include "../appcontrol.h"
 #include "../ui/fn.h"
 #include "../log.h"
@@ -100,12 +101,17 @@ MeasureDock::MeasureDock(QWidget *parent, View &view, SigSession *session) :
 
     _dist_layout = new QGridLayout(_widget);
     _dist_layout->setVerticalSpacing(5);
-    _dist_layout->addWidget(_dist_add_btn, 0, 0);
-    _dist_layout->addWidget(new QLabel(_widget), 0, 1, 1, 3);
     _add_dec_label = new QLabel(L_S(STR_PAGE_DLG, S_ID(IDS_DLG_TIME_SAMPLES), "Time/Samples"), _widget);
-    _dist_layout->addWidget(_add_dec_label, 0, 4);
-    _dist_layout->addWidget(new QLabel(_widget), 0, 5, 1, 2);
-    _dist_layout->setColumnStretch(1, 50);
+    {
+        auto *hdr = new QWidget(_widget);
+        auto *hdr_lay = new QHBoxLayout(hdr);
+        hdr_lay->setContentsMargins(0, 0, 0, 0);
+        hdr_lay->setSpacing(6);
+        hdr_lay->addWidget(_dist_add_btn);
+        hdr_lay->addWidget(_add_dec_label);
+        hdr_lay->addStretch();
+        _dist_layout->addWidget(hdr, 0, 0, 1, 7);
+    }
     _dist_layout->setColumnStretch(6, 100);
     _dist_groupBox->setLayout(_dist_layout);
     _dist_layout->setContentsMargins(8, 8, 8, 8);
@@ -120,11 +126,18 @@ MeasureDock::MeasureDock(QWidget *parent, View &view, SigSession *session) :
     _edge_label = new QLabel(_widget);
     _edge_layout = new QGridLayout(_widget);
     _edge_layout->setVerticalSpacing(5);
-    _edge_layout->addWidget(_edge_add_btn, 0, 0);
-    _edge_layout->addWidget(new QLabel(_widget), 0, 1, 1, 4);
-    _edge_layout->addWidget(_channel_label, 0, 5);
-    _edge_layout->addWidget(_edge_label, 0, 6);
-    _edge_layout->setColumnStretch(1, 50);
+    {
+        auto *hdr = new QWidget(_widget);
+        auto *hdr_lay = new QHBoxLayout(hdr);
+        hdr_lay->setContentsMargins(0, 0, 0, 0);
+        hdr_lay->setSpacing(6);
+        hdr_lay->addWidget(_edge_add_btn);
+        hdr_lay->addWidget(_channel_label);
+        hdr_lay->addWidget(_edge_label);
+        hdr_lay->addStretch();
+        _edge_layout->addWidget(hdr, 0, 0, 1, 7);
+    }
+    _edge_layout->setColumnStretch(6, 100);
     _edge_groupBox->setLayout(_edge_layout);
     _edge_layout->setContentsMargins(8, 8, 8, 8);
 
@@ -267,16 +280,7 @@ void MeasureDock::build_dist_pannel()
     lay->setContentsMargins(0,0,0,0);
     
     int dex = 0;
-    QLabel cal_lb;
-    cal_lb.setFont(font);
-    //int bt_w = cal_lb.fontMetrics().horizontalAdvance("22") + 8;
-
-    #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
-        int bt_w = cal_lb.fontMetrics().horizontalAdvance("22") + 8;
-    #else
-        int bt_w = cal_lb.fontMetrics().width("22") + 8;
-    #endif
-
+    const int bt_w = 36;
 
     auto mode_rows = get_mode_rows();
 
@@ -409,14 +413,7 @@ void MeasureDock::build_edge_pannel()
     lay->setContentsMargins(0,0,0,0);
   
     int dex = 0;
-    QLabel cal_lb;
-    cal_lb.setFont(font);
-    //int bt_w = cal_lb.fontMetrics().horizontalAdvance("22") + 8;
-    #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
-        int bt_w = cal_lb.fontMetrics().horizontalAdvance("22") + 8;
-    #else
-        int bt_w = cal_lb.fontMetrics().width("22") + 8;
-    #endif
+    const int bt_w = 36;
     auto mode_rows = get_mode_rows();
 
     for (auto &o : mode_rows->_edge_row_list)
@@ -656,9 +653,6 @@ void MeasureDock::set_sel_cursor()
 void MeasureDock::update_dist()
 {
     auto &cursor_list = _view.get_cursorList();
-
-    QColor bkColor = AppConfig::Instance().GetStyleColor(); 
-
     auto mode_rows = get_mode_rows();
 
     for (auto &inf : mode_rows->_dist_row_list)
@@ -786,16 +780,20 @@ void MeasureDock::set_cursor_btn_color(QPushButton *btn)
     set_cursor_btn_color(btn, cursor_color, bkColor, isCursor);
 }
 
-void MeasureDock::set_cursor_btn_color(QPushButton *btn, QColor cursorColor, QColor bkColor, bool isCursor)
-{  
-    QString border_width = isCursor ? "0px" : "1px";
-    QString hoverColor = isCursor ? cursorColor.darker().name() : bkColor.name();
-    QString normal = "{background-color:" + cursorColor.name() +
-            "; color:black" + "; border-width:" + border_width + ";}";
-    QString hover = "{background-color:" + hoverColor +
-            "; color:black" + "; border-width:" + border_width + ";}";
-    QString style = "QPushButton:hover" + hover +
-                    "QPushButton" + normal;
+void MeasureDock::set_cursor_btn_color(QPushButton *btn, QColor cursorColor, QColor /*bkColor*/, bool isCursor)
+{
+    QString style;
+    if (isCursor) {
+        QString hoverColor = cursorColor.darker().name();
+        style = "QPushButton{background-color:" + cursorColor.name() +
+                "; color:black; border:none; border-radius:3px;}"
+                "QPushButton:hover{background-color:" + hoverColor + "; color:black; border:none; border-radius:3px;}";
+    } else {
+        style = "QPushButton{background-color:#2a2a2a; color:#666666;"
+                " border:1px solid #444444; border-radius:3px;}"
+                "QPushButton:hover{background-color:#333333; color:#aaaaaa;"
+                " border:1px solid #555555; border-radius:3px;}";
+    }
     btn->setStyleSheet(style);
 }
 
@@ -882,16 +880,7 @@ void MeasureDock::build_cursor_pannel()
     QFont font = this->font();
     font.setPointSizeF(AppConfig::Instance().appOptions.fontSize);
 
-    QLabel cal_lb;
-    cal_lb.setFont(font);
-    //int bt_w = cal_lb.fontMetrics().horizontalAdvance("22") + 8;
-
-    #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
-        int bt_w = cal_lb.fontMetrics().horizontalAdvance("22") + 8;
-    #else
-        int bt_w = cal_lb.fontMetrics().width("22") + 8;
-    #endif
-
+    const int bt_w = 36;
     int index = 1;
     int cursor_dex = 0;
     auto &cursor_list = _view.get_cursorList();
@@ -910,14 +899,16 @@ void MeasureDock::build_cursor_pannel()
         QPushButton *cursor_pushButton = new QPushButton(QString::number(index), _widget);
         set_cursor_btn_color(cursor_pushButton);
 
-        QString cur_pos = _view.get_cm_time(cursor_dex) + "/" 
+        QString cur_pos = _view.get_cm_time(cursor_dex) + "/"
                     + QString::number(_view.get_cursor_samples(cursor_dex));
-        QLabel *curpos_label = new QLabel(cur_pos, _widget); 
+        QLineEdit *curpos_label = new QLineEdit(cur_pos, _widget);
+        curpos_label->setReadOnly(true);
+        curpos_label->setObjectName("cursor_pos_edit");
+        curpos_label->setFont(font);
 
         _cursor_layout->addWidget(del_btn, 1+index, 0);
         _cursor_layout->addWidget(cursor_pushButton, 1 + index, 1);
         _cursor_layout->addWidget(curpos_label, 1 + index, 2);
-        curpos_label->setFont(font);
         cursor_pushButton->setFont(font);
         cursor_pushButton->setFixedWidth(bt_w);
 
