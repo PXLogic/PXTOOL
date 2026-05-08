@@ -118,13 +118,20 @@ ProtocolDock::ProtocolDock(QWidget *parent, view::View &view, SigSession *sessio
 
     _pro_add_button = new QPushButton(top_panel);
     _pro_add_button->setFlat(true);
+    _pro_add_button->setObjectName("decode_add_btn");
+    _pro_add_button->setFixedSize(28, 28);
     _del_all_button = new QPushButton(top_panel);
     _del_all_button->setFlat(true);
     _del_all_button->setCheckable(true);
+    _del_all_button->setObjectName("decode_del_btn");
+    _del_all_button->setFixedSize(28, 28);
     _pro_keyword_edit = new KeywordLineEdit(top_panel, this);
-    _pro_keyword_edit->setReadOnly(true); 
- 
+    _pro_keyword_edit->setReadOnly(true);
+    _pro_keyword_edit->setObjectName("decode_keyword_edit");
+
     _pro_search_button = new XToolButton(top_panel);
+    _pro_search_button->setObjectName("decode_search_btn");
+    _pro_search_button->setFixedSize(28, 28);
     QHBoxLayout *pro_search_lay = new QHBoxLayout();
     pro_search_lay->setSpacing(2);
     pro_search_lay->addWidget(_pro_add_button);
@@ -141,11 +148,18 @@ ProtocolDock::ProtocolDock(QWidget *parent, view::View &view, SigSession *sessio
     //-----------------------------bottom panel
     _bot_set_button = new QPushButton(bot_panel);
     _bot_set_button->setFlat(true);
+    _bot_set_button->setObjectName("decode_settings_btn");
+    _bot_set_button->setFixedSize(28, 28);
     _bot_save_button = new QPushButton(bot_panel);
     _bot_save_button->setFlat(true);
+    _bot_save_button->setObjectName("decode_save_btn");
+    _bot_save_button->setFixedSize(28, 28);
     _dn_nav_button = new QPushButton(bot_panel);
     _dn_nav_button->setFlat(true);
+    _dn_nav_button->setObjectName("decode_nav_btn");
+    _dn_nav_button->setFixedSize(28, 28);
     _bot_title_label = new QLabel(bot_panel);
+    _bot_title_label->setObjectName("decode_title_label");
 
     QHBoxLayout *bot_title_layout = new QHBoxLayout();
     bot_title_layout->setSpacing(2);
@@ -155,11 +169,17 @@ ProtocolDock::ProtocolDock(QWidget *parent, view::View &view, SigSession *sessio
     bot_title_layout->addWidget(_dn_nav_button);
     
     _pre_button = new QPushButton(bot_panel);
+    _pre_button->setObjectName("decode_prev_btn");
+    _pre_button->setFixedSize(24, 24);
     _ann_search_button = new QPushButton(bot_panel); //search icon
+    _ann_search_button->setObjectName("decode_ann_search_icon");
+    _ann_search_button->setFixedSize(24, 24);
     _nxt_button = new QPushButton(bot_panel);
+    _nxt_button->setObjectName("decode_next_btn");
+    _nxt_button->setFixedSize(24, 24);
     _ann_search_edit = new PopupLineEdit(bot_panel);
-    
-    _ann_search_button->setFixedWidth(_ann_search_button->height());
+    _ann_search_edit->setObjectName("decode_ann_search_edit");
+
     _ann_search_button->setDisabled(true);
    
     QHBoxLayout *ann_search_layout = new QHBoxLayout();
@@ -178,13 +198,17 @@ ProtocolDock::ProtocolDock(QWidget *parent, view::View &view, SigSession *sessio
     _table_view->setVerticalScrollMode(QAbstractItemView::ScrollPerPixel); 
 
     _matchs_title_label = new QLabel();
-    _matchs_label = new QLabel();  
+    _matchs_title_label->setObjectName("decode_matchs_title");
+    _matchs_label = new QLabel();
+    _matchs_label->setObjectName("decode_matchs_count");
     QHBoxLayout *match_layout = new QHBoxLayout();
     match_layout->addWidget(_matchs_title_label, 0, Qt::AlignLeft);
     match_layout->addWidget(_matchs_label, 0, Qt::AlignLeft);
     match_layout->addStretch(1);
 
     QVBoxLayout *bot_layout = new QVBoxLayout();
+    bot_layout->setContentsMargins(4, 4, 4, 4);
+    bot_layout->setSpacing(4);
     bot_layout->addLayout(bot_title_layout);
     bot_layout->addLayout(ann_search_layout);
     bot_layout->addLayout(match_layout);
@@ -248,22 +272,28 @@ void ProtocolDock::retranslateUi()
 
 void ProtocolDock::reStyle()
 {
-    QString iconPath = GetIconPath();
-
     if (_pro_add_button == NULL)
-    {
         return;
-    }
 
-    _pro_add_button->setIcon(QIcon(iconPath+"/add.svg"));
-    _del_all_button->setIcon(QIcon(iconPath+"/del.svg"));
-    _bot_set_button->setIcon(QIcon(iconPath+"/gear.svg"));
-    _bot_save_button->setIcon(QIcon(iconPath+"/save.svg"));
-    _dn_nav_button->setIcon(QIcon(iconPath+"/nav.svg"));
-    _pre_button->setIcon(QIcon(iconPath+"/pre.svg"));
-    _nxt_button->setIcon(QIcon(iconPath+"/next.svg"));
-    _ann_search_button->setIcon(QIcon(iconPath+"/search.svg"));
-    _pro_search_button->setIcon(QIcon(iconPath + "/search.svg"));
+    QSize iconSz(14, 14);
+    _pro_add_button->setIcon(QIcon(":/icons/sidebar/plus.svg"));
+    _pro_add_button->setIconSize(iconSz);
+    _del_all_button->setIcon(QIcon(":/icons/sidebar/x.svg"));
+    _del_all_button->setIconSize(iconSz);
+    _bot_set_button->setIcon(QIcon(":/icons/sidebar/settings.svg"));
+    _bot_set_button->setIconSize(iconSz);
+    _bot_save_button->setIcon(QIcon(":/icons/sidebar/save.svg"));
+    _bot_save_button->setIconSize(iconSz);
+    _dn_nav_button->setIcon(QIcon(":/icons/sidebar/navigation.svg"));
+    _dn_nav_button->setIconSize(iconSz);
+    _pre_button->setIcon(QIcon(":/icons/sidebar/chevron-left.svg"));
+    _pre_button->setIconSize(iconSz);
+    _nxt_button->setIcon(QIcon(":/icons/sidebar/chevron-right.svg"));
+    _nxt_button->setIconSize(iconSz);
+    _ann_search_button->setIcon(QIcon(":/icons/sidebar/search.svg"));
+    _ann_search_button->setIconSize(iconSz);
+    _pro_search_button->setIcon(QIcon(":/icons/sidebar/search.svg"));
+    _pro_search_button->setIconSize(QSize(14, 14));
 
     for (auto item : _protocol_lay_items){
         item->ResetStyle();
