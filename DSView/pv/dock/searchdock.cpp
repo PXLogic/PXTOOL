@@ -54,36 +54,65 @@ SearchDock::SearchDock(QWidget *parent, View &view, SigSession *session) :
     QWidget(parent),
     _session(session),
     _view(view)
-{ 
+{
+    // Search icon (inside container, not embedded in FakeLineEdit)
     _search_button = new QPushButton(this);
-    _search_button->setFixedWidth(_search_button->height());
+    _search_button->setFixedSize(14, 14);
     _search_button->setDisabled(true);
+    _search_button->setObjectName("search_icon_btn");
 
     QLineEdit *_search_parent = new QLineEdit(this);
     _search_parent->setVisible(false);
     _search_value = new FakeLineEdit(_search_parent);
-
-    QHBoxLayout *search_layout = new QHBoxLayout();
-    search_layout->addWidget(_search_button);
-    search_layout->addStretch();
-    search_layout->setContentsMargins(0, 0, 0, 0);
-    _search_value->setLayout(search_layout);
-    _search_value->setTextMargins(_search_button->width(), 0, 0, 0);
+    _search_value->setObjectName("search_pattern_edit");
     _search_value->setReadOnly(true);
+    _search_value->setFrame(false);
 
     connect(_search_value, SIGNAL(trigger()), this, SLOT(on_set()));
 
-    QHBoxLayout *layout = new QHBoxLayout();
-    layout->addStretch(1);
-    layout->addWidget(&_pre_button);
-    layout->addWidget(_search_value);
-    layout->addWidget(&_nxt_button);
-    layout->addStretch(1);
+    // Container: [icon | FakeLineEdit] — same pattern as decode_search_container
+    auto *pattern_container = new QWidget(this);
+    pattern_container->setObjectName("search_pattern_container");
+    auto *pc_layout = new QHBoxLayout(pattern_container);
+    pc_layout->setContentsMargins(6, 2, 6, 2);
+    pc_layout->setSpacing(4);
+    pc_layout->addWidget(_search_button);
+    pc_layout->addWidget(_search_value, 1);
 
+    // Nav buttons: 24×24, same size as decode prev/next
+    _pre_button.setObjectName("search_nav_btn");
+    _pre_button.setFixedSize(24, 24);
+    _pre_button.setIconSize(QSize(16, 16));
+    _nxt_button.setObjectName("search_nav_btn");
+    _nxt_button.setFixedSize(24, 24);
+    _nxt_button.setIconSize(QSize(16, 16));
+
+    // Hint label
+    auto *hint = new QLabel(tr("Click the search pattern\nto configure search options"), this);
+    hint->setObjectName("search_hint_label");
+    hint->setAlignment(Qt::AlignCenter);
+    hint->setWordWrap(true);
+
+    // Controls row: [prev] [pattern_container] [next]
+    auto *ctrl_lay = new QHBoxLayout();
+    ctrl_lay->setSpacing(8);
+    ctrl_lay->setContentsMargins(0, 0, 0, 0);
+    ctrl_lay->addWidget(&_pre_button);
+    ctrl_lay->addWidget(pattern_container, 1);
+    ctrl_lay->addWidget(&_nxt_button);
+
+    // Outer layout: vertically centered
+    auto *layout = new QVBoxLayout(this);
+    layout->setContentsMargins(16, 0, 16, 16);
+    layout->setSpacing(12);
+    layout->addStretch(1);
+    layout->addLayout(ctrl_lay);
+    layout->addWidget(hint);
+    layout->addStretch(1);
     setLayout(layout);
 
     connect(&_pre_button, SIGNAL(clicked()), this, SLOT(on_previous()));
-    connect(&_nxt_button, SIGNAL(clicked()),this, SLOT(on_next()));
+    connect(&_nxt_button, SIGNAL(clicked()), this, SLOT(on_next()));
 
     ADD_UI(this);
 }
@@ -100,11 +129,10 @@ void SearchDock::retranslateUi()
 
 void SearchDock::reStyle()
 {
-    QString iconPath = GetIconPath();
-
-    _pre_button.setIcon(QIcon(iconPath+"/pre.svg"));
-    _nxt_button.setIcon(QIcon(iconPath+"/next.svg"));
-    _search_button->setIcon(QIcon(iconPath+"/search.svg"));
+    _pre_button.setIcon(QIcon(":/icons/sidebar/chevron-left.svg"));
+    _nxt_button.setIcon(QIcon(":/icons/sidebar/chevron-right.svg"));
+    _search_button->setIcon(QIcon(":/icons/sidebar/search.svg"));
+    _search_button->setIconSize(QSize(14, 14));
 }
 
 void SearchDock::paintEvent(QPaintEvent *)

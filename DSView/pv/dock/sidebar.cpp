@@ -87,6 +87,23 @@ SideBar::SideBar(QWidget *parent, view::View &view, SigSession *session)
     mw_layout->addWidget(mw_header);
     mw_layout->addWidget(_measure_widget, 1);
 
+    // Search tab wrapper: fixed "Search" header above the SearchDock
+    auto *search_wrap = new QWidget(this);
+    search_wrap->setObjectName("search_wrap");
+    auto *sw_layout = new QVBoxLayout(search_wrap);
+    sw_layout->setContentsMargins(0, 0, 0, 0);
+    sw_layout->setSpacing(0);
+    auto *sw_header = new QWidget(search_wrap);
+    sw_header->setObjectName("search_header_bar");
+    auto *sw_hlay = new QHBoxLayout(sw_header);
+    sw_hlay->setContentsMargins(12, 8, 12, 8);
+    auto *sw_title = new QLabel(tr("Search"), sw_header);
+    sw_title->setObjectName("search_panel_title");
+    sw_hlay->addWidget(sw_title);
+    sw_hlay->addStretch();
+    sw_layout->addWidget(sw_header);
+    sw_layout->addWidget(_search_widget, 1);
+
     _options_widget = new QWidget(this);
     _options_widget->setObjectName("options_panel");
     auto *optLayout = new QVBoxLayout(_options_widget);
@@ -106,7 +123,7 @@ SideBar::SideBar(QWidget *parent, view::View &view, SigSession *session)
     _stack->addWidget(_trigger_stack);   // page 0: trigger
     _stack->addWidget(decode_wrap);      // page 1: decodes (header + protocol dock)
     _stack->addWidget(measure_wrap);      // page 2: measures (header + measure dock)
-    _stack->addWidget(_search_widget);   // page 3: search
+    _stack->addWidget(search_wrap);       // page 3: search (header + search dock)
     _stack->addWidget(_options_widget);  // page 4: options
     _stack->setVisible(false);
     _stack->setMinimumWidth(200);

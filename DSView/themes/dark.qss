@@ -2208,3 +2208,67 @@ QWidget#measureWidget QLabel#cursor_pos_label {
     font-size: 12px;
     padding: 1px 4px;
 }
+
+/* ── Search Panel header bar (dark) ─────────────────────────────── */
+QWidget#search_header_bar {
+    background: #1a1a1a;
+    border-bottom: 1px solid #333333;
+}
+QWidget#search_header_bar QLabel#search_panel_title {
+    color: #e0e0e0;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+/* ── Search Panel nav buttons (dark) ────────────────────────────── */
+QPushButton#search_nav_btn {
+    background-color: transparent;
+    border: 1px solid #444444;
+    border-radius: 4px;
+    min-width: 24px;
+    max-width: 24px;
+    min-height: 24px;
+    max-height: 24px;
+    padding: 0px;
+}
+QPushButton#search_nav_btn:hover {
+    border-color: #7c3aed;
+    background-color: rgba(124, 58, 237, 0.10);
+}
+
+/* ── Search Panel pattern container (dark) ──────────────────────── */
+QWidget#search_pattern_container {
+    background-color: #2a2a2a;
+    border: 1px solid #444444;
+    border-radius: 4px;
+    min-height: 28px;
+}
+QWidget#search_pattern_container:hover {
+    border-color: #7c3aed;
+}
+QWidget#search_pattern_container QPushButton#search_icon_btn {
+    background-color: transparent;
+    border: none;
+    padding: 0px;
+    min-width: 14px;
+    max-width: 14px;
+    min-height: 14px;
+    max-height: 14px;
+}
+QWidget#search_pattern_container QLineEdit#search_pattern_edit {
+    background-color: transparent;
+    border: none;
+    color: #cccccc;
+    font-size: 12px;
+    font-family: monospace;
+    selection-background-color: #7c3aed;
+    padding: 0px;
+}
+
+/* ── Search Panel hint label (dark) ─────────────────────────────── */
+QLabel#search_hint_label {
+    color: #555555;
+    font-size: 11px;
+    background: transparent;
+    border: none;
+}
