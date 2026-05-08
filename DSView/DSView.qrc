@@ -6,6 +6,13 @@
         <file>icons/sidebar/ruler.svg</file>
         <file>icons/sidebar/search.svg</file>
         <file>icons/sidebar/settings-2.svg</file>
+        <file>icons/sidebar/plus.svg</file>
+        <file>icons/sidebar/x.svg</file>
+        <file>icons/sidebar/settings.svg</file>
+        <file>icons/sidebar/save.svg</file>
+        <file>icons/sidebar/navigation.svg</file>
+        <file>icons/sidebar/chevron-left.svg</file>
+        <file>icons/sidebar/chevron-right.svg</file>
         <file>icons/Blackman.png</file>
         <file>icons/Flat_top.png</file>
         <file>icons/Hamming.png</file>
