@@ -117,11 +117,9 @@ ProtocolDock::ProtocolDock(QWidget *parent, view::View &view, SigSession *sessio
     QWidget* bot_panel = new QWidget();
 
     _pro_add_button = new QPushButton(top_panel);
-    _pro_add_button->setFlat(true);
     _pro_add_button->setObjectName("decode_add_btn");
     _pro_add_button->setFixedSize(28, 28);
     _del_all_button = new QPushButton(top_panel);
-    _del_all_button->setFlat(true);
     _del_all_button->setCheckable(true);
     _del_all_button->setObjectName("decode_del_btn");
     _del_all_button->setFixedSize(28, 28);
@@ -148,15 +146,12 @@ ProtocolDock::ProtocolDock(QWidget *parent, view::View &view, SigSession *sessio
  
     //-----------------------------bottom panel
     _bot_set_button = new QPushButton(bot_panel);
-    _bot_set_button->setFlat(true);
     _bot_set_button->setObjectName("decode_settings_btn");
     _bot_set_button->setFixedSize(28, 28);
     _bot_save_button = new QPushButton(bot_panel);
-    _bot_save_button->setFlat(true);
     _bot_save_button->setObjectName("decode_save_btn");
     _bot_save_button->setFixedSize(28, 28);
     _dn_nav_button = new QPushButton(bot_panel);
-    _dn_nav_button->setFlat(true);
     _dn_nav_button->setObjectName("decode_nav_btn");
     _dn_nav_button->setFixedSize(28, 28);
     _bot_title_label = new QLabel(bot_panel);
@@ -172,22 +167,30 @@ ProtocolDock::ProtocolDock(QWidget *parent, view::View &view, SigSession *sessio
     _pre_button = new QPushButton(bot_panel);
     _pre_button->setObjectName("decode_prev_btn");
     _pre_button->setFixedSize(24, 24);
-    _ann_search_button = new QPushButton(bot_panel); //search icon
-    _ann_search_button->setObjectName("decode_ann_search_icon");
-    _ann_search_button->setFixedSize(24, 24);
     _nxt_button = new QPushButton(bot_panel);
     _nxt_button->setObjectName("decode_next_btn");
     _nxt_button->setFixedSize(24, 24);
+
+    // Search icon inside the input container (matches web's bg-[#2a2a2a] container)
+    _ann_search_button = new QPushButton(bot_panel);
+    _ann_search_button->setObjectName("decode_ann_search_icon");
+    _ann_search_button->setFixedSize(14, 14);
+    _ann_search_button->setDisabled(true);
     _ann_search_edit = new PopupLineEdit(bot_panel);
     _ann_search_edit->setObjectName("decode_ann_search_edit");
 
-    _ann_search_button->setDisabled(true);
-   
+    QWidget *search_container = new QWidget(bot_panel);
+    search_container->setObjectName("decode_search_container");
+    auto *sc_layout = new QHBoxLayout(search_container);
+    sc_layout->setContentsMargins(6, 2, 6, 2);
+    sc_layout->setSpacing(4);
+    sc_layout->addWidget(_ann_search_button);
+    sc_layout->addWidget(_ann_search_edit, 1);
+
     QHBoxLayout *ann_search_layout = new QHBoxLayout();
     ann_search_layout->setSpacing(6);
     ann_search_layout->addWidget(_pre_button);
-    ann_search_layout->addWidget(_ann_search_button);
-    ann_search_layout->addWidget(_ann_search_edit, 1);
+    ann_search_layout->addWidget(search_container, 1);
     ann_search_layout->addWidget(_nxt_button);
 
     _table_view = new QTableView(bot_panel);
@@ -202,17 +205,22 @@ ProtocolDock::ProtocolDock(QWidget *parent, view::View &view, SigSession *sessio
     _matchs_title_label->setObjectName("decode_matchs_title");
     _matchs_label = new QLabel();
     _matchs_label->setObjectName("decode_matchs_count");
-    QHBoxLayout *match_layout = new QHBoxLayout();
+
+    // Matching items row wrapped in a widget for border-top styling
+    QWidget *match_row = new QWidget(bot_panel);
+    match_row->setObjectName("decode_match_row");
+    QHBoxLayout *match_layout = new QHBoxLayout(match_row);
+    match_layout->setContentsMargins(4, 4, 4, 4);
     match_layout->addWidget(_matchs_title_label, 0, Qt::AlignLeft);
     match_layout->addWidget(_matchs_label, 0, Qt::AlignLeft);
     match_layout->addStretch(1);
 
     QVBoxLayout *bot_layout = new QVBoxLayout();
     bot_layout->setContentsMargins(4, 4, 4, 4);
-    bot_layout->setSpacing(4);
+    bot_layout->setSpacing(6);
     bot_layout->addLayout(bot_title_layout);
     bot_layout->addLayout(ann_search_layout);
-    bot_layout->addLayout(match_layout);
+    bot_layout->addWidget(match_row);
     bot_layout->addWidget(_table_view);
     bot_panel->setLayout(bot_layout); 
 

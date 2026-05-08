@@ -2032,76 +2032,107 @@ QWidget#sidebar QPushButton#decode_settings_btn,
 QWidget#sidebar QPushButton#decode_save_btn,
 QWidget#sidebar QPushButton#decode_nav_btn,
 QWidget#sidebar QPushButton#decode_prev_btn,
-QWidget#sidebar QPushButton#decode_next_btn,
-QWidget#sidebar QPushButton#decode_ann_search_icon {
-    background: transparent;
+QWidget#sidebar QPushButton#decode_next_btn {
+    background-color: transparent;
     border: 1px solid #444444;
-    border-radius: 3px;
-    padding: 5px;
+    border-radius: 4px;
+    min-width: 28px;
+    max-width: 28px;
+    min-height: 28px;
+    max-height: 28px;
+    padding: 0px;
+}
+QWidget#sidebar QPushButton#decode_prev_btn,
+QWidget#sidebar QPushButton#decode_next_btn {
+    min-width: 24px;
+    max-width: 24px;
+    min-height: 24px;
+    max-height: 24px;
 }
 QWidget#sidebar QToolButton#decode_search_btn {
-    background: transparent;
+    background-color: transparent;
     border: none;
     padding: 5px;
 }
 
 QWidget#sidebar QPushButton#decode_add_btn:hover {
     border-color: #7c3aed;
-    background: rgba(124, 58, 237, 0.10);
+    background-color: rgba(124, 58, 237, 0.10);
 }
 QWidget#sidebar QPushButton#decode_del_btn:hover {
     border-color: #dc2626;
-    background: rgba(220, 38, 38, 0.10);
+    background-color: rgba(220, 38, 38, 0.10);
 }
 QWidget#sidebar QPushButton#decode_nav_btn {
     border-color: #7c3aed;
 }
 QWidget#sidebar QPushButton#decode_nav_btn:hover {
-    background: rgba(124, 58, 237, 0.18);
+    background-color: rgba(124, 58, 237, 0.18);
 }
 QWidget#sidebar QPushButton#decode_prev_btn:hover,
 QWidget#sidebar QPushButton#decode_next_btn:hover {
     border-color: #7c3aed;
-    background: rgba(124, 58, 237, 0.10);
+    background-color: rgba(124, 58, 237, 0.10);
 }
 QWidget#sidebar QPushButton#decode_settings_btn:hover,
 QWidget#sidebar QPushButton#decode_save_btn:hover {
     border-color: #555555;
-    background: #252525;
+    background-color: #252525;
 }
 QWidget#sidebar QToolButton#decode_search_btn:hover {
-    background: rgba(124, 58, 237, 0.10);
+    background-color: rgba(124, 58, 237, 0.10);
 }
 
-/* ── Decode Panel inputs (dark) ─────────────────────────────────── */
+/* ── Decode Panel search container (dark) ───────────────────────── */
+QWidget#decode_search_container {
+    background-color: #2a2a2a;
+    border: 1px solid #444444;
+    border-radius: 4px;
+    min-height: 26px;
+}
+QWidget#decode_search_container QPushButton#decode_ann_search_icon {
+    background-color: transparent;
+    border: none;
+    padding: 0px;
+    min-width: 14px;
+    max-width: 14px;
+    min-height: 14px;
+    max-height: 14px;
+}
+QWidget#decode_search_container QLineEdit#decode_ann_search_edit {
+    background-color: transparent;
+    border: none;
+    color: #cccccc;
+    font-size: 12px;
+    selection-background-color: #7c3aed;
+    padding: 0px;
+}
+
+/* ── Decode Panel top toolbar inputs (dark) ─────────────────────── */
 QWidget#sidebar QLineEdit#decode_keyword_edit {
-    background: transparent;
+    background-color: transparent;
     border: none;
     color: #aaaaaa;
     font-size: 12px;
     selection-background-color: #7c3aed;
 }
-QWidget#sidebar QLineEdit#decode_ann_search_edit {
-    background: #2a2a2a;
-    border: 1px solid #444444;
-    border-radius: 3px;
-    color: #cccccc;
+
+/* ── Decode Panel match row (dark) ──────────────────────────────── */
+QWidget#decode_match_row {
+    border-top: 1px solid #2e2e2e;
+}
+QWidget#decode_match_row QLabel#decode_matchs_title {
+    color: #888888;
     font-size: 12px;
-    padding: 3px 6px;
-    selection-background-color: #7c3aed;
+}
+QWidget#decode_match_row QLabel#decode_matchs_count {
+    color: #dddddd;
+    font-size: 12px;
 }
 
-/* ── Decode Panel labels (dark) ─────────────────────────────────── */
+/* ── Decode Panel other labels (dark) ───────────────────────────── */
 QWidget#sidebar QLabel#decode_title_label {
     color: #888888;
     font-size: 12px;
     padding-left: 4px;
-}
-QWidget#sidebar QLabel#decode_matchs_title {
-    color: #888888;
-    font-size: 12px;
-}
-QWidget#sidebar QLabel#decode_matchs_count {
-    color: #dddddd;
-    font-size: 12px;
 }
