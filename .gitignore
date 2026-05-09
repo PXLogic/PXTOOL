@@ -1,0 +1,24 @@
+# Local Qt user cache
+/.qt/
+
+# CMake and build artifacts (in-source build)
+/CMakeCache.txt
+/CMakeFiles/
+/Makefile
+/cmake_install.cmake
+/install_manifest.txt
+
+# CPack packaging artifacts
+/CPackConfig.cmake
+/CPackSourceConfig.cmake
+/_CPack_Packages/
+/DSView-*-Darwin.dmg
+
+# Local install and app build output
+/package-root/
+/build.dir/
+
+# Qt generated source files
+**/moc_*.cpp
+**/moc_*.cpp_parameters
+/qrc_*.cpp

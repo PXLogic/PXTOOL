@@ -100,7 +100,11 @@ TriggerDock::TriggerDock(QWidget *parent, SigSession *session) :
     stages_comboBox->setDisabled(true);
 
     _adv_tabWidget = new QTabWidget(_widget);
+    _adv_tabWidget->setObjectName("trig_adv_tab");
     _adv_tabWidget->setTabPosition(QTabWidget::North);
+    _adv_tabWidget->tabBar()->setExpanding(false);
+    _adv_tabWidget->tabBar()->setElideMode(Qt::ElideNone);
+    _adv_tabWidget->tabBar()->setAutoFillBackground(false);
     _adv_tabWidget->setDisabled(true);
     setup_adv_tab();
 
@@ -108,20 +112,31 @@ TriggerDock::TriggerDock(QWidget *parent, SigSession *session) :
     connect(_adv_radioButton, SIGNAL(clicked()), this, SLOT(adv_trigger()));
     connect(stages_comboBox, SIGNAL(currentIndexChanged(int)), this, SLOT(widget_enable(int)));
 
+    QFont triggerTypeFont = this->font();
+    triggerTypeFont.setPointSizeF(AppConfig::Instance().appOptions.fontSize);
+    _simple_radioButton->setFont(triggerTypeFont);
+    _adv_radioButton->setFont(triggerTypeFont);
 
     QVBoxLayout *layout = new QVBoxLayout(_widget);
+    layout->setContentsMargins(12, 8, 12, 8);
+
+    QVBoxLayout *trigger_type_lay = new QVBoxLayout();
+    trigger_type_lay->setSpacing(2);
+    trigger_type_lay->addWidget(_simple_radioButton);
+    trigger_type_lay->addWidget(_adv_radioButton);
+    layout->addLayout(trigger_type_lay);
+    layout->addSpacing(12);
+
     QGridLayout *gLayout = new QGridLayout();
     gLayout->setVerticalSpacing(5);
-    gLayout->addWidget(_simple_radioButton, 0, 0);
-    gLayout->addWidget(_adv_radioButton, 1, 0);
-    gLayout->addWidget(_position_label, 2, 0);
-    gLayout->addWidget(_position_spinBox, 2, 1);
+    gLayout->addWidget(_position_label, 0, 0);
+    gLayout->addWidget(_position_spinBox, 0, 1);
     //tr
-    gLayout->addWidget(new QLabel("%", _widget), 2, 2);
-    gLayout->addWidget(_position_slider, 3, 0, 1, 3);
-    gLayout->addWidget(_stages_label, 4, 0);
-    gLayout->addWidget(stages_comboBox, 4, 1);
-    gLayout->addWidget(new QLabel(_widget), 4, 2);
+    gLayout->addWidget(new QLabel("%", _widget), 0, 2);
+    gLayout->addWidget(_position_slider, 1, 0, 1, 3);
+    gLayout->addWidget(_stages_label, 2, 0);
+    gLayout->addWidget(stages_comboBox, 2, 1);
+    gLayout->addWidget(new QLabel(_widget), 2, 2);
     gLayout->setColumnStretch(2, 1);
 
     layout->addLayout(gLayout);
@@ -173,8 +188,8 @@ void TriggerDock::retranslateUi()
         _contiguous_label_list.at(i)->setText(L_S(STR_PAGE_DLG, S_ID(IDS_DLG_CONTIGUOUS), "Contiguous"));
     }
 
-    for (int i = 0; i < _stage_groupBox_list.length(); i++){
-        _stage_groupBox_list.at(i)->setTitle(L_S(STR_PAGE_DLG, S_ID(IDS_DLG_STAGE), "Stage")+QString::number(i));
+    for (int i = 0; i < _stage_title_label_list.length(); i++){
+        _stage_title_label_list.at(i)->setText(L_S(STR_PAGE_DLG, S_ID(IDS_DLG_STAGE), "Stage")+QString::number(i));
     }
 
     for (int i = 0; i < _stage_note_label_list.length(); i++){
@@ -560,6 +575,7 @@ void TriggerDock::setup_adv_tab()
     _contiguous_label_list.clear();
     _stage_note_label_list.clear();
     _stage_groupBox_list.clear();
+    _stage_title_label_list.clear();
 
     _value0_ext32_lineEdit_list.clear();
     _value1_ext32_lineEdit_list.clear();
@@ -572,6 +588,7 @@ void TriggerDock::setup_adv_tab()
     font.setPointSizeF(AppConfig::Instance().appOptions.fontSize);
 
     _stage_tabWidget = new QTabWidget(_widget);
+    _stage_tabWidget->setObjectName("trig_stage_tab");
     _stage_tabWidget->setTabPosition(QTabWidget::East);
     _stage_tabWidget->setUsesScrollButtons(false);
 
@@ -636,6 +653,7 @@ void TriggerDock::setup_adv_tab()
         _count_exp_label_list.push_back(count_exp_label);
 
         QVBoxLayout *stage_layout = new QVBoxLayout();
+        stage_layout->setContentsMargins(8, 8, 8, 8);
         QGridLayout *stage_glayout = new QGridLayout();
         stage_glayout->setVerticalSpacing(5);
 
@@ -714,12 +732,39 @@ void TriggerDock::setup_adv_tab()
         stage_layout->addStretch(1);
 
         QGroupBox *stage_groupBox = new QGroupBox(_stage_tabWidget);
-        stage_groupBox->setContentsMargins(5, 15, 5, 5);
+        stage_groupBox->setObjectName("trig_stage_group");
+        stage_groupBox->setTitle("");
         stage_groupBox->setFlat(true);
         stage_groupBox->setLayout(stage_layout);
         _stage_groupBox_list.push_back(stage_groupBox);
 
-        _stage_tabWidget->addTab((QWidget *)stage_groupBox, QString::number(i));
+        // Custom [line][StageN][line] divider header matching reference design
+        auto *divider_row = new QWidget(_stage_tabWidget);
+        divider_row->setObjectName("stage_divider_row");
+        auto *divider_lay = new QHBoxLayout(divider_row);
+        divider_lay->setContentsMargins(0, 0, 0, 0);
+        divider_lay->setSpacing(0);
+        auto *left_line = new QWidget(divider_row);
+        left_line->setObjectName("stage_divider_line");
+        left_line->setFixedHeight(1);
+        auto *stage_title_lbl = new QLabel(divider_row);
+        stage_title_lbl->setObjectName("stage_title_label");
+        stage_title_lbl->setAlignment(Qt::AlignCenter);
+        _stage_title_label_list.push_back(stage_title_lbl);
+        auto *right_line = new QWidget(divider_row);
+        right_line->setObjectName("stage_divider_line");
+        right_line->setFixedHeight(1);
+        divider_lay->addWidget(left_line, 1);
+        divider_lay->addWidget(stage_title_lbl, 0);
+        divider_lay->addWidget(right_line, 1);
+
+        auto *tab_page = new QWidget(_stage_tabWidget);
+        auto *tab_page_lay = new QVBoxLayout(tab_page);
+        tab_page_lay->setContentsMargins(0, 8, 0, 8);
+        tab_page_lay->setSpacing(0);
+        tab_page_lay->addWidget(divider_row);
+        tab_page_lay->addWidget(stage_groupBox);
+        _stage_tabWidget->addTab(tab_page, QString::number(i));
     }
 
     _serial_groupBox = new QGroupBox(_widget);

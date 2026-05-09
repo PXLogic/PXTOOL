@@ -49,6 +49,23 @@ SideBar::SideBar(QWidget *parent, view::View &view, SigSession *session)
     _trigger_stack->addWidget(_trigger_widget);
     _trigger_stack->addWidget(_dso_trigger_widget);
 
+    // Trigger tab wrapper: fixed "Trigger" header above the trigger stack
+    auto *trigger_wrap = new QWidget(this);
+    trigger_wrap->setObjectName("trigger_wrap");
+    auto *tw_layout = new QVBoxLayout(trigger_wrap);
+    tw_layout->setContentsMargins(0, 0, 0, 0);
+    tw_layout->setSpacing(0);
+    auto *tw_header = new QWidget(trigger_wrap);
+    tw_header->setObjectName("trigger_header_bar");
+    auto *tw_hlay = new QHBoxLayout(tw_header);
+    tw_hlay->setContentsMargins(12, 8, 12, 8);
+    auto *tw_title = new QLabel(tr("Trigger Setting"), trigger_wrap);
+    tw_title->setObjectName("trigger_panel_title");
+    tw_hlay->addWidget(tw_title);
+    tw_hlay->addStretch();
+    tw_layout->addWidget(tw_header);
+    tw_layout->addWidget(_trigger_stack, 1);
+
     _protocol_widget = new ProtocolDock(this, view, session);
     _measure_widget  = new MeasureDock(this, view, session);
     _search_widget   = new SearchDock(this, view, session);
@@ -120,7 +137,7 @@ SideBar::SideBar(QWidget *parent, view::View &view, SigSession *session)
 
     // Outer content stack: one page per tab
     _stack = new QStackedWidget(this);
-    _stack->addWidget(_trigger_stack);   // page 0: trigger
+    _stack->addWidget(trigger_wrap);      // page 0: trigger (header + inner stack)
     _stack->addWidget(decode_wrap);      // page 1: decodes (header + protocol dock)
     _stack->addWidget(measure_wrap);      // page 2: measures (header + measure dock)
     _stack->addWidget(search_wrap);       // page 3: search (header + search dock)

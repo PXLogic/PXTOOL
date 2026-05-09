@@ -112,10 +112,18 @@ DeviceOptions::DeviceOptions(QWidget *parent) :
     _device_agent = session->get_device();
 
     this->setTitle(L_S(STR_PAGE_DLG, S_ID(IDS_DLG_DEVICE_OPTIONS), "Device Options"));
-    this->SetTitleSpace(0);
+    setObjectName("deviceOptionsDialog");
+    this->SetTitleSpace(8);
     this->layout()->setSpacing(0);
     this->layout()->setDirection(QBoxLayout::TopToBottom);
-    this->layout()->setAlignment(Qt::AlignTop); 
+    this->layout()->setAlignment(Qt::AlignTop);
+    this->layout()->setContentsMargins(0, 5, 0, 0);
+
+    // Top divider (below TitleBar)
+    auto *top_sep = new QWidget(this);
+    top_sep->setObjectName("device_options_divider");
+    top_sep->setFixedHeight(1);
+    this->layout()->addWidget(top_sep);
 
     // scroll panel
     _scroll_panel  = new QWidget();
@@ -131,7 +139,7 @@ DeviceOptions::DeviceOptions(QWidget *parent) :
     _container_lay = new QVBoxLayout();
     _container_lay->setDirection(QBoxLayout::TopToBottom);
     _container_lay->setAlignment(Qt::AlignTop);
-    _container_lay->setContentsMargins(0, 0, 0, 0);
+    _container_lay->setContentsMargins(12, 8, 12, 8);
     _container_lay->setSpacing(5);
     _container_panel->setLayout(_container_lay);
     scroll_lay->addWidget(_container_panel);
@@ -157,14 +165,20 @@ DeviceOptions::DeviceOptions(QWidget *parent) :
     // chnnels group box
     this->build_dynamic_panel();
 
-    // space
-    QWidget *space = new QWidget();
-    space->setMinimumHeight(5);
-    this->layout()->addWidget(space);
+    // Bottom divider
+    auto *bot_sep = new QWidget(this);
+    bot_sep->setObjectName("device_options_divider");
+    bot_sep->setFixedHeight(1);
+    this->layout()->addWidget(bot_sep);
 
-    //button
-    auto button_box = new QDialogButtonBox(QDialogButtonBox::Ok, Qt::Horizontal, this);
-	this->layout()->addWidget(button_box); 
+    // Footer: right-aligned OK button
+    auto *ok_btn = new QPushButton("OK", this);
+    ok_btn->setObjectName("device_ok_btn");
+    auto *footer_lay = new QHBoxLayout();
+    footer_lay->setContentsMargins(12, 10, 12, 10);
+    footer_lay->addStretch();
+    footer_lay->addWidget(ok_btn);
+    this->layout()->addLayout(footer_lay);
    
     _device_agent->get_config_int16(SR_CONF_OPERATION_MODE, _opt_mode);
 
@@ -174,7 +188,7 @@ DeviceOptions::DeviceOptions(QWidget *parent) :
     try_resize_scroll();
   
     connect(&_mode_check_timer, SIGNAL(timeout()), this, SLOT(mode_check_timeout()));
-    connect(button_box, SIGNAL(accepted()), this, SLOT(accept()));
+    connect(ok_btn, SIGNAL(clicked()), this, SLOT(accept()));
 
     _mode_check_timer.setInterval(100);
     _mode_check_timer.start();  
@@ -400,7 +414,9 @@ void DeviceOptions::logic_probes(QVBoxLayout &layout)
     line_lay->setSpacing(10);
 
     QPushButton *enable_all_probes = new QPushButton(L_S(STR_PAGE_DLG, S_ID(IDS_DLG_ENABLE_ALL), "Enable All"));
+    enable_all_probes->setObjectName("device_ch_btn");
     QPushButton *disable_all_probes = new QPushButton(L_S(STR_PAGE_DLG, S_ID(IDS_DLG_DISABLE_ALL), "Disable All"));
+    disable_all_probes->setObjectName("device_ch_btn");
     enable_all_probes->setMaximumHeight(33);
     disable_all_probes->setMaximumHeight(33);
     enable_all_probes->setFont(font);
@@ -409,9 +425,11 @@ void DeviceOptions::logic_probes(QVBoxLayout &layout)
     //int bt_width = enable_all_probes->fontMetrics().horizontalAdvance(enable_all_probes->text()) + 20;
 
     #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
-        int bt_width = enable_all_probes->fontMetrics().horizontalAdvance(enable_all_probes->text()) + 20;
+        int bt_width = qMax(enable_all_probes->fontMetrics().horizontalAdvance(enable_all_probes->text()),
+                            disable_all_probes->fontMetrics().horizontalAdvance(disable_all_probes->text())) + 20;
     #else
-        int bt_width = enable_all_probes->fontMetrics().width(enable_all_probes->text()) + 20;
+        int bt_width = qMax(enable_all_probes->fontMetrics().width(enable_all_probes->text()),
+                            disable_all_probes->fontMetrics().width(disable_all_probes->text())) + 20;
     #endif
 
     enable_all_probes->setMaximumWidth(bt_width);
@@ -876,10 +894,10 @@ void DeviceOptions::try_resize_scroll()
 {
     this->update_font();
 
-    // content area height
-    int contentHeight = _groupHeight1 + _groupHeight2 + 20; // +space
-    //dialog height
-    int dlgHeight = contentHeight + 100; // +bottom buttton
+    // content area height (+36 accounts for container layout margins 8+8 + spacing/minWid)
+    int contentHeight = _groupHeight1 + _groupHeight2 + 36;
+    // dialog height: +110 covers titlebar+spacer+dividers+footer+layout margins
+    int dlgHeight = contentHeight + 110;
 
 #ifdef Q_OS_DARWIN
     dlgHeight += 20;

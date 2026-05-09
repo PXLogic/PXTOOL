@@ -117,6 +117,7 @@ private:
     QTabWidget *_stage_tabWidget;
 
     QVector <QGroupBox *> _stage_groupBox_list;
+    QVector <QLabel *>    _stage_title_label_list;
     QVector <QLabel *>    _mu_label_list;
     QVector <DsComboBox *> _logic_comboBox_list;
     QVector <PopupLineEdit *> _value0_lineEdit_list;

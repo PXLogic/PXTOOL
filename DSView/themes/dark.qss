@@ -1781,15 +1781,22 @@ QWidget#sidebar QLabel:disabled {
 }
 
 /* Radio buttons & checkboxes */
-QWidget#sidebar QRadioButton,
+QWidget#sidebar QRadioButton {
+    color: #aaaaaa;
+    font-size: 12px;
+    spacing: 6px;
+    background: transparent;
+}
 QWidget#sidebar QCheckBox {
     color: #aaaaaa;
     font-size: 11px;
-    spacing: 5px;
+    spacing: 6px;
     background: transparent;
 }
 
-QWidget#sidebar QRadioButton:checked,
+QWidget#sidebar QRadioButton:checked {
+    color: #e5e5e5;
+}
 QWidget#sidebar QCheckBox:checked {
     color: #e5e5e5;
 }
@@ -1797,6 +1804,18 @@ QWidget#sidebar QCheckBox:checked {
 QWidget#sidebar QRadioButton:disabled,
 QWidget#sidebar QCheckBox:disabled {
     color: #444444;
+}
+
+QWidget#sidebar QRadioButton::indicator {
+    width: 13px;
+    height: 13px;
+    border: 1px solid #444444;
+    border-radius: 7px;
+    background-color: #2a2a2a;
+}
+QWidget#sidebar QRadioButton::indicator:checked {
+    background-color: #7c3aed;
+    border-color: #7c3aed;
 }
 
 /* Buttons inside panels */
@@ -1881,8 +1900,8 @@ QWidget#sidebar QSlider::groove:horizontal {
     background: #2e2e2e;
     border-radius: 1px;
     margin: 0px;
-    left: 0px;
-    right: 0px;
+    left: 6px;
+    right: 6px;
 }
 
 QWidget#sidebar QSlider::handle:horizontal {
@@ -1933,6 +1952,90 @@ QWidget#sidebar QTabBar::tab:selected {
 QWidget#sidebar QTabBar::tab:hover:!selected {
     background: #222222;
     color: #aaaaaa;
+}
+
+/* ── Trigger Stage/Serial tab — borderless underline style (dark) ─ */
+QWidget#sidebar QTabWidget#trig_adv_tab {
+    background: transparent;
+}
+QWidget#sidebar QTabWidget#trig_adv_tab::pane {
+    border: none;
+    background: transparent;
+}
+QWidget#sidebar QTabWidget#trig_adv_tab > QTabBar {
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid #333333;
+}
+QWidget#sidebar QTabWidget#trig_stage_tab {
+    background: transparent;
+}
+
+/* ── Stage0 container — horizontal-rule title style (dark) ───────── */
+QWidget#sidebar QGroupBox#trig_stage_group {
+    background: transparent;
+    border: none;
+    border-radius: 0px;
+    margin: 0px;
+    padding: 0px;
+}
+QWidget#stage_divider_row {
+    background: transparent;
+}
+QWidget#stage_divider_row QWidget#stage_divider_line {
+    background-color: #333333;
+}
+QWidget#stage_divider_row QLabel#stage_title_label {
+    color: #6b7280;
+    font-size: 11px;
+    padding: 0 8px;
+    background: transparent;
+}
+/* adv tab bar — specificity 203 beats sidebar rule at 102 */
+QWidget#sidebar QTabWidget#trig_adv_tab QTabBar::tab {
+    background: transparent;
+    color: #666666;
+    border: none;
+    border-bottom: 1px solid #333333;
+    padding: 6px 14px;
+    font-size: 11px;
+    min-width: 0px;
+}
+QWidget#sidebar QTabWidget#trig_adv_tab QTabBar::tab:selected {
+    color: #e5e5e5;
+    border-bottom: 2px solid #9333ea;
+}
+QWidget#sidebar QTabWidget#trig_adv_tab QTabBar::tab:hover:!selected {
+    color: #aaaaaa;
+    background: transparent;
+}
+
+/* ── Stage inner tab (East, 0/1/2/3) background (dark) ──────────── */
+QWidget#sidebar QTabWidget#trig_stage_tab::pane {
+    border: none;
+    background: transparent;
+    padding: 0px;
+}
+QWidget#sidebar QTabWidget#trig_stage_tab QTabBar::tab {
+    background: transparent;
+    color: #555555;
+    border: none;
+    border-left: 2px solid transparent;
+    padding: 8px 6px;
+    font-size: 10px;
+    min-width: 0px;
+}
+QWidget#sidebar QTabWidget#trig_stage_tab QTabBar::tab:selected {
+    color: #e5e5e5;
+    background: transparent;
+    border-left: 2px solid #9333ea;
+}
+QWidget#sidebar QTabWidget#trig_stage_tab QTabBar::tab:hover:!selected {
+    color: #aaaaaa;
+    background: #202020;
+}
+QWidget#sidebar QTabWidget#trig_stage_tab QTabBar::tab:disabled {
+    color: #333333;
 }
 
 /* Table view (Decode panel) */
@@ -2015,6 +2118,17 @@ QWidget#sidebar QScrollBar::sub-page:horizontal {
 }
 
 /* ── Decode Panel header bar (dark) ─────────────────────────────── */
+/* ── Trigger Panel header bar (dark) ─────────────────────────────── */
+QWidget#trigger_header_bar {
+    background: #1a1a1a;
+    border-bottom: 1px solid #333333;
+}
+QWidget#trigger_header_bar QLabel#trigger_panel_title {
+    color: #e0e0e0;
+    font-size: 14px;
+    font-weight: 600;
+}
+
 QWidget#decode_header_bar {
     background: #1a1a1a;
     border-bottom: 1px solid #333333;
@@ -2193,6 +2307,27 @@ QWidget#sidebar QCheckBox#measure_fen_checkbox::indicator:checked {
     image: url(:/icons/sidebar/checkbox-checked.svg);
 }
 
+/* ── Measure Panel GroupBox fieldset style (dark) ───────────────── */
+QWidget#measureWidget QGroupBox {
+    background: transparent;
+    border: 1px solid #333333;
+    border-radius: 4px;
+    margin-top: 10px;
+    padding: 8px 6px 6px 6px;
+    color: #666666;
+    font-size: 11px;
+    font-weight: normal;
+}
+QWidget#measureWidget QGroupBox::title {
+    subcontrol-origin: margin;
+    subcontrol-position: top left;
+    left: 8px;
+    padding: 0 4px;
+    color: #666666;
+    font-size: 11px;
+    font-weight: normal;
+}
+
 /* ── Measure Panel labels (dark) ────────────────────────────────── */
 QWidget#measureWidget QLabel {
     color: #aaaaaa;
@@ -2335,4 +2470,110 @@ QPushButton#search_cancel_btn {
 QPushButton#search_cancel_btn:hover {
     background-color: #2a2a2a;
     border-color: #555555;
+}
+
+/* ── Device Options Dialog (dark) ──────────────────────────────── */
+QDialog#deviceOptionsDialog QWidget#TitleBar QLabel {
+    font-size: 14px;
+    font-weight: 600;
+    color: #e0e0e0;
+}
+QDialog#deviceOptionsDialog QWidget#device_options_divider {
+    background-color: #333333;
+    min-height: 1px;
+    max-height: 1px;
+}
+QDialog#deviceOptionsDialog QGroupBox {
+    border: 1px solid #333333;
+    border-radius: 4px;
+    margin-top: 10px;
+    padding: 8px 6px 6px 6px;
+    color: #888888;
+    font-size: 11px;
+}
+QDialog#deviceOptionsDialog QGroupBox::title {
+    subcontrol-origin: margin;
+    subcontrol-position: top left;
+    left: 8px;
+    padding: 0 4px;
+    color: #666666;
+    font-size: 11px;
+}
+QDialog#deviceOptionsDialog QComboBox {
+    background-color: #2a2a2a;
+    border: 1px solid #444444;
+    border-radius: 3px;
+    color: #cccccc;
+    font-size: 12px;
+    padding: 2px 20px 2px 6px;
+    min-width: 88px;
+    min-height: 22px;
+}
+QDialog#deviceOptionsDialog QComboBox::drop-down {
+    border: none;
+    width: 16px;
+}
+QDialog#deviceOptionsDialog QComboBox::down-arrow {
+    image: url(:/icons/sidebar/chevron-down.svg);
+    width: 10px;
+    height: 10px;
+}
+QDialog#deviceOptionsDialog QComboBox QAbstractItemView {
+    background-color: #2a2a2a;
+    border: 1px solid #444444;
+    color: #cccccc;
+    selection-background-color: #7c3aed;
+}
+QDialog#deviceOptionsDialog QRadioButton {
+    color: #aaaaaa;
+    font-size: 12px;
+    spacing: 6px;
+}
+QDialog#deviceOptionsDialog QRadioButton::indicator {
+    width: 13px;
+    height: 13px;
+    border: 1px solid #444444;
+    border-radius: 7px;
+    background-color: #2a2a2a;
+}
+QDialog#deviceOptionsDialog QRadioButton::indicator:checked {
+    background-color: #7c3aed;
+    border-color: #7c3aed;
+}
+QDialog#deviceOptionsDialog QLabel {
+    color: #aaaaaa;
+    font-size: 12px;
+}
+QDialog#deviceOptionsDialog QCheckBox::indicator {
+    width: 16px;
+    height: 16px;
+    image: url(:/icons/sidebar/checkbox-unchecked.svg);
+}
+QDialog#deviceOptionsDialog QCheckBox::indicator:checked {
+    image: url(:/icons/sidebar/checkbox-checked.svg);
+}
+QPushButton#device_ch_btn {
+    background-color: transparent;
+    border: 1px solid #444444;
+    border-radius: 3px;
+    color: #aaaaaa;
+    font-size: 12px;
+    padding: 3px 10px;
+    min-height: 22px;
+}
+QPushButton#device_ch_btn:hover {
+    background-color: #2a2a2a;
+    border-color: #555555;
+}
+QPushButton#device_ok_btn {
+    background-color: #7c3aed;
+    border: none;
+    border-radius: 4px;
+    color: #ffffff;
+    font-size: 12px;
+    padding: 4px 16px;
+    min-height: 24px;
+}
+QPushButton#device_ok_btn:hover {
+    background-color: #6d28d9;
 }
