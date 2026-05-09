@@ -23,6 +23,7 @@
 #include <stdint.h>
 #include <getopt.h>
 #include <QApplication>
+#include <QIcon>
 #include <QDir>
 #include <QStyle> 
 #include <QGuiApplication>
@@ -168,6 +169,10 @@ bool bHighScale = true;
 	//----------------------init app
     QApplication a(argcFinal, argvFinal);
     a.setStyle(new MyStyle);
+
+    QIcon appIcon;
+    appIcon.addFile(QString::fromUtf8(":/icons/titlebar_wave_icon.svg"), QSize(), QIcon::Normal, QIcon::Off);
+    QApplication::setWindowIcon(appIcon);
 
     // Set some application metadata
     QApplication::setApplicationVersion(DS_VERSION_STRING);

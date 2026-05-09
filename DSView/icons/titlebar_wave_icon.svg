@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Square squircle tile like macOS app icons; wave centered inside (TitleBar colors). -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="512" height="512">
+  <!-- Outer corners stay transparent for Dock mask; inner = standard ~80% square tile -->
+  <rect x="10" y="10" width="80" height="80" rx="18" fill="#181818"/>
+  <g transform="translate(50, 50) scale(2) translate(-28, -16)"
+     fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.1">
+    <line x1="10" y1="16" x2="10" y2="21.12" stroke="#d50f25"/>
+    <line x1="46" y1="10.88" x2="46" y2="16" stroke="#d50f25"/>
+    <line x1="14" y1="16" x2="14" y2="26.56" stroke="#eeb211"/>
+    <line x1="42" y1="5.44" x2="42" y2="16" stroke="#eeb211"/>
+    <line x1="18" y1="16" x2="18" y2="32" stroke="#1185d1"/>
+    <line x1="38" y1="0" x2="38" y2="16" stroke="#1185d1"/>
+    <line x1="22" y1="16" x2="22" y2="26.56" stroke="#009925" stroke-opacity="0.78"/>
+    <line x1="34" y1="5.44" x2="34" y2="16" stroke="#009925" stroke-opacity="0.78"/>
+    <line x1="26" y1="16" x2="26" y2="21.12" stroke="#6d329c"/>
+    <line x1="30" y1="10.88" x2="30" y2="16" stroke="#6d329c"/>
+  </g>
+</svg>

@@ -26,6 +26,8 @@
 #include <QObject>
 #include <QEvent>
 #include <QMouseEvent>
+#include <QApplication>
+#include <QIcon>
 #include <QVBoxLayout>
 #include <QAbstractButton>
 #include "../dsvdef.h"
@@ -75,7 +77,10 @@ DSDialog::DSDialog(QWidget *parent, bool hasClose, bool bBaseButton) :
     setWindowFlags(Qt::Dialog | Qt::FramelessWindowHint | Qt::WindowSystemMenuHint);
     setAttribute(Qt::WA_TranslucentBackground);
 
-    build_base(hasClose); 
+    build_base(hasClose);
+
+    if (!QApplication::windowIcon().isNull())
+        setWindowIcon(QApplication::windowIcon());
 }
 
 DSDialog::~DSDialog()

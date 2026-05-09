@@ -117,7 +117,7 @@ MainFrame::MainFrame()
   
     // Set the window icon
     QIcon icon;
-    icon.addFile(QString::fromUtf8(":/icons/logo.svg"), QSize(), QIcon::Normal, QIcon::Off);
+    icon.addFile(QString::fromUtf8(":/icons/titlebar_wave_icon.svg"), QSize(), QIcon::Normal, QIcon::Off);
     setWindowIcon(icon);
     
     _titleBar = new toolbars::TitleBar(true, this, this, false);

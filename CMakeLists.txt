@@ -699,6 +699,16 @@ if(APPLE)
         MACOSX_BUNDLE_INFO_PLIST ${CMAKE_SOURCE_DIR}/mac_appbundle_template.plist.in
         MACOSX_BUNDLE_ICON_FILE DSView.icns
     )
+    # `make` does not install into the bundle; without this, Contents/Resources
+    # has no DSView.icns and the Dock shows a blank generic icon.
+    add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E make_directory
+            "$<TARGET_FILE_DIR:${PROJECT_NAME}>/../Resources"
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "${CMAKE_CURRENT_SOURCE_DIR}/DSView.icns"
+            "$<TARGET_FILE_DIR:${PROJECT_NAME}>/../Resources/DSView.icns"
+        COMMENT "Copy DSView.icns into app bundle (Dock icon)"
+    )
 endif()
 
 if(ENABLE_COTIRE)

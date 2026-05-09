@@ -154,6 +154,7 @@
         <file>icons/dsl_logo.svg</file>
         <file>icons/dark/minimize.svg</file>
         <file>icons/logo.svg</file>
+        <file>icons/titlebar_wave_icon.svg</file>
         <file>icons/light/loop.svg</file>
         <file>icons/dark/loop.svg</file>
         <file>icons/light/log.svg</file>
