@@ -57,6 +57,9 @@ public:
     void setTitle(QString title); 
     QString title();
 
+    /** Title QLabel alignment; use AlignHCenter for dialog titles centered in the bar. */
+    void setTitleTextAlignment(Qt::Alignment alignment);
+
     //IUiWindow
     void UpdateLanguage() override;
     void UpdateTheme() override;

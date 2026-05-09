@@ -30,6 +30,11 @@
 #include <QDir>
 #include <QTextStream>
 #include <QScrollBar>
+#include <QWidget>
+#include <QHBoxLayout>
+#include <QPushButton>
+#include <QVBoxLayout>
+#include <QBoxLayout>
   
 #include "../config/appconfig.h"
 #include "../dsvdef.h"
@@ -40,10 +45,24 @@ namespace pv {
 namespace dialogs {
 
 About::About(QWidget *parent) :
-    DSDialog(parent, true)
+    DSDialog(parent, false, false)
 {
-    setFixedHeight(600);
+    setObjectName("aboutDialog");
+    setFixedHeight(650);
     setFixedWidth(800);
+
+    setTitle(L_S(STR_PAGE_DLG, S_ID(IDS_DLG_ABOUT), "About"));
+    setTitleTextAlignment(Qt::AlignHCenter | Qt::AlignVCenter);
+    SetTitleSpace(8);
+    layout()->setSpacing(0);
+    layout()->setDirection(QBoxLayout::TopToBottom);
+    layout()->setAlignment(Qt::AlignTop);
+    layout()->setContentsMargins(0, 5, 0, 0);
+
+    auto *top_sep = new QWidget(this);
+    top_sep->setObjectName("device_options_divider");
+    top_sep->setFixedHeight(1);
+    layout()->addWidget(top_sep);
 
     #if defined(__x86_64__) || defined(_M_X64)
         QString arch = "x64";
@@ -115,11 +134,27 @@ About::About(QWidget *parent) :
     cur.insertHtml(version+url+thanks+changlogs);
     about->moveCursor(QTextCursor::Start);
 
-    QVBoxLayout *xlayout = new QVBoxLayout();
-    xlayout->addWidget(about);
+    QVBoxLayout *contentLay = new QVBoxLayout();
+    contentLay->setContentsMargins(16, 12, 16, 20);
+    contentLay->setSpacing(0);
+    contentLay->addWidget(about);
 
-    layout()->addLayout(xlayout);
-    setTitle(L_S(STR_PAGE_DLG, S_ID(IDS_DLG_ABOUT), "About"));
+    layout()->addLayout(contentLay);
+
+    auto *bot_sep = new QWidget(this);
+    bot_sep->setObjectName("device_options_divider");
+    bot_sep->setFixedHeight(1);
+    layout()->addWidget(bot_sep);
+
+    auto *ok_btn = new QPushButton("OK", this);
+    ok_btn->setObjectName("device_ok_btn");
+    auto *footer_lay = new QHBoxLayout();
+    footer_lay->setContentsMargins(12, 10, 12, 10);
+    footer_lay->addStretch();
+    footer_lay->addWidget(ok_btn);
+    layout()->addLayout(footer_lay);
+
+    QObject::connect(ok_btn, &QPushButton::clicked, this, &DSDialog::slotAccept);
 }
 
 About::~About()

@@ -54,6 +54,7 @@ public:
     inline void SetCallback(IDlgCallback *callback){m_callback = callback;}
     inline QVBoxLayout *layout(){return _main_layout;}
     void setTitle(QString title);
+    void setTitleTextAlignment(Qt::Alignment alignment);
     void reload(); 
     int exec();
 
@@ -70,6 +71,11 @@ public:
     void update_font();
 
     void show();
+
+public slots:
+    /** Public wrappers so callers can connect QPushButton::clicked without reaching protected accept/reject. */
+    void slotAccept();
+    void slotReject();
 
 protected:
     void accept();

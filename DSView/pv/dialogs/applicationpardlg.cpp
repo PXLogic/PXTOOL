@@ -21,6 +21,8 @@
 
 #include "applicationpardlg.h"
 #include "dsdialog.h"
+#include <QBoxLayout>
+#include <QWidget>
 #include <QFormLayout>
 #include <QHBoxLayout>
 #include <QVBoxLayout>
@@ -31,6 +33,7 @@
 #include <QLabel>
 #include <vector>
 #include <QGridLayout>
+#include <QPushButton>
 
 #include "../config/appconfig.h"
 #include "../ui/langresource.h"
@@ -106,12 +109,26 @@ void ApplicationParamDlg::bind_font_size_list(QComboBox *box, float size)
 
 bool ApplicationParamDlg::ShowDlg(QWidget *parent)
 {
-    DSDialog dlg(parent, true, true);
+    /* Match DeviceOptions: no title-bar close; centered title; divider under title row;
+     * custom footer: outline Cancel (device_cancel_btn), primary OK (device_ok_btn). */
+    DSDialog dlg(parent, false, false);
+    dlg.setObjectName("displayOptionsDialog");
     dlg.setTitle(L_S(STR_PAGE_DLG, S_ID(IDS_DLG_DISPLAY_OPTIONS), "Display options"));
+    dlg.setTitleTextAlignment(Qt::AlignHCenter | Qt::AlignVCenter);
+    dlg.SetTitleSpace(8);
+    dlg.layout()->setSpacing(0);
+    dlg.layout()->setDirection(QBoxLayout::TopToBottom);
+    dlg.layout()->setAlignment(Qt::AlignTop);
+    dlg.layout()->setContentsMargins(0, 5, 0, 0);
     dlg.setMinimumSize(300, 230);
 
+    auto *top_sep = new QWidget(&dlg);
+    top_sep->setObjectName("device_options_divider");
+    top_sep->setFixedHeight(1);
+    dlg.layout()->addWidget(top_sep);
+
     QVBoxLayout *lay = new QVBoxLayout();
-    lay->setContentsMargins(0,10,0,20);
+    lay->setContentsMargins(16, 12, 16, 20);
     lay->setSpacing(8);
 
     //show config
@@ -172,7 +189,29 @@ bool ApplicationParamDlg::ShowDlg(QWidget *parent)
     uiLay->addWidget(ftCbSize, 1, 1, Qt::AlignRight);
     lay->addWidget(uiGroup);
 
-    dlg.layout()->addLayout(lay);      
+    dlg.layout()->addLayout(lay);
+
+    auto *bot_sep = new QWidget(&dlg);
+    bot_sep->setObjectName("device_options_divider");
+    bot_sep->setFixedHeight(1);
+    dlg.layout()->addWidget(bot_sep);
+
+    auto *cancel_btn = new QPushButton(
+        L_S(STR_PAGE_DLG, S_ID(IDS_DLG_CANCEL), "Cancel"), &dlg);
+    cancel_btn->setObjectName("device_cancel_btn");
+    auto *ok_btn = new QPushButton("OK", &dlg);
+    ok_btn->setObjectName("device_ok_btn");
+    auto *footer_lay = new QHBoxLayout();
+    footer_lay->setContentsMargins(12, 10, 12, 10);
+    footer_lay->addStretch();
+    footer_lay->addWidget(cancel_btn);
+    footer_lay->addSpacing(8);
+    footer_lay->addWidget(ok_btn);
+    dlg.layout()->addLayout(footer_lay);
+
+    QObject::connect(ok_btn, &QPushButton::clicked, &dlg, &DSDialog::slotAccept);
+    QObject::connect(cancel_btn, &QPushButton::clicked, &dlg, &DSDialog::slotReject);
+
     dlg.exec();
     bool ret = dlg.IsClickYes();
 

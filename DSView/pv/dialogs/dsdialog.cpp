@@ -90,6 +90,16 @@ DSDialog::~DSDialog()
     PopupDlgList::RemoveDlgFromList(this);
 }
 
+void DSDialog::slotAccept()
+{
+    accept();
+}
+
+void DSDialog::slotReject()
+{
+    reject();
+}
+
 void DSDialog::accept()
 {  
     _clickYes = true;
@@ -117,6 +127,12 @@ void DSDialog::setTitle(QString title)
     if (_titlebar){
          _titlebar->setTitle(title);
     } 
+}
+
+void DSDialog::setTitleTextAlignment(Qt::Alignment alignment)
+{
+    if (_titlebar)
+        _titlebar->setTitleTextAlignment(alignment);
 }
 
 void DSDialog::reload()

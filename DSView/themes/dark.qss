@@ -2533,7 +2533,7 @@ QWidget#measureWidget QGroupBox {
     border-radius: 4px;
     margin-top: 10px;
     padding: 8px 6px 6px 6px;
-    color: #666666;
+    color: #eff0f1;
     font-size: 11px;
     font-weight: normal;
 }
@@ -2542,7 +2542,7 @@ QWidget#measureWidget QGroupBox::title {
     subcontrol-position: top left;
     left: 8px;
     padding: 0 4px;
-    color: #666666;
+    color: #eff0f1;
     font-size: 11px;
     font-weight: normal;
 }
@@ -2692,12 +2692,18 @@ QPushButton#search_cancel_btn:hover {
 }
 
 /* ── Device Options Dialog (dark) ──────────────────────────────── */
-QDialog#deviceOptionsDialog QWidget#TitleBar QLabel {
+QDialog#deviceOptionsDialog QWidget#TitleBar QLabel,
+QDialog#displayOptionsDialog QWidget#TitleBar QLabel,
+QDialog#logOptionsDialog QWidget#TitleBar QLabel,
+QDialog#aboutDialog QWidget#TitleBar QLabel {
     font-size: 14px;
     font-weight: 600;
     color: #e0e0e0;
 }
-QDialog#deviceOptionsDialog QWidget#device_options_divider {
+QDialog#deviceOptionsDialog QWidget#device_options_divider,
+QDialog#displayOptionsDialog QWidget#device_options_divider,
+QDialog#logOptionsDialog QWidget#device_options_divider,
+QDialog#aboutDialog QWidget#device_options_divider {
     background-color: #333333;
     min-height: 1px;
     max-height: 1px;
@@ -2707,7 +2713,7 @@ QDialog#deviceOptionsDialog QGroupBox {
     border-radius: 4px;
     margin-top: 10px;
     padding: 8px 6px 6px 6px;
-    color: #888888;
+    color: #eff0f1;
     font-size: 11px;
 }
 QDialog#deviceOptionsDialog QGroupBox::title {
@@ -2715,10 +2721,11 @@ QDialog#deviceOptionsDialog QGroupBox::title {
     subcontrol-position: top left;
     left: 8px;
     padding: 0 4px;
-    color: #666666;
+    color: #eff0f1;
     font-size: 11px;
 }
-QDialog#deviceOptionsDialog QComboBox {
+QDialog#deviceOptionsDialog QComboBox,
+QDialog#logOptionsDialog QComboBox {
     background-color: #2a2a2a;
     border: 1px solid #444444;
     border-radius: 3px;
@@ -2728,16 +2735,19 @@ QDialog#deviceOptionsDialog QComboBox {
     min-width: 88px;
     min-height: 22px;
 }
-QDialog#deviceOptionsDialog QComboBox::drop-down {
+QDialog#deviceOptionsDialog QComboBox::drop-down,
+QDialog#logOptionsDialog QComboBox::drop-down {
     border: none;
     width: 16px;
 }
-QDialog#deviceOptionsDialog QComboBox::down-arrow {
+QDialog#deviceOptionsDialog QComboBox::down-arrow,
+QDialog#logOptionsDialog QComboBox::down-arrow {
     image: url(:/icons/sidebar/chevron-down.svg);
     width: 10px;
     height: 10px;
 }
-QDialog#deviceOptionsDialog QComboBox QAbstractItemView {
+QDialog#deviceOptionsDialog QComboBox QAbstractItemView,
+QDialog#logOptionsDialog QComboBox QAbstractItemView {
     background-color: #2a2a2a;
     border: 1px solid #444444;
     color: #cccccc;
@@ -2759,16 +2769,19 @@ QDialog#deviceOptionsDialog QRadioButton::indicator:checked {
     background-color: #7c3aed;
     border-color: #7c3aed;
 }
-QDialog#deviceOptionsDialog QLabel {
+QDialog#deviceOptionsDialog QLabel,
+QDialog#logOptionsDialog QLabel {
     color: #aaaaaa;
     font-size: 12px;
 }
-QDialog#deviceOptionsDialog QCheckBox::indicator {
+QDialog#deviceOptionsDialog QCheckBox::indicator,
+QDialog#logOptionsDialog QCheckBox::indicator {
     width: 16px;
     height: 16px;
     image: url(:/icons/sidebar/checkbox-unchecked.svg);
 }
-QDialog#deviceOptionsDialog QCheckBox::indicator:checked {
+QDialog#deviceOptionsDialog QCheckBox::indicator:checked,
+QDialog#logOptionsDialog QCheckBox::indicator:checked {
     image: url(:/icons/sidebar/checkbox-checked.svg);
 }
 QPushButton#device_ch_btn {
@@ -2783,6 +2796,19 @@ QPushButton#device_ch_btn {
 QPushButton#device_ch_btn:hover {
     background-color: #2a2a2a;
     border-color: #555555;
+}
+QPushButton#device_cancel_btn {
+    background-color: transparent;
+    border: 1px solid #555555;
+    border-radius: 4px;
+    color: #cccccc;
+    font-size: 12px;
+    padding: 4px 16px;
+    min-height: 24px;
+}
+QPushButton#device_cancel_btn:hover {
+    background-color: #2a2a2a;
+    border-color: #666666;
 }
 QPushButton#device_ok_btn {
     background-color: #7c3aed;

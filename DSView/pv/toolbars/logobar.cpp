@@ -33,6 +33,8 @@
 #include <QWidget>
 #include <QCheckBox> 
 #include <QHBoxLayout>
+#include <QVBoxLayout>
+#include <QBoxLayout>
 #include <QFile> 
 #include <QLabel>
 
@@ -229,11 +231,27 @@ void LogoBar::on_action_setting_log()
 {   
     AppConfig &app = AppConfig::Instance(); 
     auto *topWind = AppControl::Instance()->GetTopWindow();
-    dialogs::DSDialog dlg(topWind, false, true);
+    dialogs::DSDialog dlg(topWind, false, false);
+    dlg.setObjectName("logOptionsDialog");
     dlg.setTitle(L_S(STR_PAGE_DLG, S_ID(IDS_DLG_LOG_OPTIONS), "Log Options"));
+    dlg.setTitleTextAlignment(Qt::AlignHCenter | Qt::AlignVCenter);
+    dlg.SetTitleSpace(8);
+    dlg.layout()->setSpacing(0);
+    dlg.layout()->setDirection(QBoxLayout::TopToBottom);
+    dlg.layout()->setAlignment(Qt::AlignTop);
+    dlg.layout()->setContentsMargins(0, 5, 0, 0);
     dlg.setMinimumSize(460, 300);
+
+    auto *top_sep = new QWidget(&dlg);
+    top_sep->setObjectName("device_options_divider");
+    top_sep->setFixedHeight(1);
+    dlg.layout()->addWidget(top_sep);
+
+    QVBoxLayout *contentLay = new QVBoxLayout();
+    contentLay->setContentsMargins(16, 12, 16, 20);
+    contentLay->setSpacing(8);
+
     QWidget *panel = new QWidget(&dlg);
-    dlg.layout()->addWidget(panel);
     panel->setMinimumSize(250, 110);
     QFormLayout *lay = new QFormLayout();
     panel->setLayout(lay);
@@ -258,11 +276,13 @@ void LogoBar::on_action_setting_log()
 
     QPushButton *btOpen = new QPushButton();
     btOpen->setText(L_S(STR_PAGE_DLG, S_ID(IDS_DLG_OPEN), "Open"));
+    btOpen->setObjectName("device_ch_btn");
     _log_open_bt = btOpen;
     connect(btOpen, SIGNAL(released()), this, SLOT(on_open_log_file()));   
 
     QPushButton *btClear = new QPushButton();
     btClear->setText(L_S(STR_PAGE_DLG, S_ID(IDS_DLG_CLEARE), "Clear"));
+    btClear->setObjectName("device_ch_btn");
     _log_clear_bt = btClear;
     connect(btClear, SIGNAL(released()), this, SLOT(on_clear_log_file()));
 
@@ -280,6 +300,30 @@ void LogoBar::on_action_setting_log()
         btOpen->setEnabled(false);
         btClear->setEnabled(false);
     }
+
+    contentLay->addWidget(panel);
+    dlg.layout()->addLayout(contentLay);
+
+    auto *bot_sep = new QWidget(&dlg);
+    bot_sep->setObjectName("device_options_divider");
+    bot_sep->setFixedHeight(1);
+    dlg.layout()->addWidget(bot_sep);
+
+    auto *cancel_btn = new QPushButton(
+        L_S(STR_PAGE_DLG, S_ID(IDS_DLG_CANCEL), "Cancel"), &dlg);
+    cancel_btn->setObjectName("device_cancel_btn");
+    auto *ok_btn = new QPushButton("OK", &dlg);
+    ok_btn->setObjectName("device_ok_btn");
+    auto *footer_lay = new QHBoxLayout();
+    footer_lay->setContentsMargins(12, 10, 12, 10);
+    footer_lay->addStretch();
+    footer_lay->addWidget(cancel_btn);
+    footer_lay->addSpacing(8);
+    footer_lay->addWidget(ok_btn);
+    dlg.layout()->addLayout(footer_lay);
+
+    QObject::connect(ok_btn, &QPushButton::clicked, &dlg, &dialogs::DSDialog::slotAccept);
+    QObject::connect(cancel_btn, &QPushButton::clicked, &dlg, &dialogs::DSDialog::slotReject);
 
     dlg.exec();
 

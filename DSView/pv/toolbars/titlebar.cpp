@@ -28,6 +28,7 @@
 #include <QMouseEvent> 
 #include <QPainter>
 #include <QStyleOption>
+#include <QSizePolicy>
 #include <assert.h>
 #include <QTimer>
 #include <QGuiApplication>
@@ -191,6 +192,13 @@ void TitleBar::setTitle(QString title)
     else if (_parent != NULL){
         _parent->setWindowTitle(title);
     }    
+}
+
+void TitleBar::setTitleTextAlignment(Qt::Alignment alignment)
+{
+    _title->setAlignment(alignment);
+    if (alignment.testFlag(Qt::AlignHCenter))
+        _title->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
 }
   
 QString TitleBar::title()
