@@ -40,7 +40,7 @@ QToolTip
 QWidget
 {
     color: #eff0f1;
-    background-color: #1F1F1F;
+    background-color: #141414;
     selection-background-color:#1185D1;
     selection-color: #eff0f1;
     background-clip: border;
@@ -616,6 +616,187 @@ QToolBar::separator:vertical
     image: url(:/dark/vsepartoolbars.svg);
     width = 63px;
     height = 7px;
+}
+
+/* Top capture strip (logic-viewer device-bar style) */
+QToolBar#device_bar
+{
+    background-color: #1a1a1a;
+    border-bottom: 1px solid #333333;
+    min-height: 48px;
+    padding: 0px 12px;
+    spacing: 0;
+}
+
+QToolBar#device_bar QWidget#device_bar_inner,
+QToolBar#device_bar QWidget#device_bar_inner > QWidget
+{
+    background: #1a1a1a;
+}
+
+/* Section labels: "DEVICE", "SAMPLE RATE", etc. — text-gray-500, uppercase, tracking-wider */
+QToolBar#device_bar QLabel#device_bar_label
+{
+    color: #6b7280;
+    background-color: #1a1a1a;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    padding: 0;
+    border: none;
+}
+
+QToolBar#device_bar QFrame#device_bar_sep
+{
+    color: #333333;
+    max-height: 20px;
+    min-height: 20px;
+}
+
+/* Dropdowns: transparent bg to blend into device bar, border [#444], text-gray-300 */
+QToolBar#device_bar QComboBox
+{
+    background-color: #1a1a1a;
+    border: 1px solid #444444;
+    border-radius: 4px;
+    padding: 3px 8px;
+    min-height: 22px;
+    color: #d1d5db;
+    font-size: 12px;
+    selection-background-color: transparent;
+}
+
+QToolBar#device_bar QComboBox:hover
+{
+    border-color: #666666;
+    background-color: #242424;
+}
+
+QToolBar#device_bar QComboBox::drop-down
+{
+    border: none;
+    width: 16px;
+}
+
+QToolBar#device_bar QComboBox::down-arrow
+{
+    image: url(:/icons/sidebar/chevron-down.svg);
+    width: 10px;
+    height: 10px;
+}
+
+QToolBar#device_bar QComboBox QAbstractItemView
+{
+    background-color: #1e1e1e;
+    border: 1px solid #444444;
+    selection-background-color: rgba(147, 51, 234, 0.2);
+    color: #d1d5db;
+    font-size: 12px;
+    outline: none;
+    padding: 2px 0;
+}
+
+/* Generic tool buttons (device type icon, settings icon) */
+QToolBar#device_bar QToolButton
+{
+    background-color: transparent;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    color: #9ca3af;
+    font-size: 12px;
+    padding: 3px 4px;
+    min-height: 22px;
+}
+
+QToolBar#device_bar QToolButton:hover
+{
+    border-color: #444444;
+    background-color: rgba(255, 255, 255, 12);
+}
+
+/* Mode button — same look as ComboBox: transparent bg, border, text left, chevron right */
+QToolBar#device_bar QToolButton#mode_button
+{
+    background-color: #1a1a1a;
+    border: 1px solid #444444;
+    border-radius: 4px;
+    color: #d1d5db;
+    font-size: 12px;
+    padding: 3px 24px 3px 8px;
+    min-height: 22px;
+    min-width: 90px;
+    text-align: left;
+}
+
+QToolBar#device_bar QToolButton#mode_button:hover
+{
+    border-color: #666666;
+    background-color: #242424;
+}
+
+QToolBar#device_bar QToolButton#mode_button::menu-indicator
+{
+    image: url(:/icons/sidebar/chevron-down.svg);
+    subcontrol-origin: padding;
+    subcontrol-position: right center;
+    width: 10px;
+    height: 10px;
+    right: 6px;
+}
+
+/* Start Capture — bg-purple-600/20 border-purple-600 text-purple-400
+   same height as dropdowns */
+QToolBar#device_bar QToolButton#run_stop_button
+{
+    background-color: rgba(147, 51, 234, 0.2);
+    border: 1px solid #9333ea;
+    border-radius: 4px;
+    color: #c084fc;
+    font-size: 12px;
+    padding: 3px 16px;
+    min-height: 22px;
+    font-weight: 500;
+}
+
+QToolBar#device_bar QToolButton#run_stop_button:hover
+{
+    background-color: rgba(147, 51, 234, 0.3);
+    border-color: #a855f7;
+    color: #e9d5ff;
+}
+
+/* Stop Capture — bg-red-600/20 border-red-600 text-red-400 */
+QToolBar#device_bar QToolButton#run_stop_button[capturing="true"]
+{
+    background-color: rgba(220, 38, 38, 0.2);
+    border-color: #dc2626;
+    color: #f87171;
+}
+
+QToolBar#device_bar QToolButton#run_stop_button[capturing="true"]:hover
+{
+    background-color: rgba(220, 38, 38, 0.3);
+    border-color: #ef4444;
+    color: #fca5a5;
+}
+
+/* Instant Capture button — same height as dropdowns */
+QToolBar#device_bar QToolButton#instant_capture_button
+{
+    background-color: transparent;
+    border: 1px solid #3f3f3f;
+    border-radius: 4px;
+    color: #9ca3af;
+    font-size: 12px;
+    padding: 3px 12px;
+    min-height: 22px;
+}
+
+QToolBar#device_bar QToolButton#instant_capture_button:hover
+{
+    border-color: #666666;
+    color: #e5e7eb;
+    background-color: rgba(255, 255, 255, 10);
 }
 
 QPushButton

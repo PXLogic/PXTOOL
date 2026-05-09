@@ -28,7 +28,7 @@
 #include <list>
 #include <map>
 #include <QDialog>
-#include <QToolBar> 
+#include <QToolBar>
 #include <QAction>
 #include <QMenu>
 #include "../ui/dscombobox.h"
@@ -38,6 +38,7 @@
 
 struct st_dev_inst;
 class QAction;
+class QLabel;
 struct ds_device_info;
 
 class DeviceAgent;
@@ -94,6 +95,12 @@ namespace pv
             void run_or_stop();
 
             void run_or_stop_instant();
+
+            /** Hosts device type, selectors, mode, start/stop, instant. Call once from MainWindow. */
+            void attachCaptureToolBar(QToolBar *strip);
+
+            /** Reparent capture widgets off \a strip before \a strip is destroyed (member storage safety). */
+            void detachFromDeviceBar();
 
             inline void update_sample_rate_list()
             {
@@ -175,6 +182,10 @@ namespace pv
             bool                _updating_sample_rate;
             bool                _updating_sample_count;
             bool                _updating_device_list;
+
+            QToolBar            *_capture_strip;
+            QWidget             *_capture_container;
+            QAction             *_capture_action;
         };
 
     } // namespace toolbars

@@ -93,6 +93,7 @@ public:
      
 public:
     explicit MainWindow(toolbars::TitleBar *title_bar, QWidget *parent = 0);
+    ~MainWindow();
 
     void openDoc();
 
@@ -212,6 +213,7 @@ private:
 	QVBoxLayout             *_vertical_layout;
 
 	toolbars::SamplingBar   *_sampling_bar;
+    QToolBar                *_device_bar;
     toolbars::TrigBar       *_trig_bar;
     toolbars::FileBar       *_file_bar;
     toolbars::LogoBar       *_logo_bar; //help button, on top right

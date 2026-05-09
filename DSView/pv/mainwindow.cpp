@@ -29,6 +29,7 @@
 #include <QStatusBar>
 #include <QVBoxLayout>
 #include <QWidget>
+#include <QToolBar>
 #include <QDesktopServices>
 #include <QKeyEvent>
 #include <QEvent>
@@ -144,6 +145,12 @@ namespace pv
         update_title_bar_text();
     }
 
+    MainWindow::~MainWindow()
+    {
+        if (_sampling_bar != nullptr)
+            _sampling_bar->detachFromDeviceBar();
+    }
+
     void MainWindow::setup_ui()
     {
         setObjectName(QString::fromUtf8("MainWindow"));
@@ -157,9 +164,15 @@ namespace pv
         _vertical_layout->setContentsMargins(0, 0, 0, 0);
         setCentralWidget(_central_widget);
 
-        // Setup the sampling bar
-        _sampling_bar = new toolbars::SamplingBar(_session, this);        
+        // Setup capture controls: top device strip + logic owner (hidden QToolBar)
+        _sampling_bar = new toolbars::SamplingBar(_session, this);
         _sampling_bar->setObjectName("sampling_bar");
+        _device_bar = new QToolBar(this);
+        _device_bar->setObjectName("device_bar");
+        _device_bar->setIconSize(QSize(14, 14));
+        _sampling_bar->attachCaptureToolBar(_device_bar);
+        _sampling_bar->hide();
+
         _trig_bar = new toolbars::TrigBar(_session, this);
         _trig_bar->setObjectName("trig_bar");
         _file_bar = new toolbars::FileBar(_session, this);
@@ -186,14 +199,15 @@ namespace pv
         addDockWidget(Qt::RightDockWidgetArea, _sidebar_dock);
 
         setIconSize(QSize(40, 40));
-        addToolBar(_sampling_bar);
+        addToolBar(_device_bar);
+        addToolBarBreak(Qt::TopToolBarArea);
         addToolBar(_trig_bar);
         addToolBar(_file_bar);
         addToolBar(_logo_bar);
 
         // event filter
         _view->installEventFilter(this);
-        _sampling_bar->installEventFilter(this);
+        _device_bar->installEventFilter(this);
         _trig_bar->installEventFilter(this);
         _file_bar->installEventFilter(this);
         _logo_bar->installEventFilter(this);

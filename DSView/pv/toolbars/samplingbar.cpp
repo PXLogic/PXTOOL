@@ -23,7 +23,10 @@
 #include <assert.h>
 #include <QAction>
 #include <QLabel>
+#include <QFrame>
+#include <QHBoxLayout>
 #include <QAbstractItemView>
+#include <QStyleFactory>
 #include <math.h>
 #include <libusb-1.0/libusb.h>
 #include "../dialogs/deviceoptions.h"
@@ -65,7 +68,10 @@ namespace pv
                                                                          _sample_rate(this),
                                                                          _run_stop_button(this),
                                                                          _instant_button(this),
-                                                                         _mode_button(this)
+                                                                         _mode_button(this),
+                                                                         _capture_strip(nullptr),
+                                                                         _capture_container(nullptr),
+                                                                         _capture_action(nullptr)
         {
             _updating_device_list = false;
             _updating_sample_rate = false;
@@ -82,7 +88,8 @@ namespace pv
 
             setMovable(false);
             setContentsMargins(0, 0, 0, 0);
-            layout()->setSpacing(0);
+            if (layout())
+                layout()->setSpacing(0);
 
             _mode_button.setPopupMode(QToolButton::InstantPopup);
 
@@ -91,23 +98,18 @@ namespace pv
             _sample_count.setSizeAdjustPolicy(DsComboBox::AdjustToContents);
             _device_selector.setMaximumWidth(ComboBoxMaxWidth);
 
+            // Force Fusion style on all device-bar controls so macOS native
+            // rendering doesn't override QSS background colors.
+            QStyle *fusion = QStyleFactory::create("Fusion");
+            if (fusion) {
+                _device_selector.setStyle(fusion);
+                _sample_rate.setStyle(fusion);
+                _sample_count.setStyle(fusion);
+            }
+
             //tr
             _run_stop_button.setObjectName("run_stop_button");
-
-            QWidget *leftMargin = new QWidget(this);
-            leftMargin->setFixedWidth(4);
-            addWidget(leftMargin);
-
-            _device_type.setToolButtonStyle(Qt::ToolButtonTextUnderIcon);
-            addWidget(&_device_type);
-            addWidget(&_device_selector);
-            _configure_button.setToolButtonStyle(Qt::ToolButtonTextUnderIcon);
-            addWidget(&_configure_button);
-
-            addWidget(&_sample_count);
-            //tr
-            addWidget(new QLabel(" @ "));
-            addWidget(&_sample_rate);
+            _instant_button.setObjectName("instant_capture_button");
 
             _action_single = new QAction(this);
             _action_repeat = new QAction(this);
@@ -118,16 +120,6 @@ namespace pv
             _mode_menu->addAction(_action_repeat);
             _mode_menu->addAction(_action_loop);
             _mode_button.setMenu(_mode_menu);
-
-            _mode_button.setToolButtonStyle(Qt::ToolButtonTextUnderIcon);
-            _mode_action = addWidget(&_mode_button);
-
-            _run_stop_button.setToolButtonStyle(Qt::ToolButtonTextUnderIcon);
-            _run_stop_action = addWidget(&_run_stop_button);
-            _instant_button.setToolButtonStyle(Qt::ToolButtonTextUnderIcon);
-            _instant_action = addWidget(&_instant_button); 
-
-            update_view_status();
 
             connect(&_device_selector, SIGNAL(currentIndexChanged(int)), this, SLOT(on_device_selected()));
             connect(&_configure_button, SIGNAL(clicked()), this, SLOT(on_configure()));
@@ -142,9 +134,152 @@ namespace pv
             ADD_UI(this);
         }
 
+        void SamplingBar::attachCaptureToolBar(QToolBar *strip)
+        {
+            assert(strip != nullptr);
+            if (_capture_strip != nullptr) return;
+            _capture_strip = strip;
+
+            strip->setMovable(false);
+            strip->setContentsMargins(0, 0, 0, 0);
+            if (strip->layout())
+                strip->layout()->setSpacing(0);
+
+            // Single container fills the strip so we control layout entirely
+            _capture_container = new QWidget(strip);
+            _capture_container->setObjectName("device_bar_inner");
+            _capture_container->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+
+            QHBoxLayout *lay = new QHBoxLayout(_capture_container);
+            lay->setContentsMargins(10, 1, 10, 1);
+            lay->setSpacing(0);
+
+            // Helper: uppercase label + control in a tight group
+            auto makeGroup = [&](const QString &labelText, QWidget *ctrl) -> QWidget* {
+                QWidget *g = new QWidget(_capture_container);
+                QHBoxLayout *gl = new QHBoxLayout(g);
+                gl->setContentsMargins(0, 0, 0, 0);
+                gl->setSpacing(5);
+                QLabel *lbl = new QLabel(labelText, g);
+                lbl->setObjectName("device_bar_label");
+                gl->addWidget(lbl);
+                gl->addWidget(ctrl);
+                return g;
+            };
+
+            // Vertical separator between groups
+            auto makeSep = [&]() -> QWidget* {
+                QFrame *f = new QFrame(_capture_container);
+                f->setFrameShape(QFrame::VLine);
+                f->setObjectName("device_bar_sep");
+                return f;
+            };
+
+            // DEVICE: selector only
+            {
+                QWidget *g = new QWidget(_capture_container);
+                QHBoxLayout *gl = new QHBoxLayout(g);
+                gl->setContentsMargins(0, 0, 0, 0);
+                gl->setSpacing(4);
+                QLabel *lbl = new QLabel("DEVICE", g);
+                lbl->setObjectName("device_bar_label");
+                gl->addWidget(lbl);
+                gl->addWidget(&_device_selector);
+                lay->addWidget(g);
+            }
+
+            lay->addSpacing(16);
+
+            // SAMPLE RATE
+            lay->addWidget(makeGroup("SAMPLE RATE", &_sample_rate));
+
+            lay->addSpacing(16);
+
+            // BUFFER (sample count / duration)
+            lay->addWidget(makeGroup("BUFFER", &_sample_count));
+
+            lay->addSpacing(16);
+
+            // MODE
+            _mode_button.setObjectName("mode_button");
+            _mode_button.setToolButtonStyle(Qt::ToolButtonTextOnly);
+            _mode_button.setStyle(QStyleFactory::create("Fusion"));
+            lay->addWidget(makeGroup("MODE", &_mode_button));
+
+            lay->addStretch(1);
+
+            // Start / Stop capture
+            _run_stop_button.setObjectName("run_stop_button");
+            _run_stop_button.setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
+            _run_stop_button.setStyle(QStyleFactory::create("Fusion"));
+            _run_stop_button.setStyleSheet(
+                "QToolButton { background-color: rgba(147,51,234,0.2);"
+                "  border: 1px solid #9333ea; border-radius: 4px;"
+                "  color: #c084fc; font-size: 12px; font-weight: 500;"
+                "  padding: 0px 16px; }"
+                "QToolButton:hover { background-color: rgba(147,51,234,0.3);"
+                "  border-color: #a855f7; color: #e9d5ff; }");
+            lay->addWidget(&_run_stop_button);
+
+            lay->addSpacing(8);
+
+            // Instant
+            _instant_button.setObjectName("instant_capture_button");
+            _instant_button.setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
+            _instant_button.setStyle(QStyleFactory::create("Fusion"));
+            _instant_button.setStyleSheet(
+                "QToolButton { background-color: rgba(22,163,74,0.1);"
+                "  border: 1px solid rgba(22,163,74,0.5); border-radius: 4px;"
+                "  color: #4ade80; font-size: 12px; font-weight: 500;"
+                "  padding: 0px 16px; }"
+                "QToolButton:hover { background-color: rgba(22,163,74,0.2);"
+                "  border-color: #16a34a; color: #86efac; }"
+                "QToolButton:disabled { background-color: rgba(80,80,80,0.1);"
+                "  border-color: rgba(100,100,100,0.4); color: #555555; }");
+            lay->addWidget(&_instant_button);
+
+            // Visibility now controlled on the widget directly, not via QAction
+            _mode_action     = nullptr;
+            _run_stop_action = nullptr;
+            _instant_action  = nullptr;
+
+            _capture_action = strip->addWidget(_capture_container);
+
+            update_view_status();
+        }
+
         SamplingBar::~SamplingBar()
         {
             REMOVE_UI(this);
+        }
+
+        void SamplingBar::detachFromDeviceBar()
+        {
+            if (_capture_strip == nullptr)
+                return;
+
+            // Reparent member-backed widgets off the container before it is destroyed
+            auto lift = [this](QWidget *w) {
+                if (w != nullptr)
+                    w->setParent(this);
+            };
+
+            lift(&_device_type);
+            lift(&_device_selector);
+            lift(&_configure_button);
+            lift(&_sample_rate);
+            lift(&_sample_count);
+            lift(&_mode_button);
+            lift(&_run_stop_button);
+            lift(&_instant_button);
+
+            if (_capture_action != nullptr) {
+                _capture_strip->removeAction(_capture_action);
+                _capture_action = nullptr;
+            }
+            // _capture_container is now empty and owned by the strip; it will be deleted with it
+            _capture_container = nullptr;
+            _capture_strip = nullptr;
         }
 
         void SamplingBar::retranslateUi()
@@ -237,9 +372,30 @@ namespace pv
                 QString iconPath = GetIconPath();
                 _configure_button.setIcon(QIcon(iconPath + "/params.svg"));
             
-                QString icon2 = _session->is_working() ? "stop.svg" : "start.svg";
+                bool is_working = _session->is_working();
+                QString icon2 = is_working ? "stop.svg" : "start.svg";
                 _run_stop_button.setIcon(QIcon(iconPath + "/" + icon2));
                 _instant_button.setIcon(QIcon(iconPath + "/single.svg"));
+
+                // Update run/stop button style directly — property selectors are
+                // unreliable with per-widget Fusion style on macOS.
+                if (is_working) {
+                    _run_stop_button.setStyleSheet(
+                        "QToolButton { background-color: rgba(220,38,38,0.2);"
+                        "  border: 1px solid #dc2626; border-radius: 4px;"
+                        "  color: #f87171; font-size: 12px; font-weight: 500;"
+                        "  padding: 0px 16px; }"
+                        "QToolButton:hover { background-color: rgba(220,38,38,0.3);"
+                        "  border-color: #ef4444; color: #fca5a5; }");
+                } else {
+                    _run_stop_button.setStyleSheet(
+                        "QToolButton { background-color: rgba(147,51,234,0.2);"
+                        "  border: 1px solid #9333ea; border-radius: 4px;"
+                        "  color: #c084fc; font-size: 12px; font-weight: 500;"
+                        "  padding: 0px 16px; }"
+                        "QToolButton:hover { background-color: rgba(147,51,234,0.3);"
+                        "  border-color: #a855f7; color: #e9d5ff; }");
+                }
 
                 _action_single->setIcon(QIcon(iconPath + SINGLE_ACTION_ICON));
                 _action_repeat->setIcon(QIcon(iconPath + REPEAT_ACTION_ICON));
@@ -888,7 +1044,7 @@ namespace pv
 
         void SamplingBar::on_instant_stop()
         {
-            if (_instant_action->isVisible() == false){
+            if (_instant_button.isVisible() == false){
                 return;
             }
             _instant_button.setEnabled(false);
@@ -1022,12 +1178,12 @@ namespace pv
             if (mode == LOGIC)
             {
                 if (_device_agent->is_file()){
-                    _mode_action->setVisible(false);
+                    _mode_button.setVisible(false);
                 }
                 else
                 {
                     update_mode_icon();
-                    _mode_action->setVisible(true);
+                    _mode_button.setVisible(true);
                     _action_repeat->setVisible(true);    
 
                     if (_session->is_loop_mode() && _device_agent->is_stream_mode() == false 
@@ -1038,20 +1194,20 @@ namespace pv
                     if (_device_agent->is_stream_mode() || _device_agent->is_demo())
                         _action_loop->setVisible(true);
                 }
-                _run_stop_action->setVisible(true);
-                _instant_action->setVisible(true);      
+                _run_stop_button.setVisible(true);
+                _instant_button.setVisible(true);      
             }
             else if (mode == ANALOG)
             {
-                _mode_action->setVisible(false);
-                _run_stop_action->setVisible(true);
-                _instant_action->setVisible(false);
+                _mode_button.setVisible(false);
+                _run_stop_button.setVisible(true);
+                _instant_button.setVisible(false);
             }
             else if (mode == DSO)
             {
-                _mode_action->setVisible(false);
-                _run_stop_action->setVisible(true);
-                _instant_action->setVisible(true);
+                _mode_button.setVisible(false);
+                _run_stop_button.setVisible(true);
+                _instant_button.setVisible(true);
             }
         
             retranslateUi();
@@ -1227,7 +1383,45 @@ namespace pv
                 _instant_button.setIcon(!bEnable ? QIcon(iconPath + "/stop.svg") : QIcon(iconPath + "/single.svg"));
             else
                 _run_stop_button.setIcon(!bEnable ? QIcon(iconPath + "/stop.svg") : QIcon(iconPath + "/start.svg"));
- 
+
+            if (!bEnable && !_is_run_as_instant) {
+                _run_stop_button.setStyleSheet(
+                    "QToolButton { background-color: rgba(220,38,38,0.2);"
+                    "  border: 1px solid #dc2626; border-radius: 4px;"
+                    "  color: #f87171; font-size: 12px; font-weight: 500;"
+                    "  padding: 0px 16px; }"
+                    "QToolButton:hover { background-color: rgba(220,38,38,0.3);"
+                    "  border-color: #ef4444; color: #fca5a5; }");
+            } else {
+                _run_stop_button.setStyleSheet(
+                    "QToolButton { background-color: rgba(147,51,234,0.2);"
+                    "  border: 1px solid #9333ea; border-radius: 4px;"
+                    "  color: #c084fc; font-size: 12px; font-weight: 500;"
+                    "  padding: 0px 16px; }"
+                    "QToolButton:hover { background-color: rgba(147,51,234,0.3);"
+                    "  border-color: #a855f7; color: #e9d5ff; }");
+            }
+
+            if (_is_run_as_instant && !bEnable) {
+                _instant_button.setStyleSheet(
+                    "QToolButton { background-color: rgba(220,38,38,0.2);"
+                    "  border: 1px solid #dc2626; border-radius: 4px;"
+                    "  color: #f87171; font-size: 12px; font-weight: 500;"
+                    "  padding: 0px 16px; }"
+                    "QToolButton:hover { background-color: rgba(220,38,38,0.3);"
+                    "  border-color: #ef4444; color: #fca5a5; }");
+            } else {
+                _instant_button.setStyleSheet(
+                    "QToolButton { background-color: rgba(22,163,74,0.1);"
+                    "  border: 1px solid rgba(22,163,74,0.5); border-radius: 4px;"
+                    "  color: #4ade80; font-size: 12px; font-weight: 500;"
+                    "  padding: 0px 16px; }"
+                    "QToolButton:hover { background-color: rgba(22,163,74,0.2);"
+                    "  border-color: #16a34a; color: #86efac; }"
+                    "QToolButton:disabled { background-color: rgba(80,80,80,0.1);"
+                    "  border-color: rgba(100,100,100,0.4); color: #555555; }");
+            }
+
             retranslateUi();
 
             if (bEnable){
@@ -1290,7 +1484,10 @@ namespace pv
         {  
             QFont font = this->font();
             font.setPointSizeF(AppConfig::Instance().appOptions.fontSize);
-            ui::set_toolbar_font(this, font);
+            if (_capture_strip != nullptr)
+                ui::set_toolbar_font(_capture_strip, font);
+            else
+                ui::set_toolbar_font(this, font);
 
             update_view_status();
         }
