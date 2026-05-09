@@ -121,6 +121,7 @@ MainFrame::MainFrame()
     setWindowIcon(icon);
     
     _titleBar = new toolbars::TitleBar(true, this, this, false);
+    _titleBar->setObjectName("main_window_title_bar");
     _mainWindow = new MainWindow(_titleBar, this);
     _mainWindow->setWindowFlags(Qt::Widget);
 

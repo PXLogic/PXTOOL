@@ -242,6 +242,50 @@ QMenuBar::item:pressed
     padding-bottom: 1px;
 }
 
+QMenuBar#main_menu_bar
+{
+    background-color: #1a1a1a;
+    color: #f0f0f0;
+    font-size: 13px;
+    font-weight: 600;
+    border-bottom: 1px solid #333333;
+}
+
+QMenuBar#main_menu_bar::item
+{
+    background: transparent;
+    padding: 8px 12px;
+    border-radius: 3px;
+}
+
+QMenuBar#main_menu_bar::item:selected
+{
+    background-color: #333333;
+    color: #e5e7eb;
+}
+
+QMenuBar#main_menu_bar::item:pressed
+{
+    background-color: #333333;
+    color: #e5e7eb;
+    margin-bottom: 0px;
+    padding-bottom: 8px;
+}
+
+/* Main window frameless title bar — same surface as main_menu_bar */
+QWidget#main_window_title_bar
+{
+    background-color: #1a1a1a;
+    border-bottom: 1px solid #333333;
+    color: #f0f0f0;
+}
+
+QWidget#main_window_title_bar QLabel
+{
+    color: #f0f0f0;
+    background-color: transparent;
+}
+
 QMenu
 {
     border: 1px transparent;
@@ -637,9 +681,10 @@ QToolBar#device_bar QWidget#device_bar_inner > QWidget
 /* Section labels: "DEVICE", "SAMPLE RATE", etc. — text-gray-500, uppercase, tracking-wider */
 QToolBar#device_bar QLabel#device_bar_label
 {
-    color: #6b7280;
+    color: #ffffff;
     background-color: #1a1a1a;
     font-size: 10px;
+    font-weight: bold;
     text-transform: uppercase;
     letter-spacing: 0.8px;
     padding: 0;
@@ -1346,28 +1391,18 @@ QSlider::sub-page:disabled
     border-radius: 1px;
 }
 
-QToolButton#MaximizeButton {
-    background-color: transparent;
-    border-left: 1px solid QLinearGradient( x1: 0, y1: 0, x2: 0, y2: 1,
-                                            stop: 0.0 #1F1F1F, stop: 0.3 #606060,
-                                            stop: 0.5 #707070,
-                                            stop: 0.7 #606060, stop: 1 #1F1F1F);
-    border-right: 1px solid QLinearGradient( x1: 0, y1: 0, x2: 0, y2: 1,
-                                            stop: 0.0 #1F1F1F, stop: 0.3 #606060,
-                                            stop: 0.5 #707070,
-                                            stop: 0.7 #606060, stop: 1 #1F1F1F);
-    border-radius: 0px;
-    margin: 0px;
-    padding: 0px;
-}
-
 QToolButton#MinimizeButton,
+QToolButton#MaximizeButton,
 QToolButton#CloseButton {
     background-color: transparent;
-    border: 1px transparent;
+    border: none;
     border-radius: 0px;
     margin: 0px;
     padding: 0px;
+    min-width: 48px;
+    max-width: 48px;
+    min-height: 32px;
+    max-height: 32px;
 }
 
 QToolButton#FileCloseButton {
@@ -1381,19 +1416,22 @@ QToolButton#FileCloseButton {
     padding: 0px;
 }
 
-QToolButton#MinimizeButton:hover, QToolButton#MinimizeButton::menu-button:hover,
-QToolButton#MaximizeButton:hover, QToolButton#MaximizeButton::menu-button:hover{
-    background-color: QLinearGradient( x1: 0, y1: 0, x2: 0, y2: 1,
-                                       stop: 0.0 #1F1F1F, stop: 0.4 #4E4D4D,
-                                       stop: 0.5 #4A4949,
-                                       stop: 0.6 #4E4D4D, stop: 1 #1F1F1F);
+QToolButton#MinimizeButton:hover,
+QToolButton#MaximizeButton:hover {
+    background-color: #333333;
 }
 
-QToolButton#CloseButton:hover, QToolButton#CloseButton::menu-button:hover {
-background-color: QLinearGradient( x1: 0, y1: 0, x2: 0, y2: 1,
-                                   stop: 0.0 #1F1F1F, stop: 0.2 #A82F2F,
-                                   stop: 0.5 #D50F25,
-                                   stop: 0.8 #A82F2F, stop: 1 #1F1F1F);
+QToolButton#MinimizeButton:pressed,
+QToolButton#MaximizeButton:pressed {
+    background-color: #404040;
+}
+
+QToolButton#CloseButton:hover {
+    background-color: #dc2626;
+}
+
+QToolButton#CloseButton:pressed {
+    background-color: #b91c1c;
 }
 
 QToolButton#FileCloseButton:hover, QToolButton#FileCloseButton::menu-button:hover {

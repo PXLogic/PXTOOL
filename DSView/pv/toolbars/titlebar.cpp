@@ -61,8 +61,8 @@ TitleBar::TitleBar(bool top, QWidget *parent, ITitleParent *titleParent, bool ha
     assert(parent);
 
     setObjectName("TitleBar");
-    setContentsMargins(0,0,0,0);
-    setFixedHeight(32); 
+    setContentsMargins(0, 0, 0, 0);
+    setFixedHeight(32);
 
     QHBoxLayout *lay1 = new QHBoxLayout(this);
 
@@ -72,8 +72,10 @@ TitleBar::TitleBar(bool top, QWidget *parent, ITitleParent *titleParent, bool ha
     if (_isTop) {
         _minimizeButton = new QToolButton(this);
         _minimizeButton->setObjectName("MinimizeButton");
+        _minimizeButton->setIconSize(QSize(16, 16));
         _maximizeButton = new QToolButton(this);
         _maximizeButton->setObjectName("MaximizeButton");
+        _maximizeButton->setIconSize(QSize(16, 16));
 
         lay1->addWidget(_minimizeButton);
         lay1->addWidget(_maximizeButton);
@@ -87,13 +89,14 @@ TitleBar::TitleBar(bool top, QWidget *parent, ITitleParent *titleParent, bool ha
     if (_isTop || _hasClose) {
         _closeButton= new QToolButton(this);
         _closeButton->setObjectName("CloseButton");
+        _closeButton->setIconSize(QSize(16, 16));
         lay1->addWidget(_closeButton);
         connect(_closeButton, SIGNAL( clicked()), parent, SLOT(close()));
     }
 
     lay1->insertStretch(0, 500);
     lay1->insertStretch(2, 500);
-    lay1->setContentsMargins(0,0,0,0);
+    lay1->setContentsMargins(0, 0, 0, 0);
     lay1->setSpacing(0);
 
     setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed); 
@@ -146,6 +149,15 @@ void TitleBar::paintEvent(QPaintEvent *event)
 
     const int xgap = 2;
     const int xstart = 10;
+    /* Left stripe logo: uniform scale about its visual center */
+    const qreal logoScale = 0.72;
+    const qreal cx = xstart + 9.0 * xgap;
+    const qreal cy = height() * 0.5;
+    p.save();
+    p.translate(cx, cy);
+    p.scale(logoScale, logoScale);
+    p.translate(-cx, -cy);
+
     p.setPen(QPen(QColor(213, 15, 37, 255), 2, Qt::SolidLine));
     p.drawLine(xstart + xgap*0,  height()*0.50, xstart + xgap*0,  height()*0.66);
     p.drawLine(xstart + xgap*18, height()*0.34, xstart + xgap*18, height()*0.50);
@@ -165,6 +177,8 @@ void TitleBar::paintEvent(QPaintEvent *event)
     p.setPen(QPen(QColor(109, 50, 156, 255), 2, Qt::SolidLine));
     p.drawLine(xstart + xgap*8,  height()*0.50, xstart + xgap*8,  height()*0.66);
     p.drawLine(xstart + xgap*10, height()*0.34, xstart + xgap*10, height()*0.50);
+
+    p.restore();
 
     QWidget::paintEvent(event);
 }

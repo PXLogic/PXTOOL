@@ -140,7 +140,7 @@ namespace pv
             void apply_sample_count(double &hori_res);
 
         private slots:
-            void on_collect_mode();
+            void on_mode_changed(int index);
             void on_run_stop();
             void on_instant_stop();
             void on_device_selected();
@@ -161,16 +161,11 @@ namespace pv
             DsComboBox          _sample_rate;          
             XToolButton         _run_stop_button;
             XToolButton         _instant_button;
-            XToolButton         _mode_button;
+            DsComboBox          _mode_button;
 
             QAction             *_run_stop_action;
             QAction             *_instant_action;
             QAction             *_mode_action;
-         
-            QMenu               *_mode_menu;
-            QAction             *_action_repeat;
-            QAction             *_action_single;
-            QAction             *_action_loop;
         
             DeviceAgent         *_device_agent;
             ds_device_handle    _last_device_handle;

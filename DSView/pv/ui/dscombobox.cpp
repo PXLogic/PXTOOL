@@ -48,17 +48,24 @@ void DsComboBox::measureSize()
     for (int i=0; i<num; i++){
         QString text = this->itemText(i);
         QRect rc = fm.boundingRect(text);
- 
+
         if (rc.width() > maxWidth){
             maxWidth = rc.width();
         }
         height = rc.height();
     }
 
-    QString style = QString("QAbstractItemView{min-width:%1px; min-height:%2px;}")
+    // Append the size rule to whatever stylesheet is already set so we don't
+    // wipe the background-color that reStyle() applied to this combo.
+    QString sizeRule = QString("QAbstractItemView{min-width:%1px; min-height:%2px;}")
                 .arg(maxWidth + 30)
                 .arg(height + 5);
-    this->setStyleSheet(style);
+    QString base = this->styleSheet();
+    // Strip any previously appended size rule before re-appending.
+    int idx = base.indexOf("QAbstractItemView{min-width:");
+    if (idx != -1)
+        base = base.left(idx);
+    this->setStyleSheet(base + sizeRule);
 }
 
 void DsComboBox::showPopup()
@@ -71,19 +78,20 @@ void DsComboBox::showPopup()
     QComboBox::showPopup();
 
     QWidget *popup = this->findChild<QFrame*>();
-    auto rc = popup->geometry();
-    int x = rc.left() + 6;
-    int y = rc.top();
-    int w = rc.right() - rc.left();
-    int h = rc.bottom() - rc.top() + 20;
-    popup->setGeometry(x, y, w, h);
-
-    int sy = QGuiApplication::primaryScreen()->size().height(); 
-    if (sy <= 1080){
-        popup->setMaximumHeight(750); 
+    if (popup) {
+        // Reposition popup to appear directly below this combo box.
+        // Qt's default calculation can be wrong on macOS in certain widget hierarchies.
+        QPoint below = this->mapToGlobal(QPoint(0, this->height()));
+        int screenH = QGuiApplication::primaryScreen()->size().height();
+        int popH = popup->height();
+        if (screenH <= 1080)
+            popup->setMaximumHeight(750);
+        // Flip above if not enough room below
+        if (below.y() + popH > screenH)
+            below.setY(this->mapToGlobal(QPoint(0, 0)).y() - popH);
+        popup->move(below);
+        popup->setStyleSheet("background-color:" + AppConfig::Instance().GetStyleColor().name());
     }
-
-    popup->setStyleSheet("background-color:" + AppConfig::Instance().GetStyleColor().name());
 
 #else
     QComboBox::showPopup();

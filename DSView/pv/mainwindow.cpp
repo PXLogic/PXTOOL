@@ -198,12 +198,65 @@ namespace pv
 
         addDockWidget(Qt::RightDockWidgetArea, _sidebar_dock);
 
+        // In-window menu bar (macOS: setNativeMenuBar(false) forces it into the window)
+        _menu_bar = menuBar();
+        _menu_bar->setObjectName("main_menu_bar");
+        _menu_bar->setNativeMenuBar(false);
+
+        // File menu
+        _menu_file = _menu_bar->addMenu(tr("File"));
+        QMenu *_menu_session = _menu_file->addMenu(tr("Config..."));
+        QAction *_action_load    = _menu_session->addAction(tr("Load..."));
+        QAction *_action_store   = _menu_session->addAction(tr("Store..."));
+        QAction *_action_default = _menu_session->addAction(tr("Default..."));
+        _action_open = _menu_file->addAction(tr("Open..."));
+        QAction *_action_save    = _menu_file->addAction(tr("Save..."));
+        QAction *_action_export  = _menu_file->addAction(tr("Export..."));
+        QAction *_action_capture = _menu_file->addAction(tr("Capture..."));
+        _menu_file->addSeparator();
+        _action_quit = _menu_file->addAction(tr("Exit"));
+        connect(_action_load,    SIGNAL(triggered()), _file_bar, SLOT(on_actionLoad_triggered()));
+        connect(_action_store,   SIGNAL(triggered()), _file_bar, SLOT(on_actionStore_triggered()));
+        connect(_action_default, SIGNAL(triggered()), _file_bar, SLOT(on_actionDefault_triggered()));
+        connect(_action_open,    SIGNAL(triggered()), _file_bar, SLOT(on_actionOpen_triggered()));
+        connect(_action_save,    &QAction::triggered, this, &MainWindow::on_save);
+        connect(_action_export,  &QAction::triggered, this, &MainWindow::on_export);
+        connect(_action_capture, SIGNAL(triggered()), _file_bar, SLOT(on_actionCapture_triggered()));
+        connect(_action_quit,    &QAction::triggered, this, &MainWindow::close);
+
+        // Window menu
+        _menu_view = _menu_bar->addMenu(tr("Window"));
+        QMenu *_menu_themes = _menu_view->addMenu(tr("Themes"));
+        QAction *_action_dark  = _menu_themes->addAction(tr("Dark"));
+        QAction *_action_light = _menu_themes->addAction(tr("Light"));
+        connect(_action_dark,  SIGNAL(triggered()), _trig_bar, SLOT(on_actionDark_triggered()));
+        connect(_action_light, SIGNAL(triggered()), _trig_bar, SLOT(on_actionLight_triggered()));
+        QAction *_action_lissajous     = _menu_view->addAction(tr("Lissajous..."));
+        QAction *_action_display_opts  = _menu_view->addAction(tr("Display Options..."));
+        connect(_action_lissajous,    SIGNAL(triggered()), _trig_bar, SLOT(on_actionLissajous_triggered()));
+        connect(_action_display_opts, SIGNAL(triggered()), _trig_bar, SLOT(on_display_setting()));
+
+        // Help menu
+        _menu_help = _menu_bar->addMenu(tr("Help"));
+        _action_about = _menu_help->addAction(tr("About"));
+        QAction *_action_doc    = _menu_help->addAction(tr("Manual"));
+        QAction *_action_issue  = _menu_help->addAction(tr("Bug Report"));
+        QAction *_action_update = _menu_help->addAction(tr("Check for Updates"));
+        QAction *_action_log    = _menu_help->addAction(tr("Log Options"));
+        _menu_help->addSeparator();
+        QMenu *_menu_language = _menu_help->addMenu(tr("Language"));
+        QAction *_action_lang_en = _menu_language->addAction(tr("English"));
+        QAction *_action_lang_cn = _menu_language->addAction(tr("中文"));
+        connect(_action_about,   SIGNAL(triggered()), _logo_bar, SLOT(on_actionAbout_triggered()));
+        connect(_action_doc,     &QAction::triggered, this, &MainWindow::on_open_doc);
+        connect(_action_issue,   SIGNAL(triggered()), _logo_bar, SLOT(on_actionIssue_triggered()));
+        connect(_action_update,  SIGNAL(triggered()), _logo_bar, SLOT(on_action_update()));
+        connect(_action_log,     SIGNAL(triggered()), _logo_bar, SLOT(on_action_setting_log()));
+        connect(_action_lang_en, SIGNAL(triggered()), _logo_bar, SLOT(on_actionEn_triggered()));
+        connect(_action_lang_cn, SIGNAL(triggered()), _logo_bar, SLOT(on_actionCn_triggered()));
+
         setIconSize(QSize(40, 40));
         addToolBar(_device_bar);
-        addToolBarBreak(Qt::TopToolBarArea);
-        addToolBar(_trig_bar);
-        addToolBar(_file_bar);
-        addToolBar(_logo_bar);
 
         // event filter
         _view->installEventFilter(this);

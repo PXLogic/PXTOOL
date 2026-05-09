@@ -26,6 +26,7 @@
 #include <QFrame>
 #include <QHBoxLayout>
 #include <QAbstractItemView>
+#include <QStandardItemModel>
 #include <QStyleFactory>
 #include <math.h>
 #include <libusb-1.0/libusb.h>
@@ -91,44 +92,30 @@ namespace pv
             if (layout())
                 layout()->setSpacing(0);
 
-            _mode_button.setPopupMode(QToolButton::InstantPopup);
-
             _device_selector.setSizeAdjustPolicy(DsComboBox::AdjustToContents);
             _sample_rate.setSizeAdjustPolicy(DsComboBox::AdjustToContents);
             _sample_count.setSizeAdjustPolicy(DsComboBox::AdjustToContents);
             _device_selector.setMaximumWidth(ComboBoxMaxWidth);
 
-            // Force Fusion style on all device-bar controls so macOS native
-            // rendering doesn't override QSS background colors.
-            QStyle *fusion = QStyleFactory::create("Fusion");
-            if (fusion) {
-                _device_selector.setStyle(fusion);
-                _sample_rate.setStyle(fusion);
-                _sample_count.setStyle(fusion);
-            }
+            // Combo boxes use explicit per-widget stylesheets (applied in reStyle)
+            // rather than setStyle(Fusion), which bypasses QStyleSheetStyle and
+            // prevents qApp QSS rules from applying on macOS.
 
             //tr
             _run_stop_button.setObjectName("run_stop_button");
             _instant_button.setObjectName("instant_capture_button");
 
-            _action_single = new QAction(this);
-            _action_repeat = new QAction(this);
-            _action_loop = new QAction(this);
-
-            _mode_menu = new QMenu(this);
-            _mode_menu->addAction(_action_single);
-            _mode_menu->addAction(_action_repeat);
-            _mode_menu->addAction(_action_loop);
-            _mode_button.setMenu(_mode_menu);
+            // Mode combo: index 0=Single, 1=Repetitive, 2=Loop
+            _mode_button.addItem("Single");
+            _mode_button.addItem("Repetitive");
+            _mode_button.addItem("Loop");
 
             connect(&_device_selector, SIGNAL(currentIndexChanged(int)), this, SLOT(on_device_selected()));
             connect(&_configure_button, SIGNAL(clicked()), this, SLOT(on_configure()));
             connect(&_run_stop_button, SIGNAL(clicked()), this, SLOT(on_run_stop()));
             connect(&_instant_button, SIGNAL(clicked()), this, SLOT(on_instant_stop()));
             connect(&_sample_count, SIGNAL(currentIndexChanged(int)), this, SLOT(on_samplecount_sel(int)));
-            connect(_action_single, SIGNAL(triggered()), this, SLOT(on_collect_mode()));
-            connect(_action_repeat, SIGNAL(triggered()), this, SLOT(on_collect_mode()));
-            connect(_action_loop, SIGNAL(triggered()), this, SLOT(on_collect_mode()));
+            connect(&_mode_button, SIGNAL(currentIndexChanged(int)), this, SLOT(on_mode_changed(int)));
             connect(&_sample_rate, SIGNAL(currentIndexChanged(int)), this, SLOT(on_samplerate_sel(int)));
 
             ADD_UI(this);
@@ -202,8 +189,6 @@ namespace pv
 
             // MODE
             _mode_button.setObjectName("mode_button");
-            _mode_button.setToolButtonStyle(Qt::ToolButtonTextOnly);
-            _mode_button.setStyle(QStyleFactory::create("Fusion"));
             lay->addWidget(makeGroup("MODE", &_mode_button));
 
             lay->addStretch(1);
@@ -310,7 +295,9 @@ namespace pv
                 }
             }
             _configure_button.setText(L_S(STR_PAGE_TOOLBAR, S_ID(IDS_TOOLBAR_DEVICE_OPTION), "Options"));
-           _mode_button.setText(L_S(STR_PAGE_TOOLBAR, S_ID(IDS_TOOLBAR_CAPTURE_MODE), "Mode"));
+           _mode_button.setItemText(0, L_S(STR_PAGE_TOOLBAR, S_ID(IDS_TOOLBAR_CAPTURE_MODE_SINGLE), "Single"));
+           _mode_button.setItemText(1, L_S(STR_PAGE_TOOLBAR, S_ID(IDS_TOOLBAR_CAPTURE_MODE_REPEAT), "Repetitive"));
+           _mode_button.setItemText(2, L_S(STR_PAGE_TOOLBAR, S_ID(IDS_TOOLBAR_CAPTURE_MODE_LOOP), "Loop"));
 
             int mode = _device_agent->get_work_mode();
             bool is_working = _session->is_working();
@@ -340,13 +327,29 @@ namespace pv
                     _instant_button.setText(str_instant);
             }
 
-            _action_single->setText(L_S(STR_PAGE_TOOLBAR, S_ID(IDS_TOOLBAR_CAPTURE_MODE_SINGLE), "&Single"));
-            _action_repeat->setText(L_S(STR_PAGE_TOOLBAR, S_ID(IDS_TOOLBAR_CAPTURE_MODE_REPEAT), "&Repetitive"));
-            _action_loop->setText(L_S(STR_PAGE_TOOLBAR, S_ID(IDS_TOOLBAR_CAPTURE_MODE_LOOP), "&Loop"));
         }
 
         void SamplingBar::reStyle()
-        { 
+        {
+            // Apply combo box styles directly so they remain correct regardless of
+            // whether measureSize() has overwritten the widget stylesheet.
+            bool isDark = (AppConfig::Instance().frameOptions.style != "light");
+            QString comboBg     = isDark ? "#1a1a1a" : "#ffffff";
+            QString comboBorder = isDark ? "#444444" : "#6b7280";
+            QString comboFg     = isDark ? "#d1d5db" : "#374151";
+            QString comboHoverBorder = isDark ? "#666666" : "#374151";
+            QString comboStyle =
+                QString("QComboBox { background-color: %1; border: 1px solid %2;"
+                        " border-radius: 4px; padding: 3px 8px; min-height: 22px;"
+                        " color: %3; font-size: 12px; }"
+                        "QComboBox:hover { border-color: %4; }"
+                        "QComboBox::drop-down { border: none; width: 16px; }")
+                .arg(comboBg, comboBorder, comboFg, comboHoverBorder);
+            _device_selector.setStyleSheet(comboStyle);
+            _sample_rate.setStyleSheet(comboStyle);
+            _sample_count.setStyleSheet(comboStyle);
+            _mode_button.setStyleSheet(comboStyle);
+
             bool bDev = _device_agent->have_instance();
 
             if (bDev)
@@ -397,9 +400,6 @@ namespace pv
                         "  border-color: #a855f7; color: #e9d5ff; }");
                 }
 
-                _action_single->setIcon(QIcon(iconPath + SINGLE_ACTION_ICON));
-                _action_repeat->setIcon(QIcon(iconPath + REPEAT_ACTION_ICON));
-                _action_loop->setIcon(QIcon(iconPath + LOOP_ACTION_ICON));
 
                 update_mode_icon();
             }
@@ -1172,7 +1172,9 @@ namespace pv
         {
             QString iconPath = GetIconPath();
 
-            _action_loop->setVisible(false);
+            // Disable Loop item by default; re-enable only for stream/demo LOGIC mode
+            if (auto *m = qobject_cast<QStandardItemModel*>(_mode_button.model()))
+                m->item(2)->setEnabled(false);
 
             int mode = _device_agent->get_work_mode();
             if (mode == LOGIC)
@@ -1184,15 +1186,15 @@ namespace pv
                 {
                     update_mode_icon();
                     _mode_button.setVisible(true);
-                    _action_repeat->setVisible(true);    
 
-                    if (_session->is_loop_mode() && _device_agent->is_stream_mode() == false 
+                    if (_session->is_loop_mode() && _device_agent->is_stream_mode() == false
                         && _device_agent->is_hardware()){
                         _session->set_collect_mode(COLLECT_SINGLE);
                     }
 
                     if (_device_agent->is_stream_mode() || _device_agent->is_demo())
-                        _action_loop->setVisible(true);
+                        if (auto *m = qobject_cast<QStandardItemModel*>(_mode_button.model()))
+                            m->item(2)->setEnabled(true);
                 }
                 _run_stop_button.setVisible(true);
                 _instant_button.setVisible(true);      
@@ -1215,56 +1217,42 @@ namespace pv
             update();
         }
 
-        void SamplingBar::on_collect_mode()
+        void SamplingBar::on_mode_changed(int index)
         {
-            QString iconPath = GetIconPath();
-            QAction *act = qobject_cast<QAction *>(sender());
-
-            if (act == _action_single)
-            {  
+            if (index == 0) {
                 _session->set_collect_mode(COLLECT_SINGLE);
-
-                if (_device_agent->is_demo()){
+                if (_device_agent->is_demo()) {
                     _device_agent->set_config_string(SR_CONF_PATTERN_MODE, "protocol");
                     _session->broadcast_msg(DSV_MSG_DEMO_OPERATION_MODE_CHNAGED);
                 }
-            }
-            else if (act == _action_repeat)
-            { 
-                if (_device_agent->is_stream_mode() || _device_agent->is_demo())
-                {
+            } else if (index == 1) {
+                if (_device_agent->is_stream_mode() || _device_agent->is_demo()) {
                     _session->set_repeat_intvl(0.1);
                     _session->set_collect_mode(COLLECT_REPEAT);
-                }
-                else{
+                } else {
                     pv::dialogs::Interval interval_dlg(this);
-
                     interval_dlg.set_interval(_session->get_repeat_intvl());
                     interval_dlg.exec();
-
-                    if (interval_dlg.is_done())
-                    {
+                    if (interval_dlg.is_done()) {
                         _session->set_repeat_intvl(interval_dlg.get_interval());
                         _session->set_collect_mode(COLLECT_REPEAT);
-                       
+                    } else {
+                        // Dialog cancelled — revert selection without triggering this slot again
+                        update_mode_icon();
+                        return;
                     }
                 }
-
-                if (_device_agent->is_demo()){
+                if (_device_agent->is_demo()) {
                     _device_agent->set_config_string(SR_CONF_PATTERN_MODE, "random");
                     _session->broadcast_msg(DSV_MSG_DEMO_OPERATION_MODE_CHNAGED);
-                }          
-            }
-            else if (act == _action_loop)
-            {  
+                }
+            } else if (index == 2) {
                 _session->set_collect_mode(COLLECT_LOOP);
-
-                if (_device_agent->is_demo()){
+                if (_device_agent->is_demo()) {
                     _device_agent->set_config_string(SR_CONF_PATTERN_MODE, "random");
                     _session->broadcast_msg(DSV_MSG_DEMO_OPERATION_MODE_CHNAGED);
                 }
             }
-
             update_mode_icon();
         }
 
@@ -1316,10 +1304,8 @@ namespace pv
         }
 
         void SamplingBar::config_device()
-        {   
-            if (_configure_button.isVisible() && _configure_button.isEnabled()){
-                on_configure();
-            }            
+        {
+            on_configure();
         }
 
         void SamplingBar::update_view_status()
@@ -1331,13 +1317,15 @@ namespace pv
             _mode_button.setEnabled(bEnable);
             _configure_button.setEnabled(bEnable);
             _device_selector.setEnabled(bEnable);
-            _action_loop->setVisible(false);
+            // Disable Loop item by default; re-enable for stream/demo LOGIC mode
+            if (auto *m = qobject_cast<QStandardItemModel*>(_mode_button.model()))
+                m->item(2)->setEnabled(false);
 
             if (_session->get_device()->is_file()){
                 _sample_rate.setEnabled(false);
-                _sample_count.setEnabled(false);                
+                _sample_count.setEnabled(false);
             }
-            else if (mode == DSO){               
+            else if (mode == DSO){
                 _sample_rate.setEnabled(false);
                 _sample_count.setEnabled(bEnable);
 
@@ -1360,11 +1348,12 @@ namespace pv
                         }
                     }
                 }
-                
+
                 if (mode == LOGIC && _device_agent->is_file() == false){
                     if (_device_agent->is_stream_mode() || _device_agent->is_demo())
-                        _action_loop->setVisible(true);
-                }                
+                        if (auto *m = qobject_cast<QStandardItemModel*>(_mode_button.model()))
+                            m->item(2)->setEnabled(true);
+                }
             }
 
             if (_session->is_working()){
@@ -1449,15 +1438,14 @@ namespace pv
         }
 
         void SamplingBar::update_mode_icon()
-        {  
-            QString iconPath = GetIconPath();
-
+        {
+            QSignalBlocker blocker(_mode_button);
             if (_session->is_repeat_mode())
-                _mode_button.setIcon(QIcon(iconPath + REPEAT_ACTION_ICON));
+                _mode_button.setCurrentIndex(1);
             else if (_session->is_loop_mode())
-                _mode_button.setIcon(QIcon(iconPath + LOOP_ACTION_ICON));
+                _mode_button.setCurrentIndex(2);
             else
-                _mode_button.setIcon(QIcon(iconPath + SINGLE_ACTION_ICON));
+                _mode_button.setCurrentIndex(0);
         }
 
         void SamplingBar::run_or_stop()
