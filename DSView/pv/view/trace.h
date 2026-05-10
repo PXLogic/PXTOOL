@@ -55,6 +55,8 @@ public:
     static const int COLOR = 1;
     static const int NAME = 2;
     static const int LABEL = 8;
+    static const int HeightOverrideMin = 20;
+    static const int HeightOverrideMax = 800;
 
     static const QColor PROBE_COLORS[8];
 
@@ -149,6 +151,12 @@ public:
     inline void set_totalHeight(int height){
          _totalHeight = height;
     }
+
+    inline int get_height_override() const { return _height_override; }
+    inline void set_height_override(int h) {
+        _height_override = (h > 0) ? qBound(HeightOverrideMin, h, HeightOverrideMax) : 0;
+    }
+    inline void clear_height_override() { _height_override = 0; }
 
     /**
      * Geom
@@ -341,6 +349,7 @@ protected:
     int _sec_index;
     int _old_v_offset;
     int _totalHeight;
+    int _height_override;
     int _typeWidth;
     int _view_index;
 
