@@ -798,6 +798,12 @@ namespace pv
                 s_obj["mapMax"] = analogSig->get_mapMax();
                 s_obj["mapDefault"] = analogSig->get_mapDefault();
             }
+
+            if (logicSig) {
+                int rh = s->get_height_override();
+                if (rh > 0)
+                    s_obj["row_height"] = rh;
+            }
             channelVar.append(s_obj);
         }
         sessionVar["channel"] = channelVar;
@@ -1084,6 +1090,12 @@ namespace pv
                             view::AnalogSignal *analogSig = (view::AnalogSignal*)s;
                             analogSig->set_zero_ratio(obj["zeroPos"].toDouble());
                             analogSig->commit_settings();
+                        }
+
+                        if (logicSig && obj.contains("row_height")) {
+                            int rh = obj["row_height"].toInt();
+                            if (rh > 0)
+                                s->set_height_override(rh);
                         }
                         
                         break;
