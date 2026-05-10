@@ -41,6 +41,7 @@
 #include "xcursor.h"
 #include "signal.h"
 #include "viewstatus.h"
+#include "waveformscrollbar.h"
 #include "../dsvdef.h" 
 #include "../interface/icallbacks.h"
 #include "../ui/uimanager.h"
@@ -96,6 +97,7 @@ public:
 
     static const int StatusHeight = 20;
     static const int DsoStatusHeight = 55;
+    static const int ScrollBarHeight = 14;
 
     static const int ForeAlpha = 200;
     static const int BackAlpha = 100;
@@ -451,6 +453,7 @@ private:
 	Ruler                   *_ruler;
 	Header                  *_header;
     DevMode                 *_devmode;
+    WaveformScrollBar       *_waveform_scrollbar;
     
 
 	/// The view time scale in seconds per pixel.

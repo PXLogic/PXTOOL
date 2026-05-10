@@ -34,6 +34,7 @@
 #include "header.h"
 #include "devmode.h"
 #include "ruler.h"
+#include "waveformscrollbar.h"
 #include "signal.h"
 #include "dsosignal.h"
 #include "view.h"
@@ -110,7 +111,7 @@ View::View(SigSession *session, pv::toolbars::SamplingBar *sampling_bar, QWidget
    // Restore persisted trigger sidebar visibility
    _triggersVisible = AppConfig::Instance().appOptions.triggersVisible;
 
-    setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
+    setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
   
     // trace viewport map
     _trace_view_map[SR_CHANNEL_LOGIC] = TIME_VIEW;
@@ -125,9 +126,13 @@ View::View(SigSession *session, pv::toolbars::SamplingBar *sampling_bar, QWidget
     _active_viewport = NULL;
     _ruler = new Ruler(*this);
     _header = new Header(*this);
+    _waveform_scrollbar = new WaveformScrollBar(*this, this);
+    _waveform_scrollbar->setFixedHeight(ScrollBarHeight);
+    connect(_waveform_scrollbar, &WaveformScrollBar::offset_changed,
+            this, [this](int64_t off) { set_scale_offset(_scale, off); });
     _devmode = new DevMode(this, session);
     
-    setViewportMargins(headerWidth(), RulerHeight, 0, 0);
+    setViewportMargins(headerWidth(), RulerHeight, 0, ScrollBarHeight);
 
     // windows splitter
     _time_viewport = new Viewport(*this, TIME_VIEW);
@@ -641,6 +646,17 @@ void View::update_scroll()
 	// Set the vertical scrollbar
 	verticalScrollBar()->setPageStep(areaSize.height());
     verticalScrollBar()->setRange(0,0);
+
+    if (get_view_width() > 0) {
+        int64_t total_len = 0, dummy = 0;
+        get_scroll_layout(total_len, dummy);
+        _waveform_scrollbar->update_state(
+            _offset,
+            get_min_offset(),
+            get_max_offset(),
+            total_len,
+            get_view_width());
+    }
 }
 
 void View::update_scale_offset()
@@ -912,7 +928,7 @@ int View::headerWidth()
         }
     }
 
-    setViewportMargins(headerWidth, RulerHeight, 0, 0);
+    setViewportMargins(headerWidth, RulerHeight, 0, ScrollBarHeight);
 
     return headerWidth;
 }
@@ -926,7 +942,7 @@ void View::resizeEvent(QResizeEvent*)
     }
 
     reconstruct();
-    setViewportMargins(headerWidth(), RulerHeight, 0, 0);
+    setViewportMargins(headerWidth(), RulerHeight, 0, ScrollBarHeight);
     update_margins();
     update_scroll();
     signals_changed(NULL);
@@ -984,7 +1000,7 @@ void View::v_scroll_value_changed(int value)
 
 void View::data_updated()
 {
-    setViewportMargins(headerWidth(), RulerHeight, 0, 0);
+    setViewportMargins(headerWidth(), RulerHeight, 0, ScrollBarHeight);
     update_margins();
 
 	// Update the scroll bars
@@ -1010,6 +1026,9 @@ void View::update_margins()
         _ruler->setGeometry(_viewcenter->x(), 0,  width, _viewcenter->y());
         _header->setGeometry(0, _viewcenter->y(), _viewcenter->x(), _viewcenter->height());
         _devmode->setGeometry(0, 0, _viewcenter->x(), _viewcenter->y());
+        const int sb_y = _viewcenter->y() + _viewcenter->height();
+        _waveform_scrollbar->setGeometry(_viewcenter->x(), sb_y,
+                                          width, ScrollBarHeight);
     } 
 }
 
