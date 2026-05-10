@@ -161,6 +161,46 @@ void Header::paintEvent(QPaintEvent*)
         t->paint_label(painter, w, dragging ? QPoint(-1, -1) : _mouse_point, fore);
 	}
 
+    // Draw trigger sidebar toggle button (top-right corner of header)
+    {
+        const bool tv = _view.is_triggers_visible();
+        const int btnSize = 14;
+        const int btnX = w - btnSize - 2;
+        const int btnY = 2;
+        QRect btnRect(btnX, btnY, btnSize, btnSize);
+
+        // Background circle
+        painter.save();
+        painter.setRenderHint(QPainter::Antialiasing, true);
+        QColor bgColor = fore;
+        bgColor.setAlpha(btnRect.contains(_mouse_point) ? 80 : 40);
+        painter.setBrush(bgColor);
+        painter.setPen(Qt::NoPen);
+        painter.drawRoundedRect(btnRect, 3, 3);
+
+        // Arrow: "◀" when expanded (click to collapse), "▶" when collapsed (click to expand)
+        painter.setPen(QPen(fore, 1.5));
+        const int cx = btnRect.center().x();
+        const int cy = btnRect.center().y();
+        const int as = 4; // arrow half-size
+        if (tv) {
+            // Left-pointing triangle (collapse)
+            QPolygon arrow;
+            arrow << QPoint(cx + as, cy - as)
+                  << QPoint(cx - as, cy)
+                  << QPoint(cx + as, cy + as);
+            painter.drawPolyline(arrow);
+        } else {
+            // Right-pointing triangle (expand)
+            QPolygon arrow;
+            arrow << QPoint(cx - as, cy - as)
+                  << QPoint(cx + as, cy)
+                  << QPoint(cx - as, cy + as);
+            painter.drawPolyline(arrow);
+        }
+        painter.restore();
+    }
+
     // Draw bottom divider for traces with height override (visual drag hint)
     painter.setPen(QPen(QColor(120, 120, 120, 160), 1));
     for (auto t : traces) {
@@ -219,6 +259,18 @@ void Header::mousePressEvent(QMouseEvent *event)
 
 	if (event->button() & Qt::LeftButton) {
 		_mouse_down_point = event->pos();
+
+        // Toggle trigger sidebar button (top-right corner)
+        {
+            const int btnSize = 14;
+            const int btnX = width() - btnSize - 2;
+            QRect btnRect(btnX, 2, btnSize, btnSize);
+            if (btnRect.contains(event->pos())) {
+                _view.set_triggers_visible(!_view.is_triggers_visible());
+                update();
+                return;
+            }
+        }
 
         // Resize handle check — takes priority over reorder in LOGIC mode
         Trace* rt = get_resize_trace(event->pos());

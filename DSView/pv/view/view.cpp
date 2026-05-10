@@ -90,6 +90,7 @@ View::View(SigSession *session, pv::toolbars::SamplingBar *sampling_bar, QWidget
 	_offset(0),
     _preOffset(0),
 	_updating_scroll(false),
+    _triggersVisible(true),
     _trig_hoff(0),
 	_show_cursors(false),
     _search_hit(false),
@@ -105,6 +106,9 @@ View::View(SigSession *session, pv::toolbars::SamplingBar *sampling_bar, QWidget
 
    _session = session;
    _device_agent = session->get_device();
+
+   // Restore persisted trigger sidebar visibility
+   _triggersVisible = AppConfig::Instance().appOptions.triggersVisible;
 
     setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
   
@@ -703,6 +707,10 @@ void View::signals_changed(const Trace* eventTrace)
         else if (t->get_type() == SR_CHANNEL_DECODER)
             decoder_traces.push_back(t);
     }
+
+    // Apply global trigger column visibility to all logic traces
+    for (auto t : logic_traces)
+        t->set_showTypeOptions(_triggersVisible);
 
     if (!fft_traces.empty()) {
         if (!_fft_viewport->isVisible()) {
@@ -1615,6 +1623,16 @@ void View::reset_height_overrides()
     for (auto t : traces)
         t->clear_height_override();
     signals_changed(nullptr);
+}
+
+void View::set_triggers_visible(bool v)
+{
+    _triggersVisible = v;
+    AppConfig::Instance().appOptions.triggersVisible = v;
+    AppConfig::Instance().SaveApp();
+    signals_changed(nullptr);
+    headerWidth();
+    update();
 }
 
 } // namespace view

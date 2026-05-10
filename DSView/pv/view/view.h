@@ -368,6 +368,9 @@ public:
 
     void reset_height_overrides();
 
+    bool is_triggers_visible() const { return _triggersVisible; }
+    void set_triggers_visible(bool v);
+
 public slots:
     void reload();
     void set_measure_en(int enable);
@@ -461,6 +464,7 @@ private:
     int64_t     _preOffset;
     int         _spanY;
     int         _signalHeight;
+    bool        _triggersVisible;
     bool        _updating_scroll;
 
     // trigger position fix

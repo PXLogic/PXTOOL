@@ -72,6 +72,7 @@ struct AppOptions
     bool  swapBackBufferAlways;
     bool  autoScrollLatestData;
     float fontSize;
+    bool  triggersVisible;
 
     std::vector<StringPair> m_protocolFormats;
 };

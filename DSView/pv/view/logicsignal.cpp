@@ -215,6 +215,18 @@ void LogicSignal::paint_caps(QPainter &p, QLineF *const lines,
 
 void LogicSignal::paint_type_options(QPainter &p, int right, const QPoint pt, QColor fore)
 {
+    if (!_showTypeOptions) {
+        if (_trig != NONTRIG) {
+            p.save();
+            p.setBrush(View::Blue);
+            p.setPen(Qt::NoPen);
+            const int y = get_y();
+            p.drawEllipse(QPointF(right - (int)(2 * Margin + 1.5 * SquareWidth) - 8, y), 3, 3);
+            p.restore();
+        }
+        return;
+    }
+
     int y = get_y();
     const QRectF posTrig_rect  = get_rect(POSTRIG,  y, right);
     const QRectF higTrig_rect  = get_rect(HIGTRIG,  y, right);

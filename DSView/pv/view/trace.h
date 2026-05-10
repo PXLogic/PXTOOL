@@ -158,6 +158,9 @@ public:
     }
     inline void clear_height_override() { _height_override = 0; }
 
+    inline bool get_showTypeOptions() const { return _showTypeOptions; }
+    inline void set_showTypeOptions(bool v) { _showTypeOptions = v; }
+
     /**
      * Geom
      */
@@ -166,6 +169,8 @@ public:
     }
 
     inline int get_rightWidth(){
+        if (!_showTypeOptions)
+            return (int)(2 * Margin + 1.5 * SquareWidth);
         return 2 * Margin + _typeWidth * SquareWidth + 1.5 * SquareWidth;
     }
 
@@ -350,6 +355,7 @@ protected:
     int _old_v_offset;
     int _totalHeight;
     int _height_override;
+    bool _showTypeOptions;
     int _typeWidth;
     int _view_index;
 

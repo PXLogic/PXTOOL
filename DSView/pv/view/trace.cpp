@@ -57,6 +57,7 @@ Trace::Trace(QString name, uint16_t index, int type) :
     _sec_index(0),
     _totalHeight(30),
     _height_override(0),
+    _showTypeOptions(true),
     _typeWidth(SquareNum)
 {
     _index_list.push_back(index);
@@ -72,6 +73,7 @@ Trace::Trace(QString name, std::list<int> index_list, int type, int sec_index) :
     _sec_index(sec_index),
     _totalHeight(30),
     _height_override(0),
+    _showTypeOptions(true),
     _typeWidth(SquareNum)
 {
     _view_index = -1;
@@ -88,6 +90,7 @@ Trace::Trace(const Trace &t) :
     _old_v_offset(t._old_v_offset),
     _totalHeight(t._totalHeight),
     _height_override(t._height_override),
+    _showTypeOptions(t._showTypeOptions),
     _typeWidth(t._typeWidth),
     _text_size(t._text_size)
 {
