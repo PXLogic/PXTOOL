@@ -365,7 +365,9 @@ public:
     static bool compare_trace_y(const Trace *a, const Trace *b);
 
     void signals_changed(const Trace* eventTrace);
- 
+
+    void reset_height_overrides();
+
 public slots:
     void reload();
     void set_measure_en(int enable);

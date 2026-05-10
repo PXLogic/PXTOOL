@@ -815,7 +815,9 @@ void View::signals_changed(const Trace* eventTrace)
             if (t->rows_size() == 0)
                 continue;
 
-            const double traceHeight = _signalHeight*t->rows_size();
+            // Use per-trace override if set; fall back to global signal height
+            const int baseH = (t->get_height_override() > 0) ? t->get_height_override() : (int)_signalHeight;
+            const double traceHeight = baseH * t->rows_size();
             t->set_totalHeight((int)traceHeight);
             t->set_v_offset(next_v_offset + 0.5 * traceHeight + actualMargin);
             next_v_offset += traceHeight + 2 * actualMargin;
@@ -1604,6 +1606,15 @@ bool View::view_is_ready()
 {
     int w = get_view_width();
     return w > 0;
+}
+
+void View::reset_height_overrides()
+{
+    std::vector<Trace*> traces;
+    get_traces(ALL_VIEW, traces);
+    for (auto t : traces)
+        t->clear_height_override();
+    signals_changed(NULL);
 }
 
 } // namespace view
