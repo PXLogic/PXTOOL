@@ -1,0 +1,19 @@
+---
+description: After changing DSView app sources or themes, rebuild and relaunch DSView.app
+globs: DSView/**/*.{cpp,h,hpp,mm,cc},DSView/themes/*.qss,CMakeLists.txt,mac_appbundle_template.plist.in
+alwaysApply: false
+---
+
+# DSView: rebuild and relaunch after edits
+
+Whenever you **modify** files matched by this rule (C++/Qt headers, `DSView/themes/*.qss`, top-level `CMakeLists.txt`, or the macOS bundle plist template), **before ending the turn** run from the DSView repo root:
+
+```bash
+bash scripts/relaunch-dsview.sh
+```
+
+This runs `make -j8`, stops any running `build.dir/DSView.app` instance, and `open`s the app again.
+
+If `make` fails, **do not** `pkill` or `open`; fix the build first, then rerun the script.
+
+For edits outside these globs (e.g. only docs), skip unless the user explicitly wants a run.

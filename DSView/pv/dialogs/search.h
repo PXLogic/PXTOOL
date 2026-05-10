@@ -27,7 +27,6 @@
 #include <QLineEdit>
 #include <QVBoxLayout>
 #include <QGridLayout>
-#include <QDialogButtonBox>
 
 #include "../sigsession.h"
 #include "../toolbars/titlebar.h"
@@ -69,7 +68,6 @@ private:
 
     toolbars::TitleBar *_titlebar;
     QVector<QLineEdit *> _search_lineEdit_vec;
-    QDialogButtonBox search_buttonBox;
 };
 
 } // namespace dialogs

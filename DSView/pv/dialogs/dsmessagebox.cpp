@@ -59,10 +59,13 @@ DSMessageBox::DSMessageBox(QWidget *parent,const QString title) :
 
     _main_widget = new QWidget(this);
     _main_layout = new QVBoxLayout(_main_widget);
-    _main_widget->setLayout(_main_layout);  
+    _main_widget->setLayout(_main_layout);
+    _main_layout->setContentsMargins(0, 5, 0, 0);
+    _main_layout->setSpacing(0);
 
     _shadow = new Shadow(this);
     _msg = new QMessageBox(this);
+    _msg->setObjectName("dsMessageBoxInner");
     _titlebar = new toolbars::TitleBar(false, this, NULL, false);
     _layout = new QVBoxLayout(this);
  
@@ -81,9 +84,17 @@ DSMessageBox::DSMessageBox(QWidget *parent,const QString title) :
     else{
         _titlebar->setTitle(L_S(STR_PAGE_MSG, S_ID(IDS_MSG_MESSAGE), "Message"));
     }
-    
+
+    setObjectName("dsMessageBoxDialog");
+
     _main_layout->addWidget(_titlebar);
-    _main_layout->addWidget(_msg);   
+
+    auto *title_sep = new QWidget(_main_widget);
+    title_sep->setObjectName("device_options_divider");
+    title_sep->setFixedHeight(1);
+    _main_layout->addWidget(title_sep);
+
+    _main_layout->addWidget(_msg);
     _layout->addWidget(_main_widget);
 
     setLayout(_layout); 

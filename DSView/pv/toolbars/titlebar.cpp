@@ -362,7 +362,12 @@ void TitleBar::UpdateTheme()
 void TitleBar::UpdateFont()
 {  
     QFont font = this->font();
-    font.setPointSizeF(AppConfig::Instance().appOptions.fontSize+1);
+    /* Main window title ("DSView"): same size as QMenuBar#main_menu_bar (13px in QSS). */
+    if (objectName() == QStringLiteral("main_window_title_bar"))
+        font.setPointSize(13);
+    else
+        font.setPointSizeF(AppConfig::Instance().appOptions.fontSize + 1);
+    font.setBold(true);
     _title->setFont(font);
 }
 

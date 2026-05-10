@@ -413,32 +413,14 @@ void DeviceOptions::logic_probes(QVBoxLayout &layout)
     layout.addLayout(line_lay);
     line_lay->setSpacing(10);
 
-    QPushButton *enable_all_probes = new QPushButton(L_S(STR_PAGE_DLG, S_ID(IDS_DLG_ENABLE_ALL), "Enable All"));
+    QPushButton *enable_all_probes = new QPushButton(L_S(STR_PAGE_DLG, S_ID(IDS_DLG_ENABLE_ALL), "Enable All"), this);
     enable_all_probes->setObjectName("device_ch_btn");
-    QPushButton *disable_all_probes = new QPushButton(L_S(STR_PAGE_DLG, S_ID(IDS_DLG_DISABLE_ALL), "Disable All"));
+    QPushButton *disable_all_probes = new QPushButton(L_S(STR_PAGE_DLG, S_ID(IDS_DLG_DISABLE_ALL), "Disable All"), this);
     disable_all_probes->setObjectName("device_ch_btn");
     enable_all_probes->setMaximumHeight(33);
     disable_all_probes->setMaximumHeight(33);
     enable_all_probes->setFont(font);
     disable_all_probes->setFont(font);
-
-    //int bt_width = enable_all_probes->fontMetrics().horizontalAdvance(enable_all_probes->text()) + 20;
-
-    #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
-        int bt_width = qMax(enable_all_probes->fontMetrics().horizontalAdvance(enable_all_probes->text()),
-                            disable_all_probes->fontMetrics().horizontalAdvance(disable_all_probes->text())) + 20;
-    #else
-        int bt_width = qMax(enable_all_probes->fontMetrics().width(enable_all_probes->text()),
-                            disable_all_probes->fontMetrics().width(disable_all_probes->text())) + 20;
-    #endif
-
-    enable_all_probes->setMaximumWidth(bt_width);
-    disable_all_probes->setMaximumWidth(bt_width);
-
-    this->update_font(); 
-
-    contentHeight += enable_all_probes->sizeHint().height();
-    contentHeight += channel_line_height * row2 + 50;
 
     connect(enable_all_probes, SIGNAL(clicked()),
             this, SLOT(enable_all_probes()));
@@ -447,6 +429,25 @@ void DeviceOptions::logic_probes(QVBoxLayout &layout)
 
     line_lay->addWidget(enable_all_probes);
     line_lay->addWidget(disable_all_probes);
+
+    /* Apply dialog font before measuring; avoid setMaximumWidth from pre-update_font metrics (clips after font change). */
+    this->update_font();
+
+    const int hPad = 28;
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+    enable_all_probes->setMinimumWidth(
+        enable_all_probes->fontMetrics().horizontalAdvance(enable_all_probes->text()) + hPad);
+    disable_all_probes->setMinimumWidth(
+        disable_all_probes->fontMetrics().horizontalAdvance(disable_all_probes->text()) + hPad);
+#else
+    enable_all_probes->setMinimumWidth(
+        enable_all_probes->fontMetrics().width(enable_all_probes->text()) + hPad);
+    disable_all_probes->setMinimumWidth(
+        disable_all_probes->fontMetrics().width(disable_all_probes->text()) + hPad);
+#endif
+
+    contentHeight += enable_all_probes->sizeHint().height();
+    contentHeight += channel_line_height * row2 + 50;
 
     _groupHeight2 = contentHeight + (row1 + row2) * 2 + 38;
 

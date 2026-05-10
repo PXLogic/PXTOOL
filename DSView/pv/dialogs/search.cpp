@@ -25,6 +25,7 @@
 #include <QRegularExpressionValidator>
 #include <QTimer>
 #include <QPushButton>
+#include <QHBoxLayout>
 #include "../ui/langresource.h"
  
 
@@ -58,13 +59,6 @@ Search::Search(QWidget *parent, SigSession *session, std::map<uint16_t, QString>
 
     QRegularExpression value_rx("[10XRFCxrfc]+");
     QValidator *value_validator = new QRegularExpressionValidator(value_rx, this);
-
-    search_buttonBox.addButton(QDialogButtonBox::Ok);
-    search_buttonBox.addButton(QDialogButtonBox::Cancel);
-    if (auto *ok = search_buttonBox.button(QDialogButtonBox::Ok))
-        ok->setObjectName("search_ok_btn");
-    if (auto *cancel = search_buttonBox.button(QDialogButtonBox::Cancel))
-        cancel->setObjectName("search_cancel_btn");
 
     // Remove left/right margins from _main_layout so dividers span full width;
     // content areas carry their own padding via setContentsMargins.
@@ -132,17 +126,31 @@ Search::Search(QWidget *parent, SigSession *session, std::map<uint16_t, QString>
     bot_sep->setFixedHeight(1);
     layout()->addWidget(bot_sep);
 
-    // Footer button row (right-aligned, with padding)
+    // Footer: plain QPushButtons (QDialogButtonBox ignores app QSS background on macOS)
+    auto *cancel_btn = new QPushButton(L_S(STR_PAGE_DLG, S_ID(IDS_DLG_CANCEL), "Cancel"), this);
+    cancel_btn->setObjectName("device_cancel_btn");
+    auto *ok_btn = new QPushButton(QStringLiteral("OK"), this);
+    ok_btn->setObjectName("device_ok_btn");
+    /* macOS native default-button chrome overrides app QSS; match Device Options (plain QPushButton + flat). */
+    cancel_btn->setFlat(true);
+    ok_btn->setFlat(true);
+    cancel_btn->setAutoDefault(false);
+    ok_btn->setAutoDefault(false);
+    cancel_btn->setDefault(false);
+    ok_btn->setDefault(false);
+
     auto *btn_lay = new QHBoxLayout();
     btn_lay->setContentsMargins(12, 10, 12, 10);
+    btn_lay->setSpacing(8);
     btn_lay->addStretch();
-    btn_lay->addWidget(&search_buttonBox);
+    btn_lay->addWidget(cancel_btn);
+    btn_lay->addWidget(ok_btn);
     layout()->addLayout(btn_lay);
 
     setTitle(L_S(STR_PAGE_DLG, S_ID(IDS_DLG_SEARCH_OPTIONS), "Search Options"));
 
-    connect(&search_buttonBox, SIGNAL(accepted()), this, SLOT(accept()));
-    connect(&search_buttonBox, SIGNAL(rejected()), this, SLOT(reject()));
+    connect(ok_btn, &QPushButton::clicked, this, [this]() { accept(); });
+    connect(cancel_btn, &QPushButton::clicked, this, [this]() { reject(); });
 }
 
 Search::~Search()

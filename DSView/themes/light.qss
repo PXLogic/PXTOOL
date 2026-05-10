@@ -259,6 +259,8 @@ QWidget#main_window_title_bar QLabel
 {
     color: #111111;
     background-color: transparent;
+    font-size: 13px;
+    font-weight: 600;
 }
 
 QMenu
@@ -2605,7 +2607,9 @@ QDialog#searchDialog QLabel#search_legend {
     padding-left: 12px;
     line-height: 1.6;
 }
-QPushButton#search_ok_btn {
+/* Search footer: scoped + :flat (same intent as dark) */
+QDialog#searchDialog QPushButton#device_ok_btn,
+QDialog#searchDialog QPushButton#device_ok_btn:flat {
     background-color: #7c3aed;
     border: none;
     border-radius: 4px;
@@ -2614,10 +2618,13 @@ QPushButton#search_ok_btn {
     padding: 4px 16px;
     min-height: 24px;
 }
-QPushButton#search_ok_btn:hover {
+QDialog#searchDialog QPushButton#device_ok_btn:hover,
+QDialog#searchDialog QPushButton#device_ok_btn:flat:hover {
     background-color: #6d28d9;
+    border: none;
 }
-QPushButton#search_cancel_btn {
+QDialog#searchDialog QPushButton#device_cancel_btn,
+QDialog#searchDialog QPushButton#device_cancel_btn:flat {
     background-color: transparent;
     border: 1px solid #cccccc;
     border-radius: 4px;
@@ -2626,7 +2633,8 @@ QPushButton#search_cancel_btn {
     padding: 4px 16px;
     min-height: 24px;
 }
-QPushButton#search_cancel_btn:hover {
+QDialog#searchDialog QPushButton#device_cancel_btn:hover,
+QDialog#searchDialog QPushButton#device_cancel_btn:flat:hover {
     background-color: #eeeeee;
     border-color: #aaaaaa;
 }
@@ -2635,7 +2643,8 @@ QPushButton#search_cancel_btn:hover {
 QDialog#deviceOptionsDialog QWidget#TitleBar QLabel,
 QDialog#displayOptionsDialog QWidget#TitleBar QLabel,
 QDialog#logOptionsDialog QWidget#TitleBar QLabel,
-QDialog#aboutDialog QWidget#TitleBar QLabel {
+QDialog#aboutDialog QWidget#TitleBar QLabel,
+QDialog#dsMessageBoxDialog QWidget#TitleBar QLabel {
     font-size: 14px;
     font-weight: 600;
     color: #222222;
@@ -2643,7 +2652,8 @@ QDialog#aboutDialog QWidget#TitleBar QLabel {
 QDialog#deviceOptionsDialog QWidget#device_options_divider,
 QDialog#displayOptionsDialog QWidget#device_options_divider,
 QDialog#logOptionsDialog QWidget#device_options_divider,
-QDialog#aboutDialog QWidget#device_options_divider {
+QDialog#aboutDialog QWidget#device_options_divider,
+QDialog#dsMessageBoxDialog QWidget#device_options_divider {
     background-color: #dddddd;
     min-height: 1px;
     max-height: 1px;
@@ -2760,5 +2770,41 @@ QPushButton#device_ok_btn {
     min-height: 24px;
 }
 QPushButton#device_ok_btn:hover {
+    background-color: #6d28d9;
+}
+
+/* ── Message / DSMessageBox (light) ──────────────────────────── */
+QDialog#dsMessageBoxDialog QMessageBox#dsMessageBoxInner {
+    background-color: transparent;
+}
+QDialog#dsMessageBoxDialog QMessageBox#dsMessageBoxInner QLabel {
+    color: #444444;
+    font-size: 12px;
+}
+QDialog#dsMessageBoxDialog QMessageBox#dsMessageBoxInner QDialogButtonBox {
+    border-top: 1px solid #dddddd;
+    padding-top: 12px;
+    margin-top: 8px;
+}
+QDialog#dsMessageBoxDialog QMessageBox#dsMessageBoxInner QPushButton {
+    background-color: transparent;
+    border: 1px solid #cccccc;
+    border-radius: 4px;
+    color: #333333;
+    font-size: 12px;
+    padding: 4px 16px;
+    min-height: 24px;
+    min-width: 72px;
+}
+QDialog#dsMessageBoxDialog QMessageBox#dsMessageBoxInner QPushButton:hover {
+    background-color: #f5f5f5;
+    border-color: #aaaaaa;
+}
+QDialog#dsMessageBoxDialog QMessageBox#dsMessageBoxInner QPushButton:default {
+    background-color: #7c3aed;
+    border: none;
+    color: #ffffff;
+}
+QDialog#dsMessageBoxDialog QMessageBox#dsMessageBoxInner QPushButton:default:hover {
     background-color: #6d28d9;
 }

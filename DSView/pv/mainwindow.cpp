@@ -231,9 +231,7 @@ namespace pv
         QAction *_action_light = _menu_themes->addAction(tr("Light"));
         connect(_action_dark,  SIGNAL(triggered()), _trig_bar, SLOT(on_actionDark_triggered()));
         connect(_action_light, SIGNAL(triggered()), _trig_bar, SLOT(on_actionLight_triggered()));
-        QAction *_action_lissajous     = _menu_view->addAction(tr("Lissajous..."));
         QAction *_action_display_opts  = _menu_view->addAction(tr("Display Options..."));
-        connect(_action_lissajous,    SIGNAL(triggered()), _trig_bar, SLOT(on_actionLissajous_triggered()));
         connect(_action_display_opts, SIGNAL(triggered()), _trig_bar, SLOT(on_display_setting()));
 
         // Help menu
