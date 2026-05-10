@@ -161,6 +161,17 @@ void Header::paintEvent(QPaintEvent*)
         t->paint_label(painter, w, dragging ? QPoint(-1, -1) : _mouse_point, fore);
 	}
 
+    // Draw bottom divider for traces with height override (visual drag hint)
+    painter.setPen(QPen(QColor(120, 120, 120, 160), 1));
+    for (auto t : traces) {
+        if (!t->enabled() || t->rows_size() == 0)
+            continue;
+        if (t->get_height_override() <= 0)
+            continue;
+        int row_bottom = t->get_v_offset() + t->get_totalHeight() / 2;
+        painter.drawLine(0, row_bottom, w, row_bottom);
+    }
+
 	painter.end();
 }
 
@@ -531,14 +542,27 @@ void Header::leaveEvent(QEvent*)
 
 void Header::contextMenuEvent(QContextMenuEvent *event)
 {
-    (void)event;
-
     int action;
-
     const auto t = get_mTrace(action, _mouse_point);
 
-    if (!t || !t->selected() || action != Trace::LABEL)
+    if (!t)
         return;
+
+    if (_view.session().get_device()->get_work_mode() != LOGIC)
+        return;
+
+    QMenu menu(this);
+    QAction *resetOne = menu.addAction(tr("Reset Row Height"));
+    QAction *resetAll = menu.addAction(tr("Reset All Row Heights"));
+
+    QAction *chosen = menu.exec(event->globalPos());
+
+    if (chosen == resetOne) {
+        t->clear_height_override();
+        _view.signals_changed(nullptr);
+    } else if (chosen == resetAll) {
+        _view.reset_height_overrides();
+    }
 }
 
 void Header::on_action_set_name_triggered()
