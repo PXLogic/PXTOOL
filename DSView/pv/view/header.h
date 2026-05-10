@@ -49,6 +49,7 @@ public:
 
 private:
     pv::view::Trace* get_mTrace(int &action, const QPoint &pt);
+    Trace* get_resize_trace(const QPoint &pt);
 
 private:
     void retranslateUi();
@@ -101,6 +102,10 @@ private:
     std::list<std::pair<Trace*, int> > _drag_traces;
     Trace *_context_trace;
     bool    _mouse_is_down;
+
+    Trace*  _resize_trace   = nullptr;
+    int     _resize_start_y = 0;
+    int     _resize_start_h = 0;
 };
 
 } // namespace view

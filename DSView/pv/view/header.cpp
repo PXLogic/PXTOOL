@@ -112,6 +112,26 @@ pv::view::Trace* Header::get_mTrace(int &action, const QPoint &pt)
     return NULL;
 }
 
+Trace* Header::get_resize_trace(const QPoint &pt)
+{
+    if (_view.session().get_device()->get_work_mode() != LOGIC)
+        return nullptr;
+    if (_view.session().is_working())
+        return nullptr;
+
+    std::vector<Trace*> traces;
+    _view.get_traces(ALL_VIEW, traces);
+
+    for (auto t : traces) {
+        if (!t->enabled() || t->rows_size() == 0)
+            continue;
+        int row_bottom = t->get_v_offset() + t->get_totalHeight() / 2;
+        if (pt.y() >= row_bottom - 6 && pt.y() <= row_bottom + 1)
+            return t;
+    }
+    return nullptr;
+}
+
 void Header::paintEvent(QPaintEvent*)
 { 
     using pv::view::Trace;
@@ -189,6 +209,16 @@ void Header::mousePressEvent(QMouseEvent *event)
 	if (event->button() & Qt::LeftButton) {
 		_mouse_down_point = event->pos();
 
+        // Resize handle check — takes priority over reorder in LOGIC mode
+        Trace* rt = get_resize_trace(event->pos());
+        if (rt) {
+            _resize_trace   = rt;
+            _resize_start_y = event->pos().y();
+            _resize_start_h = rt->get_totalHeight();
+            setCursor(Qt::SplitVCursor);
+            return;
+        }
+
         // Save the offsets of any Traces which will be dragged
         for(auto t : traces){
             if (t->selected())
@@ -240,6 +270,13 @@ void Header::mouseReleaseEvent(QMouseEvent *event)
 	assert(event);
 
     _mouse_is_down = false;
+
+    if (_resize_trace) {
+        _resize_trace = nullptr;
+        unsetCursor();
+        _view.signals_changed(nullptr);
+        return;
+    }
 
     // judge for color / name / trigger / move
     int action;
@@ -420,6 +457,24 @@ void Header::mouseMoveEvent(QMouseEvent *event)
     }
 
 	_mouse_point = event->pos();
+
+    // Active resize drag
+    if (_resize_trace) {
+        int delta = event->pos().y() - _resize_start_y;
+        int newH  = qMax(_resize_start_h + delta, (int)Trace::HeightOverrideMin);
+        _resize_trace->set_height_override(newH);
+        _view.signals_changed(nullptr);
+        update();
+        return;
+    }
+
+    // Hover: show resize cursor near row bottom
+    if (_drag_traces.empty()) {
+        if (get_resize_trace(event->pos()))
+            setCursor(Qt::SplitVCursor);
+        else
+            unsetCursor();
+    }
 
     // Move the Traces if we are dragging
     if (!_drag_traces.empty()) {
