@@ -225,7 +225,9 @@ void Header::mousePressEvent(QMouseEvent *event)
         if (rt) {
             _resize_trace   = rt;
             _resize_start_y = event->pos().y();
-            _resize_start_h = rt->get_totalHeight();
+            _resize_start_h = (rt->get_height_override() > 0)
+                                  ? rt->get_height_override()
+                                  : _view.get_signalHeight();
             setCursor(Qt::SplitVCursor);
             return;
         }
@@ -549,6 +551,9 @@ void Header::contextMenuEvent(QContextMenuEvent *event)
         return;
 
     if (_view.session().get_device()->get_work_mode() != LOGIC)
+        return;
+
+    if (_view.session().is_working())
         return;
 
     QMenu menu(this);

@@ -1614,7 +1614,7 @@ void View::reset_height_overrides()
     get_traces(ALL_VIEW, traces);
     for (auto t : traces)
         t->clear_height_override();
-    signals_changed(NULL);
+    signals_changed(nullptr);
 }
 
 } // namespace view
