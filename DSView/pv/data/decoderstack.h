@@ -35,6 +35,7 @@
 #include "decode/row.h" 
 #include "../data/signaldata.h"
 #include "decode/decoderstatus.h"
+#include "c_decoder_registry.h"
  
 
 namespace DecoderStackTest {
@@ -199,10 +200,16 @@ public:
         return _task_active.exchange(false);
     }
 
+    inline void set_use_c_decoder(bool use_c) { _use_c_decoder = use_c; }
+    inline bool use_c_decoder() const { return _use_c_decoder; }
+
+public:
+    static void annotation_callback(srd_proto_data *pdata, void *self);
+
 private:
     void decode_data(const uint64_t decode_start, const uint64_t decode_end, srd_session *const session);
 	void execute_decode_stack();
-	static void annotation_callback(srd_proto_data *pdata, void *self);
+    void execute_c_decode_stack();
     void do_decode_work();
     void join_own_thread();
   
@@ -241,6 +248,8 @@ private:
     int             _progress;
     bool            _is_decoding;
     uint64_t        _result_count;
+
+    bool            _use_c_decoder;
 
 	friend class DecoderStackTest::TwoDecoderStack;
 };

@@ -24,6 +24,7 @@
 #include <stdexcept>
 #include <algorithm>
 #include <assert.h>
+#include <cstring>
 
 #include "decoderstack.h"
 #include "logicsnapshot.h"
@@ -36,6 +37,7 @@
 #include "../log.h"
 #include "../ui/langresource.h"
 #include <ds_types.h>
+#include "c_decoder_registry.h"
 
 using namespace pv::data::decode;
 using namespace std;
@@ -71,9 +73,14 @@ DecoderStack::DecoderStack(pv::SigSession *session,
     _is_decoding = false;
     _result_count = 0;
     
+    _use_c_decoder = false;
+
     _stack.push_back(new decode::Decoder(dec));
  
     build_row();
+
+    const srd_decoder *root = _stack.front()->decoder();
+    _use_c_decoder = pv::cdecoders::CDecoderRegistry::instance().is_c_decoder(root);
 }
 
 void DecoderStack::join_own_thread()
@@ -700,7 +707,13 @@ void DecoderStack::decode_data(const uint64_t decode_start, const uint64_t decod
 }
 
 void DecoderStack::execute_decode_stack()
-{  
+{
+    const srd_decoder *root_dec = _stack.front()->decoder();
+    if (_use_c_decoder && pv::cdecoders::CDecoderRegistry::instance().is_c_decoder(root_dec)) {
+        execute_c_decode_stack();
+        return;
+    }
+
 	srd_session *session = NULL;
 	srd_decoder_inst *prev_di = NULL;
     uint64_t decode_start = 0;
@@ -898,6 +911,211 @@ const char* DecoderStack::get_root_decoder_id()
         return dec->decoder()->id;
     }
     return NULL;
+}
+
+// Helper context for the C put_annotation callback
+struct CPutFnCtx {
+    DecoderStack *stack;
+    decode_task_status *status;
+    srd_pd_output *fake_pdo;
+    const std::vector<std::vector<int>> *row_class_map;
+    volatile int *stop_flag;
+};
+
+static void c_put_annotation_cb(void *ctx, uint64_t ss, uint64_t es,
+                                 unsigned int ann_row, unsigned int ann_class,
+                                 const char *text)
+{
+    CPutFnCtx *pctx = static_cast<CPutFnCtx*>(ctx);
+    if (pctx->status->_bStop) {
+        *(pctx->stop_flag) = 1;
+        return;
+    }
+
+    int global_class = static_cast<int>(ann_class);
+    const auto &rcm = *(pctx->row_class_map);
+    if (ann_row < rcm.size() && ann_class < rcm[ann_row].size()) {
+        global_class = rcm[ann_row][ann_class];
+    }
+
+    const char *texts[2] = { text ? text : "", nullptr };
+
+    srd_proto_data_annotation ann_data = {};
+    ann_data.ann_class = global_class;
+    ann_data.ann_type  = 0;
+    ann_data.ann_text  = const_cast<char**>(texts);
+
+    srd_proto_data pdata = {};
+    pdata.start_sample = ss;
+    pdata.end_sample   = es;
+    pdata.pdo          = pctx->fake_pdo;
+    pdata.data         = &ann_data;
+
+    DecoderStack::annotation_callback(&pdata, pctx->status);
+}
+
+void DecoderStack::execute_c_decode_stack()
+{
+    assert(_snapshot);
+
+    const srd_decoder *root_srd = _stack.front()->decoder();
+    CDecoderDef *c_def =
+        pv::cdecoders::CDecoderRegistry::instance().get_c_decoder_def(root_srd);
+    if (!c_def || !c_def->decode) {
+        _error_message = "C decoder has no decode function";
+        dsv_err("C decoder '%s' has no decode function", root_srd->id);
+        return;
+    }
+
+    decode::Decoder *front_dec = _stack.front();
+    _sample_count = _snapshot->get_ring_sample_count();
+    uint64_t decode_start = front_dec->decode_start();
+    uint64_t decode_end   = front_dec->decode_end();
+    if (decode_end >= _sample_count)
+        decode_end = _sample_count - 1;
+    if (decode_start > decode_end) {
+        dsv_err("C decoder: decode_start (%llu) > decode_end (%llu)",
+                (unsigned long long)decode_start, (unsigned long long)decode_end);
+        return;
+    }
+
+    int num_channels = 0;
+    if (c_def->channel_ids)
+        while (c_def->channel_ids[num_channels]) num_channels++;
+
+    std::vector<int> sig_indices(num_channels, -1);
+    {
+        int ch_idx = 0;
+        for (const GSList *l = root_srd->channels; l && ch_idx < num_channels;
+             l = l->next, ch_idx++) {
+            const srd_channel *const pdch = static_cast<const srd_channel*>(l->data);
+            sig_indices[ch_idx] = front_dec->binded_probe_index(pdch);
+        }
+    }
+
+    uint64_t num_samples = decode_end - decode_start + 1;
+    std::vector<std::vector<uint8_t>> sample_bufs(num_channels);
+    for (int ch = 0; ch < num_channels; ch++)
+        sample_bufs[ch].assign(num_samples, 0);
+
+    uint64_t pos = decode_start;
+    while (pos <= decode_end && !_stask_stauts->_bStop) {
+        uint64_t chunk_end = decode_end;
+        for (int ch = 0; ch < num_channels; ch++) {
+            int sig_idx = sig_indices[ch];
+            if (sig_idx < 0 || !_snapshot->has_data(sig_idx)) continue;
+            uint64_t ce = chunk_end;
+            const uint8_t *data = _snapshot->get_samples(pos, ce, sig_idx);
+            if (!data) continue;
+            if (ce > decode_end) ce = decode_end;
+            uint64_t copy_len = ce - pos + 1;
+            uint64_t buf_offset = pos - decode_start;
+            if (buf_offset + copy_len > num_samples)
+                copy_len = num_samples - buf_offset;
+            std::memcpy(&sample_bufs[ch][buf_offset], data, copy_len);
+            chunk_end = ce;
+            break;
+        }
+        for (int ch = 0; ch < num_channels; ch++) {
+            int sig_idx = sig_indices[ch];
+            if (sig_idx < 0 || !_snapshot->has_data(sig_idx)) continue;
+            uint64_t ce = chunk_end;
+            const uint8_t *data = _snapshot->get_samples(pos, ce, sig_idx);
+            if (!data) continue;
+            if (ce > decode_end) ce = decode_end;
+            uint64_t copy_len = ce - pos + 1;
+            uint64_t buf_offset = pos - decode_start;
+            if (buf_offset + copy_len > num_samples)
+                copy_len = num_samples - buf_offset;
+            std::memcpy(&sample_bufs[ch][buf_offset], data, copy_len);
+        }
+        pos = chunk_end + 1;
+    }
+
+    if (_stask_stauts->_bStop) return;
+
+    std::vector<std::vector<int>> row_class_map;
+    if (c_def->ann_row_ids && c_def->ann_classes) {
+        int nrows = 0;
+        while (c_def->ann_row_ids[nrows]) nrows++;
+        int nclasses = 0;
+        while (c_def->ann_classes[nclasses]) nclasses++;
+
+        std::vector<int> row_count(nrows, 0);
+        for (int k = 0; k < nclasses; k++) {
+            const char *entry = c_def->ann_classes[k];
+            const char *colon = std::strchr(entry, ':');
+            if (!colon) continue;
+            size_t plen = static_cast<size_t>(colon - entry);
+            for (int r = 0; r < nrows; r++) {
+                if (std::strlen(c_def->ann_row_ids[r]) == plen &&
+                    std::strncmp(c_def->ann_row_ids[r], entry, plen) == 0) {
+                    row_count[r]++;
+                    break;
+                }
+            }
+        }
+
+        row_class_map.resize(nrows);
+        for (int r = 0; r < nrows; r++)
+            row_class_map[r].assign(row_count[r], -1);
+
+        std::vector<int> row_idx(nrows, 0);
+        for (int k = 0; k < nclasses; k++) {
+            const char *entry = c_def->ann_classes[k];
+            const char *colon = std::strchr(entry, ':');
+            if (!colon) continue;
+            size_t plen = static_cast<size_t>(colon - entry);
+            for (int r = 0; r < nrows; r++) {
+                if (std::strlen(c_def->ann_row_ids[r]) == plen &&
+                    std::strncmp(c_def->ann_row_ids[r], entry, plen) == 0) {
+                    row_class_map[r][row_idx[r]++] = k;
+                    break;
+                }
+            }
+        }
+    }
+
+    srd_decoder_inst fake_di = {};
+    fake_di.decoder = const_cast<srd_decoder*>(root_srd);
+
+    srd_pd_output fake_pdo = {};
+    fake_pdo.output_type = SRD_OUTPUT_ANN;
+    fake_pdo.di          = &fake_di;
+
+    volatile int stop_flag = 0;
+
+    CPutFnCtx put_ctx = {
+        this, _stask_stauts, &fake_pdo, &row_class_map, &stop_flag
+    };
+
+    std::vector<const uint8_t*> ch_ptrs(num_channels);
+    for (int ch = 0; ch < num_channels; ch++)
+        ch_ptrs[ch] = sample_bufs[ch].data();
+
+    _progress = 0;
+    _is_decoding = true;
+
+    int rc = c_def->decode(
+        static_cast<uint64_t>(_samplerate),
+        decode_start,
+        decode_end,
+        num_channels,
+        ch_ptrs.data(),
+        c_put_annotation_cb,
+        &put_ctx,
+        &stop_flag
+    );
+
+    _progress   = 100;
+    _is_decoding = false;
+
+    if (rc != 0 && !_stask_stauts->_bStop) {
+        _error_message = QString("C decoder returned error: %1").arg(rc);
+        dsv_err("C decoder '%s' decode() returned %d", root_srd->id, rc);
+    }
+
+    new_decode_data();
 }
 
 } // namespace data
