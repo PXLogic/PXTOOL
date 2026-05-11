@@ -365,9 +365,8 @@ public:
         _callback->show_region(start, end, keep);
     }
 
-    inline void decode_done(){
-        _callback->decode_done();
-    }
+    void decode_done();
+    bool is_decoding();
 
     inline bool is_saving(){
         return _is_saving;
@@ -482,9 +481,6 @@ private:
         clear_all_decode_task(run_dex);
     }
    
-    void decode_task_proc();
-    view::DecodeTrace* get_top_decode_task();    
-
     void capture_init(); 
     void nodata_timeout();
     void feed_timeout();    
@@ -553,13 +549,9 @@ private:
 private:
     mutable std::mutex      _sampling_mutex;
     mutable std::mutex      _data_mutex;
-    mutable std::mutex      _decode_task_mutex;  
-    std::thread             _decode_thread;
-    volatile bool           _is_decoding;
- 
+
 	std::vector<view::Signal*>      _signals; 
     std::vector<view::DecodeTrace*> _decode_traces;
-    std::vector<view::DecodeTrace*> _decode_tasks;
     pv::data::DecoderModel          *_decoder_model;
     std::vector<view::SpectrumTrace*> _spectrum_traces;
     view::LissajousTrace            *_lissajous_trace;
