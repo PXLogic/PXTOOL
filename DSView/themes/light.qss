@@ -306,6 +306,7 @@ QMenu::item
     padding: 5px 30px 5px 30px;
     margin-left: 2px;
     border: 1px solid transparent; /* reserve space for selection border */
+    font-size: 13px;
 }
 
 QMenu::item:selected
@@ -1566,9 +1567,32 @@ QToolButton::menu-arrow:open
     border: 1px solid #2A2A2A;
 }
 
+QToolButton#ModeButton
+{
+    background: transparent;
+    color: #111111;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 4px 12px;
+    border: none;
+    border-radius: 3px;
+    margin: 0px;
+}
+
+QToolButton#ModeButton:hover
+{
+    background-color: #e0e0e0;
+    color: #111111;
+}
+
+QToolButton#ModeButton:pressed
+{
+    background-color: #d0d0d0;
+    color: #111111;
+}
+
 QToolButton#ModeButton::menu-arrow
 {
-    /*image: url(:/light/mode_down_arrow.svg);*/
     image:none;
 }
 
@@ -1588,15 +1612,9 @@ QToolButton{
 
 QToolButton#ModeButton::menu-indicator
 {
-    image: url(:/light/mode_down_arrow.svg);
-    top: 0px;
-    left: 0px;
-    width:12px;
-    height:12px;
-}
-QToolButton#ModeButton::menu-indicator:hover
-{
-    top: 0px;
+    width: 0;
+    height: 0;
+    image: none;
 }
 
 QPushButton::menu-indicator

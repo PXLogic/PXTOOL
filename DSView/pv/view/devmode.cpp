@@ -72,9 +72,8 @@ DevMode::DevMode(QWidget *parent, SigSession *session) :
 
     _mode_btn = new XToolButton();
     _mode_btn->setObjectName("ModeButton");
-    _mode_btn->setIconSize(QSize(height() * 1.5, height()));
-    _mode_btn->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
-    _mode_btn->setContentsMargins(0, 0, 0, 0);  
+    _mode_btn->setToolButtonStyle(Qt::ToolButtonTextOnly);
+    _mode_btn->setContentsMargins(0, 0, 0, 0);
     _mode_btn->setPopupMode(QToolButton::InstantPopup);
     _mode_btn->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Maximum);
 
