@@ -101,6 +101,9 @@ void ProtocolItemLayer::on_format_select_changed(int index){
 //-----------------
 
  void ProtocolItemLayer::SetProgress(int progress, QString text){
+      if (!_progress_label)
+          return;
+
       QString str = QString::number(progress) + "%" + text;
 
        if (progress == 100)

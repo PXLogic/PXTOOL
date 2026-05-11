@@ -47,6 +47,7 @@ namespace pv {
 namespace data {
 
 const double DecoderStack::DecodeMargin = 1.0;
+std::mutex DecoderStack::s_srd_session_mutex;
 const double DecoderStack::DecodeThreshold = 0.2;
 const int64_t DecoderStack::DecodeChunkLength = 4 * 1024; 
 const unsigned int DecoderStack::DecodeNotifyPeriod = 1024;
@@ -714,6 +715,14 @@ void DecoderStack::execute_decode_stack()
         return;
     }
 
+    // Acquire the global srd mutex before touching any srd_session.
+    // libsigrokdecode's global `sessions` list is unprotected; concurrent
+    // srd_session_new / srd_session_destroy calls race with the Python
+    // decoder glib threads that call srd_inst_find_by_obj(), leading to
+    // SIGSEGV (far=0x10, NULL+offsetof(srd_pd_output,di)).
+    // C-decoder sessions bypass libsigrokdecode entirely and skip this lock.
+    std::lock_guard<std::mutex> _srd_lock(s_srd_session_mutex);
+
 	srd_session *session = NULL;
 	srd_decoder_inst *prev_di = NULL;
     uint64_t decode_start = 0;
@@ -833,6 +842,12 @@ void DecoderStack::annotation_callback(srd_proto_data *pdata, void *self)
     d->_result_count++;
 
 	// Find the row
+	// These are asserted in debug; add explicit guards for release builds
+	// to prevent a NULL-dereference crash (far=0x10 = NULL+offsetof(pdo,di)).
+	if (!pdata->pdo || !pdata->pdo->di || !pdata->pdo->di->decoder) {
+	    delete a;
+	    return;
+	}
 	assert(pdata->pdo);
 	assert(pdata->pdo->di);
 	const srd_decoder *const decc = pdata->pdo->di->decoder;

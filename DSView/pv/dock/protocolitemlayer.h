@@ -24,6 +24,7 @@
 #include <QHBoxLayout>
 #include <QPushButton>
 #include <QLabel>
+#include <QPointer>
 #include <QString>
 #include "../ui/dscombobox.h"
 
@@ -81,7 +82,7 @@ public:
   
 private:
     QLabel *_protocol_label;
-    QLabel *_progress_label;
+    QPointer<QLabel> _progress_label;
     QPushButton *_set_button;
     QPushButton *_del_button;
     DsComboBox  *_format_combox;

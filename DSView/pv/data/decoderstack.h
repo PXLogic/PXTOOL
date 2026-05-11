@@ -79,6 +79,13 @@ private:
 	static const int64_t DecodeChunkLength;
 	static const unsigned int DecodeNotifyPeriod;
     static const uint64_t MaxChunkSize = 1024 * 16;
+    // libsigrokdecode's global `sessions` list has no internal locking.
+    // Running multiple srd_sessions concurrently causes data races inside
+    // srd_inst_find_by_obj() (the "performance shortcut" reads sessions->data
+    // without any lock). Serialise all Python-decoder execute_decode_stack()
+    // calls with this mutex. C-decoder paths bypass libsigrokdecode entirely
+    // and are not affected.
+    static std::mutex s_srd_session_mutex;
 
 public:
     enum decode_state {
