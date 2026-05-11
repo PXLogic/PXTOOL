@@ -130,9 +130,14 @@ View::View(SigSession *session, pv::toolbars::SamplingBar *sampling_bar, QWidget
     _waveform_scrollbar->setFixedHeight(ScrollBarHeight);
     connect(_waveform_scrollbar, &WaveformScrollBar::offset_changed,
             this, [this](int64_t off) { set_scale_offset(_scale, off); });
+
+    _vertical_scrollbar = new VerticalScrollBar(*this, this);
+    _vertical_scrollbar->setFixedWidth(VScrollBarWidth);
+    connect(_vertical_scrollbar, &VerticalScrollBar::v_offset_changed,
+            this, &View::on_v_scroll_changed);
     _devmode = new DevMode(this, session);
     
-    setViewportMargins(headerWidth(), RulerHeight, 0, ScrollBarHeight);
+    setViewportMargins(headerWidth(), RulerHeight, VScrollBarWidth, ScrollBarHeight);
 
     // windows splitter
     _time_viewport = new Viewport(*this, TIME_VIEW);
@@ -657,6 +662,16 @@ void View::update_scroll()
             total_len,
             get_view_width());
     }
+
+    // Drive the vertical scrollbar
+    {
+        const int vp_h   = _time_viewport ? _time_viewport->height() : 0;
+        const int max_v  = std::max(0, _total_content_height - vp_h);
+        _v_scroll_offset = std::min(_v_scroll_offset, max_v);
+        _vertical_scrollbar->update_state(_v_scroll_offset, max_v,
+                                          _total_content_height, vp_h);
+        _vertical_scrollbar->setVisible(max_v > 0);
+    }
 }
 
 void View::update_scale_offset()
@@ -857,12 +872,21 @@ void View::signals_changed(const Trace* eventTrace)
                 sig->set_scale(sig->get_totalHeight());
             }
         }
+        _total_content_height = next_v_offset;
         _time_viewport->clear_measure();
         _session->update_dso_data_scale();
     }
 
     header_updated();
     normalize_layout();
+
+    // Apply vertical scroll offset so traces appear shifted when scrolled
+    if (_v_scroll_offset > 0) {
+        std::vector<Trace*> scrolled_traces;
+        get_traces(ALL_VIEW, scrolled_traces);
+        for (auto t : scrolled_traces)
+            t->set_v_offset(t->get_v_offset() - _v_scroll_offset);
+    }
     update_scale_offset();
     data_updated();
 }
@@ -928,7 +952,7 @@ int View::headerWidth()
         }
     }
 
-    setViewportMargins(headerWidth, RulerHeight, 0, ScrollBarHeight);
+    setViewportMargins(headerWidth, RulerHeight, VScrollBarWidth, ScrollBarHeight);
 
     return headerWidth;
 }
@@ -942,7 +966,7 @@ void View::resizeEvent(QResizeEvent*)
     }
 
     reconstruct();
-    setViewportMargins(headerWidth(), RulerHeight, 0, ScrollBarHeight);
+    setViewportMargins(headerWidth(), RulerHeight, VScrollBarWidth, ScrollBarHeight);
     update_margins();
     update_scroll();
     signals_changed(NULL);
@@ -998,9 +1022,31 @@ void View::v_scroll_value_changed(int value)
     viewport_update();
 }
 
+void View::on_v_scroll_changed(int new_offset)
+{
+    const int vp_h  = _time_viewport ? _time_viewport->height() : 0;
+    const int max_v = std::max(0, _total_content_height - vp_h);
+    new_offset = std::max(0, std::min(new_offset, max_v));
+
+    const int delta = new_offset - _v_scroll_offset;
+    if (delta == 0) return;
+
+    _v_scroll_offset = new_offset;
+
+    std::vector<Trace*> traces;
+    get_traces(ALL_VIEW, traces);
+    for (auto t : traces)
+        t->set_v_offset(t->get_v_offset() - delta);
+
+    _vertical_scrollbar->update_state(_v_scroll_offset, max_v,
+                                      _total_content_height, vp_h);
+    _header->update();
+    viewport_update();
+}
+
 void View::data_updated()
 {
-    setViewportMargins(headerWidth(), RulerHeight, 0, ScrollBarHeight);
+    setViewportMargins(headerWidth(), RulerHeight, VScrollBarWidth, ScrollBarHeight);
     update_margins();
 
 	// Update the scroll bars
@@ -1029,6 +1075,11 @@ void View::update_margins()
         const int sb_y = _viewcenter->y() + _viewcenter->height();
         _waveform_scrollbar->setGeometry(_viewcenter->x(), sb_y,
                                           width, ScrollBarHeight);
+        _vertical_scrollbar->setGeometry(
+            _viewcenter->x() + _viewcenter->width(),
+            _viewcenter->y(),
+            VScrollBarWidth,
+            _viewcenter->height());
     } 
 }
 

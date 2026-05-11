@@ -2839,3 +2839,9 @@ QDialog#dsMessageBoxDialog QMessageBox#dsMessageBoxInner QPushButton:default {
 QDialog#dsMessageBoxDialog QMessageBox#dsMessageBoxInner QPushButton:default:hover {
     background-color: #6d28d9;
 }
+
+/* Vertical scrollbar strip beside the waveform view */
+pv--view--VerticalScrollBar {
+    background-color: #dcdcdc;
+    border: none;
+}

@@ -42,6 +42,7 @@
 #include "signal.h"
 #include "viewstatus.h"
 #include "waveformscrollbar.h"
+#include "verticalscrollbar.h"
 #include "../dsvdef.h" 
 #include "../interface/icallbacks.h"
 #include "../ui/uimanager.h"
@@ -97,7 +98,8 @@ public:
 
     static const int StatusHeight = 20;
     static const int DsoStatusHeight = 55;
-    static const int ScrollBarHeight = 14;
+    static const int ScrollBarHeight  = 14;
+    static const int VScrollBarWidth  = 14;
 
     static const int ForeAlpha = 200;
     static const int BackAlpha = 100;
@@ -376,6 +378,7 @@ public:
 public slots:
     void reload();
     void set_measure_en(int enable);
+    void on_v_scroll_changed(int new_offset);
   
     void data_updated();
     void update_scale_offset();
@@ -437,6 +440,8 @@ public:
     int  get_body_width();
     int  get_body_height();
 
+    int v_scroll_offset() const { return _v_scroll_offset; }
+
 private:
 	SigSession                  *_session;
     pv::toolbars::SamplingBar   *_sampling_bar;
@@ -454,6 +459,7 @@ private:
 	Header                  *_header;
     DevMode                 *_devmode;
     WaveformScrollBar       *_waveform_scrollbar;
+    VerticalScrollBar       *_vertical_scrollbar;
     
 
 	/// The view time scale in seconds per pixel.
@@ -469,6 +475,9 @@ private:
     int         _signalHeight;
     bool        _triggersVisible;
     bool        _updating_scroll;
+
+    int         _v_scroll_offset      = 0;
+    int         _total_content_height = 0;
 
     // trigger position fix
     double      _trig_hoff;

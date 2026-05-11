@@ -439,9 +439,7 @@ void Header::wheelEvent(QWheelEvent *event)
 
     if (isVertical)
     {
-        std::vector<Trace*> traces;
-        _view.get_traces(ALL_VIEW, traces);
-        // Vertical scrolling
+        // Vertical scrolling — drive the view's global scroll offset
         double shift = 0;
 
 #ifdef Q_OS_DARWIN
@@ -468,13 +466,9 @@ void Header::wheelEvent(QWheelEvent *event)
         shift = delta / 80.0;
 #endif
 
-        for (auto t : traces)
-        {
-            if (t->mouse_wheel(width(), pos, shift))
-                break;
-        }
-
-        update();
+        const int step      = (int)(shift * _view.get_signalHeight());
+        const int new_off   = _view.v_scroll_offset() + step;
+        _view.on_v_scroll_changed(new_off);
     }
 }
 
