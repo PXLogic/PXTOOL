@@ -580,7 +580,11 @@ QString GetDecodeScriptDir()
 
 QString GetCDecodeDir()
 {
-    return GetAppDataDir() + "/cdecoders";
+    // Use the user-writable data directory so users can install C decoders
+    // without modifying the app bundle.
+    // macOS: ~/Library/Application Support/DSView/cdecoders
+    // Linux: ~/.local/share/DSView/cdecoders
+    return GetUserDataDir() + "/cdecoders";
 }
 
 QString GetProfileDir()

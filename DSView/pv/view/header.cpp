@@ -613,6 +613,7 @@ void Header::contextMenuEvent(QContextMenuEvent *event)
     QAction *useC  = nullptr;
     QAction *usePy = nullptr;
     DecodeTrace *dt = dynamic_cast<DecodeTrace*>(t);
+
     if (dt && !dt->decoder()->stack().empty()) {
         const srd_decoder *root_srd = dt->decoder()->stack().front()->decoder();
         if (pv::cdecoders::CDecoderRegistry::instance().has_c_decoder_for_id(root_srd->id)) {
