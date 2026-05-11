@@ -568,7 +568,8 @@ int DecodeTrace::get_progress()
 void DecodeTrace::on_decode_done()
 { 
     on_new_decode_data();
-    _session->decode_done();
+    // Counter management and _callback->decode_done() are now handled by the
+    // lambda connected in SigSession::add_decode_task(). No call needed here.
 }
   
 int DecodeTrace::rows_size()

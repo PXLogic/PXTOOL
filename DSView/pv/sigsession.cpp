@@ -1846,12 +1846,41 @@ namespace pv
 
     void SigSession::add_decode_task(view::DecodeTrace *trace)
     {
-        trace->decoder()->begin_decode_work();
+        _running_decoder_count.fetch_add(1);
+        pv::data::DecoderStack *ds = trace->decoder();
+        ds->set_task_active(true);
+
+        // Connect the decoder's done signal to a lambda (using ds as the context
+        // object so Qt discards any queued event if ds is destroyed before delivery).
+        // The lambda owns the single counter decrement for this task.
+        QObject::connect(ds, &pv::data::DecoderStack::decode_done,
+                ds, [this, ds]() {
+                    if (ds->clear_task_active()) {
+                        if (_running_decoder_count.fetch_sub(1) == 1) {
+                            if (_view_data && _view_data->get_logic())
+                                _view_data->get_logic()->decode_end();
+                            _callback->decode_done();
+                        }
+                    }
+                }, Qt::QueuedConnection);
+
+        ds->begin_decode_work();
     }
 
     void SigSession::remove_decode_task(view::DecodeTrace *trace)
     {
-        trace->decoder()->stop_decode_work();
+        pv::data::DecoderStack *ds = trace->decoder();
+
+        // Join the thread first. After join, any still-queued decode_done event
+        // is pending but the context (ds) will be destroyed by the caller, causing
+        // Qt to discard it — so the lambda will NOT run after this point.
+        ds->stop_decode_work();
+
+        // Claim the counter decrement if add_decode_task was called for this decoder
+        // and the completion lambda hasn't already claimed it.
+        if (ds->clear_task_active()) {
+            _running_decoder_count.fetch_sub(1);
+        }
     }
 
     void SigSession::clear_all_decoder(bool bUpdateView)
@@ -1874,31 +1903,28 @@ namespace pv
     {
         runningDex = -1;
 
+        // Clear every task_active flag before stopping so that any pending queued
+        // decode_done lambda (from a race where emit happened before _bStop was set)
+        // sees false and does not touch the counter.
+        for (auto trace : _decode_traces)
+            trace->decoder()->clear_task_active();
+
         // Stop and join every decoder's own thread.
         for (auto trace : _decode_traces)
-        {
             trace->decoder()->stop_decode_work();
-        }
+
+        // Safety net: all threads are joined, nothing can be running.
+        _running_decoder_count.store(0);
 
         if (_view_data && _view_data->get_logic())
             _view_data->get_logic()->decode_end();
     }
 
-    bool SigSession::is_decoding()
-    {
-        for (auto trace : _decode_traces)
-        {
-            if (trace->decoder() && trace->decoder()->IsRunning())
-                return true;
-        }
-        return false;
-    }
-
     void SigSession::decode_done()
     {
-        _callback->decode_done();
-        if (!is_decoding() && _view_data && _view_data->get_logic())
-            _view_data->get_logic()->decode_end();
+        // Previously called from DecodeTrace::on_decode_done(). That call has been
+        // removed; completion handling now lives in the add_decode_task lambda.
+        // Kept as a no-op to preserve the public interface.
     }
 
     view::DecodeTrace *SigSession::get_decoder_trace(int index)

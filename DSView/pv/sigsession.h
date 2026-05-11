@@ -29,6 +29,7 @@
 #include <stdint.h> 
 #include <QString>
 #include <thread>
+#include <atomic>
 #include <QDateTime>
 #include <list>
 
@@ -366,7 +367,11 @@ public:
     }
 
     void decode_done();
-    bool is_decoding();
+
+    // Thread-safe: backed by an atomic counter, safe to call from any thread.
+    inline bool is_decoding() {
+        return _running_decoder_count.load() > 0;
+    }
 
     inline bool is_saving(){
         return _is_saving;
@@ -549,6 +554,11 @@ private:
 private:
     mutable std::mutex      _sampling_mutex;
     mutable std::mutex      _data_mutex;
+
+    // Counts decoders currently running (begin_decode_work called, not yet finished
+    // or stopped). Incremented in add_decode_task, decremented exactly once per
+    // add_decode_task call — either in the completion lambda or in remove_decode_task.
+    std::atomic<int>        _running_decoder_count{0};
 
 	std::vector<view::Signal*>      _signals; 
     std::vector<view::DecodeTrace*> _decode_traces;

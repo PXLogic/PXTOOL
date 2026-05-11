@@ -189,6 +189,16 @@ public:
         return _result_count;
     }
 
+    inline void set_task_active(bool v) {
+        _task_active.store(v);
+    }
+
+    // Atomically clears _task_active and returns its previous value.
+    // The caller that gets true "owns" the matching _running_decoder_count decrement.
+    inline bool clear_task_active() {
+        return _task_active.exchange(false);
+    }
+
 private:
     void decode_data(const uint64_t decode_start, const uint64_t decode_end, srd_session *const session);
 	void execute_decode_stack();
@@ -211,6 +221,10 @@ private:
   
     SigSession      *_session;
     std::atomic<decode_state> _decode_state;
+    // Tracks whether this decoder's run was counted in SigSession::_running_decoder_count.
+    // Set to true in add_decode_task, cleared atomically by either the completion
+    // lambda or remove_decode_task — whichever runs first.
+    std::atomic<bool> _task_active{false};
     volatile bool   _options_changed;
     volatile bool   _no_memory;
     int64_t         _mark_index;
