@@ -156,7 +156,7 @@ int DecodeTrace::get_name_width()
     int base = Trace::get_name_width();
     if (!_decoder_stack->stack().empty()) {
         const srd_decoder *root = _decoder_stack->stack().front()->decoder();
-        if (pv::cdecoders::CDecoderRegistry::instance().is_c_decoder(root)) {
+        if (root && pv::cdecoders::CDecoderRegistry::instance().has_c_decoder_for_id(root->id)) {
             QFont font;
             float fSize = AppConfig::Instance().appOptions.fontSize;
             font.setPointSizeF(fSize <= 10 ? fSize : 10);
@@ -174,7 +174,7 @@ void DecodeTrace::paint_label(QPainter &p, int right, const QPoint pt, QColor fo
         root_srd = _decoder_stack->stack().front()->decoder();
 
     bool has_c_version = root_srd &&
-        pv::cdecoders::CDecoderRegistry::instance().is_c_decoder(root_srd);
+        pv::cdecoders::CDecoderRegistry::instance().has_c_decoder_for_id(root_srd->id);
 
     if (has_c_version) {
         const QString orig_name = _name;

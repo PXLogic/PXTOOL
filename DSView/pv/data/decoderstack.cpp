@@ -80,7 +80,8 @@ DecoderStack::DecoderStack(pv::SigSession *session,
     build_row();
 
     const srd_decoder *root = _stack.front()->decoder();
-    _use_c_decoder = pv::cdecoders::CDecoderRegistry::instance().is_c_decoder(root);
+    _use_c_decoder = root &&
+        pv::cdecoders::CDecoderRegistry::instance().has_c_decoder_for_id(root->id);
 }
 
 void DecoderStack::join_own_thread()
@@ -961,7 +962,7 @@ void DecoderStack::execute_c_decode_stack()
 
     const srd_decoder *root_srd = _stack.front()->decoder();
     CDecoderDef *c_def =
-        pv::cdecoders::CDecoderRegistry::instance().get_c_decoder_def(root_srd);
+        pv::cdecoders::CDecoderRegistry::instance().get_c_decoder_def_by_id(root_srd->id);
     if (!c_def || !c_def->decode) {
         _error_message = "C decoder has no decode function";
         dsv_err("C decoder '%s' has no decode function", root_srd->id);

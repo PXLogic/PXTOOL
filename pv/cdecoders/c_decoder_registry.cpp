@@ -120,6 +120,7 @@ void CDecoderRegistry::load_c_decoders(const std::string &dir_path)
 
         _owned_decoders.push_back(dec);
         _c_decoder_map[dec] = def;
+        _c_decoder_by_id[def->id] = def;
         _dl_handles.push_back(handle);
     }
 
@@ -139,6 +140,21 @@ CDecoderDef* CDecoderRegistry::get_c_decoder_def(const srd_decoder *dec) const
     return it->second;
 }
 
+bool CDecoderRegistry::has_c_decoder_for_id(const char *id) const
+{
+    if (!id) return false;
+    return _c_decoder_by_id.count(id) > 0;
+}
+
+CDecoderDef* CDecoderRegistry::get_c_decoder_def_by_id(const char *id) const
+{
+    if (!id) return nullptr;
+    auto it = _c_decoder_by_id.find(id);
+    if (it == _c_decoder_by_id.end())
+        return nullptr;
+    return it->second;
+}
+
 void CDecoderRegistry::unload_all()
 {
     for (srd_decoder *dec : _owned_decoders) {
@@ -150,6 +166,7 @@ void CDecoderRegistry::unload_all()
         dlclose(h);
     _dl_handles.clear();
     _c_decoder_map.clear();
+    _c_decoder_by_id.clear();
 }
 
 // ---------------------------------------------------------------------------

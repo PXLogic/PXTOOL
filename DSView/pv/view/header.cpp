@@ -615,7 +615,7 @@ void Header::contextMenuEvent(QContextMenuEvent *event)
     DecodeTrace *dt = dynamic_cast<DecodeTrace*>(t);
     if (dt && !dt->decoder()->stack().empty()) {
         const srd_decoder *root_srd = dt->decoder()->stack().front()->decoder();
-        if (pv::cdecoders::CDecoderRegistry::instance().is_c_decoder(root_srd)) {
+        if (pv::cdecoders::CDecoderRegistry::instance().has_c_decoder_for_id(root_srd->id)) {
             menu.addSeparator();
             QMenu *engMenu = menu.addMenu(tr("Decode Engine"));
             QActionGroup *engGroup = new QActionGroup(engMenu);
