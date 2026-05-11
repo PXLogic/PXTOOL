@@ -293,6 +293,7 @@ set(DSView_SOURCES
     DSView/pv/dock/measuredock.cpp
     DSView/pv/dock/searchdock.cpp
     DSView/pv/dock/sidebar.cpp
+    DSView/pv/dock/deviceoptionsdock.cpp
     DSView/pv/toolbars/logobar.cpp
     DSView/pv/dialogs/about.cpp
     DSView/pv/dialogs/search.cpp
@@ -413,6 +414,7 @@ set(DSView_HEADERS
     DSView/pv/dock/measuredock.h
     DSView/pv/dock/searchdock.h
     DSView/pv/dock/sidebar.h
+    DSView/pv/dock/deviceoptionsdock.h
     DSView/pv/toolbars/logobar.h
     DSView/pv/dialogs/about.h
     DSView/pv/dialogs/search.h

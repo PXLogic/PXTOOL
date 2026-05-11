@@ -2597,6 +2597,44 @@ QWidget#search_header_bar QLabel#search_panel_title {
     font-weight: 600;
 }
 
+/* ── Device Options Panel header bar (light) ────────────────────── */
+QWidget#options_header_bar {
+    background: #f5f5f5;
+    border-bottom: 1px solid #dddddd;
+}
+QWidget#options_header_bar QLabel#options_panel_title {
+    color: #222222;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+/* ── Device Options Panel GroupBox fieldset style (light) ─────────── */
+QWidget#deviceOptionsWidget QGroupBox {
+    background: transparent;
+    border: 1px solid #cccccc;
+    border-radius: 4px;
+    margin-top: 10px;
+    padding: 8px 6px 6px 6px;
+    color: #222222;
+    font-size: 11px;
+    font-weight: normal;
+}
+QWidget#deviceOptionsWidget QGroupBox::title {
+    subcontrol-origin: margin;
+    subcontrol-position: top left;
+    left: 8px;
+    padding: 0 4px;
+    color: #222222;
+    font-size: 11px;
+    font-weight: normal;
+}
+
+/* ── Device Options Panel labels (light) ─────────────────────────── */
+QWidget#deviceOptionsWidget QLabel {
+    color: #555555;
+    font-size: 12px;
+}
+
 /* ── Search Panel nav buttons (light) ───────────────────────────── */
 QPushButton#search_nav_btn {
     background-color: transparent;

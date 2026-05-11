@@ -300,7 +300,6 @@ namespace pv
         connect(_view, SIGNAL(prgRate(int)), this, SIGNAL(prgRate(int)));
         connect(_view, SIGNAL(auto_trig(int)), _sidebar_widget->dso_trigger_widget(), SLOT(auto_trig(int)));
         connect(_sidebar_widget, SIGNAL(sig_search_visible(bool)), _view, SLOT(show_search_cursor(bool)));
-        connect(_sidebar_widget, &dock::SideBar::sig_show_device_options, _sampling_bar, &toolbars::SamplingBar::config_device);
 
         // trig_bar
         connect(_trig_bar, SIGNAL(sig_protocol(bool)), this, SLOT(on_protocol(bool)));

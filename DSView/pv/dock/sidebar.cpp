@@ -25,6 +25,7 @@
 #include "protocoldock.h"
 #include "measuredock.h"
 #include "searchdock.h"
+#include "deviceoptionsdock.h"
 #include "../view/view.h"
 #include <QLabel>
 #include <QIcon>
@@ -121,27 +122,31 @@ SideBar::SideBar(QWidget *parent, view::View &view, SigSession *session)
     sw_layout->addWidget(sw_header);
     sw_layout->addWidget(_search_widget, 1);
 
-    _options_widget = new QWidget(this);
-    _options_widget->setObjectName("options_panel");
-    auto *optLayout = new QVBoxLayout(_options_widget);
-    optLayout->setContentsMargins(16, 16, 16, 16);
-    optLayout->setSpacing(8);
-    auto *optTitle = new QLabel(tr("OPTIONS"), _options_widget);
-    optTitle->setObjectName("options_title_label");
-    optLayout->addWidget(optTitle);
-    auto *optHint = new QLabel(tr("Configure sampling and device\nsettings in the toolbar above."), _options_widget);
-    optHint->setObjectName("options_hint_label");
-    optHint->setWordWrap(true);
-    optLayout->addWidget(optHint);
-    optLayout->addStretch();
+    // Options tab wrapper: fixed "Device Options" header above the DeviceOptionsDock
+    auto *options_wrap = new QWidget(this);
+    options_wrap->setObjectName("options_wrap");
+    auto *ow_layout = new QVBoxLayout(options_wrap);
+    ow_layout->setContentsMargins(0, 0, 0, 0);
+    ow_layout->setSpacing(0);
+    auto *ow_header = new QWidget(options_wrap);
+    ow_header->setObjectName("options_header_bar");
+    auto *ow_hlay = new QHBoxLayout(ow_header);
+    ow_hlay->setContentsMargins(12, 8, 12, 8);
+    auto *ow_title = new QLabel(tr("Device Options"), ow_header);
+    ow_title->setObjectName("options_panel_title");
+    ow_hlay->addWidget(ow_title);
+    ow_hlay->addStretch();
+    _device_options_widget = new DeviceOptionsDock(options_wrap, session);
+    ow_layout->addWidget(ow_header);
+    ow_layout->addWidget(_device_options_widget, 1);
 
     // Outer content stack: one page per tab
     _stack = new QStackedWidget(this);
     _stack->addWidget(trigger_wrap);      // page 0: trigger (header + inner stack)
-    _stack->addWidget(decode_wrap);      // page 1: decodes (header + protocol dock)
+    _stack->addWidget(decode_wrap);       // page 1: decodes (header + protocol dock)
     _stack->addWidget(measure_wrap);      // page 2: measures (header + measure dock)
     _stack->addWidget(search_wrap);       // page 3: search (header + search dock)
-    _stack->addWidget(_options_widget);  // page 4: options
+    _stack->addWidget(options_wrap);      // page 4: device options panel
     _stack->setVisible(false);
     _stack->setMinimumWidth(200);
 
@@ -203,13 +208,6 @@ SideBar::~SideBar()
 
 void SideBar::onButtonClicked(int tab)
 {
-    // Options opens a modal dialog instead of a side panel
-    if (tab == TabOptions) {
-        _btns[TabOptions]->setChecked(false);
-        emit sig_show_device_options();
-        return;
-    }
-
     if (_active_tab == tab && _panel_visible) {
         // Toggle off: hide the panel
         _panel_visible = false;
@@ -218,6 +216,8 @@ void SideBar::onButtonClicked(int tab)
         _active_tab = -1;
         if (tab == TabSearch)
             emit sig_search_visible(false);
+        if (tab == TabOptions)
+            _device_options_widget->panel_shown(); // stop timer when hidden
     } else {
         // Switch to (or re-open) this tab
         bool prevWasSearch = (_active_tab == TabSearch && _panel_visible);
@@ -234,6 +234,9 @@ void SideBar::onButtonClicked(int tab)
             emit sig_search_visible(true);
         else if (prevWasSearch)
             emit sig_search_visible(false);
+
+        if (tab == TabOptions)
+            _device_options_widget->panel_shown();
     }
 }
 

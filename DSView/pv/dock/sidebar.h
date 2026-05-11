@@ -45,6 +45,7 @@ class DsoTriggerDock;
 class ProtocolDock;
 class MeasureDock;
 class SearchDock;
+class DeviceOptionsDock;
 
 class SideBar : public QWidget, public IUiWindow
 {
@@ -63,11 +64,12 @@ public:
     SideBar(QWidget *parent, view::View &view, SigSession *session);
     ~SideBar();
 
-    TriggerDock    *trigger_widget()        { return _trigger_widget; }
-    DsoTriggerDock *dso_trigger_widget()    { return _dso_trigger_widget; }
-    ProtocolDock   *protocol_widget()       { return _protocol_widget; }
-    MeasureDock    *measure_widget()        { return _measure_widget; }
-    SearchDock     *search_widget()         { return _search_widget; }
+    TriggerDock       *trigger_widget()        { return _trigger_widget; }
+    DsoTriggerDock    *dso_trigger_widget()    { return _dso_trigger_widget; }
+    ProtocolDock      *protocol_widget()       { return _protocol_widget; }
+    MeasureDock       *measure_widget()        { return _measure_widget; }
+    SearchDock        *search_widget()         { return _search_widget; }
+    DeviceOptionsDock *device_options_widget() { return _device_options_widget; }
 
     void showTab(Tab tab, bool visible);
     void setDsoMode(bool isDso);
@@ -79,7 +81,6 @@ public:
 
 signals:
     void sig_search_visible(bool visible);
-    void sig_show_device_options();
 
 private slots:
     void onButtonClicked(int tab);
@@ -91,13 +92,13 @@ private:
     int             _active_tab;
     bool            _panel_visible;
 
-    QStackedWidget *_trigger_stack;
-    TriggerDock    *_trigger_widget;
-    DsoTriggerDock *_dso_trigger_widget;
-    ProtocolDock   *_protocol_widget;
-    MeasureDock    *_measure_widget;
-    SearchDock     *_search_widget;
-    QWidget        *_options_widget;
+    QStackedWidget    *_trigger_stack;
+    TriggerDock       *_trigger_widget;
+    DsoTriggerDock    *_dso_trigger_widget;
+    ProtocolDock      *_protocol_widget;
+    MeasureDock       *_measure_widget;
+    SearchDock        *_search_widget;
+    DeviceOptionsDock *_device_options_widget;
 
     SigSession     *_session;
 };
