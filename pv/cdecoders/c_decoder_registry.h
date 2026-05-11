@@ -4,12 +4,12 @@
 #include <unordered_map>
 #include <vector>
 
+#include "c_decoder_api.h"  // defines CDecoderDef at global scope (pure C)
+
 struct srd_decoder;
 
 namespace pv {
 namespace cdecoders {
-
-struct CDecoderDef;  // forward decl; full def is in c_decoder_api.h
 
 /**
  * Singleton registry: loads C decoders from .dylib/.so, builds srd_decoder
