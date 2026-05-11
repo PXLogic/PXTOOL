@@ -52,6 +52,7 @@
 #include "../ui/langresource.h"
 #include "../config/appconfig.h"
 #include "../log.h"
+#include "c_decoder_registry.h"
 
 using namespace boost;
 using namespace std;
@@ -148,6 +149,25 @@ void DecodeTrace::set_view(pv::view::View *view)
 {
 	assert(view);
 	Trace::set_view(view);
+}
+
+void DecodeTrace::paint_label(QPainter &p, int right, const QPoint pt, QColor fore)
+{
+    const srd_decoder *root_srd = nullptr;
+    if (!_decoder_stack->stack().empty())
+        root_srd = _decoder_stack->stack().front()->decoder();
+
+    bool has_c_version = root_srd &&
+        pv::cdecoders::CDecoderRegistry::instance().is_c_decoder(root_srd);
+
+    if (has_c_version) {
+        const QString orig_name = _name;
+        _name = orig_name + (_decoder_stack->use_c_decoder() ? " [C]" : " [Py]");
+        Trace::paint_label(p, right, pt, fore);
+        _name = orig_name;
+    } else {
+        Trace::paint_label(p, right, pt, fore);
+    }
 }
 
 void DecodeTrace::paint_back(QPainter &p, int left, int right, QColor fore, QColor back)

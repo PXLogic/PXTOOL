@@ -48,6 +48,9 @@
 #include "../config/appconfig.h"
 #include "../ui/fn.h"
 #include "../log.h"
+#include "c_decoder_registry.h"
+#include "../data/decoderstack.h"
+#include "../data/decode/decoder.h"
  
 using namespace std;
 
@@ -606,6 +609,23 @@ void Header::contextMenuEvent(QContextMenuEvent *event)
     QAction *resetOne = menu.addAction(tr("Reset Row Height"));
     QAction *resetAll = menu.addAction(tr("Reset All Row Heights"));
 
+    QAction *useC  = nullptr;
+    QAction *usePy = nullptr;
+    DecodeTrace *dt = dynamic_cast<DecodeTrace*>(t);
+    if (dt && !dt->decoder()->stack().empty()) {
+        const srd_decoder *root_srd = dt->decoder()->stack().front()->decoder();
+        if (pv::cdecoders::CDecoderRegistry::instance().is_c_decoder(root_srd)) {
+            menu.addSeparator();
+            QMenu *engMenu = menu.addMenu(tr("Decode Engine"));
+            useC  = engMenu->addAction(tr("C Decoder"));
+            usePy = engMenu->addAction(tr("Python Decoder"));
+            useC->setCheckable(true);
+            usePy->setCheckable(true);
+            useC->setChecked(dt->decoder()->use_c_decoder());
+            usePy->setChecked(!dt->decoder()->use_c_decoder());
+        }
+    }
+
     QAction *chosen = menu.exec(event->globalPos());
 
     if (chosen == resetOne) {
@@ -613,6 +633,16 @@ void Header::contextMenuEvent(QContextMenuEvent *event)
         _view.signals_changed(nullptr);
     } else if (chosen == resetAll) {
         _view.reset_height_overrides();
+    } else if (useC && chosen == useC) {
+        if (!dt->decoder()->use_c_decoder()) {
+            dt->decoder()->set_use_c_decoder(true);
+            _view.session().rst_decoder_by_key_handel(dt->get_key_handel());
+        }
+    } else if (usePy && chosen == usePy) {
+        if (dt->decoder()->use_c_decoder()) {
+            dt->decoder()->set_use_c_decoder(false);
+            _view.session().rst_decoder_by_key_handel(dt->get_key_handel());
+        }
     }
 }
 
