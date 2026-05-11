@@ -215,8 +215,12 @@ void DecoderOptionsDlg::load_options_view()
     cancel_btn->setObjectName("device_cancel_btn");
     ok_btn->setObjectName("device_ok_btn");
 
+    cancel_btn->setMinimumWidth(80);
+    ok_btn->setMinimumWidth(60);
+
     auto *footer_lay = new QHBoxLayout();
     footer_lay->setContentsMargins(12, 10, 12, 10);
+    footer_lay->setSpacing(8);
     footer_lay->addStretch();
     footer_lay->addWidget(cancel_btn);
     footer_lay->addWidget(ok_btn);
