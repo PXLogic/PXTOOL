@@ -2750,6 +2750,7 @@ QDialog#searchDialog QPushButton#device_cancel_btn:flat:hover {
 
 /* ── Device Options Dialog (dark) ──────────────────────────────── */
 QDialog#deviceOptionsDialog QWidget#TitleBar QLabel,
+QDialog#decoderOptionsDialog QWidget#TitleBar QLabel,
 QDialog#displayOptionsDialog QWidget#TitleBar QLabel,
 QDialog#logOptionsDialog QWidget#TitleBar QLabel,
 QDialog#aboutDialog QWidget#TitleBar QLabel,
@@ -2759,6 +2760,7 @@ QDialog#dsMessageBoxDialog QWidget#TitleBar QLabel {
     color: #e0e0e0;
 }
 QDialog#deviceOptionsDialog QWidget#device_options_divider,
+QDialog#decoderOptionsDialog QWidget#device_options_divider,
 QDialog#displayOptionsDialog QWidget#device_options_divider,
 QDialog#logOptionsDialog QWidget#device_options_divider,
 QDialog#aboutDialog QWidget#device_options_divider,
@@ -2843,6 +2845,76 @@ QDialog#deviceOptionsDialog QCheckBox::indicator:checked,
 QDialog#logOptionsDialog QCheckBox::indicator:checked {
     image: url(:/icons/sidebar/checkbox-checked.svg);
 }
+/* ── Decoder Options Dialog (dark) ──────────────────────────────── */
+QDialog#decoderOptionsDialog QGroupBox {
+    border: 1px solid #333333;
+    border-radius: 4px;
+    margin-top: 10px;
+    padding: 8px 6px 6px 6px;
+    color: #eff0f1;
+    font-size: 11px;
+}
+QDialog#decoderOptionsDialog QGroupBox::title {
+    subcontrol-origin: margin;
+    subcontrol-position: top left;
+    left: 8px;
+    padding: 0 4px;
+    color: #eff0f1;
+    font-size: 11px;
+}
+QDialog#decoderOptionsDialog QLabel {
+    color: #cccccc;
+    font-size: 12px;
+}
+QDialog#decoderOptionsDialog QComboBox {
+    background-color: #2a2a2a;
+    border: 1px solid #444444;
+    border-radius: 3px;
+    color: #cccccc;
+    font-size: 12px;
+    padding: 2px 20px 2px 6px;
+    min-width: 88px;
+    min-height: 22px;
+}
+QDialog#decoderOptionsDialog QComboBox::drop-down {
+    border: none;
+    width: 16px;
+}
+QDialog#decoderOptionsDialog QComboBox::down-arrow {
+    image: url(:/icons/sidebar/chevron-down.svg);
+    width: 10px;
+    height: 10px;
+}
+QDialog#decoderOptionsDialog QComboBox QAbstractItemView {
+    background-color: #1e1e1e;
+    border: 1px solid #444444;
+    color: #cccccc;
+    selection-background-color: #7c3aed;
+}
+QDialog#decoderOptionsDialog QCheckBox {
+    color: #cccccc;
+    font-size: 12px;
+    spacing: 6px;
+}
+QDialog#decoderOptionsDialog QCheckBox::indicator {
+    width: 16px;
+    height: 16px;
+    image: url(:/icons/sidebar/checkbox-unchecked.svg);
+}
+QDialog#decoderOptionsDialog QCheckBox::indicator:checked {
+    image: url(:/icons/sidebar/checkbox-checked.svg);
+}
+QDialog#decoderOptionsDialog QLineEdit,
+QDialog#decoderOptionsDialog QSpinBox {
+    background-color: #2a2a2a;
+    border: 1px solid #444444;
+    border-radius: 3px;
+    color: #cccccc;
+    font-size: 12px;
+    padding: 2px 6px;
+    min-height: 22px;
+}
+
 QPushButton#device_ch_btn {
     background-color: transparent;
     border: 1px solid #444444;

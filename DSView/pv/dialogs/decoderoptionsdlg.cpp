@@ -21,14 +21,15 @@
 
 #include "decoderoptionsdlg.h"
 #include <libsigrokdecode.h>
-#include <QScrollArea> 
-#include <QDialogButtonBox>
+#include <QScrollArea>
+#include <QPushButton>
+#include <QGroupBox>
 #include <assert.h>
 #include <QVBoxLayout>
-#include <QLabel> 
+#include <QHBoxLayout>
+#include <QLabel>
 #include <QGridLayout>
 #include <QFormLayout>
-#include <QScrollArea> 
 #include <QVariant>
 #include <QGuiApplication>
 #include <QScreen>
@@ -88,177 +89,184 @@ void DecoderOptionsDlg::load_options(view::DecodeTrace *trace)
 }
 
 void DecoderOptionsDlg::load_options_view()
-{   
-    DSDialog *dlg = this;   
+{
+    DSDialog *dlg = this;
 
-    dlg->setTitle(L_S(STR_PAGE_DLG, S_ID(IDS_DLG_DECODER_OPTIONS), "Decoder Options"));   
+    dlg->setTitle(L_S(STR_PAGE_DLG, S_ID(IDS_DLG_DECODER_OPTIONS), "Decoder Options"));
+    dlg->setObjectName("decoderOptionsDialog");
+    dlg->SetTitleSpace(8);
+    dlg->layout()->setSpacing(0);
+    dlg->layout()->setDirection(QBoxLayout::TopToBottom);
+    dlg->layout()->setAlignment(Qt::AlignTop);
+    dlg->layout()->setContentsMargins(0, 5, 0, 0);
 
-    QFormLayout *form = new QFormLayout();
-    form->setContentsMargins(0, 0, 0, 0);
-    form->setVerticalSpacing(5);
-    form->setFormAlignment(Qt::AlignLeft);
-    form->setLabelAlignment(Qt::AlignLeft);
-    dlg->layout()->addLayout(form);
-    
-    //scroll pannel
-    QWidget *scroll_pannel  = new QWidget();
+    // Top divider
+    auto *top_sep = new QWidget(dlg);
+    top_sep->setObjectName("device_options_divider");
+    top_sep->setFixedHeight(1);
+    dlg->layout()->addWidget(top_sep);
+
+    // Scroll panel (outer, no margins)
+    QWidget *scroll_panel = new QWidget();
     QVBoxLayout *scroll_lay = new QVBoxLayout();
     scroll_lay->setContentsMargins(0, 0, 0, 0);
-    scroll_lay->setAlignment(Qt::AlignLeft);
-    scroll_pannel->setLayout(scroll_lay);
-    form->addRow(scroll_pannel);
+    scroll_lay->setAlignment(Qt::AlignLeft | Qt::AlignTop);
+    scroll_panel->setLayout(scroll_lay);
+    dlg->layout()->addWidget(scroll_panel);
 
-    // decoder options 
-    QWidget *container_panel = new QWidget();      
-    QVBoxLayout *decoder_lay = new QVBoxLayout();
-    decoder_lay->setContentsMargins(0, 0, 0, 0);
-    decoder_lay->setDirection(QBoxLayout::TopToBottom);
-    container_panel->setLayout(decoder_lay);
+    // Container panel (inner, with breathing room)
+    QWidget *container_panel = new QWidget();
+    QVBoxLayout *container_lay = new QVBoxLayout();
+    container_lay->setContentsMargins(12, 8, 12, 8);
+    container_lay->setSpacing(6);
+    container_lay->setDirection(QBoxLayout::TopToBottom);
+    container_lay->setAlignment(Qt::AlignTop);
+    container_panel->setLayout(container_lay);
     scroll_lay->addWidget(container_panel);
-  
+
+    // Decoder channel/option forms
     load_decoder_forms(container_panel);
- 
-    //Add region combobox
+
+    // Region selector group
+    QGroupBox *region_box = new QGroupBox(
+        L_S(STR_PAGE_DLG, S_ID(IDS_DLG_DECODE_RANGE), "Decode Range"), dlg);
+    QFont font = this->font();
+    font.setPointSizeF(AppConfig::Instance().appOptions.fontSize);
+    region_box->setFont(font);
+    QFormLayout *region_form = new QFormLayout();
+    region_form->setContentsMargins(8, 16, 8, 8);
+    region_form->setVerticalSpacing(6);
+    region_form->setFormAlignment(Qt::AlignLeft);
+    region_form->setLabelAlignment(Qt::AlignLeft);
+    region_box->setLayout(region_form);
+
     _start_comboBox = new DsComboBox(dlg);
-    _end_comboBox = new DsComboBox(dlg);
+    _end_comboBox   = new DsComboBox(dlg);
     _start_comboBox->addItem("Start");
-    _end_comboBox->addItem("End"); 
+    _end_comboBox->addItem("End");
     _start_comboBox->setMinimumContentsLength(7);
     _end_comboBox->setMinimumContentsLength(7);
-    _start_comboBox->setMinimumWidth(30);
-    _end_comboBox->setMinimumWidth(30);
-    
+
     // Add cursor list
     auto view = _trace->get_view();
     int dex1 = 0;
     int dex2 = 0;
-
-    if (view)
-    {  
+    if (view) {
         int num = 1;
-        auto &cursor_list = view->get_cursorList();
-        
-        for (auto c : cursor_list){
-            //tr
-            QString cursor_name = L_S(STR_PAGE_DLG, S_ID(IDS_DLG_CURSOR), "Cursor") + 
-                                QString::number(num);
+        for (auto c : view->get_cursorList()) {
+            QString cursor_name = L_S(STR_PAGE_DLG, S_ID(IDS_DLG_CURSOR), "Cursor") +
+                                  QString::number(num);
             _start_comboBox->addItem(cursor_name, QVariant((quint64)c->get_key()));
             _end_comboBox->addItem(cursor_name, QVariant((quint64)c->get_key()));
-
-            if (c->get_key() == _cursor1)
-                dex1 = num;
-            if (c->get_key() == _cursor2) 
-                dex2 = num; 
-
+            if (c->get_key() == _cursor1) dex1 = num;
+            if (c->get_key() == _cursor2) dex2 = num;
             num++;
         }
     }
-
-    if (dex1 == 0)
-        _cursor1 = 0;
-    if (dex2 == 0)
-        _cursor2 = 0;
-
+    if (dex1 == 0) _cursor1 = 0;
+    if (dex2 == 0) _cursor2 = 0;
     _start_comboBox->setCurrentIndex(dex1);
     _end_comboBox->setCurrentIndex(dex2);
- 
-    update_decode_range(); // set default sample range
- 
+    update_decode_range();
+
+    QLabel *lb1 = new QLabel(
+        L_S(STR_PAGE_DLG, S_ID(IDS_DLG_CURSOR_FOR_DECODE_START), "The cursor for decode start time"));
+    QLabel *lb2 = new QLabel(
+        L_S(STR_PAGE_DLG, S_ID(IDS_DLG_CURSOR_FOR_DECODE_END), "The cursor for decode end time"));
+    region_form->addRow(_start_comboBox, lb1);
+    region_form->addRow(_end_comboBox,   lb2);
+    container_lay->addWidget(region_box);
+
+    // Translate-params checkbox (non-English only)
     int h_ex2 = 0;
     bool bLang = AppConfig::Instance().appOptions.transDecoderDlg;
-
-    if (LangResource::Instance()->is_lang_en() == false){
-        QWidget *sp1 = new QWidget();
-        sp1->setFixedHeight(5);
-        form->addRow(sp1);
-        QString trans_lable(L_S(STR_PAGE_DLG, S_ID(IDS_DLG_DECODER_IF_TRANS), "Translate param names"));
+    if (!LangResource::Instance()->is_lang_en()) {
+        QString trans_label(L_S(STR_PAGE_DLG, S_ID(IDS_DLG_DECODER_IF_TRANS), "Translate param names"));
         QCheckBox *ck_trans = new QCheckBox();
-        ck_trans->setFixedSize(20,20);
+        ck_trans->setFixedSize(20, 20);
         ck_trans->setChecked(bLang);
         connect(ck_trans, SIGNAL(released()), this, SLOT(on_trans_pramas()));
-        ck_trans->setStyleSheet("margin-top:5px");
-        QLabel *trans_lb = new QLabel(trans_lable);
-        
+        QLabel *trans_lb = new QLabel(trans_label);
+
         QHBoxLayout *trans_lay = new QHBoxLayout();
         QWidget *trans_wid = new QWidget();
         trans_wid->setLayout(trans_lay);
-        trans_lay->setSpacing(0);
-        trans_lay->setContentsMargins(10,0,0,0);
+        trans_lay->setSpacing(6);
+        trans_lay->setContentsMargins(0, 4, 0, 0);
         trans_lay->addWidget(ck_trans);
         trans_lay->addWidget(trans_lb);
-        form->addRow("", trans_wid);
-        h_ex2 = 40;   
-    }  
+        trans_lay->addStretch();
+        container_lay->addWidget(trans_wid);
+        h_ex2 = 36;
+    }
 
-  //tr
-    QLabel *lb1 = new QLabel(
-                     L_S(STR_PAGE_DLG, S_ID(IDS_DLG_CURSOR_FOR_DECODE_START), "The cursor for decode start time"));
-    QLabel *lb2 = new QLabel(
-                     L_S(STR_PAGE_DLG, S_ID(IDS_DLG_CURSOR_FOR_DECODE_END), "The cursor for decode end time"));
+    (void)h_ex2;
 
-    form->addRow(_start_comboBox, lb1);
-    form->addRow(_end_comboBox, lb2);
- 
-    // Add ButtonBox (OK/Cancel)
-    QDialogButtonBox *button_box = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel,
-                                Qt::Horizontal, dlg);
+    // Bottom divider
+    auto *bot_sep = new QWidget(dlg);
+    bot_sep->setObjectName("device_options_divider");
+    bot_sep->setFixedHeight(1);
+    dlg->layout()->addWidget(bot_sep);
 
-    QHBoxLayout *confirm_button_box = new QHBoxLayout;
-    confirm_button_box->addWidget(button_box, 0, Qt::AlignRight);
-    form->addRow(confirm_button_box);
+    // Footer: Cancel + OK
+    auto *cancel_btn = new QPushButton(
+        L_S(STR_PAGE_DLG, S_ID(IDS_DLG_CANCEL), "Cancel"), dlg);
+    auto *ok_btn = new QPushButton("OK", dlg);
+    cancel_btn->setObjectName("device_cancel_btn");
+    ok_btn->setObjectName("device_ok_btn");
+
+    auto *footer_lay = new QHBoxLayout();
+    footer_lay->setContentsMargins(12, 10, 12, 10);
+    footer_lay->addStretch();
+    footer_lay->addWidget(cancel_btn);
+    footer_lay->addWidget(ok_btn);
+    dlg->layout()->addLayout(footer_lay);
 
     this->update_font();
 
-    int real_content_width = _content_width;
+    // Size calculation
     int content_height = _contentHeight;
+    content_height += region_box->sizeHint().height() + 6;
+    content_height += h_ex2;
 
-     // scroll     
     QSize tsize = dlg->sizeHint();
-    int w = tsize.width(); 
-    int other_height = 190 + h_ex2; 
-    content_height += 20;
+    int w = tsize.width();
+    if (w < _content_width) w = _content_width;
 
-    int cursor_line_width = lb1->sizeHint().width() + _start_comboBox->sizeHint().width();
+    int cursor_line_w = lb1->sizeHint().width() + _start_comboBox->sizeHint().width() + 24;
+    if (w < cursor_line_w) w = cursor_line_w;
 
-    if (w < real_content_width){
-        w = real_content_width;
-    }
-    if (w < cursor_line_width){
-        w = cursor_line_width;
-    }
-
+    // overhead: titlebar + titleSpace + top_sep + footer + bottom_sep + container margins
+    int overhead = 130;
 #ifdef Q_OS_DARWIN
-    other_height += 40;
+    overhead += 20;
 #endif
 
-    int dlgHeight = content_height + other_height; 
-     
     float sk = QGuiApplication::primaryScreen()->logicalDotsPerInch() / 96;
-    int srcHeight = 600;
-    container_panel->setFixedHeight(content_height);
+    const int srcHeight = 600;
+    container_panel->setFixedHeight(content_height + 16);
 
-    if (dlgHeight * sk > srcHeight)
-    { 
-        QScrollArea *scroll = new QScrollArea(scroll_pannel);
+    if ((content_height + overhead) * sk > srcHeight) {
+        QScrollArea *scroll = new QScrollArea(scroll_panel);
         scroll->setWidget(container_panel);
         scroll->setStyleSheet("QScrollArea{border:none;}");
         scroll->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-        dlg->setFixedSize(w + 20, srcHeight);
-        scroll_pannel->setFixedSize(w, srcHeight - other_height);
+        int scroll_h = srcHeight - overhead;
         int sclw = w - 18;
 #ifdef Q_OS_DARWIN
         sclw -= 20;
 #endif
-        scroll->setFixedSize(sclw, srcHeight - other_height);
+        scroll->setFixedSize(sclw, scroll_h);
+        scroll_panel->setFixedSize(w, scroll_h);
+        dlg->setFixedSize(w + 20, srcHeight);
+    } else {
+        dlg->setFixedSize(w + 20, content_height + overhead);
     }
-    else{
-        dlg->setFixedSize(w + 20,dlgHeight);
-    }
- 
+
     connect(_start_comboBox, SIGNAL(currentIndexChanged(int)), this, SLOT(on_region_set(int)));
-    connect(_end_comboBox, SIGNAL(currentIndexChanged(int)), this, SLOT(on_region_set(int))); 
-    connect(button_box, SIGNAL(accepted()), dlg, SLOT(on_accept()));
-    connect(button_box, SIGNAL(rejected()), dlg, SLOT(reject()));
+    connect(_end_comboBox,   SIGNAL(currentIndexChanged(int)), this, SLOT(on_region_set(int)));
+    connect(cancel_btn, SIGNAL(clicked()), dlg, SLOT(reject()));
+    connect(ok_btn,     SIGNAL(clicked()), dlg, SLOT(on_accept()));
 }
 
 void DecoderOptionsDlg::load_decoder_forms(QWidget *container)
