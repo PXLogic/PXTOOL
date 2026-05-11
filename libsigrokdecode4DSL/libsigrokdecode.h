@@ -389,6 +389,7 @@ SRD_API int srd_pd_output_callback_add(struct srd_session *sess,
 SRD_API int srd_session_end(struct srd_session *sess, char **error);
 
 /* decoder.c */
+SRD_API int srd_decoder_register(struct srd_decoder *dec);
 SRD_API const GSList *srd_decoder_list(void);
 SRD_API struct srd_decoder *srd_decoder_get_by_id(const char *id);
 SRD_API int srd_decoder_load(const char *name);

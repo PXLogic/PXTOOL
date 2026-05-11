@@ -69,6 +69,34 @@ static gboolean srd_check_init(void)
 }
 
 /**
+ * Register a pre-built decoder into the global decoder list.
+ *
+ * Used by CDecoderRegistry to inject C decoders into the same pd_list
+ * that srd_decoder_list() returns, so the existing UI picks them up.
+ *
+ * @param dec A fully populated srd_decoder struct. Must not be NULL,
+ *            and dec->id must be non-NULL and unique.
+ *
+ * @return SRD_OK on success, SRD_ERR_ARG if dec or dec->id is NULL,
+ *         SRD_ERR if a decoder with the same ID is already registered.
+ */
+SRD_API int srd_decoder_register(struct srd_decoder *dec)
+{
+    if (!dec || !dec->id)
+        return SRD_ERR_ARG;
+    /* Reject duplicate IDs */
+    for (GSList *l = pd_list; l; l = l->next) {
+        struct srd_decoder *d = (struct srd_decoder *)l->data;
+        if (strcmp(d->id, dec->id) == 0) {
+            srd_err("Decoder with id '%s' already registered.", dec->id);
+            return SRD_ERR;
+        }
+    }
+    pd_list = g_slist_append(pd_list, dec);
+    return SRD_OK;
+}
+
+/**
  * Returns the list of loaded protocol decoders.
  *
  * This is a GSList of pointers to struct srd_decoder items.

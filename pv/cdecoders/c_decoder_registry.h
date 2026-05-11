@@ -1,0 +1,57 @@
+#pragma once
+
+#include <string>
+#include <unordered_map>
+#include <vector>
+
+struct srd_decoder;
+
+namespace pv {
+namespace cdecoders {
+
+struct CDecoderDef;  // forward decl; full def is in c_decoder_api.h
+
+/**
+ * Singleton registry: loads C decoders from .dylib/.so, builds srd_decoder
+ * metadata, injects them into libsigrokdecode's global decoder list.
+ */
+class CDecoderRegistry {
+public:
+    static CDecoderRegistry& instance();
+
+    /**
+     * Scan @p dir_path for .dylib (macOS) / .so (Linux) files,
+     * dlopen each, read c_decoder_def, validate api_version,
+     * build srd_decoder, call srd_decoder_register().
+     * Safe to call multiple times (skips already-loaded IDs).
+     */
+    void load_c_decoders(const std::string &dir_path);
+
+    /** Returns true iff @p dec was registered by this registry. */
+    bool is_c_decoder(const srd_decoder *dec) const;
+
+    /**
+     * Returns the CDecoderDef for @p dec, or nullptr if not a C decoder.
+     * Lifetime: valid until unload_all().
+     */
+    CDecoderDef* get_c_decoder_def(const srd_decoder *dec) const;
+
+    /** dlclose all handles, free built srd_decoder structs. */
+    void unload_all();
+
+private:
+    CDecoderRegistry() = default;
+    ~CDecoderRegistry();
+    CDecoderRegistry(const CDecoderRegistry&) = delete;
+    CDecoderRegistry& operator=(const CDecoderRegistry&) = delete;
+
+    srd_decoder* build_srd_decoder(CDecoderDef *def);
+    void free_srd_decoder(srd_decoder *dec);
+
+    std::unordered_map<const srd_decoder*, CDecoderDef*> _c_decoder_map;
+    std::vector<srd_decoder*> _owned_decoders;
+    std::vector<void*>        _dl_handles;
+};
+
+} // namespace cdecoders
+} // namespace pv
