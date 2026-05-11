@@ -109,6 +109,8 @@ void CDecoderRegistry::load_c_decoders(const std::string &dir_path)
 
         srd_decoder *dec = build_srd_decoder(def);
         if (!dec) {
+            fprintf(stderr, "[CDecoderRegistry] build_srd_decoder failed for %s\n",
+                    path.c_str());
             dlclose(handle);
             continue;
         }
@@ -144,14 +146,15 @@ CDecoderDef* CDecoderRegistry::get_c_decoder_def(const srd_decoder *dec) const
 
 void CDecoderRegistry::unload_all()
 {
-    for (srd_decoder *dec : _owned_decoders)
-        free_srd_decoder(dec);
+    for (srd_decoder *dec : _owned_decoders) {
+        srd_decoder_unregister(dec);   /* remove from pd_list first */
+        free_srd_decoder(dec);         /* then free */
+    }
     _owned_decoders.clear();
-    _c_decoder_map.clear();
-
     for (void *h : _dl_handles)
         dlclose(h);
     _dl_handles.clear();
+    _c_decoder_map.clear();
 }
 
 // ---------------------------------------------------------------------------
@@ -165,8 +168,7 @@ srd_decoder* CDecoderRegistry::build_srd_decoder(CDecoderDef *def)
         return nullptr;
     }
 
-    srd_decoder *dec = new srd_decoder();
-    memset(dec, 0, sizeof(*dec));
+    srd_decoder *dec = g_new0(srd_decoder, 1);
 
     /* --- Basic metadata --- */
     dec->id       = g_strdup(def->id);
@@ -228,10 +230,10 @@ srd_decoder* CDecoderRegistry::build_srd_decoder(CDecoderDef *def)
                 char **pair = g_new0(char *, 2);
                 pair[0] = g_strdup(class_label);
                 pair[1] = nullptr;
-                ann_list = g_slist_append(ann_list, pair);
+                ann_list = g_slist_prepend(ann_list, pair);
             }
         }
-        dec->annotations = ann_list;
+        dec->annotations = g_slist_reverse(ann_list);
     }
 
     /* --- Annotation rows --- */
@@ -272,10 +274,10 @@ srd_decoder* CDecoderRegistry::build_srd_decoder(CDecoderDef *def)
                     }
                 }
 
-                row_list = g_slist_append(row_list, row);
+                row_list = g_slist_prepend(row_list, row);
             }
         }
-        dec->annotation_rows = row_list;
+        dec->annotation_rows = g_slist_reverse(row_list);
     }
 
     return dec;
@@ -335,7 +337,7 @@ void CDecoderRegistry::free_srd_decoder(srd_decoder *dec)
     g_slist_free(dec->ann_types);
     g_slist_free(dec->binary);
 
-    delete dec;
+    g_free(dec);
 }
 
 } // namespace cdecoders

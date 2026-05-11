@@ -82,6 +82,8 @@ static gboolean srd_check_init(void)
  */
 SRD_API int srd_decoder_register(struct srd_decoder *dec)
 {
+    if (!srd_check_init())
+        return SRD_ERR;
     if (!dec || !dec->id)
         return SRD_ERR_ARG;
     /* Reject duplicate IDs */
@@ -93,6 +95,24 @@ SRD_API int srd_decoder_register(struct srd_decoder *dec)
         }
     }
     pd_list = g_slist_append(pd_list, dec);
+    return SRD_OK;
+}
+
+/**
+ * Remove a pre-built decoder from the global decoder list.
+ *
+ * Used by CDecoderRegistry to remove C decoders from pd_list before
+ * freeing their memory, so no dangling pointers remain in the list.
+ *
+ * @param dec The srd_decoder to remove. Must not be NULL.
+ *
+ * @return SRD_OK on success, SRD_ERR_ARG if dec is NULL.
+ */
+SRD_API int srd_decoder_unregister(struct srd_decoder *dec)
+{
+    if (!dec)
+        return SRD_ERR_ARG;
+    pd_list = g_slist_remove(pd_list, dec);
     return SRD_OK;
 }
 
