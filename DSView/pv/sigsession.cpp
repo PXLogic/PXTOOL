@@ -1888,9 +1888,11 @@ namespace pv
             _decode_connections.erase(it);
         }
 
-        // Join the thread first. After join, any still-queued decode_done event
-        // is pending but the context (ds) will be destroyed by the caller, causing
-        // Qt to discard it — so the lambda will NOT run after this point.
+        // The _task_active flag was already cleared above, so even if a
+        // decode_done QMetaCallEvent is already queued (posted before we
+        // disconnected), the lambda body will be a no-op when it runs.
+        // ~QObject() / QCoreApplication::removePostedEvents handles any
+        // residual events after the caller deletes the trace.
         ds->stop_decode_work();
 
         // Claim the counter decrement if add_decode_task was called for this decoder
@@ -1905,8 +1907,7 @@ namespace pv
         if (_decode_traces.empty())
             return;
 
-        int dex = -1;
-        clear_all_decode_task(dex);  // stops+joins all decoder threads
+        clear_all_decode_task();  // stops+joins all decoder threads
 
         for (auto trace : _decode_traces)
             delete trace;
@@ -1916,10 +1917,8 @@ namespace pv
             signals_changed();
     }
 
-    void SigSession::clear_all_decode_task(int &runningDex)
+    void SigSession::clear_all_decode_task()
     {
-        runningDex = -1;
-
         // Disconnect per-task lambdas precisely, leaving other slots intact.
         for (auto trace : _decode_traces) {
             pv::data::DecoderStack *ds = trace->decoder();
@@ -1948,13 +1947,6 @@ namespace pv
             if (_view_data && _view_data->get_logic())
                 _view_data->get_logic()->decode_end();
         }
-    }
-
-    void SigSession::decode_done()
-    {
-        // Previously called from DecodeTrace::on_decode_done(). That call has been
-        // removed; completion handling now lives in the add_decode_task lambda.
-        // Kept as a no-op to preserve the public interface.
     }
 
     view::DecodeTrace *SigSession::get_decoder_trace(int index)

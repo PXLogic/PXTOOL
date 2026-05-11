@@ -369,8 +369,6 @@ public:
         _callback->show_region(start, end, keep);
     }
 
-    void decode_done();
-
     // Thread-safe: backed by an atomic counter, safe to call from any thread.
     inline bool is_decoding() {
         return _running_decoder_count.load() > 0;
@@ -482,11 +480,10 @@ private:
   
     void add_decode_task(view::DecodeTrace *trace);
     void remove_decode_task(view::DecodeTrace *trace);
-    void clear_all_decode_task(int &runningDex);
+    void clear_all_decode_task();
 
     inline void clear_all_decode_task2(){
-        int run_dex = 0;
-        clear_all_decode_task(run_dex);
+        clear_all_decode_task();
     }
    
     void capture_init(); 
