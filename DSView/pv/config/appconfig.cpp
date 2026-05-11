@@ -578,6 +578,11 @@ QString GetDecodeScriptDir()
     return "";
 }
 
+QString GetCDecodeDir()
+{
+    return GetAppDataDir() + "/cdecoders";
+}
+
 QString GetProfileDir()
 {
  #if QT_VERSION >= 0x050400

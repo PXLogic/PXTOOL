@@ -85,6 +85,7 @@ endif()
 #-------------------------------------------------------------------------------
 include_directories(
    ./DSView
+   ./pv
    ./libsigrok4DSL
    ./libsigrokdecode4DSL
    ./common
@@ -307,6 +308,7 @@ set(DSView_SOURCES
     DSView/pv/data/decode/decoder.cpp
     DSView/pv/data/decode/annotation.cpp
     DSView/pv/view/decodetrace.cpp
+    pv/cdecoders/c_decoder_registry.cpp
     DSView/pv/prop/binding/decoderoptions.cpp
     DSView/pv/widgets/fakelineedit.cpp
     DSView/pv/widgets/decodermenu.cpp
@@ -662,6 +664,10 @@ set(DSVIEW_LINK_LIBS
 	${FFTW_LIBRARIES}
 	${PY_LIB}
 )
+
+if(NOT APPLE)
+    list(APPEND DSVIEW_LINK_LIBS -ldl)
+endif()
 
 if(STATIC_PKGDEPS_LIBS)
 	link_directories(${PKGDEPS_STATIC_LIBRARY_DIRS})

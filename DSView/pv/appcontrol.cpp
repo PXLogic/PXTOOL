@@ -34,6 +34,7 @@
 #include "log.h"
 #include "utility/path.h"
 #include "utility/encoding.h"
+#include "cdecoders/c_decoder_registry.h"
 
 AppControl::AppControl()
 {
@@ -123,7 +124,14 @@ bool AppControl::Init()
         dsv_err("ERROR: load the protocol decoders failed.");
         return false;
     }
- 
+
+    {
+        QString cdir = GetCDecodeDir();
+        std::string cdir_str = pv::path::ConvertPath(cdir);
+        pv::cdecoders::CDecoderRegistry::instance().load_c_decoders(cdir_str);
+        dsv_info("C decoders loaded from: %s", cdir_str.c_str());
+    }
+
     return true;
 }
 
@@ -139,7 +147,9 @@ bool AppControl::Start()
  }
 
 void AppControl::UnInit()
-{  
+{
+    pv::cdecoders::CDecoderRegistry::instance().unload_all();
+
     // Destroy libsigrokdecode
     srd_exit();
 
