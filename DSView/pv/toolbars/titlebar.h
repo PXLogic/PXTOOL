@@ -31,6 +31,7 @@
 
 class QHBoxLayout;
 class QLabel;
+class QMenu;
 
 namespace pv {
 
@@ -74,6 +75,9 @@ public:
     }
 
     void EnableAbleDrag(bool bEnabled);
+
+    /** Embed File/Window/Help menus into the title bar, right of the app icon. */
+    void addMenusToTitleBar(QMenu *fileMenu, QMenu *windowMenu, QMenu *helpMenu);
 
 private: 
     void reStyle();

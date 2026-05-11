@@ -175,10 +175,13 @@ namespace pv
 
         _trig_bar = new toolbars::TrigBar(_session, this);
         _trig_bar->setObjectName("trig_bar");
+        _trig_bar->hide();
         _file_bar = new toolbars::FileBar(_session, this);
         _file_bar->setObjectName("file_bar");
+        _file_bar->hide();
         _logo_bar = new toolbars::LogoBar(_session, this);
         _logo_bar->setObjectName("logo_bar");
+        _logo_bar->hide();
 
         // Setup _view widget
         _view = new pv::view::View(_session, _sampling_bar, this);
@@ -198,10 +201,13 @@ namespace pv
 
         addDockWidget(Qt::RightDockWidgetArea, _sidebar_dock);
 
-        // In-window menu bar (macOS: setNativeMenuBar(false) forces it into the window)
-        _menu_bar = menuBar();
+        // Standalone menu bar — NOT QMainWindow::menuBar() to avoid QMainWindow
+        // placing it in its internal menu slot (which renders a collapsed button
+        // even when hidden).
+        _menu_bar = new QMenuBar(this);
         _menu_bar->setObjectName("main_menu_bar");
         _menu_bar->setNativeMenuBar(false);
+        _menu_bar->hide();
 
         // File menu
         _menu_file = _menu_bar->addMenu(tr("File"));
@@ -252,6 +258,10 @@ namespace pv
         connect(_action_log,     SIGNAL(triggered()), _logo_bar, SLOT(on_action_setting_log()));
         connect(_action_lang_en, SIGNAL(triggered()), _logo_bar, SLOT(on_actionEn_triggered()));
         connect(_action_lang_cn, SIGNAL(triggered()), _logo_bar, SLOT(on_actionCn_triggered()));
+
+        // Move File/Window/Help into the title bar and hide the in-window menu bar
+        _title_bar->addMenusToTitleBar(_menu_file, _menu_view, _menu_help);
+        _menu_bar->hide();
 
         setIconSize(QSize(40, 40));
         addToolBar(_device_bar);

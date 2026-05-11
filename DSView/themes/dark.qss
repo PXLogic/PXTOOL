@@ -288,6 +288,37 @@ QWidget#main_window_title_bar QLabel
     font-weight: 600;
 }
 
+QWidget#main_window_title_bar QToolButton#TitleMenuButton
+{
+    background: transparent;
+    color: #f0f0f0;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 4px 12px;
+    border: none;
+    border-radius: 3px;
+    margin: 0px;
+}
+
+QWidget#main_window_title_bar QToolButton#TitleMenuButton:hover
+{
+    background-color: #333333;
+    color: #e5e7eb;
+}
+
+QWidget#main_window_title_bar QToolButton#TitleMenuButton:pressed
+{
+    background-color: #333333;
+    color: #e5e7eb;
+}
+
+QWidget#main_window_title_bar QToolButton#TitleMenuButton::menu-indicator
+{
+    width: 0;
+    height: 0;
+    image: none;
+}
+
 QMenu
 {
     border: 1px transparent;

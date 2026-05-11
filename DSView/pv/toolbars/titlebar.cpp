@@ -375,6 +375,35 @@ void TitleBar::EnableAbleDrag(bool bEnabled)
 {
     _is_able_drag = bEnabled;
 }
+
+void TitleBar::addMenusToTitleBar(QMenu *fileMenu, QMenu *windowMenu, QMenu *helpMenu)
+{
+    QHBoxLayout *lay = qobject_cast<QHBoxLayout *>(layout());
+
+    // Use QToolButton + InstantPopup to avoid macOS native menu-bar integration
+    struct MenuDef { QString label; QMenu *menu; };
+    const MenuDef defs[] = {
+        { tr("File"),   fileMenu   },
+        { tr("Window"), windowMenu },
+        { tr("Help"),   helpMenu   },
+    };
+
+    // Insert in reverse order so File ends up at the leftmost position (index 0)
+    for (int i = 2; i >= 0; --i) {
+        QToolButton *btn = new QToolButton(this);
+        btn->setText(defs[i].label);
+        btn->setMenu(defs[i].menu);
+        btn->setPopupMode(QToolButton::InstantPopup);
+        btn->setToolButtonStyle(Qt::ToolButtonTextOnly);
+        btn->setObjectName("TitleMenuButton");
+        btn->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+        lay->insertWidget(0, btn, 0, Qt::AlignVCenter);
+    }
+
+    // Left margin reserves space for the painted app logo (~41 px wide)
+    lay->setContentsMargins(50, 0, 0, 0);
+}
+
  
 } // namespace toolbars
 } // namespace pv
