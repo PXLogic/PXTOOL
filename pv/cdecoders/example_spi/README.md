@@ -47,11 +47,11 @@ make
 Copy the built shared library to the DSView C decoders directory:
 
 ```bash
-# macOS (typical location)
-cp spi.dylib ~/Library/Application\ Support/DSView/cdecoders/
+# macOS
+cp spi.dylib ~/Library/Application\ Support/DreamSourceLab/DSView/cdecoders/
 
-# Linux (typical location)
-cp spi.so ~/.local/share/DSView/cdecoders/
+# Linux
+cp spi.so ~/.local/share/DreamSourceLab/DSView/cdecoders/
 ```
 
 Restart DSView. When you add an SPI decoder, its title will show `[C]` if
