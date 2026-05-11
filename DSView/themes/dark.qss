@@ -319,6 +319,38 @@ QWidget#main_window_title_bar QToolButton#TitleMenuButton::menu-indicator
     image: none;
 }
 
+QToolBar QToolButton#TitleMenuButton {
+    background: transparent;
+    border: none;
+    border-radius: 4px;
+    padding: 4px;
+    margin: 0px;
+}
+
+QToolBar QToolButton#TitleMenuButton:hover {
+    background-color: #333333;
+}
+
+QToolBar QToolButton#TitleMenuButton:pressed {
+    background-color: #404040;
+}
+
+QToolButton#TriggerToggleButton {
+    background: transparent;
+    border: none;
+    border-radius: 4px;
+    padding: 4px;
+    margin: 0px;
+}
+
+QToolButton#TriggerToggleButton:hover {
+    background-color: #333333;
+}
+
+QToolButton#TriggerToggleButton:pressed {
+    background-color: #404040;
+}
+
 QMenu
 {
     border: 1px transparent;

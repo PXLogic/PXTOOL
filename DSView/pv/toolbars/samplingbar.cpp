@@ -162,6 +162,16 @@ namespace pv
                 return f;
             };
 
+            // Trigger sidebar toggle button (leftmost)
+            _triggers_toggle_btn.setObjectName("TriggerToggleButton");
+            _triggers_toggle_btn.setToolTip(tr("Show/Hide trigger settings"));
+            _triggers_toggle_btn.setFixedWidth(30);
+            _triggers_toggle_btn.setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Expanding);
+            _triggers_toggle_btn.setIconSize(QSize(18, 18));
+            connect(&_triggers_toggle_btn, SIGNAL(clicked()), this, SLOT(on_triggers_toggle()));
+            lay->addWidget(&_triggers_toggle_btn);
+            lay->addSpacing(8);
+
             // DEVICE: selector only
             {
                 QWidget *g = new QWidget(_capture_container);
@@ -373,6 +383,7 @@ namespace pv
             if (true)
             {
                 QString iconPath = GetIconPath();
+                update_triggers_toggle_btn();
                 _configure_button.setIcon(QIcon(iconPath + "/params.svg"));
             
                 bool is_working = _session->is_working();
@@ -1417,7 +1428,8 @@ namespace pv
                 _is_run_as_instant = false;
             }
 
-            update_mode_icon(); 
+            update_mode_icon();
+            update_triggers_toggle_btn();
 
             if (_session->get_device()->is_demo() && bEnable)
             {
@@ -1483,6 +1495,23 @@ namespace pv
         void SamplingBar::set_sample_count_index(int index)
         {
             _sample_count.setCurrentIndex(index);
+        }
+
+        void SamplingBar::on_triggers_toggle()
+        {
+            if (_view) {
+                _view->set_triggers_visible(!_view->is_triggers_visible());
+                update_triggers_toggle_btn();
+                _view->update();
+            }
+        }
+
+        void SamplingBar::update_triggers_toggle_btn()
+        {
+            QString iconPath = GetIconPath();
+            bool visible = _view && _view->is_triggers_visible();
+            QString iconFile = visible ? "/trigger-eye.svg" : "/trigger-eye-off.svg";
+            _triggers_toggle_btn.setIcon(QIcon(iconPath + iconFile));
         }
 
     } // namespace toolbars

@@ -52,6 +52,8 @@
         <file>icons/dark/moder.svg</file>
         <file>icons/dark/modes.svg</file>
         <file>icons/dark/trigger.svg</file>
+        <file>icons/dark/trigger-eye.svg</file>
+        <file>icons/dark/trigger-eye-off.svg</file>
         <file>icons/light/about.svg</file>
         <file>icons/light/add.svg</file>
         <file>icons/light/bug.svg</file>
@@ -85,6 +87,8 @@
         <file>icons/light/start.svg</file>
         <file>icons/light/stop.svg</file>
         <file>icons/light/trigger.svg</file>
+        <file>icons/light/trigger-eye.svg</file>
+        <file>icons/light/trigger-eye-off.svg</file>
         <file>icons/dark/about.svg</file>
         <file>icons/dark/add.svg</file>
         <file>icons/dark/bug.svg</file>

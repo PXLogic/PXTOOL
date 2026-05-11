@@ -149,12 +149,16 @@ namespace pv
             void on_configure();
             void zero_adj();
             void on_run_stop_action();
-            void on_instant_stop_action();    
+            void on_instant_stop_action();
+            void on_triggers_toggle();
 
         private:
+            void update_triggers_toggle_btn();
+
             SigSession          *_session;
 
             XToolButton         _device_type;
+            XToolButton         _triggers_toggle_btn;
             DsComboBox          _device_selector;
             XToolButton         _configure_button;           
             DsComboBox          _sample_count;
