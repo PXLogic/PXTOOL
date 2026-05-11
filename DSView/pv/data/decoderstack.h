@@ -29,7 +29,8 @@
 #include <boost/optional.hpp>
 #include <QObject>
 #include <QString>
-#include <mutex> 
+#include <mutex>
+#include <atomic>
 
 #include "decode/row.h" 
 #include "../data/signaldata.h"
@@ -193,6 +194,7 @@ private:
 	void execute_decode_stack();
 	static void annotation_callback(srd_proto_data *pdata, void *self);
     void do_decode_work();
+    void join_own_thread();
   
 signals:
 	void new_decode_data();
@@ -208,7 +210,7 @@ private:
     std::map<std::pair<const srd_decoder*, int>, decode::Row> _class_rows;
   
     SigSession      *_session;
-    decode_state    _decode_state;
+    std::atomic<decode_state> _decode_state;
     volatile bool   _options_changed;
     volatile bool   _no_memory;
     int64_t         _mark_index;

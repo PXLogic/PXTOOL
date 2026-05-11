@@ -2001,6 +2001,23 @@ namespace pv
             task = get_top_decode_task();
         }
 
+        // Wait for all async decode threads to actually finish before clearing
+        // _is_decoding; otherwise the bNotFree buffer-safety gate is lifted too early.
+        {
+            bool any_running = true;
+            while (any_running) {
+                any_running = false;
+                for (auto trace : _decode_traces) {
+                    if (trace->decoder() && trace->decoder()->IsRunning()) {
+                        any_running = true;
+                        break;
+                    }
+                }
+                if (any_running)
+                    std::this_thread::sleep_for(std::chrono::milliseconds(50));
+            }
+        }
+
         _view_data->get_logic()->decode_end();
 
         dsv_info("------->decode thread end");

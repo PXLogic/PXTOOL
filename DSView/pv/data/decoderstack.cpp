@@ -76,9 +76,14 @@ DecoderStack::DecoderStack(pv::SigSession *session,
     build_row();
 }
 
-DecoderStack::~DecoderStack()
+void DecoderStack::join_own_thread()
 {
     if (_own_thread.joinable()) _own_thread.join();
+}
+
+DecoderStack::~DecoderStack()
+{
+    join_own_thread();
 
     //release resource talbe
     DESTROY_OBJECT(_decoder_status);
@@ -393,19 +398,24 @@ void DecoderStack::stop_decode_work()
         _stask_stauts->_bStop = true;
     }
     _decode_state = Stopped;
-    if (_own_thread.joinable()) _own_thread.join();
+    join_own_thread();
 }
 
 void DecoderStack::begin_decode_work()
 {
+    // _own_thread may still be joinable() if it exited but wasn't joined yet
+    // (it will have set _decode_state = Stopped, so the assert passes)
     assert(_decode_state == Stopped);
-    if (_own_thread.joinable()) _own_thread.join();
+    join_own_thread();
     _error_message = "";
     _decode_state = Running;
     _own_thread = std::thread([this](){
         do_decode_work();
         _decode_state = Stopped;
-        emit decode_done();
+        bool was_cancelled = _stask_stauts && _stask_stauts->_bStop;
+        if (!was_cancelled && !_session->is_closed()) {
+            emit decode_done();
+        }
     });
 }
 
