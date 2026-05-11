@@ -1870,6 +1870,7 @@ namespace pv
     void SigSession::remove_decode_task(view::DecodeTrace *trace)
     {
         pv::data::DecoderStack *ds = trace->decoder();
+        QObject::disconnect(ds, &pv::data::DecoderStack::decode_done, nullptr, nullptr);  // disconnect all slots connected to decode_done
 
         // Join the thread first. After join, any still-queued decode_done event
         // is pending but the context (ds) will be destroyed by the caller, causing
