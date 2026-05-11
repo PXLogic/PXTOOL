@@ -85,7 +85,7 @@ endif()
 #-------------------------------------------------------------------------------
 include_directories(
    ./DSView
-   ./pv
+   ./pv/cdecoders
    ./libsigrok4DSL
    ./libsigrokdecode4DSL
    ./common

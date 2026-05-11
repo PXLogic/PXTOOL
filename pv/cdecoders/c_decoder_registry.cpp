@@ -10,13 +10,14 @@
 #include "c_decoder_registry.h"
 #include "c_decoder_api.h"
 
+#include "pv/log.h"
+
 #include <libsigrokdecode.h>
 #include <glib.h>
 
 #include <dlfcn.h>
 #include <dirent.h>
 #include <cstring>
-#include <cstdio>
 #include <string>
 
 namespace pv {
@@ -45,8 +46,7 @@ void CDecoderRegistry::load_c_decoders(const std::string &dir_path)
 {
     DIR *dir = opendir(dir_path.c_str());
     if (!dir) {
-        fprintf(stderr, "[CDecoderRegistry] Cannot open directory: %s\n",
-                dir_path.c_str());
+        dsv_err("Cannot open directory: %s", dir_path.c_str());
         return;
     }
 
@@ -69,24 +69,20 @@ void CDecoderRegistry::load_c_decoders(const std::string &dir_path)
 
         void *handle = dlopen(path.c_str(), RTLD_NOW | RTLD_LOCAL);
         if (!handle) {
-            fprintf(stderr, "[CDecoderRegistry] dlopen failed for %s: %s\n",
-                    path.c_str(), dlerror());
+            dsv_err("dlopen failed for %s: %s", path.c_str(), dlerror());
             continue;
         }
 
         CDecoderDef *def = static_cast<CDecoderDef *>(
             dlsym(handle, "c_decoder_def"));
         if (!def) {
-            fprintf(stderr, "[CDecoderRegistry] No c_decoder_def in %s\n",
-                    path.c_str());
+            dsv_err("No c_decoder_def in %s", path.c_str());
             dlclose(handle);
             continue;
         }
 
         if (def->api_version != C_DECODER_API_VERSION) {
-            fprintf(stderr,
-                    "[CDecoderRegistry] API version mismatch in %s "
-                    "(expected %u, got %u)\n",
+            dsv_err("API version mismatch in %s (expected %u, got %u)",
                     path.c_str(),
                     static_cast<unsigned>(C_DECODER_API_VERSION),
                     static_cast<unsigned>(def->api_version));
@@ -109,8 +105,7 @@ void CDecoderRegistry::load_c_decoders(const std::string &dir_path)
 
         srd_decoder *dec = build_srd_decoder(def);
         if (!dec) {
-            fprintf(stderr, "[CDecoderRegistry] build_srd_decoder failed for %s\n",
-                    path.c_str());
+            dsv_err("build_srd_decoder failed for %s", path.c_str());
             dlclose(handle);
             continue;
         }
@@ -164,7 +159,7 @@ void CDecoderRegistry::unload_all()
 srd_decoder* CDecoderRegistry::build_srd_decoder(CDecoderDef *def)
 {
     if (!def || !def->id) {
-        fprintf(stderr, "[CDecoderRegistry] build_srd_decoder: NULL def or id\n");
+        dsv_err("build_srd_decoder: NULL def or id");
         return nullptr;
     }
 

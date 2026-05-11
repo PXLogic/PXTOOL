@@ -4,7 +4,8 @@
 #include <unordered_map>
 #include <vector>
 
-#include "c_decoder_api.h"  // defines CDecoderDef at global scope (pure C)
+#include "c_decoder_api.h"  // defines CDecoderDef (needed for map value type);
+                             // the extern c_decoder_def symbol is decoder-side only
 
 struct srd_decoder;
 
