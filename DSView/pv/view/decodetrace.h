@@ -142,6 +142,7 @@ public:
 	bool create_popup(bool isnew);
 
     void paint_label(QPainter &p, int right, const QPoint pt, QColor fore) override;
+    int get_name_width() override;
 
 protected:
     void paint_type_options(QPainter &p, int right, const QPoint pt, QColor fore);

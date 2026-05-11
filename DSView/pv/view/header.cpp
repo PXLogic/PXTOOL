@@ -24,6 +24,7 @@
   
 #include <QColorDialog>
 #include <QInputDialog>
+#include <QActionGroup>
 #include <QMenu>
 #include <QMouseEvent>
 #include <QPainter>
@@ -617,10 +618,14 @@ void Header::contextMenuEvent(QContextMenuEvent *event)
         if (pv::cdecoders::CDecoderRegistry::instance().is_c_decoder(root_srd)) {
             menu.addSeparator();
             QMenu *engMenu = menu.addMenu(tr("Decode Engine"));
+            QActionGroup *engGroup = new QActionGroup(engMenu);
+            engGroup->setExclusive(true);
             useC  = engMenu->addAction(tr("C Decoder"));
             usePy = engMenu->addAction(tr("Python Decoder"));
             useC->setCheckable(true);
             usePy->setCheckable(true);
+            engGroup->addAction(useC);
+            engGroup->addAction(usePy);
             useC->setChecked(dt->decoder()->use_c_decoder());
             usePy->setChecked(!dt->decoder()->use_c_decoder());
         }

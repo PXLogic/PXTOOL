@@ -151,6 +151,22 @@ void DecodeTrace::set_view(pv::view::View *view)
 	Trace::set_view(view);
 }
 
+int DecodeTrace::get_name_width()
+{
+    int base = Trace::get_name_width();
+    if (!_decoder_stack->stack().empty()) {
+        const srd_decoder *root = _decoder_stack->stack().front()->decoder();
+        if (pv::cdecoders::CDecoderRegistry::instance().is_c_decoder(root)) {
+            QFont font;
+            float fSize = AppConfig::Instance().appOptions.fontSize;
+            font.setPointSizeF(fSize <= 10 ? fSize : 10);
+            QFontMetrics fm(font);
+            base += fm.boundingRect(" [Py]").width();
+        }
+    }
+    return base;
+}
+
 void DecodeTrace::paint_label(QPainter &p, int right, const QPoint pt, QColor fore)
 {
     const srd_decoder *root_srd = nullptr;
