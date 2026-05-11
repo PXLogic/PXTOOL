@@ -124,7 +124,6 @@ DecodeTrace::DecodeTrace(pv::SigSession *session,
     _decode_end  = INT64_MAX; 
     _decoder_stack = decoder_stack;
     _session = session;
-    _delete_flag = false;
     _decode_cursor1 = 0;
     _decode_cursor2 = 0;
 

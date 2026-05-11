@@ -1850,10 +1850,19 @@ namespace pv
         pv::data::DecoderStack *ds = trace->decoder();
         ds->set_task_active(true);
 
+        // Remove any stale per-task connection before adding a new one.
+        auto it = _decode_connections.find(ds);
+        if (it != _decode_connections.end()) {
+            QObject::disconnect(it.value());
+            _decode_connections.erase(it);
+        }
+
         // Connect the decoder's done signal to a lambda (using ds as the context
         // object so Qt discards any queued event if ds is destroyed before delivery).
-        // The lambda owns the single counter decrement for this task.
-        QObject::connect(ds, &pv::data::DecoderStack::decode_done,
+        // The lambda owns the single counter decrement for this task.  Store the
+        // handle so we can disconnect it precisely in remove/clear without disturbing
+        // other slots connected to decode_done (e.g. DecodeTrace::on_decode_done).
+        _decode_connections[ds] = QObject::connect(ds, &pv::data::DecoderStack::decode_done,
                 ds, [this, ds]() {
                     if (ds->clear_task_active()) {
                         if (_running_decoder_count.fetch_sub(1) == 1) {
@@ -1870,7 +1879,14 @@ namespace pv
     void SigSession::remove_decode_task(view::DecodeTrace *trace)
     {
         pv::data::DecoderStack *ds = trace->decoder();
-        QObject::disconnect(ds, &pv::data::DecoderStack::decode_done, nullptr, nullptr);  // disconnect all slots connected to decode_done
+
+        // Disconnect only our per-task lambda, leaving other slots (e.g.
+        // DecodeTrace::on_decode_done) intact.
+        auto it = _decode_connections.find(ds);
+        if (it != _decode_connections.end()) {
+            QObject::disconnect(it.value());
+            _decode_connections.erase(it);
+        }
 
         // Join the thread first. After join, any still-queued decode_done event
         // is pending but the context (ds) will be destroyed by the caller, causing
@@ -1904,6 +1920,16 @@ namespace pv
     {
         runningDex = -1;
 
+        // Disconnect per-task lambdas precisely, leaving other slots intact.
+        for (auto trace : _decode_traces) {
+            pv::data::DecoderStack *ds = trace->decoder();
+            auto it = _decode_connections.find(ds);
+            if (it != _decode_connections.end()) {
+                QObject::disconnect(it.value());
+                _decode_connections.erase(it);
+            }
+        }
+
         // Clear every task_active flag before stopping so that any pending queued
         // decode_done lambda (from a race where emit happened before _bStop was set)
         // sees false and does not touch the counter.
@@ -1915,10 +1941,13 @@ namespace pv
             trace->decoder()->stop_decode_work();
 
         // Safety net: all threads are joined, nothing can be running.
-        _running_decoder_count.store(0);
-
-        if (_view_data && _view_data->get_logic())
-            _view_data->get_logic()->decode_end();
+        // Only call decode_end() if decoders were actually running; otherwise the
+        // natural-completion lambda already called it and we would fire it twice.
+        int was_running = _running_decoder_count.exchange(0);
+        if (was_running > 0) {
+            if (_view_data && _view_data->get_logic())
+                _view_data->get_logic()->decode_end();
+        }
     }
 
     void SigSession::decode_done()

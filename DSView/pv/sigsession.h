@@ -32,6 +32,8 @@
 #include <atomic>
 #include <QDateTime>
 #include <list>
+#include <QHash>
+#include <QMetaObject>
 
 #include "view/mathtrace.h"
 #include "data/mathstack.h"
@@ -60,6 +62,7 @@ class DsoSnapshot;
 class LogicSnapshot;
 class DecoderModel;
 class MathStack;
+class DecoderStack;
 
 namespace decode {
     class Decoder;
@@ -559,6 +562,10 @@ private:
     // or stopped). Incremented in add_decode_task, decremented exactly once per
     // add_decode_task call — either in the completion lambda or in remove_decode_task.
     std::atomic<int>        _running_decoder_count{0};
+
+    // Stores the QMetaObject::Connection handle for each decoder's decode_done lambda
+    // so we can disconnect precisely without disturbing other slots (e.g. DecodeTrace).
+    QHash<pv::data::DecoderStack*, QMetaObject::Connection> _decode_connections;
 
 	std::vector<view::Signal*>      _signals; 
     std::vector<view::DecodeTrace*> _decode_traces;
