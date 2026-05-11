@@ -305,9 +305,9 @@ namespace pv
                 }
             }
             _configure_button.setText(L_S(STR_PAGE_TOOLBAR, S_ID(IDS_TOOLBAR_DEVICE_OPTION), "Options"));
-           _mode_button.setItemText(0, L_S(STR_PAGE_TOOLBAR, S_ID(IDS_TOOLBAR_CAPTURE_MODE_SINGLE), "Single"));
-           _mode_button.setItemText(1, L_S(STR_PAGE_TOOLBAR, S_ID(IDS_TOOLBAR_CAPTURE_MODE_REPEAT), "Repetitive"));
-           _mode_button.setItemText(2, L_S(STR_PAGE_TOOLBAR, S_ID(IDS_TOOLBAR_CAPTURE_MODE_LOOP), "Loop"));
+           _mode_button.setItemText(0, QString(L_S(STR_PAGE_TOOLBAR, S_ID(IDS_TOOLBAR_CAPTURE_MODE_SINGLE), "Single")).remove('&'));
+           _mode_button.setItemText(1, QString(L_S(STR_PAGE_TOOLBAR, S_ID(IDS_TOOLBAR_CAPTURE_MODE_REPEAT), "Repetitive")).remove('&'));
+           _mode_button.setItemText(2, QString(L_S(STR_PAGE_TOOLBAR, S_ID(IDS_TOOLBAR_CAPTURE_MODE_LOOP), "Loop")).remove('&'));
 
             int mode = _device_agent->get_work_mode();
             bool is_working = _session->is_working();
