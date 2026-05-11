@@ -708,7 +708,6 @@ void DecoderStack::decode_data(const uint64_t decode_start, const uint64_t decod
 
 void DecoderStack::execute_decode_stack()
 {
-    const srd_decoder *root_dec = _stack.front()->decoder();
     if (_use_c_decoder) {
         execute_c_decode_stack();
         return;
