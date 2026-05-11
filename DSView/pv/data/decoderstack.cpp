@@ -77,7 +77,9 @@ DecoderStack::DecoderStack(pv::SigSession *session,
 }
 
 DecoderStack::~DecoderStack()
-{   
+{
+    if (_own_thread.joinable()) _own_thread.join();
+
     //release resource talbe
     DESTROY_OBJECT(_decoder_status);
 
@@ -386,22 +388,25 @@ void DecoderStack::init()
 }
  
 void DecoderStack::stop_decode_work()
-{  
-    //set the flag to exit from task thread 
-     if (_stask_stauts){
-         _stask_stauts->_bStop = true;
-     }
-    _decode_state = Stopped; 
+{
+    if (_stask_stauts) {
+        _stask_stauts->_bStop = true;
+    }
+    _decode_state = Stopped;
+    if (_own_thread.joinable()) _own_thread.join();
 }
 
 void DecoderStack::begin_decode_work()
 {
-     assert(_decode_state == Stopped);
-
-     _error_message = "";
-     _decode_state = Running;
-      do_decode_work();
-     _decode_state = Stopped;
+    assert(_decode_state == Stopped);
+    if (_own_thread.joinable()) _own_thread.join();
+    _error_message = "";
+    _decode_state = Running;
+    _own_thread = std::thread([this](){
+        do_decode_work();
+        _decode_state = Stopped;
+        emit decode_done();
+    });
 }
 
 bool DecoderStack::check_required_probes()
@@ -682,8 +687,6 @@ void DecoderStack::decode_data(const uint64_t decode_start, const uint64_t decod
     if (error != NULL)
         g_free(error);
   
-    if (!_session->is_closed())
-        decode_done();
 }
 
 void DecoderStack::execute_decode_stack()

@@ -25,6 +25,7 @@
 
 #include <libsigrokdecode.h>
 #include <list>
+#include <thread>
 #include <boost/optional.hpp>
 #include <QObject>
 #include <QString>
@@ -218,7 +219,8 @@ private:
     uint64_t        _sample_count; 
  
     decode_task_status  *_stask_stauts;    
-    mutable std::mutex _output_mutex; 
+    mutable std::mutex _output_mutex;
+    std::thread _own_thread;
     bool            _is_capture_end;
     int             _progress;
     bool            _is_decoding;
