@@ -204,6 +204,7 @@ public:
     inline bool use_c_decoder() const { return _use_c_decoder; }
 
 public:
+    // Called from c_put_annotation_cb (free function in pv::data namespace)
     static void annotation_callback(srd_proto_data *pdata, void *self);
 
 private:
@@ -249,7 +250,7 @@ private:
     bool            _is_decoding;
     uint64_t        _result_count;
 
-    bool            _use_c_decoder;
+    std::atomic<bool> _use_c_decoder{false};
 
 	friend class DecoderStackTest::TwoDecoderStack;
 };

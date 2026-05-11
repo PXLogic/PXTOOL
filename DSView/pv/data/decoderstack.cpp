@@ -709,7 +709,7 @@ void DecoderStack::decode_data(const uint64_t decode_start, const uint64_t decod
 void DecoderStack::execute_decode_stack()
 {
     const srd_decoder *root_dec = _stack.front()->decoder();
-    if (_use_c_decoder && pv::cdecoders::CDecoderRegistry::instance().is_c_decoder(root_dec)) {
+    if (_use_c_decoder) {
         execute_c_decode_stack();
         return;
     }
@@ -927,7 +927,7 @@ static void c_put_annotation_cb(void *ctx, uint64_t ss, uint64_t es,
                                  const char *text)
 {
     CPutFnCtx *pctx = static_cast<CPutFnCtx*>(ctx);
-    if (pctx->status->_bStop) {
+    if (pctx->status->_bStop || pctx->stack->out_of_memory()) {
         *(pctx->stop_flag) = 1;
         return;
     }
@@ -957,6 +957,8 @@ static void c_put_annotation_cb(void *ctx, uint64_t ss, uint64_t es,
 void DecoderStack::execute_c_decode_stack()
 {
     assert(_snapshot);
+    // Note: C decoders don't support real-time streaming mode (pre-allocates all samples).
+    // In streaming mode, the Python path is used instead.
 
     const srd_decoder *root_srd = _stack.front()->decoder();
     CDecoderDef *c_def =
@@ -969,6 +971,10 @@ void DecoderStack::execute_c_decode_stack()
 
     decode::Decoder *front_dec = _stack.front();
     _sample_count = _snapshot->get_ring_sample_count();
+    if (_sample_count == 0) {
+        dsv_err("C decoder: snapshot has no samples");
+        return;
+    }
     uint64_t decode_start = front_dec->decode_start();
     uint64_t decode_end   = front_dec->decode_end();
     if (decode_end >= _sample_count)
@@ -994,42 +1000,76 @@ void DecoderStack::execute_c_decode_stack()
     }
 
     uint64_t num_samples = decode_end - decode_start + 1;
-    std::vector<std::vector<uint8_t>> sample_bufs(num_channels);
-    for (int ch = 0; ch < num_channels; ch++)
-        sample_bufs[ch].assign(num_samples, 0);
+    std::vector<std::vector<uint8_t>> sample_bufs;
+    try {
+        sample_bufs.resize(num_channels);
+        for (int ch = 0; ch < num_channels; ch++)
+            sample_bufs[ch].assign(num_samples, 0);
+    } catch (const std::bad_alloc &) {
+        _no_memory = true;
+        _error_message = "Out of memory allocating sample buffers for C decoder";
+        dsv_err("C decoder: out of memory allocating %llu x %d bytes",
+                (unsigned long long)num_samples, num_channels);
+        return;
+    }
+
+    std::vector<void*> lbp_per_ch(num_channels, nullptr);
 
     uint64_t pos = decode_start;
     while (pos <= decode_end && !_stask_stauts->_bStop) {
         uint64_t chunk_end = decode_end;
-        for (int ch = 0; ch < num_channels; ch++) {
+        for (int ch = 0; ch < num_channels && chunk_end == decode_end; ch++) {
             int sig_idx = sig_indices[ch];
             if (sig_idx < 0 || !_snapshot->has_data(sig_idx)) continue;
-            uint64_t ce = chunk_end;
-            const uint8_t *data = _snapshot->get_samples(pos, ce, sig_idx);
+            uint64_t ce = decode_end;
+            void *lbp = nullptr;
+            const uint8_t *data = _snapshot->get_samples(pos, ce, sig_idx, &lbp);
             if (!data) continue;
-            if (ce > decode_end) ce = decode_end;
-            uint64_t copy_len = ce - pos + 1;
+            chunk_end = (ce < decode_end) ? ce : decode_end;
+            // Copy this channel
+            uint64_t copy_len = chunk_end - pos + 1;
             uint64_t buf_offset = pos - decode_start;
-            if (buf_offset + copy_len > num_samples)
-                copy_len = num_samples - buf_offset;
+            if (buf_offset + copy_len > num_samples) copy_len = num_samples - buf_offset;
             std::memcpy(&sample_bufs[ch][buf_offset], data, copy_len);
-            chunk_end = ce;
+            if (!_snapshot->is_able_free() && lbp) {
+                if (lbp_per_ch[ch] && lbp_per_ch[ch] != lbp)
+                    _snapshot->free_decode_lpb(lbp_per_ch[ch]);
+                lbp_per_ch[ch] = lbp;
+            }
+            // Fill remaining channels
+            for (int ch2 = ch + 1; ch2 < num_channels; ch2++) {
+                int sig_idx2 = sig_indices[ch2];
+                if (sig_idx2 < 0 || !_snapshot->has_data(sig_idx2)) continue;
+                uint64_t ce2 = chunk_end;
+                void *lbp2 = nullptr;
+                const uint8_t *data2 = _snapshot->get_samples(pos, ce2, sig_idx2, &lbp2);
+                if (!data2) continue;
+                uint64_t clen2 = (ce2 < chunk_end ? ce2 : chunk_end) - pos + 1;
+                if (pos - decode_start + clen2 > num_samples) clen2 = num_samples - (pos - decode_start);
+                std::memcpy(&sample_bufs[ch2][pos - decode_start], data2, clen2);
+                if (!_snapshot->is_able_free() && lbp2) {
+                    if (lbp_per_ch[ch2] && lbp_per_ch[ch2] != lbp2)
+                        _snapshot->free_decode_lpb(lbp_per_ch[ch2]);
+                    lbp_per_ch[ch2] = lbp2;
+                }
+            }
             break;
         }
-        for (int ch = 0; ch < num_channels; ch++) {
-            int sig_idx = sig_indices[ch];
-            if (sig_idx < 0 || !_snapshot->has_data(sig_idx)) continue;
-            uint64_t ce = chunk_end;
-            const uint8_t *data = _snapshot->get_samples(pos, ce, sig_idx);
-            if (!data) continue;
-            if (ce > decode_end) ce = decode_end;
-            uint64_t copy_len = ce - pos + 1;
-            uint64_t buf_offset = pos - decode_start;
-            if (buf_offset + copy_len > num_samples)
-                copy_len = num_samples - buf_offset;
-            std::memcpy(&sample_bufs[ch][buf_offset], data, copy_len);
+
+        // Update progress during extraction (0-50%)
+        {
+            uint64_t extracted = pos - decode_start + (chunk_end - pos + 1);
+            _progress = (int)(extracted * 50 / (num_samples > 0 ? num_samples : 1));
         }
+
         pos = chunk_end + 1;
+    }
+
+    // Release any still-held lock buffer pointers
+    for (int ch = 0; ch < num_channels; ch++) {
+        if (lbp_per_ch[ch])
+            _snapshot->free_decode_lpb(lbp_per_ch[ch]);
+        lbp_per_ch[ch] = nullptr;
     }
 
     if (_stask_stauts->_bStop) return;
@@ -1107,6 +1147,11 @@ void DecoderStack::execute_c_decode_stack()
         &stop_flag
     );
 
+    // Update samples_decoded
+    {
+        std::lock_guard<std::mutex> lock(_output_mutex);
+        _samples_decoded = static_cast<int64_t>(num_samples);
+    }
     _progress   = 100;
     _is_decoding = false;
 
@@ -1115,6 +1160,8 @@ void DecoderStack::execute_c_decode_stack()
         dsv_err("C decoder '%s' decode() returned %d", root_srd->id, rc);
     }
 
+    dsv_info("C decoder '%s' decoded %llu samples, %llu annotations",
+             root_srd->id, (unsigned long long)num_samples, (unsigned long long)_result_count);
     new_decode_data();
 }
 
