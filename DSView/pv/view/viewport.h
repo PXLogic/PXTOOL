@@ -59,6 +59,7 @@ enum UpdateEventType
 
 class Signal;
 class View;
+class Trace;
 
 //main graph view port, in the middle region
 //draw the left and right rule scale
@@ -86,6 +87,7 @@ public:
         LOGIC_MOVE,
         LOGIC_ZOOM,
         LOGIC_JUMP,
+        DIVIDER_RESIZE,
 
         DSO_XM_STEP0,
         DSO_XM_STEP1,
@@ -146,6 +148,7 @@ private:
     void paintProgress(QPainter& p, QColor fore, QColor back);
     void paintMeasure(QPainter &p, QColor fore, QColor back);
     void paintCursors(QPainter &p);
+    Trace* get_divider_trace(const QPoint &pt);
 
     void start_trigger_timer(int msec);
     void get_captured_progress(double &progress, int &progress100);
@@ -215,6 +218,9 @@ private:
     bool        _transfer_started;
     int         _timer_cnt;
     Signal      *_drag_sig;
+    Trace       *_divider_resize_trace;
+    int          _divider_resize_start_y;
+    int          _divider_resize_start_h;
     uint64_t    _hover_index;
     bool        _hover_hit;
     uint16_t    _hover_sig_index;

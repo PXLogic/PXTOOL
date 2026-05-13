@@ -263,11 +263,6 @@ void LogicSignal::paint_type_options(QPainter &p, int right, const QPoint pt, QC
         p.drawRect(edgeTrig_rect);
     }   
 
-    p.setPen(QPen(fore, 1, Qt::DashLine));
-    p.setBrush(Qt::transparent);
-    p.drawLine(posTrig_rect.left(), posTrig_rect.bottom(),
-               edgeTrig_rect.right(), edgeTrig_rect.bottom());
-
     p.setPen(QPen(fore, 2, Qt::SolidLine));
     p.setBrush(Qt::transparent);
     p.drawLine(posTrig_rect.left() + 5, posTrig_rect.bottom() - 5,

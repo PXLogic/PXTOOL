@@ -37,6 +37,9 @@
 #include <QRadioButton>
 #include <QTimer> 
 #include <QWidget>
+#include <QColor>
+#include <QPainter>
+#include <QMouseEvent>
 #include <vector> 
 #include "../prop/binding/deviceoptions.h"
 #include "../prop/binding/probeoptions.h"
@@ -63,13 +66,20 @@ public:
         return _box;
     }
 
+protected:
+    void paintEvent(QPaintEvent *event) override;
+    void mousePressEvent(QMouseEvent *event) override;
+
 private slots:
     void on_checked();
 
 private:
-    QCheckBox *_box;
-    IChannelCheck *_checked;
-    int     _index;
+    static const QColor CHAN_COLORS[16];
+
+    QCheckBox       *_box;
+    IChannelCheck   *_checked;
+    int              _index;
+    QColor           _color;
 };
 
 struct ChannelModePair

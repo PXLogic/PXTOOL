@@ -24,6 +24,7 @@
 #include "ruler.h"
 
 #include "signal.h"
+#include "trace.h"
 #include "dsosignal.h"
 #include "logicsignal.h"
 #include "analogsignal.h"
@@ -75,7 +76,10 @@ Viewport::Viewport(View &parent, View_type type) :
     _waiting_trig(0),
     _dso_trig_moved(false),
     _curs_moved(false),
-    _xcurs_moved(false)
+    _xcurs_moved(false),
+    _divider_resize_trace(nullptr),
+    _divider_resize_start_y(0),
+    _divider_resize_start_h(0)
 {
 	setMouseTracking(true);
 	setAutoFillBackground(true);
@@ -147,6 +151,27 @@ bool Viewport::event(QEvent *event)
     if (event->type() == QEvent::NativeGesture)
         return gestureEvent(static_cast<QNativeGestureEvent*>(event));
     return QWidget::event(event);
+}
+
+Trace* Viewport::get_divider_trace(const QPoint &pt)
+{
+    if (_view.session().get_device()->get_work_mode() != LOGIC)
+        return nullptr;
+    if (_view.session().is_working())
+        return nullptr;
+
+    std::vector<Trace*> traces;
+    _view.get_traces(ALL_VIEW, traces);
+
+    for (auto t : traces) {
+        if (!t->enabled() || t->rows_size() == 0)
+            continue;
+        // row boundary: trace bottom + bottom margin = same as start of next row's top margin
+        int row_bottom = t->get_v_offset() + t->get_totalHeight() / 2 + View::SignalMargin;
+        if (pt.y() >= row_bottom - 5 && pt.y() <= row_bottom + 5)
+            return t;
+    }
+    return nullptr;
 }
 
 void Viewport::paintEvent(QPaintEvent *event)
@@ -239,6 +264,25 @@ void Viewport::doPaint()
 
     if (_view.get_signalHeight() != _curSignalHeight)
             _curSignalHeight = _view.get_signalHeight();
+
+    // Draw channel divider lines in LOGIC mode (highlight synced with header via view)
+    if (_view.session().get_device()->get_work_mode() == LOGIC && _type == TIME_VIEW) {
+        const int vw = _view.get_view_width();
+        Trace* active_divider = _view.get_hovered_divider();
+
+        for (auto t : traces) {
+            if (!t->enabled() || t->rows_size() == 0)
+                continue;
+            int row_bottom = t->get_v_offset() + t->get_totalHeight() / 2 + View::SignalMargin;
+            bool isActive = (t == active_divider);
+            if (isActive) {
+                p.setPen(QPen(QColor(180, 180, 180, 220), 2));
+            } else {
+                p.setPen(QPen(QColor(100, 100, 100, 100), 1));
+            }
+            p.drawLine(0, row_bottom, vw, row_bottom);
+        }
+    }
 
 	p.end();
 }
@@ -646,6 +690,25 @@ void Viewport::mousePressEvent(QMouseEvent *event)
     _drag_strength = 0;
     _elapsed_time.restart();
 
+    // Divider resize: check before anything else
+    if (_action_type == NO_ACTION
+        && event->button() == Qt::LeftButton
+        && _type == TIME_VIEW)
+    {
+        Trace *dt = get_divider_trace(event->pos());
+        if (dt) {
+            _divider_resize_trace  = dt;
+            _divider_resize_start_y = event->pos().y();
+            _divider_resize_start_h = (dt->get_height_override() > 0)
+                                      ? dt->get_height_override()
+                                      : dt->get_totalHeight() / dt->rows_size();
+            set_action(DIVIDER_RESIZE);
+            setCursor(Qt::SplitVCursor);
+            _view.set_hovered_divider(dt);
+            return;
+        }
+    }
+
     if (_action_type == NO_ACTION
         && event->button() == Qt::RightButton
         && _view.session().is_stopped_status())
@@ -790,6 +853,28 @@ void Viewport:: mouseMoveEvent(QMouseEvent *event)
 	assert(event);
     _hover_hit = false;
     int mode = _view.session().get_device()->get_work_mode();
+    _mouse_point = event->pos();
+
+    // Handle divider resize drag
+    if (_action_type == DIVIDER_RESIZE && _divider_resize_trace) {
+        int delta = event->pos().y() - _divider_resize_start_y;
+        int newH  = qMax(_divider_resize_start_h + delta, (int)Trace::HeightOverrideMin);
+        _divider_resize_trace->set_height_override(newH);
+        _view.signals_changed(nullptr);
+        update(UpdateEventType::UPDATE_EV_MS_MOVE);
+        return;
+    }
+
+    // Show split cursor when hovering over a divider line, sync highlight with header
+    if (_action_type == NO_ACTION && _type == TIME_VIEW && mode == LOGIC) {
+        Trace *ht = get_divider_trace(event->pos());
+        if (ht) {
+            setCursor(Qt::SplitVCursor);
+        } else {
+            unsetCursor();
+        }
+        _view.set_hovered_divider(ht);
+    }
 
     if (event->buttons() & Qt::LeftButton) {
         if (_type == TIME_VIEW) {
@@ -1193,6 +1278,17 @@ void Viewport::mouseReleaseEvent(QMouseEvent *event)
         return;
     }
 
+    // Finish divider resize
+    if (_action_type == DIVIDER_RESIZE && event->button() == Qt::LeftButton) {
+        _divider_resize_trace = nullptr;
+        set_action(NO_ACTION);
+        unsetCursor();
+        _view.set_hovered_divider(nullptr);
+        _view.signals_changed(nullptr);
+        update(UpdateEventType::UPDATE_EV_MS_UP);
+        return;
+    }
+
     int mode = _view.session().get_device()->get_work_mode();
 
     if (mode == LOGIC){
@@ -1460,6 +1556,7 @@ bool Viewport::gestureEvent(QNativeGestureEvent *event)
 void Viewport::leaveEvent(QEvent *)
 {
     _mouse_point = QPoint(-1, -1);
+    _view.set_hovered_divider(nullptr);
 
     if (_action_type == LOGIC_EDGE) {
         _edge_rising = 0;

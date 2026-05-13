@@ -1092,6 +1092,15 @@ void View::update_margins()
     } 
 }
 
+void View::set_hovered_divider(Trace *t)
+{
+    if (_hovered_divider == t)
+        return;
+    _hovered_divider = t;
+    _header->update();
+    _time_viewport->update(UpdateEventType::UPDATE_EV_MS_MOVE);
+}
+
 void View::header_updated()
 {
     headerWidth();

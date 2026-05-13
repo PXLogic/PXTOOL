@@ -46,41 +46,70 @@ using namespace std;
 
 //--------------------------ChannelLabel
 
+const QColor ChannelLabel::CHAN_COLORS[16] = {
+    QColor(0x92, 0x52, 0xe8),  //  0 purple
+    QColor(0x34, 0x62, 0xf6),  //  1 blue
+    QColor(0x14, 0x8c, 0x1e),  //  2 green
+    QColor(0xd1, 0xb1, 0x01),  //  3 yellow
+    QColor(0xf0, 0x9a, 0x37),  //  4 orange
+    QColor(0xe2, 0x49, 0x3a),  //  5 red
+    QColor(0x85, 0x42, 0x2d),  //  6 brown
+    QColor(0x89, 0x89, 0x89),  //  7 gray
+    QColor(0x2b, 0xc4, 0xd6),  //  8 cyan
+    QColor(0xe9, 0x4f, 0xb8),  //  9 pink
+    QColor(0x4c, 0xaf, 0x50),  // 10 lime green
+    QColor(0xff, 0x77, 0x43),  // 11 deep orange
+    QColor(0x5c, 0x6b, 0xc0),  // 12 indigo
+    QColor(0x00, 0x96, 0x88),  // 13 teal
+    QColor(0xc0, 0xca, 0x33),  // 14 lime
+    QColor(0xef, 0x53, 0x50),  // 15 coral
+};
+
 ChannelLabel::ChannelLabel(IChannelCheck *check, QWidget *parent, int chanIndex)
 : QWidget(parent)
 {
     _checked = check;
-    _index = chanIndex;  
+    _index = chanIndex;
+    _color = CHAN_COLORS[chanIndex % 16];
 
-    QGridLayout *lay = new QGridLayout();
-    lay->setContentsMargins(0,0,0,0);
-    lay->setSpacing(0);
-    this->setLayout(lay);
-    QLabel *lb = new QLabel(QString::number(chanIndex));
-    lb->setAlignment(Qt::AlignCenter);
-    _box = new QCheckBox();
-    _box->setFixedSize(20,20);
-    lay->addWidget(lb, 0, 0, Qt::AlignCenter);
-    lay->addWidget(_box, 1, 0, Qt::AlignCenter);
+    _box = new QCheckBox(this);
+    _box->hide();
 
-    QFont font = this->font();
-    font.setPointSizeF(AppConfig::Instance().appOptions.fontSize);
-    lb->setFont(font);
+    setFixedSize(34, 34);
+    setCursor(Qt::PointingHandCursor);
 
-    int fh = lb->fontMetrics().height();
-    //int w = lb->fontMetrics().horizontalAdvance(lb->text()) + 5;
+    connect(_box, &QCheckBox::stateChanged, this, [this](){ update(); });
+}
 
-    #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
-        int w = lb->fontMetrics().horizontalAdvance(lb->text()) + 5;
-    #else
-        int w = lb->fontMetrics().width(lb->text()) + 5;
-    #endif
+void ChannelLabel::paintEvent(QPaintEvent *)
+{
+    QPainter p(this);
+    p.setRenderHint(QPainter::Antialiasing);
 
-    w = w < 30 ? 30 : w;
-    int h = fh + _box->height() + 2;
-    setFixedSize(w, h);
+    bool checked = _box->isChecked();
+    QColor bg     = checked ? _color          : QColor(55, 55, 55, 220);
+    QColor border = checked ? _color.lighter(140) : QColor(85, 85, 85, 180);
 
-    connect(_box, SIGNAL(released()), this, SLOT(on_checked()));
+    p.setPen(QPen(border, 1.5));
+    p.setBrush(bg);
+    p.drawRoundedRect(QRectF(rect()).adjusted(1.5, 1.5, -1.5, -1.5), 6, 6);
+
+    p.setPen(checked ? Qt::white : QColor(160, 160, 160));
+    QFont f = font();
+    f.setBold(true);
+    f.setPointSize(9);
+    p.setFont(f);
+    p.drawText(rect(), Qt::AlignCenter, QString::number(_index));
+}
+
+void ChannelLabel::mousePressEvent(QMouseEvent *event)
+{
+    if (event->button() == Qt::LeftButton) {
+        _box->setChecked(!_box->isChecked());
+        if (_checked)
+            _checked->ChannelChecked(_index, _box);
+        update();
+    }
 }
 
 void ChannelLabel::on_checked()

@@ -129,7 +129,7 @@ Trace* Header::get_resize_trace(const QPoint &pt)
     for (auto t : traces) {
         if (!t->enabled() || t->rows_size() == 0)
             continue;
-        int row_bottom = t->get_v_offset() + t->get_totalHeight() / 2;
+        int row_bottom = t->get_v_offset() + t->get_totalHeight() / 2 + View::SignalMargin;
         if (pt.y() >= row_bottom - 6 && pt.y() <= row_bottom + 1)
             return t;
     }
@@ -165,14 +165,18 @@ void Header::paintEvent(QPaintEvent*)
         t->paint_label(painter, w, dragging ? QPoint(-1, -1) : _mouse_point, fore);
 	}
 
-    // Draw bottom divider for traces with height override (visual drag hint)
-    painter.setPen(QPen(QColor(120, 120, 120, 160), 1));
+    // Draw channel divider lines — always visible, highlighted when hovered (synced with viewport)
+    Trace* active_divider = _view.get_hovered_divider();
     for (auto t : traces) {
         if (!t->enabled() || t->rows_size() == 0)
             continue;
-        if (t->get_height_override() <= 0)
-            continue;
-        int row_bottom = t->get_v_offset() + t->get_totalHeight() / 2;
+        int row_bottom = t->get_v_offset() + t->get_totalHeight() / 2 + View::SignalMargin;
+        bool isActive = (t == active_divider);
+        if (isActive) {
+            painter.setPen(QPen(QColor(180, 180, 180, 220), 2));
+        } else {
+            painter.setPen(QPen(QColor(100, 100, 100, 100), 1));
+        }
         painter.drawLine(0, row_bottom, w, row_bottom);
     }
 
@@ -479,12 +483,15 @@ void Header::mouseMoveEvent(QMouseEvent *event)
         return;
     }
 
-    // Hover: show resize cursor near row bottom
+    // Hover: show resize cursor near row bottom, sync highlight with viewport
     if (_drag_traces.empty()) {
-        if (get_resize_trace(event->pos()))
+        Trace *ht = get_resize_trace(event->pos());
+        if (ht) {
             setCursor(Qt::SplitVCursor);
-        else
+        } else {
             unsetCursor();
+        }
+        _view.set_hovered_divider(ht);
     }
 
     // Move the Traces if we are dragging
@@ -537,6 +544,7 @@ void Header::mouseMoveEvent(QMouseEvent *event)
 void Header::leaveEvent(QEvent*)
 {
 	_mouse_point = QPoint(-1, -1);
+    _view.set_hovered_divider(nullptr);
 	update();
 }
 

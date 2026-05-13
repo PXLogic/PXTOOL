@@ -328,6 +328,9 @@ public:
         return _time_viewport;
     }
 
+    inline Trace* get_hovered_divider() const { return _hovered_divider; }
+    void set_hovered_divider(Trace *t);
+
     void update_font();
     void check_measure();
     bool header_is_draging();
@@ -447,6 +450,7 @@ private:
     pv::toolbars::SamplingBar   *_sampling_bar;
 
     QWidget                 *_viewcenter;
+    Trace                   *_hovered_divider = nullptr;
     ViewStatus              *_viewbottom;
     QSplitter               *_vsplitter;
     Viewport                *_time_viewport;
