@@ -74,6 +74,7 @@ struct AppOptions
     bool  autoScrollLatestData;
     float fontSize;
     bool  triggersVisible;
+    int   signalHeightMultiple;  // 0=auto, 1/2/4/8=preset multiplier of 30px
 
     std::vector<StringPair> m_protocolFormats;
 };

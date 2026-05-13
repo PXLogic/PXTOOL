@@ -124,6 +124,7 @@ static void _loadApp(AppOptions &o, QSettings &st)
     getFiled("fontSize", st, o.fontSize, 9.0);
     getFiled("autoScrollLatestData", st, o.autoScrollLatestData, true);
     getFiled("triggersVisible", st, o.triggersVisible, true);
+    getFiled("signalHeightMultiple", st, o.signalHeightMultiple, 0);
     getFiled("version", st, o.version, 1);
 
     o.warnofMultiTrig = true;
@@ -162,6 +163,7 @@ static void _saveApp(AppOptions &o, QSettings &st)
     setFiled("fontSize", st, o.fontSize);
     setFiled("autoScrollLatestData", st, o.autoScrollLatestData);
     setFiled("triggersVisible", st, o.triggersVisible);
+    setFiled("signalHeightMultiple", st, o.signalHeightMultiple);
     setFiled("version", st, APP_CONFIG_VERSION);
 
     QString fmt =  FormatArrayToString(o.m_protocolFormats);

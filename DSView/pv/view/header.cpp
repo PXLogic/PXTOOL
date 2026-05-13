@@ -566,6 +566,23 @@ void Header::contextMenuEvent(QContextMenuEvent *event)
     QAction *resetOne = menu.addAction(tr("Reset Row Height"));
     QAction *resetAll = menu.addAction(tr("Reset All Row Heights"));
 
+    menu.addSeparator();
+    QMenu *heightMenu = menu.addMenu(tr("Set Channel Height"));
+    QAction *h_auto = heightMenu->addAction(tr("Auto (fit to view)"));
+    heightMenu->addSeparator();
+    QAction *h1x = heightMenu->addAction(tr("1X  (30px)"));
+    QAction *h2x = heightMenu->addAction(tr("2X  (60px)"));
+    QAction *h4x = heightMenu->addAction(tr("4X (120px)"));
+    QAction *h8x = heightMenu->addAction(tr("8X (240px)"));
+
+    // mark the active preset
+    const int curMul = AppConfig::Instance().appOptions.signalHeightMultiple;
+    h_auto->setCheckable(true); h_auto->setChecked(curMul == 0);
+    h1x->setCheckable(true);    h1x->setChecked(curMul == 1);
+    h2x->setCheckable(true);    h2x->setChecked(curMul == 2);
+    h4x->setCheckable(true);    h4x->setChecked(curMul == 4);
+    h8x->setCheckable(true);    h8x->setChecked(curMul == 8);
+
     QAction *useC  = nullptr;
     QAction *usePy = nullptr;
     DecodeTrace *dt = dynamic_cast<DecodeTrace*>(t);
@@ -590,10 +607,31 @@ void Header::contextMenuEvent(QContextMenuEvent *event)
 
     QAction *chosen = menu.exec(event->globalPos());
 
-    if (chosen == resetOne) {
+    if (chosen == h_auto || chosen == h1x || chosen == h2x
+            || chosen == h4x || chosen == h8x) {
+        int mul = 0;
+        if      (chosen == h1x) mul = 1;
+        else if (chosen == h2x) mul = 2;
+        else if (chosen == h4x) mul = 4;
+        else if (chosen == h8x) mul = 8;
+        AppConfig::Instance().appOptions.signalHeightMultiple = mul;
+        AppConfig::Instance().SaveApp();
+        _view.reset_height_overrides();
+        _view.signals_changed(nullptr);
+    } else if (chosen == resetOne) {
+        // Reset to 1X if in Auto mode so height is predictable
+        if (AppConfig::Instance().appOptions.signalHeightMultiple == 0) {
+            AppConfig::Instance().appOptions.signalHeightMultiple = 1;
+            AppConfig::Instance().SaveApp();
+        }
         t->clear_height_override();
         _view.signals_changed(nullptr);
     } else if (chosen == resetAll) {
+        // Reset to 1X if in Auto mode so height is predictable
+        if (AppConfig::Instance().appOptions.signalHeightMultiple == 0) {
+            AppConfig::Instance().appOptions.signalHeightMultiple = 1;
+            AppConfig::Instance().SaveApp();
+        }
         _view.reset_height_overrides();
     } else if (useC && chosen == useC) {
         if (!dt->decoder()->use_c_decoder()) {

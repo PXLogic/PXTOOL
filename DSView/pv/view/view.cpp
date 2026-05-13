@@ -821,6 +821,13 @@ void View::signals_changed(const Trace* eventTrace)
             _signalHeight = (int)((height <= 0) ? 1 : height);
         }
 
+        // Apply height preset if set (LOGIC mode only)
+        if (mode == LOGIC) {
+            int mul = AppConfig::Instance().appOptions.signalHeightMultiple;
+            if (mul > 0)
+                _signalHeight = mul * 30;
+        }
+
         _spanY = _signalHeight + 2 * actualMargin;
         int next_v_offset = actualMargin;
         
