@@ -46,6 +46,7 @@ LogicSignal::LogicSignal(data::LogicSnapshot *data,
 {
     _trig = NONTRIG; 
     _paint_align_sample_count = 0;
+    _colour = PROBE_COLORS[probe->index % countof(PROBE_COLORS)];
 }
 
 LogicSignal::LogicSignal(view::LogicSignal *s,
@@ -56,6 +57,7 @@ LogicSignal::LogicSignal(view::LogicSignal *s,
     _trig(s->get_trig())
 { 
     _paint_align_sample_count = 0;
+    _colour = PROBE_COLORS[probe->index % countof(PROBE_COLORS)];
 }
 
 LogicSignal::~LogicSignal()
