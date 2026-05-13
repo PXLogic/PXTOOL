@@ -201,27 +201,32 @@ void Trace::paint_label(QPainter &p, int right, const QPoint pt, QColor fore)
     const QRectF name_rect  = get_rect("name",  y, right);
     const QRectF label_rect = get_rect("label", get_zero_vpos(), right);
 
-    // Paint the ColorButton
     QColor foreBack = fore;
     foreBack.setAlpha(View::BackAlpha);
-    p.setPen(Qt::transparent);
-    p.setBrush(enabled() ? (_colour.isValid() ? _colour : fore) : foreBack);
-    p.drawRoundedRect(color_rect, 4, 4);
-    
-    if (_type == SR_CHANNEL_DSO ||
-        _type == SR_CHANNEL_MATH) {
-        p.setPen(enabled() ?  Qt::white: foreBack);
-        p.drawText(color_rect, Qt::AlignCenter | Qt::AlignVCenter, _name);
-    }
 
-    if (_type != SR_CHANNEL_DSO) {
-        // Paint the signal name
-        p.setPen(enabled() ?  fore: foreBack);
-        p.drawText(name_rect, Qt::AlignLeft | Qt::AlignVCenter, _name);
-    }
+    // In collapsed mode (_showTypeOptions == false) only the arrow label is drawn;
+    // skip the colour swatch, channel name, and trigger buttons.
+    if (_showTypeOptions) {
+        // Paint the ColorButton
+        p.setPen(Qt::transparent);
+        p.setBrush(enabled() ? (_colour.isValid() ? _colour : fore) : foreBack);
+        p.drawRoundedRect(color_rect, 4, 4);
 
-    // Paint the trigButton
-    paint_type_options(p, right, pt, fore);
+        if (_type == SR_CHANNEL_DSO ||
+            _type == SR_CHANNEL_MATH) {
+            p.setPen(enabled() ? Qt::white : foreBack);
+            p.drawText(color_rect, Qt::AlignCenter | Qt::AlignVCenter, _name);
+        }
+
+        if (_type != SR_CHANNEL_DSO) {
+            // Paint the signal name
+            p.setPen(enabled() ? fore : foreBack);
+            p.drawText(name_rect, Qt::AlignLeft | Qt::AlignVCenter, _name);
+        }
+
+        // Paint the trigButton
+        paint_type_options(p, right, pt, fore);
+    }
 
     // Paint the label
     if (enabled()) {

@@ -215,6 +215,8 @@ View::View(SigSession *session, pv::toolbars::SamplingBar *sampling_bar, QWidget
     connect(_header, SIGNAL(traces_moved()),this, SLOT(on_traces_moved()));
     connect(_header, SIGNAL(header_updated()),this, SLOT(header_updated()));
 
+    _devmode->setVisible(_triggersVisible);
+
     ADD_UI(this);
 }
 
@@ -739,8 +741,8 @@ void View::signals_changed(const Trace* eventTrace)
             decoder_traces.push_back(t);
     }
 
-    // Apply global trigger column visibility to all logic traces
-    for (auto t : logic_traces)
+    // Apply global header visibility to all traces
+    for (auto t : traces)
         t->set_showTypeOptions(_triggersVisible);
 
     if (!fft_traces.empty()) {
@@ -939,6 +941,13 @@ bool View::viewportEvent(QEvent *e)
 
 int View::headerWidth()
 {
+    // When header is collapsed show only the arrow label strip (no name / colour / triggers)
+    if (!_triggersVisible) {
+        const int collapsedW = (int)(2 * 3 + 1.5 * 20); // 2*Margin + 1.5*SquareWidth
+        setViewportMargins(collapsedW, RulerHeight, VScrollBarWidth, ScrollBarHeight);
+        return collapsedW;
+    }
+
     int headerWidth = _header->get_nameEditWidth();
 
     std::vector<Trace*> traces;
@@ -1700,8 +1709,10 @@ void View::set_triggers_visible(bool v)
     _triggersVisible = v;
     AppConfig::Instance().appOptions.triggersVisible = v;
     AppConfig::Instance().SaveApp();
+    _devmode->setVisible(v);
     signals_changed(nullptr);
     headerWidth();
+    update_margins();
     update();
 }
 
