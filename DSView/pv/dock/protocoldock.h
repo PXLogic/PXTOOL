@@ -161,6 +161,9 @@ private:
     QPushButton *_pro_add_button;
     QPushButton *_del_all_button; 
     QVBoxLayout *_top_layout;
+    QScrollArea *_items_scroll_area;
+    QWidget     *_items_container;
+    QVBoxLayout *_items_layout;
     std::vector <ProtocolItemLayer*> _protocol_lay_items; //protocol item layers
 
     QPushButton *_bot_set_button;

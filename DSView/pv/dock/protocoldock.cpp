@@ -137,11 +137,27 @@ ProtocolDock::ProtocolDock(QWidget *parent, view::View &view, SigSession *sessio
     pro_search_lay->addWidget(_pro_keyword_edit, 1); 
     pro_search_lay->addWidget(_pro_search_button);
   
+    // Scroll area that holds decoder item rows — allows scrolling when >4 items
+    _items_container = new QWidget();
+    _items_container->setObjectName("decode_items_container");
+    _items_layout = new QVBoxLayout(_items_container);
+    _items_layout->setContentsMargins(0, 0, 0, 12);
+    _items_layout->setSpacing(6);
+    _items_layout->addStretch(1);
+
+    _items_scroll_area = new QScrollArea();
+    _items_scroll_area->setObjectName("decode_items_scroll");
+    _items_scroll_area->setFrameShape(QFrame::NoFrame);
+    _items_scroll_area->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    _items_scroll_area->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+    _items_scroll_area->setWidgetResizable(true);
+    _items_scroll_area->setWidget(_items_container);
+
     _top_layout = new QVBoxLayout();
     _top_layout->setContentsMargins(8, 8, 8, 8);
     _top_layout->setSpacing(6);
     _top_layout->addLayout(pro_search_lay);
-    _top_layout->addStretch(1);
+    _top_layout->addWidget(_items_scroll_area, 1);
     top_panel->setLayout(_top_layout); 
  
     //-----------------------------bottom panel
@@ -427,10 +443,11 @@ bool ProtocolDock::add_protocol_by_id(QString id, bool silent, std::list<pv::dat
         return false;
     }
 
-    // create item layer
-    ProtocolItemLayer *layer = new ProtocolItemLayer(_top_panel, protocolName, this);
+    // create item layer — parent is _items_container so child widgets live there
+    ProtocolItemLayer *layer = new ProtocolItemLayer(_items_container, protocolName, this);
     _protocol_lay_items.push_back(layer);
-    _top_layout->insertLayout(_protocol_lay_items.size(), layer);
+    // insert before the trailing stretch (stretch is always the last item)
+    _items_layout->insertLayout(_protocol_lay_items.size() - 1, layer);
     layer->m_decoderStatus = dstatus; 
     layer->m_protocolId = protocolId;
     layer->_trace = trace;
@@ -1140,13 +1157,16 @@ void ProtocolDock::UpdateFont()
 
     int lineHeight = rc.height() + 15;
     _pro_keyword_edit->setFixedHeight(rc.height() + 5);
-    int pannelHeight = lineHeight * _protocol_lay_items.size() + _pro_keyword_edit->height();
 
-    if (pannelHeight < 100){
-        pannelHeight = 100;
-    }
+    // Scroll area must always show at least 4 items; more items scroll.
+    const int minVisibleItems = 4;
+    int minScrollH = minVisibleItems * lineHeight;
+    _items_scroll_area->setMinimumHeight(minScrollH);
 
-    _top_panel->setMinimumHeight(pannelHeight);
+    // Top panel minimum = search bar row + scroll area min + layout margins + spacing
+    // margins: contentsMargins top(8) + bottom(8), spacing between rows(6)
+    int topPanelMin = _pro_keyword_edit->height() + minScrollH + 8 + 8 + 6;
+    _top_panel->setMinimumHeight(topPanelMin);
  }
 
 } // namespace dock
