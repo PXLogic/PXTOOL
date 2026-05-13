@@ -206,7 +206,7 @@ void Trace::paint_label(QPainter &p, int right, const QPoint pt, QColor fore)
     foreBack.setAlpha(View::BackAlpha);
     p.setPen(Qt::transparent);
     p.setBrush(enabled() ? (_colour.isValid() ? _colour : fore) : foreBack);
-    p.drawRect(color_rect);
+    p.drawRoundedRect(color_rect, 4, 4);
     
     if (_type == SR_CHANNEL_DSO ||
         _type == SR_CHANNEL_MATH) {

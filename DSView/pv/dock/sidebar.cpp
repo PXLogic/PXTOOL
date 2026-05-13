@@ -31,6 +31,7 @@
 #include <QIcon>
 #include <QSize>
 #include <QSizePolicy>
+#include <QEvent>
 
 namespace pv {
 namespace dock {
@@ -184,8 +185,10 @@ SideBar::SideBar(QWidget *parent, view::View &view, SigSession *session)
     }
     stripLayout->addStretch(1);
 
-    // Connect buttons using index capture
+    // Connect buttons using index capture; install event filter to swallow
+    // double-click events so a double-click is treated as a single click.
     for (int i = 0; i < TabCount; i++) {
+        _btns[i]->installEventFilter(this);
         connect(_btns[i], &QToolButton::clicked, [this, i]() {
             onButtonClicked(i);
         });
@@ -258,6 +261,17 @@ void SideBar::setDsoMode(bool isDso)
         _dso_trigger_widget->update_view();
     else
         _trigger_widget->update_view();
+}
+
+bool SideBar::eventFilter(QObject *obj, QEvent *event)
+{
+    if (event->type() == QEvent::MouseButtonDblClick) {
+        for (int i = 0; i < TabCount; i++) {
+            if (obj == _btns[i])
+                return true; // swallow double-click so it doesn't fire a second toggle
+        }
+    }
+    return QWidget::eventFilter(obj, event);
 }
 
 void SideBar::UpdateLanguage() {}

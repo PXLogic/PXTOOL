@@ -79,6 +79,9 @@ public:
     void UpdateTheme()    override;
     void UpdateFont()     override;
 
+protected:
+    bool eventFilter(QObject *obj, QEvent *event) override;
+
 signals:
     void sig_search_visible(bool visible);
 
