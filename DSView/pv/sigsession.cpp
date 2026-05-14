@@ -243,6 +243,7 @@ namespace pv
 
         clear_all_decoder();
 
+        dsv_info("SigSession::set_device() clearing data for session@%p", (void*)this);
         _view_data->clear();
         _capture_data->clear();
         _capture_data = _view_data;
@@ -521,6 +522,23 @@ namespace pv
             return false;
         }
 
+        // Deferred rebind (atk-logic principle): tab switching skips
+        // rebind_device() when the session has data so display is not
+        // disrupted.  If this session's device is no longer the globally
+        // active one, reactivate it now before starting the acquire cycle.
+        if (_device_agent.have_instance()) {
+            struct ds_device_full_info active_info;
+            ds_device_handle active_handle = NULL_HANDLE;
+            if (ds_get_actived_device_info(&active_info) == SR_OK)
+                active_handle = active_info.handle;
+            if (_device_agent.handle() != active_handle) {
+                dsv_info("action_start_capture: deferred rebind, handle=%p -> active=%p",
+                         (void*)_device_agent.handle(), (void*)active_handle);
+                if (ds_active_device(_device_agent.handle()) == SR_OK)
+                    _device_agent.update();
+            }
+        }
+
         // Check that a device instance has been selected.
         if (_device_agent.have_instance() == false)
         {
@@ -536,6 +554,7 @@ namespace pv
         clear_all_decode_task2();
         clear_decode_result(); 
         
+        dsv_info("SigSession::start_capture() clearing data for session@%p", (void*)this);
         _capture_data->clear();
         _view_data->clear();       
         _is_stream_mode = false;
@@ -873,6 +892,7 @@ namespace pv
         unsigned int dso_probe_count = 0;
         unsigned int analog_probe_count = 0;
 
+        dsv_info("SigSession::init_signals() clearing data for session@%p", (void*)this);
         _capture_data->clear();
         _view_data->clear();
         set_cur_snap_samplerate(_device_agent.get_sample_rate());
@@ -2072,6 +2092,56 @@ namespace pv
     void SigSession::add_msg_listener(IMessageListener *ln)
     {
         _msg_listeners.push_back(ln);
+    }
+
+    void SigSession::remove_msg_listener(IMessageListener *ln)
+    {
+        auto it = std::find(_msg_listeners.begin(), _msg_listeners.end(), ln);
+        if (it != _msg_listeners.end())
+            _msg_listeners.erase(it);
+    }
+
+    void SigSession::set_as_current()
+    {
+        // Route libsigrok C callbacks to this session instance
+        _session = this;
+    }
+
+    void SigSession::rebind_device(ds_device_handle handle)
+    {
+        // Re-open the device globally for this session without clearing captured
+        // data or re-initializing signals.  Used when switching back to a tab that
+        // was previously initialized, so the user can resume / start a new capture
+        // while retaining whatever was already visible in the waveform view.
+        if (handle == NULL_HANDLE)
+            return;
+        dsv_info("rebind_device: session@%p has_data=%d handle=%p",
+            (void*)this, (int)have_view_data(), handle);
+        if (ds_active_device(handle) == SR_OK) {
+            _device_agent.update();
+            refresh_signal_probes();
+        }
+        dsv_info("rebind_device done: session@%p has_data=%d",
+            (void*)this, (int)have_view_data());
+    }
+
+    void SigSession::refresh_signal_probes()
+    {
+        // After ds_active_device() frees and recreates all sr_channel structs,
+        // each Signal's _probe pointer is dangling.  Walk the new channel list
+        // and patch each signal to point at the freshly-allocated sr_channel
+        // that has the same index.
+        const GSList *channels = _device_agent.get_channels();
+        for (auto sig : _signals) {
+            int target_index = sig->get_index();
+            for (const GSList *l = channels; l; l = l->next) {
+                sr_channel *probe = (sr_channel *)l->data;
+                if (probe->index == target_index) {
+                    sig->set_probe(probe);
+                    break;
+                }
+            }
+        }
     }
 
     void SigSession::broadcast_msg(int msg)

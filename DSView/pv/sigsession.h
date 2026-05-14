@@ -336,6 +336,9 @@ public:
     inline bool is_stopped_status(){
         return _device_status == ST_STOPPED;
     }
+    inline int get_device_status(){
+        return _device_status;
+    }
 
     void set_collect_mode(DEVICE_COLLECT_MODE m);
 
@@ -410,6 +413,10 @@ public:
     bool have_hardware_data();
     struct ds_device_base_info* get_device_list(int &out_count, int &actived_index);
     void add_msg_listener(IMessageListener *ln);
+    void remove_msg_listener(IMessageListener *ln);
+    void set_as_current();
+    void rebind_device(ds_device_handle handle);
+    void refresh_signal_probes();
     void broadcast_msg(int msg);    
     bool have_new_realtime_refresh(bool keep);
     view::DecodeTrace* get_decoder_trace(int index);

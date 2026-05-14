@@ -75,9 +75,14 @@ public:
     void set_name(QString name);
 
 
-protected: 
-    sr_channel *const _probe;
-    SigSession      *session;    
+    // Refresh _probe to a newly-allocated channel object after the device
+    // has been reopened (which frees and recreates all sr_channel structs).
+    // Only called from SigSession::refresh_signal_probes().
+    inline void set_probe(sr_channel *probe) { _probe = probe; }
+
+protected:
+    sr_channel *_probe;
+    SigSession      *session;
 };
 
 } // namespace view

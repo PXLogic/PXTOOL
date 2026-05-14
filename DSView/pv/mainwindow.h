@@ -34,6 +34,11 @@
 #include <chrono>
 #include <QTimer>
 #include "dstimer.h"
+#include <QHBoxLayout>
+#include <QList>
+#include <QStackedWidget>
+#include <libsigrok.h>
+#include "sessioncallback.h"
 
 class QAction;
 class QMenuBar;
@@ -102,6 +107,9 @@ public slots:
     void restore_dock();
 
 private slots:
+    void on_session_tab_add();
+    void on_session_tab_switch(int index);
+    void on_session_tab_close(int index);
 	void on_load_file(QString file_name);
     void on_open_doc();  
     void on_protocol(bool visible);
@@ -191,6 +199,20 @@ private:
     //IMessageListener
     void OnMessage(int msg) override;
 
+private:
+    // One entry per session tab
+    struct SessionItem {
+        SigSession        *session;
+        pv::view::View    *view;
+        QString            name;
+        ds_device_handle   saved_handle = NULL_HANDLE; // valid after first device init
+        SessionCallback   *cb = nullptr;               // per-session ISessionCallback proxy
+    };
+    // Tab entry in the bottom bar (mirrors SessionItem index)
+    struct TabEntry {
+        QString name;
+    };
+
 private: 
 	pv::view::View          *_view;
     dialogs::DSMessageBox   *_msg;
@@ -229,6 +251,7 @@ private:
     SigSession      *_session;
     DeviceAgent     *_device_agent;
     bool            _is_auto_switch_device;
+    bool            _is_switching_session;
     high_resolution_clock::time_point _last_key_press_time;
     bool            _is_save_confirm_msg;
     QString         _pattern_mode;
@@ -240,6 +263,18 @@ private:
 
     int         _key_value;
     bool        _key_vaild;
+
+    // Multi-session tabs
+    QList<TabEntry>     _tabs;
+    QList<SessionItem>  _session_items;
+    int                 _active_tab_index;
+    QStackedWidget     *_session_stack;
+    QWidget            *_session_tab_bar;
+    QHBoxLayout        *_tab_bar_layout;
+
+    void rebuild_tab_buttons();
+    void update_tab_bar_style();
+    void switch_to_session(int index);
 };
 
 } // namespace pv
