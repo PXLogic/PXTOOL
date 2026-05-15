@@ -1,17 +1,13 @@
 #!/usr/bin/env bash
-# Regenerate DSView.icns from DSView/icons/titlebar_wave_icon.svg (TitleBar stripe logo).
+# Regenerate DSView.icns from DSView/icons/dock_app_icon.png.
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-SVG="$ROOT/DSView/icons/titlebar_wave_icon.svg"
+PNG="$ROOT/DSView/icons/dock_app_icon.png"
 OUT="$ROOT/DSView.icns"
 TMP=$(mktemp -d)
-PNG="$TMP/base.png"
 IST="$TMP/icon.iconset"
 
 mkdir -p "$IST"
-qlmanage -t -s 1024 -o "$TMP" "$SVG"
-mv "$TMP/$(basename "$SVG").png" "$PNG"
-
 sips -z 16 16     "$PNG" --out "$IST/icon_16x16.png"
 sips -z 32 32     "$PNG" --out "$IST/icon_16x16@2x.png"
 sips -z 32 32     "$PNG" --out "$IST/icon_32x32.png"

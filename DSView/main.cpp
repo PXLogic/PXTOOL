@@ -171,12 +171,12 @@ bool bHighScale = true;
     a.setStyle(new MyStyle);
 
     QIcon appIcon;
-    appIcon.addFile(QString::fromUtf8(":/icons/titlebar_wave_icon.svg"), QSize(), QIcon::Normal, QIcon::Off);
+    appIcon.addFile(QString::fromUtf8(":/icons/dock_app_icon.png"), QSize(), QIcon::Normal, QIcon::Off);
     QApplication::setWindowIcon(appIcon);
 
     // Set some application metadata
     QApplication::setApplicationVersion(DS_VERSION_STRING);
-    QApplication::setApplicationName("DSView");
+    QApplication::setApplicationName("PXTOOL");
     QApplication::setOrganizationName("DreamSourceLab");
     QApplication::setOrganizationDomain("www.DreamSourceLab.com");
 
