@@ -31,7 +31,6 @@
 #include "../sigsession.h" 
 #include "../log.h"
 #include "../appcontrol.h"
-#include "../ui/langresource.h"
  
 using namespace std;
 

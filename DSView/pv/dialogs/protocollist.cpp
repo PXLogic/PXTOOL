@@ -31,7 +31,6 @@
 #include "../view/decodetrace.h"
 #include "../data/decodermodel.h"
 
-#include "../ui/langresource.h"
 
 using namespace boost;
 using namespace std;

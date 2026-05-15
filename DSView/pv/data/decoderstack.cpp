@@ -35,7 +35,6 @@
 #include "../view/logicsignal.h"
 #include "../dsvdef.h"
 #include "../log.h"
-#include "../ui/langresource.h"
 #include <ds_types.h>
 #include "c_decoder_registry.h"
 

@@ -29,7 +29,6 @@
 #include "../data/dsosnapshot.h"
 #include "../sigsession.h"
 
-#include "../ui/langresource.h"
  
 using namespace std;
 

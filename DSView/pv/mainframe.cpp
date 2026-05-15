@@ -55,7 +55,6 @@
 #include "config/appconfig.h"
 #include "ui/msgbox.h"
 #include "appcontrol.h"
-#include "ui/langresource.h"
 #include "log.h"
 #include "dialogs/dsdialog.h"
 #include "ui/popupdlglist.h"

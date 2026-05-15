@@ -23,7 +23,6 @@
 #include <QHBoxLayout>
 #include <QTimer>
 #include "../config/appconfig.h"
-#include "../ui/langresource.h"
 #include "../log.h"
 
 namespace{

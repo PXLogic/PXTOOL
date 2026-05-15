@@ -44,7 +44,6 @@
 #include "../dsvdef.h"
 #include "../appcontrol.h"
 #include "../log.h" 
-#include "../ui/langresource.h"
 #include "../ui/fn.h"
 #include "lissajoustrace.h"
 

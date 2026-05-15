@@ -31,7 +31,6 @@
  
 #include "../dsvdef.h"
 
-#include "../ui/langresource.h"
 #include "../ui/xtoolbutton.h"
 
 using namespace std;

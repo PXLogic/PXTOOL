@@ -29,7 +29,6 @@
 #include "../ui/msgbox.h"
 #include "../config/appconfig.h"
 #include "../utility/path.h"
-#include "../ui/langresource.h"
 #include "../log.h" 
 #include "../ui/fn.h"
 

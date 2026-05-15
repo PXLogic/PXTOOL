@@ -26,7 +26,6 @@
 #include <QTimer>
 #include <QPushButton>
 #include <QHBoxLayout>
-#include "../ui/langresource.h"
  
 
 namespace pv {

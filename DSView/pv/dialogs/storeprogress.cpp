@@ -35,7 +35,6 @@
 #include "../log.h"
 #include "../view/view.h"
 #include "../view/cursor.h"
-#include "../ui/langresource.h"
 #include "../ui/dscombobox.h"
 
 namespace pv {

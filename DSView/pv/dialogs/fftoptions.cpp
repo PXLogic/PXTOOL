@@ -30,7 +30,6 @@
 #include "../dsvdef.h"
 #include "../log.h"
 
-#include "../ui/langresource.h"
 
 
 using namespace boost;

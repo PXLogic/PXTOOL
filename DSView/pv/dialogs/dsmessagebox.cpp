@@ -29,7 +29,6 @@
 #include <QVBoxLayout>
 #include <QAbstractButton>
 #include "../dsvdef.h"
-#include "../ui/langresource.h"
 #include "../config/appconfig.h"
 #include "../ui/fn.h"
 #include "../ui/popupdlglist.h"

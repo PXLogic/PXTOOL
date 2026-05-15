@@ -44,7 +44,6 @@
 #include "decodetrace.h"
 #include "../sigsession.h"
 #include "../dsvdef.h"
-#include "../ui/langresource.h"
 #include "../appcontrol.h"
 #include "../config/appconfig.h"
 #include "../ui/fn.h"

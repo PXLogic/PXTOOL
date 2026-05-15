@@ -30,7 +30,6 @@
 #include "../sigsession.h"
 #include "../view/view.h"
 #include "../view/lissajoustrace.h"
-#include "../ui/langresource.h"
 #include "../ui/fn.h"
 #include "../config/appconfig.h"
 

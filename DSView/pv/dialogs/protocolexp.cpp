@@ -42,7 +42,6 @@
 #include "../utility/encoding.h"
 #include "../utility/path.h"
 #include "../log.h"
-#include "../ui/langresource.h"
 #include "../ui/msgbox.h"
 
 #define EXPORT_DEC_ROW_COUNT_MAX 20

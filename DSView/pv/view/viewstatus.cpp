@@ -35,7 +35,6 @@
 #include "../view/trace.h"
 #include "../dialogs/dsomeasure.h"
 
-#include "../ui/langresource.h"
 #include "../log.h"
 #include "../config/appconfig.h"
 #include "../appcontrol.h"

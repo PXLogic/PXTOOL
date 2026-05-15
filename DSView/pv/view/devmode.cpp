@@ -34,7 +34,6 @@
 #include "../config/appconfig.h"
 #include "../ui/msgbox.h"
 #include "../log.h"
-#include "../ui/langresource.h"
 #include "../appcontrol.h"
 #include "../ui/fn.h"
 

@@ -39,7 +39,6 @@
 #include <QtConcurrent/QtConcurrent>
 #include <stdint.h> 
 #include "../config/appconfig.h"
-#include "../ui/langresource.h"
 #include "../ui/msgbox.h"
 #include "../appcontrol.h"
 #include "../ui/fn.h"

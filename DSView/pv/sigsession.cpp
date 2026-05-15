@@ -55,7 +55,6 @@
 #include "config/appconfig.h"
 #include "utility/path.h"
 #include "ui/msgbox.h"
-#include "ui/langresource.h"
 
 namespace pv
 {

@@ -33,7 +33,6 @@
 #include "../dsvdef.h"
 #include "../appcontrol.h"
 #include "../sigsession.h"
-#include "../ui/langresource.h"
 #include "../ui/msgbox.h"
 #include "../ui/fn.h"
 #include "../config/appconfig.h"

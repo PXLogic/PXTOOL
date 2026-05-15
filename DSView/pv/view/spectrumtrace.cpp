@@ -33,7 +33,6 @@
 #include "../view/viewport.h"
 #include "../data/spectrumstack.h"
 #include "../dsvdef.h"
-#include "../ui/langresource.h"
 
 using namespace boost;
 using namespace std;

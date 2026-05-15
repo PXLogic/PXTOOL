@@ -49,7 +49,6 @@
 #include "../ui/msgbox.h"
 #include "../appcontrol.h"
 #include "../dialogs/decoderoptionsdlg.h"
-#include "../ui/langresource.h"
 #include "../config/appconfig.h"
 #include "../log.h"
 #include "c_decoder_registry.h"

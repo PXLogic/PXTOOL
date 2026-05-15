@@ -25,7 +25,6 @@
 #include <QMessageBox>
 #include "../dsvdef.h"
 #include "../appcontrol.h"
-#include "langresource.h"
 
 //QMessageBox::information(NULL, "Title", "Content",QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes);
 //QMessageBox::information(NULL, "Title", "Content",QMessageBox::Yes|QMessageBox::No);

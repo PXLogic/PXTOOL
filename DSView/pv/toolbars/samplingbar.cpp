@@ -40,7 +40,6 @@
 #include "../log.h"
 #include "../deviceagent.h"
 #include "../ui/msgbox.h"
-#include "../ui/langresource.h"
 #include "../view/view.h"
 #include "../ui/fn.h"
 

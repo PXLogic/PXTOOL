@@ -25,7 +25,6 @@
 #include "../view/cursor.h"
 #include "../view/view.h"
 
-#include "../ui/langresource.h"
 
 using namespace boost;
 using namespace std;

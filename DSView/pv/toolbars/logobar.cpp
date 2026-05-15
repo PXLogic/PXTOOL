@@ -45,7 +45,6 @@
 #include "../dialogs/dsdialog.h"
 #include "../appcontrol.h"
 #include "../log.h"
-#include "../ui/langresource.h"
 #include "../ui/msgbox.h"
 #include "../ui/fn.h"
 #include "../ui/dscombobox.h"

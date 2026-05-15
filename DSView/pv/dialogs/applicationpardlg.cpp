@@ -36,7 +36,6 @@
 #include <QPushButton>
 
 #include "../config/appconfig.h"
-#include "../ui/langresource.h"
 #include "../appcontrol.h"
 #include "../sigsession.h"
 #include "../ui/dscombobox.h"

@@ -24,7 +24,6 @@
 #include "dsosnapshot.h"
 #include "../sigsession.h"
 #include "../view/dsosignal.h"
-#include "../ui/langresource.h"
 
 
 #define PI 3.1415

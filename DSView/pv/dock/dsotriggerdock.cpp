@@ -32,7 +32,6 @@
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QEvent>
-#include "../ui/langresource.h"
 #include "../log.h"
 #include "../ui/msgbox.h"
 #include "../config/appconfig.h"

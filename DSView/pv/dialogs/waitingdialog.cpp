@@ -32,7 +32,6 @@
 #include "../view/trace.h"
 #include "../view/dsosignal.h"
 #include "../config/appconfig.h"
-#include "../ui/langresource.h"
 #include "../appcontrol.h"
 
 using namespace boost;

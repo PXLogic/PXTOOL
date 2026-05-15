@@ -53,7 +53,6 @@
 #include "../data/decode/decoderstatus.h"
 #include "../data/decode/decoder.h"
 #include "../log.h"
-#include "../ui/langresource.h"
 #include "../appcontrol.h"
 #include "../ui/fn.h"
 

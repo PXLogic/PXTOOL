@@ -39,7 +39,6 @@
 #include "../config/appconfig.h"
 #include "../dsvdef.h"
 #include "../utility/encoding.h"
-#include "../ui/langresource.h"
 
 namespace pv {
 namespace dialogs {

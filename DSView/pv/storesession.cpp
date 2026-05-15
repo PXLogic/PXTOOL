@@ -60,7 +60,6 @@
 #include "utility/path.h"
 #include "log.h" 
 
-#include "ui/langresource.h"
 
 #define DEOCDER_CONFIG_VERSION  2
  
