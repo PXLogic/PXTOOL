@@ -55,6 +55,12 @@ public:
     /** Call when the panel tab is made visible so it can refresh. */
     void panel_shown();
 
+    /** Update the session and device-agent pointers when the active session changes. */
+    void setSession(SigSession *session);
+
+    /** Rebuild panel if the device is now ready but content hasn't been built yet. */
+    void rebuild();
+
 private:
     void build_content();
     void build_dynamic_panel();

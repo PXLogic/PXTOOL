@@ -258,32 +258,28 @@ namespace pv
 
         if (ds_get_last_error() == SR_ERR_DEVICE_FIRMWARE_VERSION_LOW)
         {
-            QString strMsg = L_S(STR_PAGE_MSG, S_ID(IDS_MSG_TO_RECONNECT_FOR_FIRMWARE), 
-                    "Please reconnect the device!");
+            QString strMsg = tr("Please reconnect the device!");
             _callback->delay_prop_msg(strMsg);
             return false;
         }
 
         if (ds_get_last_error() == SR_ERR_FIRMWARE_NOT_EXIST)
         {
-            QString strMsg = L_S(STR_PAGE_MSG, S_ID(IDS_MSG_FIRMWARE_NOT_EXIST), 
-                    "Firmware not exist!");
+            QString strMsg = tr("Firmware not exist!");
             _callback->delay_prop_msg(strMsg);
             return false;
         }
 
         if (ds_get_last_error() == SR_ERR_DEVICE_USB_IO_ERROR)
         {
-            QString strMsg = L_S(STR_PAGE_MSG, S_ID(IDS_MSG_DEVICE_USB_IO_ERROR), 
-                    "USB io error!");
+            QString strMsg = tr("USB io error!");
             _callback->delay_prop_msg(strMsg);
             return false;
         }
 
         if (ds_get_last_error() == SR_ERR_DEVICE_IS_EXCLUSIVE)
         {
-            QString strMsg = L_S(STR_PAGE_MSG, S_ID(IDS_MSG_DEVICE_BUSY_SWITCH_FAILED), 
-                        "Device is busy!");
+            QString strMsg = tr("Device is busy!");
             if (old_dev != NULL_HANDLE)
                 MsgBox::Show(strMsg);
             else
@@ -647,7 +643,7 @@ namespace pv
 
         if (_device_agent.have_enabled_channel() == false)
         {
-            QString err_str(L_S(STR_PAGE_MSG, S_ID(IDS_MSG_NO_ENABLED_CHANNEL), "No channels enabled!"));
+            QString err_str(tr("No channels enabled!"));
             MsgBox::Show(err_str);
             return false;
         }
@@ -2312,7 +2308,7 @@ namespace pv
 
         case DS_EV_DEVICE_SPEED_NOT_MATCH:
             {
-                QString strMsg(L_S(STR_PAGE_MSG, S_ID(IDS_MSG_DEVICE_SPEED_TOO_LOW), "Speed too low!"));
+                QString strMsg(tr("Speed too low!"));
                 _callback->delay_prop_msg(strMsg);
             }
             break;

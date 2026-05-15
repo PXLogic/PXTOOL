@@ -135,11 +135,11 @@ void DevMode::set_device()
         int md = mode->mode;
 
         if (md == LOGIC)
-            action->setText(L_S(STR_PAGE_TOOLBAR, S_ID(IDS_DEVICE_MODE_LOGIC), "Logic Analyzer"));
+            action->setText(tr("Logic Analyzer"));
         else if (md == ANALOG)
-            action->setText(L_S(STR_PAGE_TOOLBAR, S_ID(IDS_DEVICE_MODE_ANALOG), "Data Acquisition"));
+            action->setText(tr("Data Acquisition"));
         else if (md == DSO)
-            action->setText(L_S(STR_PAGE_TOOLBAR, S_ID(IDS_DEVICE_MODE_DSO), "Oscilloscope"));
+            action->setText(tr("Oscilloscope"));
 
         connect(action, SIGNAL(triggered()), this, SLOT(on_mode_change()));
 
@@ -152,11 +152,11 @@ void DevMode::set_device()
             _mode_btn->setIcon(QIcon(icon_fname));
             
             if (cur_mode == LOGIC)
-                _mode_btn->setText(L_S(STR_PAGE_TOOLBAR, S_ID(IDS_DEVICE_MODE_LOGIC), "Logic Analyzer"));
+                _mode_btn->setText(tr("Logic Analyzer"));
             else if (cur_mode == ANALOG)
-                _mode_btn->setText(L_S(STR_PAGE_TOOLBAR, S_ID(IDS_DEVICE_MODE_ANALOG), "Data Acquisition"));
+                _mode_btn->setText(tr("Data Acquisition"));
             else if (cur_mode == DSO)
-                _mode_btn->setText(L_S(STR_PAGE_TOOLBAR, S_ID(IDS_DEVICE_MODE_DSO), "Oscilloscope"));
+                _mode_btn->setText(tr("Oscilloscope"));
         }
         _pop_menu->addAction(action);
     }
@@ -216,11 +216,11 @@ void DevMode::on_mode_change()
             int cur_mode = mode_name->_mode;
 
             if (cur_mode == LOGIC)
-                _mode_btn->setText(L_S(STR_PAGE_TOOLBAR, S_ID(IDS_DEVICE_MODE_LOGIC), "Logic Analyzer"));
+                _mode_btn->setText(tr("Logic Analyzer"));
             else if (cur_mode == ANALOG)
-                _mode_btn->setText(L_S(STR_PAGE_TOOLBAR, S_ID(IDS_DEVICE_MODE_ANALOG), "Data Acquisition"));
+                _mode_btn->setText(tr("Data Acquisition"));
             else if (cur_mode == DSO)
-                _mode_btn->setText(L_S(STR_PAGE_TOOLBAR, S_ID(IDS_DEVICE_MODE_DSO), "Oscilloscope"));
+                _mode_btn->setText(tr("Oscilloscope"));
                
             break;                
         }      
@@ -235,7 +235,7 @@ void DevMode::on_close()
         assert(false);
     }
 
-    if (_bFile && MsgBox::Confirm(L_S(STR_PAGE_MSG, S_ID(IDS_MSG_CLOSE_DEVICE), "Are you sure to close the device?"))){
+    if (_bFile && MsgBox::Confirm(tr("Are you sure to close the device?"))){
         _session->close_file(_device_agent->handle());
     }
 }

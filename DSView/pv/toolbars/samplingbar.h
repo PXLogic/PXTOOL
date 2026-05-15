@@ -92,6 +92,9 @@ namespace pv
                 _view = view;
             }
 
+            /** Rebind this bar to a different session (e.g. when switching tabs). */
+            void setSession(SigSession *session);
+
             void run_or_stop();
 
             void run_or_stop_instant();

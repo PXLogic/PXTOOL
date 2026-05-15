@@ -92,7 +92,7 @@ void DecoderOptionsDlg::load_options_view()
 {
     DSDialog *dlg = this;
 
-    dlg->setTitle(L_S(STR_PAGE_DLG, S_ID(IDS_DLG_DECODER_OPTIONS), "Decoder Options"));
+    dlg->setTitle(tr("Decoder Options"));
     dlg->setObjectName("decoderOptionsDialog");
     dlg->SetTitleSpace(8);
     dlg->layout()->setSpacing(0);
@@ -129,7 +129,7 @@ void DecoderOptionsDlg::load_options_view()
 
     // Region selector group
     QGroupBox *region_box = new QGroupBox(
-        L_S(STR_PAGE_DLG, S_ID(IDS_DLG_DECODE_RANGE), "Decode Range"), dlg);
+        tr("Decode Range"), dlg);
     QFont font = this->font();
     font.setPointSizeF(AppConfig::Instance().appOptions.fontSize);
     region_box->setFont(font);
@@ -154,7 +154,7 @@ void DecoderOptionsDlg::load_options_view()
     if (view) {
         int num = 1;
         for (auto c : view->get_cursorList()) {
-            QString cursor_name = L_S(STR_PAGE_DLG, S_ID(IDS_DLG_CURSOR), "Cursor") +
+            QString cursor_name = tr("Cursor") +
                                   QString::number(num);
             _start_comboBox->addItem(cursor_name, QVariant((quint64)c->get_key()));
             _end_comboBox->addItem(cursor_name, QVariant((quint64)c->get_key()));
@@ -170,9 +170,9 @@ void DecoderOptionsDlg::load_options_view()
     update_decode_range();
 
     QLabel *lb1 = new QLabel(
-        L_S(STR_PAGE_DLG, S_ID(IDS_DLG_CURSOR_FOR_DECODE_START), "The cursor for decode start time"));
+        tr("The cursor for decode start time"));
     QLabel *lb2 = new QLabel(
-        L_S(STR_PAGE_DLG, S_ID(IDS_DLG_CURSOR_FOR_DECODE_END), "The cursor for decode end time"));
+        tr("The cursor for decode end time"));
     region_form->addRow(_start_comboBox, lb1);
     region_form->addRow(_end_comboBox,   lb2);
     container_lay->addWidget(region_box);
@@ -181,7 +181,7 @@ void DecoderOptionsDlg::load_options_view()
     int h_ex2 = 0;
     bool bLang = AppConfig::Instance().appOptions.transDecoderDlg;
     if (!LangResource::Instance()->is_lang_en()) {
-        QString trans_label(L_S(STR_PAGE_DLG, S_ID(IDS_DLG_DECODER_IF_TRANS), "Translate param names"));
+        QString trans_label(tr("Translate param names"));
         QCheckBox *ck_trans = new QCheckBox();
         ck_trans->setFixedSize(20, 20);
         ck_trans->setChecked(bLang);
@@ -210,7 +210,7 @@ void DecoderOptionsDlg::load_options_view()
 
     // Footer: Cancel + OK
     auto *cancel_btn = new QPushButton(
-        L_S(STR_PAGE_DLG, S_ID(IDS_DLG_CANCEL), "Cancel"), dlg);
+        tr("Cancel"), dlg);
     auto *ok_btn = new QPushButton("OK", dlg);
     cancel_btn->setObjectName("device_cancel_btn");
     ok_btn->setObjectName("device_ok_btn");
@@ -535,8 +535,8 @@ void DecoderOptionsDlg::commit_decoder_probes(data::decode::Decoder *dec)
 void DecoderOptionsDlg::on_accept()
 { 
     if (_cursor1 > 0 && _cursor1 == _cursor2){
-        MsgBox::Show(L_S(STR_PAGE_MSG, S_ID(IDS_MSG_ERROR), "error"), 
-        L_S(STR_PAGE_MSG, S_ID(IDS_MSG_DECODE_INVAILD_CURSOR), "Invalid cursor index for sample range!"));
+        MsgBox::Show(tr("error"), 
+        tr("Invalid cursor index for sample range!"));
         return;
     }
 

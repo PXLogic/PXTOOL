@@ -69,7 +69,7 @@ ProtocolExp::ProtocolExp(QWidget *parent, SigSession *session) :
     _flayout->setFormAlignment(Qt::AlignLeft);
     _flayout->setLabelAlignment(Qt::AlignLeft);
     _flayout->setFieldGrowthPolicy(QFormLayout::AllNonFixedFieldsGrow);
-    _flayout->addRow(new QLabel(L_S(STR_PAGE_DLG, S_ID(IDS_DLG_EXPORT_FORMAT), "Export Format: "), this), _format_combobox);
+    _flayout->addRow(new QLabel(tr("Export Format: "), this), _format_combobox);
 
     pv::data::DecoderModel* decoder_model = _session->get_decoder_model();
 
@@ -100,7 +100,7 @@ ProtocolExp::ProtocolExp(QWidget *parent, SigSession *session) :
     _layout->addWidget(&_button_box);
 
     layout()->addLayout(_layout);
-    setTitle(L_S(STR_PAGE_DLG, S_ID(IDS_DLG_PROTOCOL_EXPORT), "Protocol Export"));
+    setTitle(tr("Protocol Export"));
 
     connect(&_button_box, SIGNAL(accepted()), this, SLOT(accept()));
     connect(&_button_box, SIGNAL(rejected()), this, SLOT(reject()));
@@ -112,7 +112,7 @@ void ProtocolExp::accept()
 {   
     if (_session->have_decoded_result() == false)
     {
-        QString errMsg = L_S(STR_PAGE_MSG, S_ID(IDS_MSG_NO_DECODED_RESULT), "No data to export");
+        QString errMsg = tr("No data to export");
         MsgBox::Show(errMsg);
         return;
     }
@@ -144,7 +144,7 @@ void ProtocolExp::accept()
 
     QString file_name = QFileDialog::getSaveFileName(
         this,
-        L_S(STR_PAGE_DLG, S_ID(IDS_DLG_EXPORT_DATA), "Export Data"),
+        tr("Export Data"),
         default_name, filter,
         &default_filter);
 
@@ -173,9 +173,8 @@ void ProtocolExp::accept()
                });
 
     Qt::WindowFlags flags = Qt::CustomizeWindowHint;
-    QProgressDialog dlg(L_S(STR_PAGE_DLG, S_ID(IDS_DLG_EXPORT_PROTOCOL_LIST_RESULT), 
-                        "Export Protocol List Result... It can take a while."),
-                        L_S(STR_PAGE_DLG, S_ID(IDS_DLG_CANCEL), "Cancel"), 0, 100, this, flags);
+    QProgressDialog dlg(tr("Export Protocol List Result... It can take a while."),
+                        tr("Cancel"), 0, 100, this, flags);
     dlg.setWindowModality(Qt::WindowModal);
     dlg.setWindowFlags(Qt::Dialog | Qt::FramelessWindowHint | Qt::WindowSystemMenuHint |
                        Qt::WindowMinimizeButtonHint | Qt::WindowMaximizeButtonHint);

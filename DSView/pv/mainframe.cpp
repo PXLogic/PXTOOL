@@ -117,7 +117,7 @@ MainFrame::MainFrame()
   
     // Set the window icon
     QIcon icon;
-    icon.addFile(QString::fromUtf8(":/icons/titlebar_wave_icon.svg"), QSize(), QIcon::Normal, QIcon::Off);
+    icon.addFile(QString::fromUtf8(":/icons/dock_app_icon.png"), QSize(), QIcon::Normal, QIcon::Off);
     setWindowIcon(icon);
     
     _titleBar = new toolbars::TitleBar(true, this, this, false);
@@ -1059,7 +1059,7 @@ void MainFrame::show_doc()
       
     if (app.userHistory.showDocuments) {
         dialogs::DSDialog dlg(this, true);
-        dlg.setTitle(L_S(STR_PAGE_DLG, S_ID(IDS_DLG_DOCUMENT), "Document"));
+        dlg.setTitle(tr("Document"));
 
         QString path = GetAppDataDir() + "/showDoc" + QString::number(lan)+ ".png";
         if (!QFile::exists(path)){
@@ -1073,9 +1073,9 @@ void MainFrame::show_doc()
         msg.setWindowFlags(Qt::Dialog | Qt::FramelessWindowHint | Qt::WindowSystemMenuHint);
         msg.setContentsMargins(0, 0, 0, 0);
        
-        QPushButton *noMoreButton = msg.addButton(L_S(STR_PAGE_MSG, S_ID(IDS_MSG_NOT_SHOW_AGAIN), "Not Show Again"), QMessageBox::ActionRole);
-        msg.addButton(L_S(STR_PAGE_MSG, S_ID(IDS_MSG_IGNORE), "Ignore"), QMessageBox::ActionRole);
-        QPushButton *openButton = msg.addButton(L_S(STR_PAGE_MSG, S_ID(IDS_MSG_OPEN), "Open"), QMessageBox::ActionRole);
+        QPushButton *noMoreButton = msg.addButton(tr("Not Show Again"), QMessageBox::ActionRole);
+        msg.addButton(tr("Ignore"), QMessageBox::ActionRole);
+        QPushButton *openButton = msg.addButton(tr("Open"), QMessageBox::ActionRole);
 
         QVBoxLayout layout;
         layout.addWidget(&tipsLabel);

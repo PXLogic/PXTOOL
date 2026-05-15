@@ -92,7 +92,7 @@ void LissajousTrace::paint_back(QPainter &p, int left, int right, QColor fore, Q
     fore.setAlpha(view::View::ForeAlpha);
     p.setPen(fore);
     p.drawText(_border.marginsRemoved(QMargins(10, 10, 10, 10)),
-               L_S(STR_PAGE_DLG, S_ID(IDS_DLG_LISSAJOUS_FIGURE), "Lissajous Figure"), Qt::AlignTop | Qt::AlignLeft);
+               tr("Lissajous Figure"), Qt::AlignTop | Qt::AlignLeft);
 
     _view->set_back(true);
 }
@@ -117,7 +117,7 @@ void LissajousTrace::paint_mid(QPainter &p, int left, int right, QColor fore, QC
         if (channel_num < 2){
             p.setPen(view::View::Red);
             p.drawText(_border.marginsRemoved(QMargins(10, 30, 10, 30)),
-                       L_S(STR_PAGE_DLG, S_ID(IDS_DLG_CHAN_NUM_ERR2), "Requires the data of two channels."));
+                       tr("Requires the data of two channels."));
             return;
         }
 
@@ -131,7 +131,7 @@ void LissajousTrace::paint_mid(QPainter &p, int left, int right, QColor fore, QC
         if (_xIndex >= channel_num || _yIndex >= channel_num) {
             p.setPen(view::View::Red);
             p.drawText(_border.marginsRemoved(QMargins(10, 30, 10, 30)),
-                       L_S(STR_PAGE_DLG, S_ID(IDS_DLG_DATA_SOURCE_ERROR), "Data source error."));
+                       tr("Data source error."));
         }
         else {
             const uint8_t* chan_data_array[2];

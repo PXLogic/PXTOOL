@@ -463,8 +463,7 @@ void DecoderStack::do_decode_work()
 
 	// Check that all decoders have the required channels
     if (!check_required_probes()) {
-        _error_message = L_S(STR_PAGE_MSG, S_ID(IDS_MSG_DECODERSTACK_DECODE_WORK_ERROR),
-                            "One or more required channels have not been specified");
+        _error_message = tr("One or more required channels have not been specified");
         dsv_err("ERROR:%s", _error_message.toStdString().c_str());
         return;
 	}
@@ -489,8 +488,7 @@ void DecoderStack::do_decode_work()
 
 	if (_snapshot == NULL)
     {   
-        _error_message = L_S(STR_PAGE_MSG, S_ID(IDS_MSG_DECODERSTACK_DECODE_WORK_ERROR),
-                             "One or more required channels have not been specified");
+        _error_message = tr("One or more required channels have not been specified");
         dsv_err("ERROR:%s", _error_message.toStdString().c_str());
         return;
     }		
@@ -633,8 +631,7 @@ void DecoderStack::decode_data(const uint64_t decode_start, const uint64_t decod
                     }
                 }
                 else {
-                    _error_message = L_S(STR_PAGE_MSG, S_ID(IDS_MSG_DECODERSTACK_DECODE_DATA_ERROR),
-                                     "At least one of selected channels are not enabled.");
+                    _error_message = tr("At least one of selected channels are not enabled.");
                     return;
                 }
             }
@@ -750,8 +747,7 @@ void DecoderStack::execute_decode_stack()
 
 		if (!di)
 		{
-			_error_message =L_S(STR_PAGE_MSG, S_ID(IDS_MSG_DECODERSTACK_DECODE_STACK_ERROR), 
-                            "Failed to create decoder instance");
+			_error_message =tr("Failed to create decoder instance");
 			srd_session_destroy(session);
 			return;
 		}

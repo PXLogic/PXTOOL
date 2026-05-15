@@ -22,14 +22,53 @@
 #include "log.h"
 #include <QString>
 #include <QDir>
-#include  "config/appconfig.h"
+#include <QDateTime>
+#include <QMutex>
+#include <QMutexLocker>
+#include "config/appconfig.h"
 #include "utility/path.h"
 #include <string>
+#include <cstdio>
+#include <cstdarg>
 
 xlog_writer *dsv_log = nullptr;
 static xlog_context *log_ctx = nullptr;
 static bool b_logfile = false;
-static int log_file_index = -1; 
+static int log_file_index = -1;
+
+// --- UI log buffer ---
+static QMutex            g_ui_log_mutex;
+static QList<UiLogEntry> g_ui_log_buf;
+static int               g_ui_log_level = XLOG_LEVEL_INFO;
+
+void dsv_ui_log(int level, const char *fmt, ...)
+{
+    if (level > g_ui_log_level)
+        return;
+    char buf[1024];
+    va_list args;
+    va_start(args, fmt);
+    vsnprintf(buf, sizeof(buf), fmt, args);
+    va_end(args);
+    QString ts = QDateTime::currentDateTime().toString("hh:mm:ss.zzz");
+    QMutexLocker lk(&g_ui_log_mutex);
+    if (g_ui_log_buf.size() > 2000)
+        g_ui_log_buf.removeFirst();
+    g_ui_log_buf.append({level, ts + "  " + QString::fromUtf8(buf)});
+}
+
+QList<UiLogEntry> dsv_take_ui_logs()
+{
+    QMutexLocker lk(&g_ui_log_mutex);
+    QList<UiLogEntry> result = g_ui_log_buf;
+    g_ui_log_buf.clear();
+    return result;
+}
+
+void dsv_set_ui_log_level(int level)
+{
+    g_ui_log_level = level;
+} 
 
 void dsv_log_init()
 {

@@ -456,7 +456,7 @@ void Header::changeColor(QMouseEvent *event)
     }
 
     if ((event->button() == Qt::LeftButton)) {
-        const QColor new_color = QColorDialog::getColor(_context_trace->get_colour(), this, L_S(STR_PAGE_DLG, S_ID(IDS_DLG_SET_CHANNEL_COLOUR), "Set Channel Colour"));
+        const QColor new_color = QColorDialog::getColor(_context_trace->get_colour(), this, tr("Set Channel Colour"));
         if (new_color.isValid())
             _context_trace->set_colour(new_color);
     }

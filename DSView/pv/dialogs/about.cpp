@@ -51,7 +51,7 @@ About::About(QWidget *parent) :
     setFixedHeight(650);
     setFixedWidth(800);
 
-    setTitle(L_S(STR_PAGE_DLG, S_ID(IDS_DLG_ABOUT), "About"));
+    setTitle(tr("About"));
     setTitleTextAlignment(Qt::AlignHCenter | Qt::AlignVCenter);
     SetTitleSpace(8);
     layout()->setSpacing(0);

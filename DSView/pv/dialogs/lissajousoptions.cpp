@@ -153,10 +153,10 @@ LissajousOptions::~LissajousOptions()
 
 void LissajousOptions::retranslateUi()
 {
-    _enable->setText(L_S(STR_PAGE_DLG, S_ID(IDS_DLG_ENABLE), "Enable"));
-    _x_group->setTitle(L_S(STR_PAGE_DLG, S_ID(IDS_DLG_X_AXIS), "X-axis"));
-    _y_group->setTitle(L_S(STR_PAGE_DLG, S_ID(IDS_DLG_Y_AXIS), "Y-axis"));
-    setTitle(L_S(STR_PAGE_DLG, S_ID(IDS_DLG_LISSAJOUS_OPTIONS), "Lissajous Options"));
+    _enable->setText(tr("Enable"));
+    _x_group->setTitle(tr("X-axis"));
+    _y_group->setTitle(tr("Y-axis"));
+    setTitle(tr("Lissajous Options"));
 }
 
 void LissajousOptions::accept()

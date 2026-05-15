@@ -106,8 +106,8 @@ Viewport::Viewport(View &parent, View_type type) :
     _drag_timer.setSingleShot(true);
  
     _cmenu = new QMenu(this);
-    QAction *yAction = _cmenu->addAction(L_S(STR_PAGE_DLG, S_ID(IDS_DLG_ADD_Y_CURSOR), "Add Y-cursor"));
-    QAction *xAction = _cmenu->addAction(L_S(STR_PAGE_DLG, S_ID(IDS_DLG_ADD_X_CURSOR), "Add X-cursor"));
+    QAction *yAction = _cmenu->addAction(tr("Add Y-cursor"));
+    QAction *xAction = _cmenu->addAction(tr("Add X-cursor"));
     _yAction = yAction;
     _xAction = xAction;
  
@@ -463,29 +463,29 @@ void Viewport::paintSignals(QPainter &p, QColor fore, QColor back)
                 bool bDot = false;
 
                 if (type == DSO_TRIGGER_AUTO && roll) {
-                    type_str = L_S(STR_PAGE_DLG, S_ID(IDS_DLG_AUTO_ROLL), "Auto(Roll)");
+                    type_str = tr("Auto(Roll)");
                     
                     if (_view.session().is_instant()){
                         type_str += ", ";
-                        type_str += L_S(STR_PAGE_DLG, S_ID(IDS_DLG_VIEW_CAPTURE), "Capturing");
+                        type_str += tr("Capturing");
                         bDot = true;
                     }
                 } 
                 else if (type == DSO_TRIGGER_AUTO && !_view.session().trigd()) {
-                    type_str = L_S(STR_PAGE_DLG, S_ID(IDS_DLG_AUTO), "Auto");
+                    type_str = tr("Auto");
 
                     if (_view.session().is_instant()){
                         type_str += ", ";
-                        type_str += L_S(STR_PAGE_DLG, S_ID(IDS_DLG_VIEW_CAPTURE), "Capturing");
+                        type_str += tr("Capturing");
                         bDot = true;
                     }
                 } 
                 else if (_waiting_trig > 0) {
-                    type_str = L_S(STR_PAGE_DLG, S_ID(IDS_DLG_WAITING_TRIG), "Waiting Trig"); 
+                    type_str = tr("Waiting Trig"); 
                     bDot = true;
                 } 
                 else {
-                    type_str = L_S(STR_PAGE_DLG, S_ID(IDS_DLG_TRIG_D), "Trig'd");
+                    type_str = tr("Trig'd");
                 }
 
                 if (bDot)
@@ -513,7 +513,7 @@ void Viewport::paintSignals(QPainter &p, QColor fore, QColor back)
             if (_view.session().get_device()->is_hardware())
             {
                 if (_view.session().dso_data_is_out_off_range()){
-                    QString data_status = L_S(STR_PAGE_DLG, S_ID(IDS_DLG_DATA_OUT_OFF_RANGE), "Out off range");
+                    QString data_status = tr("Out off range");
                     data_status += "! ";
                     p.setPen(QColor(255,0,0,200));
                     p.drawText(_view.get_view_rect(), Qt::AlignRight | Qt::AlignTop, data_status);
@@ -647,14 +647,14 @@ void Viewport::paintProgress(QPainter &p, QColor fore, QColor back)
             if (triggered) {
                 p.drawText(status_rect,
                            Qt::AlignCenter | Qt::AlignVCenter,
-                           L_S(STR_PAGE_DLG, S_ID(IDS_DLG_TRIGGERED), "Triggered! ") + QString::number(captured_progress) 
-                           + L_S(STR_PAGE_DLG, S_ID(IDS_DLG_CAPTURED), "% Captured"));
+                           tr("Triggered! ") + QString::number(captured_progress) 
+                           + tr("% Captured"));
             }
             else {
                 p.drawText(status_rect,
                            Qt::AlignCenter | Qt::AlignVCenter,
-                           L_S(STR_PAGE_DLG, S_ID(IDS_DLG_WAITING_FOR_TRIGGER), "Waiting for Trigger! ") + QString::number(captured_progress) 
-                           + L_S(STR_PAGE_DLG, S_ID(IDS_DLG_CAPTURED), "% Captured"));
+                           tr("Waiting for Trigger! ") + QString::number(captured_progress) 
+                           + tr("% Captured"));
             }
 
             prgRate(captured_progress);
@@ -1722,9 +1722,9 @@ void Viewport::measure()
                         _cur_aftX = _view.hover_point().x();
                         _cur_midY = logicSig->get_y() - logicSig->get_totalHeight()/2 - 5;
 
-                        _em_rising = L_S(STR_PAGE_DLG, S_ID(IDS_DLG_RISING), "Rising: ") + QString::number(_edge_rising);
-                        _em_falling = L_S(STR_PAGE_DLG, S_ID(IDS_DLG_FALLING), "Falling: ") + QString::number(_edge_falling);
-                        _em_edges = L_S(STR_PAGE_DLG, S_ID(IDS_DLG_Edges_1), "Edges: ") + QString::number(_edge_rising + _edge_falling);
+                        _em_rising = tr("Rising: ") + QString::number(_edge_rising);
+                        _em_falling = tr("Falling: ") + QString::number(_edge_falling);
+                        _em_edges = tr("Edges: ") + QString::number(_edge_rising + _edge_falling);
 
                         break;
                     }
@@ -1837,13 +1837,13 @@ void Viewport::paintMeasure(QPainter &p, QColor fore, QColor back)
 
             p.setPen(active_color);
             p.drawText(measure1_rect, Qt::AlignRight | Qt::AlignVCenter,
-                       L_S(STR_PAGE_DLG, S_ID(IDS_DLG_WIDTH), "Width: ") + _mm_width);
+                       tr("Width: ") + _mm_width);
             p.drawText(measure2_rect, Qt::AlignRight | Qt::AlignVCenter,
-                       L_S(STR_PAGE_DLG, S_ID(IDS_DLG_PERIOD), "Period: ") + _mm_period);
+                       tr("Period: ") + _mm_period);
             p.drawText(measure3_rect, Qt::AlignRight | Qt::AlignVCenter,
-                       L_S(STR_PAGE_DLG, S_ID(IDS_DLG_FREQUENCY), "Frequency: ") + _mm_freq);
+                       tr("Frequency: ") + _mm_freq);
             p.drawText(measure4_rect, Qt::AlignRight | Qt::AlignVCenter,
-                      L_S(STR_PAGE_DLG, S_ID(IDS_DLG_DUTY_CYCLE), "Duty Cycle: ") + _mm_duty);
+                      tr("Duty Cycle: ") + _mm_duty);
         }
     } 
 
@@ -2242,8 +2242,8 @@ void Viewport::add_cursor_x()
 
 void Viewport::UpdateLanguage()
 {
-    _yAction->setText(L_S(STR_PAGE_DLG, S_ID(IDS_DLG_ADD_Y_CURSOR), "Add Y-cursor"));
-    _xAction->setText(L_S(STR_PAGE_DLG, S_ID(IDS_DLG_ADD_X_CURSOR), "Add X-cursor"));
+    _yAction->setText(tr("Add Y-cursor"));
+    _xAction->setText(tr("Add X-cursor"));
 }
 
 void Viewport::UpdateTheme()

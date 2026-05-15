@@ -131,24 +131,24 @@ TrigBar::~TrigBar()
 
 void TrigBar::retranslateUi()
 {
-    _trig_button.setText(L_S(STR_PAGE_TOOLBAR, S_ID(IDS_TOOLBAR_TRIGGER), "Trigger"));
-    _protocol_button.setText(L_S(STR_PAGE_TOOLBAR, S_ID(IDS_TOOLBAR_DECODE), "Decode"));
-    _measure_button.setText(L_S(STR_PAGE_TOOLBAR, S_ID(IDS_TOOLBAR_MEASURE), "Measure"));
-    _search_button.setText(L_S(STR_PAGE_TOOLBAR, S_ID(IDS_TOOLBAR_SEARCH), "Search"));
-    _function_button.setText(L_S(STR_PAGE_TOOLBAR, S_ID(IDS_TOOLBAR_FUNCTION), "Function"));
+    _trig_button.setText(tr("Trigger"));
+    _protocol_button.setText(tr("Decode"));
+    _measure_button.setText(tr("Measure"));
+    _search_button.setText(tr("Search"));
+    _function_button.setText(tr("Function"));
 
-    _setting_button.setText(L_S(STR_PAGE_TOOLBAR, S_ID(IDS_TOOLBAR_DISPLAY), "Display"));    
-    _themes->setTitle(L_S(STR_PAGE_TOOLBAR, S_ID(IDS_TOOLBAR_DISPLAY_THEMES), "Themes"));
-    _action_lissajous->setText(L_S(STR_PAGE_TOOLBAR, S_ID(IDS_TOOLBAR_DISPLAY_LISSAJOUS), "Lissajous"));
+    _setting_button.setText(tr("Display"));    
+    _themes->setTitle(tr("Themes"));
+    _action_lissajous->setText(tr("Lissajous"));
 
    
-    _dark_style->setText(L_S(STR_PAGE_TOOLBAR, S_ID(IDS_TOOLBAR_DISPLAY_THEMES_DARK), "Dark"));
-    _light_style->setText(L_S(STR_PAGE_TOOLBAR, S_ID(IDS_TOOLBAR_DISPLAY_THEMES_LIGHT), "Light"));
+    _dark_style->setText(tr("Dark"));
+    _light_style->setText(tr("Light"));
 
-    _action_fft->setText(L_S(STR_PAGE_TOOLBAR, S_ID(IDS_TOOLBAR_FUNCTION_FFT), "FFT"));
-    _action_math->setText(L_S(STR_PAGE_TOOLBAR, S_ID(IDS_TOOLBAR_FUNCTION_MATH), "Math"));
+    _action_fft->setText(tr("FFT"));
+    _action_math->setText(tr("Math"));
 
-    _action_dispalyOptions->setText(L_S(STR_PAGE_TOOLBAR, S_ID(IDS_TOOLBAR_DISPLAY_OPTIONS), "Options"));
+    _action_dispalyOptions->setText(tr("Options"));
 }
 
 void TrigBar::reStyle()

@@ -254,6 +254,10 @@ public:
 
     void scroll_to_logic_last_data_time();
 
+    void nav_cursor(int delta);
+    void zoom_fit();
+    void delete_active_cursor();
+
     /*
      * horizental cursors
      */
@@ -498,6 +502,7 @@ private:
 
     bool        _show_xcursors;
     std::list<XCursor*> _xcursorList;
+    int         _active_cursor_index = -1;
 
     QPoint      _hover_point;
     dialogs::Calibration *_cali;

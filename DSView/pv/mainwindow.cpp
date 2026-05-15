@@ -63,6 +63,7 @@
 #include "dialogs/waitingdialog.h"
 #include "dialogs/regionoptions.h"
 #include "dialogs/applicationpardlg.h"
+#include "dialogs/shortcutdlg.h"
 
 #include "toolbars/samplingbar.h"
 #include "toolbars/trigbar.h"
@@ -285,6 +286,8 @@ namespace pv
         connect(_action_light, SIGNAL(triggered()), _trig_bar, SLOT(on_actionLight_triggered()));
         QAction *_action_display_opts  = _menu_view->addAction(tr("Display Options..."));
         connect(_action_display_opts, SIGNAL(triggered()), _trig_bar, SLOT(on_display_setting()));
+        QAction *_action_shortcuts = _menu_view->addAction(tr("Keyboard Shortcuts..."));
+        connect(_action_shortcuts, &QAction::triggered, this, &MainWindow::on_shortcut_settings);
 
         // Help menu
         _menu_help = _menu_bar->addMenu(tr("Help"));
@@ -392,11 +395,12 @@ namespace pv
             else
             {
                 dsv_err("file is not exists:%s", file_name.c_str());
-                MsgBox::Show(L_S(STR_PAGE_MSG, S_ID(IDS_MSG_OPEN_FILE_ERROR), "Open file error!"), ldFileName, NULL);
+                MsgBox::Show(tr("Open file error!"), ldFileName, NULL);
             }
         }
 
         on_load_device_first();
+        setup_shortcuts();
     }
 
     void MainWindow::on_load_device_first()
@@ -732,7 +736,7 @@ namespace pv
         }
         catch (QString e)
         {   
-            QString strMsg(L_S(STR_PAGE_MSG, S_ID(IDS_MSG_FAIL_TO_LOAD), "Failed to load "));
+            QString strMsg(tr("Failed to load "));
             strMsg += file_name;
             MsgBox::Show(strMsg);
             _session->set_default_device();
@@ -760,33 +764,29 @@ namespace pv
         case SigSession::Hw_err:
             dsv_info("MainWindow::on_session_error(),Hw_err, stop capture");
             _session->stop_capture();
-            title = L_S(STR_PAGE_MSG, S_ID(IDS_MSG_HARDWARE_ERROR), "Hardware Operation Failed");
-            details = L_S(STR_PAGE_MSG, S_ID(IDS_MSG_HARDWARE_ERROR_DET), 
-                      "Please replug device to refresh hardware configuration!");
+            title = tr("Hardware Operation Failed");
+            details = tr("Please replug device to refresh hardware configuration!");
             break;
         case SigSession::Malloc_err:
             dsv_info("MainWindow::on_session_error(),Malloc_err, stop capture");
             _session->stop_capture();
-            title = L_S(STR_PAGE_MSG, S_ID(IDS_MSG_MALLOC_ERROR), "Malloc Error");
-            details = L_S(STR_PAGE_MSG, S_ID(IDS_MSG_MALLOC_ERROR_DET), 
-                      "Memory is not enough for this sample!\nPlease reduce the sample depth!");
+            title = tr("Malloc Error");
+            details = tr("Memory is not enough for this sample!\nPlease reduce the sample depth!");
             break;
         case SigSession::Pkt_data_err:
-            title = L_S(STR_PAGE_MSG, S_ID(IDS_MSG_PACKET_ERROR), "Packet Error");
-            details = L_S(STR_PAGE_MSG, S_ID(IDS_MSG_PACKET_ERROR_DET), 
-            "the content of received packet are not expected!");
+            title = tr("Packet Error");
+            details = tr("the content of received packet are not expected!");
             _session->refresh(0);
             break;
         case SigSession::Data_overflow:
             dsv_info("MainWindow::on_session_error(),Data_overflow, stop capture");
             _session->stop_capture();
-            title = L_S(STR_PAGE_MSG, S_ID(IDS_MSG_DATA_OVERFLOW), "Data Overflow");
-            details = L_S(STR_PAGE_MSG, S_ID(IDS_MSG_DATA_OVERFLOW_DET), 
-                      "USB bandwidth can not support current sample rate! \nPlease reduce the sample rate!");
+            title = tr("Data Overflow");
+            details = tr("USB bandwidth can not support current sample rate! \nPlease reduce the sample rate!");
             break;
         default:
-            title = L_S(STR_PAGE_MSG, S_ID(IDS_MSG_UNDEFINED_ERROR), "Undefined Error");
-            details = L_S(STR_PAGE_MSG, S_ID(IDS_MSG_UNDEFINED_ERROR_DET), "Not expected error!");
+            title = tr("Undefined Error");
+            details = tr("Not expected error!");
             break;
         }
 
@@ -939,7 +939,7 @@ namespace pv
         QString format = "png";
         QString fileName = QFileDialog::getSaveFileName(
             this,
-            L_S(STR_PAGE_DLG, S_ID(IDS_DLG_SAVE_AS), "Save As"),
+            tr("Save As"),
             default_name,
             "png file(*.png);;jpeg file(*.jpeg)",
             &format);
@@ -1226,7 +1226,7 @@ namespace pv
             // check device and mode
             if (driverName != sessionDevice || mode != conf_dev_mode)
             {
-                MsgBox::Show(NULL, L_S(STR_PAGE_MSG, S_ID(IDS_MSG_PROFILE_NOT_COMPATIBLE), "Profile is not compatible with current device or mode!"), this);
+                MsgBox::Show(NULL, tr("Profile is not compatible with current device or mode!"), this);
                 return false;
             }
         }
@@ -1397,7 +1397,9 @@ namespace pv
                     if (s->get_name() ==  obj["name"].toString() &&
                         s->get_type() ==  obj["type"].toDouble())
                     {
-                        s->set_colour(QColor(obj["colour"].toString()));
+                        QColor loadedColour(obj["colour"].toString());
+                        if (loadedColour.isValid())
+                            s->set_colour(loadedColour);
                        
                         if (s->signal_type() == SR_CHANNEL_DSO)
                         {   
@@ -1427,7 +1429,9 @@ namespace pv
                             chan_name = QString::number(s->get_index());
                         }
 
-                        s->set_colour(QColor(obj["colour"].toString()));
+                        QColor loadedColour(obj["colour"].toString());
+                        if (loadedColour.isValid())
+                            s->set_colour(loadedColour);
                         s->set_name(chan_name);
 
                         view::LogicSignal *logicSig = NULL;
@@ -1600,7 +1604,7 @@ namespace pv
                 }
                 catch (...)
                 {
-                    MsgBox::Show(NULL, L_S(STR_PAGE_MSG, S_ID(IDS_MSG_RESTORE_WINDOW_ERROR), "restore window status error!"));
+                    MsgBox::Show(NULL, tr("restore window status error!"));
                 }
             }
             else
@@ -1618,6 +1622,183 @@ namespace pv
             _trig_bar->reload();
     }
 
+    // -----------------------------------------------------------------------
+    // Keyboard shortcut setup
+    // -----------------------------------------------------------------------
+
+    void MainWindow::setup_shortcuts()
+    {
+        rebuild_shortcuts();
+    }
+
+    void MainWindow::rebuild_shortcuts()
+    {
+        for (auto *sc : _shortcuts)
+            delete sc;
+        _shortcuts.clear();
+
+        auto &opts = AppConfig::Instance().shortcutOptions;
+
+        auto add = [&](const QString &seq, auto slot) {
+            if (seq.isEmpty()) return;
+            auto *sc = new QShortcut(QKeySequence(seq), this);
+            sc->setContext(Qt::ApplicationShortcut);
+            connect(sc, &QShortcut::activated, this, slot);
+            _shortcuts.append(sc);
+        };
+
+        add(opts.startCollecting,   &MainWindow::sc_start_collecting);
+        add(opts.stopCollecting,    &MainWindow::sc_stop_collecting);
+        add(opts.switchVernierUp,   &MainWindow::sc_vernier_prev);
+        add(opts.switchVernierDown, &MainWindow::sc_vernier_next);
+        add(opts.parameterMeasure,  &MainWindow::sc_measure);
+        add(opts.vernierCreate,     &MainWindow::sc_vernier_create);
+        add(opts.switchPageUp,      &MainWindow::sc_page_up);
+        add(opts.switchPageDown,    &MainWindow::sc_page_down);
+        add(opts.jumpZero,          &MainWindow::sc_jump_zero);
+        add(opts.zoomIn,            &MainWindow::sc_zoom_in);
+        add(opts.zoomOut,           &MainWindow::sc_zoom_out);
+        add(opts.zoomFull,          &MainWindow::sc_zoom_full);
+        add(opts.saveFile,          &MainWindow::sc_save);
+        add(opts.saveAs,            &MainWindow::sc_save_as);
+        add(opts.exportFile,        &MainWindow::sc_export);
+        add(opts.deviceConfig,      &MainWindow::sc_device_config);
+        add(opts.protocolDecode,    &MainWindow::sc_protocol_decode);
+        add(opts.labelMeasurement,  &MainWindow::sc_label_measurement);
+        add(opts.dataSearch,        &MainWindow::sc_data_search);
+        add(opts.closeSession,      &MainWindow::sc_close_session);
+
+        // Delete key always removes the active cursor
+        auto *delSc = new QShortcut(QKeySequence(Qt::Key_Delete), this);
+        delSc->setContext(Qt::ApplicationShortcut);
+        connect(delSc, &QShortcut::activated, this, &MainWindow::sc_delete_cursor);
+        _shortcuts.append(delSc);
+    }
+
+    // -----------------------------------------------------------------------
+    // Shortcut slot implementations
+    // -----------------------------------------------------------------------
+
+    void MainWindow::sc_start_collecting()
+    {
+        if (!_session->is_working())
+            _sampling_bar->run_or_stop();
+    }
+
+    void MainWindow::sc_stop_collecting()
+    {
+        if (_session->is_working())
+            _sampling_bar->run_or_stop();
+    }
+
+    void MainWindow::sc_vernier_prev()
+    {
+        _view->nav_cursor(-1);
+    }
+
+    void MainWindow::sc_vernier_next()
+    {
+        _view->nav_cursor(1);
+    }
+
+    void MainWindow::sc_measure()
+    {
+        _trig_bar->measure_clicked();
+    }
+
+    void MainWindow::sc_vernier_create()
+    {
+        int64_t center = _view->offset() + _view->get_view_width() / 2;
+        uint64_t sampleIndex = (uint64_t)(center * _view->scale() * _session->cur_snap_samplerate());
+        _view->add_cursor(sampleIndex);
+        _view->show_cursors(true);
+    }
+
+    void MainWindow::sc_page_up()
+    {
+        if (_active_tab_index > 0)
+            switch_to_session(_active_tab_index - 1);
+    }
+
+    void MainWindow::sc_page_down()
+    {
+        if (_active_tab_index < _session_items.size() - 1)
+            switch_to_session(_active_tab_index + 1);
+    }
+
+    void MainWindow::sc_jump_zero()
+    {
+        _view->set_scale_offset(_view->scale(), 0);
+    }
+
+    void MainWindow::sc_zoom_in()
+    {
+        _view->zoom(1);
+    }
+
+    void MainWindow::sc_zoom_out()
+    {
+        _view->zoom(-1);
+    }
+
+    void MainWindow::sc_zoom_full()
+    {
+        _view->zoom_fit();
+    }
+
+    void MainWindow::sc_save()
+    {
+        on_save();
+    }
+
+    void MainWindow::sc_save_as()
+    {
+        on_save();
+    }
+
+    void MainWindow::sc_export()
+    {
+        on_export();
+    }
+
+    void MainWindow::sc_device_config()
+    {
+        _sampling_bar->config_device();
+    }
+
+    void MainWindow::sc_protocol_decode()
+    {
+        _trig_bar->protocol_clicked();
+    }
+
+    void MainWindow::sc_label_measurement()
+    {
+        _trig_bar->measure_clicked();
+    }
+
+    void MainWindow::sc_data_search()
+    {
+        _trig_bar->search_clicked();
+    }
+
+    void MainWindow::sc_close_session()
+    {
+        on_session_tab_close(_active_tab_index);
+    }
+
+    void MainWindow::sc_delete_cursor()
+    {
+        _view->delete_active_cursor();
+    }
+
+    void MainWindow::on_shortcut_settings()
+    {
+        pv::dialogs::ShortcutDlg dlg(this);
+        dlg.exec();
+        if (dlg.IsClickYes())
+            rebuild_shortcuts();
+    }
+
     bool MainWindow::eventFilter(QObject *object, QEvent *event)
     {
         (void)object;
@@ -1627,13 +1808,15 @@ namespace pv
             const auto &sigs = _session->get_signals();
             QKeyEvent *ke = (QKeyEvent *)event;
             
-            int modifier = ke->modifiers(); 
- 
-            if(modifier & Qt::ControlModifier || 
-               modifier & Qt::ShiftModifier || 
-               modifier & Qt::AltModifier)
+            int modifier = ke->modifiers();
+
+            // Pass through modifier combos — QShortcut handles them.
+            // Only handle bare keys (no modifiers) in this eventFilter.
+            if (modifier & Qt::ControlModifier ||
+                modifier & Qt::ShiftModifier  ||
+                modifier & Qt::AltModifier)
             {
-                return true;
+                return false;
             }
 
             high_resolution_clock::time_point key_press_time = high_resolution_clock::now();
@@ -1966,8 +2149,7 @@ namespace pv
                 dsv_info("The cable's USB port version: %d.0", cable_ver);
 
                 if (usb30_support && usb_speed == LIBUSB_SPEED_HIGH){
-                    QString str_err(L_S(STR_PAGE_DLG, S_ID(IDS_DLG_CHECK_USB_SPEED_ERROR),
-                        "Plug the device into a USB 2.0 port will seriously affect its performance.\nPlease replug it into a USB 3.0 port."));
+                    QString str_err(tr("Plug the device into a USB 2.0 port will seriously affect its performance.\nPlease replug it into a USB 3.0 port."));
                     delay_prop_msg(str_err);
                 }
             }
@@ -2010,7 +2192,7 @@ namespace pv
         if (_session->have_hardware_data() && _session->is_first_store_confirm())
         {   
             // Only popup one time.
-            ret =  MsgBox::Confirm(L_S(STR_PAGE_MSG, S_ID(IDS_MSG_SAVE_CAPDATE), "Save captured data?"));
+            ret =  MsgBox::Confirm(tr("Save captured data?"));
 
             if (!ret && _is_auto_switch_device)
             {
@@ -2040,8 +2222,7 @@ namespace pv
                 {
                     if (version == 1)
                     {
-                        QString strMsg(L_S(STR_PAGE_DLG, S_ID(IDS_DLG_CHECK_SESSION_FILE_VERSION_ERROR), 
-                        "Current loading file has an old format. \nThis will lead to a slow loading speed. \nPlease resave it after loaded."));
+                        QString strMsg(tr("Current loading file has an old format. \nThis will lead to a slow loading speed. \nPlease resave it after loaded."));
                         MsgBox::Show(strMsg);
                     }
                 }
@@ -2259,7 +2440,11 @@ namespace pv
 
                 // Update device tab name only when the device session changes
                 if (isDeviceTab && !_tabs.isEmpty()) {
-                    QString devName = _device_agent->driver_name();
+                    QString devName;
+                    if (_device_agent->is_demo())
+                        devName = tr("Session 1");
+                    else
+                        devName = _device_agent->driver_name();
                     if (devName.isEmpty()) devName = tr("Device");
                     _tabs[0].name = devName;
                     if (_session_tab_bar)
@@ -2273,6 +2458,7 @@ namespace pv
 
                 _logo_bar->dsl_connected(_session->get_device()->is_hardware());
                 update_toolbar_view_status();
+                _sidebar_widget->refresh_device_options();
                 _session->device_event_object()->device_updated();
 
                 if (_device_agent->is_hardware())
@@ -2401,7 +2587,7 @@ namespace pv
                 // when the task end, the new device will be selected.
                 if (_session->get_device()->is_demo() == false && !_is_save_confirm_msg)
                 {
-                    QString msgText = L_S(STR_PAGE_MSG, S_ID(IDS_MSG_TO_SWITCH_DEVICE), "To switch the new device?");
+                    QString msgText = tr("To switch the new device?");
                     
                     if (MsgBox::Confirm(msgText, "", &_msg, NULL) == false){ 
                         _msg = NULL;

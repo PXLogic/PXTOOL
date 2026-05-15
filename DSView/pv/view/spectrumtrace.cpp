@@ -532,13 +532,13 @@ const std::vector<uint64_t> SpectrumTrace::get_length_support()
 
 void SpectrumTrace::update_lang_text()
 {
-    windows_support[0] = L_S(STR_PAGE_DLG, S_ID(IDS_FFT_WINDOW_RECTANGLE), "Rectangle");
-    windows_support[1] = L_S(STR_PAGE_DLG, S_ID(IDS_FFT_WINDOW_HANN), "Hann");
-    windows_support[2] = L_S(STR_PAGE_DLG, S_ID(IDS_FFT_WINDOW_HAMMING), "Hamming");
-    windows_support[3] = L_S(STR_PAGE_DLG, S_ID(IDS_FFT_WINDOW_BLACKMAN), "Blackman");
-    windows_support[4] = L_S(STR_PAGE_DLG, S_ID(IDS_FFT_WINDOW_FLATTOP), "Flat_top");
+    windows_support[0] = tr("Rectangle");
+    windows_support[1] = tr("Hann");
+    windows_support[2] = tr("Hamming");
+    windows_support[3] = tr("Blackman");
+    windows_support[4] = tr("Flat_top");
 
-    FFT_ViewMode[0] = L_S(STR_PAGE_DLG, S_ID(IDS_FFT_MODE_LINEARRSM), "Linear RMS");
+    FFT_ViewMode[0] = tr("Linear RMS");
     FFT_ViewMode[1] = "DBV RMS";
 }
 

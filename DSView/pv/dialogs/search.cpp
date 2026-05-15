@@ -112,8 +112,7 @@ Search::Search(QWidget *parent, SigSession *session, std::map<uint16_t, QString>
         }
     }
 
-    auto *legend_lbl = new QLabel(L_S(STR_PAGE_DLG, S_ID(IDS_DLG_SEARCH_LABEL),
-                            "X: Don't care\n0: Low level\n1: High level\nR: Rising edge\nF: Falling edge\nC: Rising/Falling edge"), this);
+    auto *legend_lbl = new QLabel(tr("X: Don't care\n0: Low level\n1: High level\nR: Rising edge\nF: Falling edge\nC: Rising/Falling edge"), this);
     legend_lbl->setObjectName("search_legend");
     search_layout->addWidget(legend_lbl, 0, 3, index, 1, Qt::AlignTop);
     search_layout->setColumnStretch(3, 100);
@@ -127,7 +126,7 @@ Search::Search(QWidget *parent, SigSession *session, std::map<uint16_t, QString>
     layout()->addWidget(bot_sep);
 
     // Footer: plain QPushButtons (QDialogButtonBox ignores app QSS background on macOS)
-    auto *cancel_btn = new QPushButton(L_S(STR_PAGE_DLG, S_ID(IDS_DLG_CANCEL), "Cancel"), this);
+    auto *cancel_btn = new QPushButton(tr("Cancel"), this);
     cancel_btn->setObjectName("device_cancel_btn");
     auto *ok_btn = new QPushButton(QStringLiteral("OK"), this);
     ok_btn->setObjectName("device_ok_btn");
@@ -147,7 +146,7 @@ Search::Search(QWidget *parent, SigSession *session, std::map<uint16_t, QString>
     btn_lay->addWidget(ok_btn);
     layout()->addLayout(btn_lay);
 
-    setTitle(L_S(STR_PAGE_DLG, S_ID(IDS_DLG_SEARCH_OPTIONS), "Search Options"));
+    setTitle(tr("Search Options"));
 
     connect(ok_btn, &QPushButton::clicked, this, [this]() { accept(); });
     connect(cancel_btn, &QPushButton::clicked, this, [this]() { reject(); });

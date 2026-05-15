@@ -248,6 +248,13 @@ namespace pv
             REMOVE_UI(this);
         }
 
+        void SamplingBar::setSession(SigSession *session)
+        {
+            _session      = session;
+            _device_agent = session->get_device();
+            update_device_list();
+        }
+
         void SamplingBar::detachFromDeviceBar()
         {
             if (_capture_strip == nullptr)
@@ -285,11 +292,11 @@ namespace pv
             {
                 if (_device_agent->is_demo())
                 {
-                    _device_type.setText(L_S(STR_PAGE_TOOLBAR, S_ID(IDS_TOOLBAR_DEVICE_TYPE_DEMO), "Demo"));
+                    _device_type.setText(tr("Demo"));
                 }
                 else if (_device_agent->is_file())
                 {
-                    _device_type.setText(L_S(STR_PAGE_TOOLBAR, S_ID(IDS_TOOLBAR_DEVICE_TYPE_FILE), "File"));
+                    _device_type.setText(tr("File"));
                 }
                 else
                 {
@@ -304,19 +311,19 @@ namespace pv
                         _device_type.setText("USB UNKNOWN");
                 }
             }
-            _configure_button.setText(L_S(STR_PAGE_TOOLBAR, S_ID(IDS_TOOLBAR_DEVICE_OPTION), "Options"));
-           _mode_button.setItemText(0, QString(L_S(STR_PAGE_TOOLBAR, S_ID(IDS_TOOLBAR_CAPTURE_MODE_SINGLE), "Single")).remove('&'));
-           _mode_button.setItemText(1, QString(L_S(STR_PAGE_TOOLBAR, S_ID(IDS_TOOLBAR_CAPTURE_MODE_REPEAT), "Repetitive")).remove('&'));
-           _mode_button.setItemText(2, QString(L_S(STR_PAGE_TOOLBAR, S_ID(IDS_TOOLBAR_CAPTURE_MODE_LOOP), "Loop")).remove('&'));
+            _configure_button.setText(tr("Options"));
+           _mode_button.setItemText(0, QString(tr("Single")).remove('&'));
+           _mode_button.setItemText(1, QString(tr("Repetitive")).remove('&'));
+           _mode_button.setItemText(2, QString(tr("Loop")).remove('&'));
 
             int mode = _device_agent->get_work_mode();
             bool is_working = _session->is_working();
 
-            auto str_start = L_S(STR_PAGE_TOOLBAR, S_ID(IDS_TOOLBAR_RUN_START), "Start");
-            auto str_stop  = L_S(STR_PAGE_TOOLBAR, S_ID(IDS_TOOLBAR_RUN_STOP), "Stop");
-            auto str_single  = L_S(STR_PAGE_TOOLBAR, S_ID(IDS_TOOLBAR_ONE_SINGLE), "Single");
-            auto str_instant  = L_S(STR_PAGE_TOOLBAR, S_ID(IDS_TOOLBAR_ONE_INSTANT), "Instant");
-            auto str_one_stop  = L_S(STR_PAGE_TOOLBAR, S_ID(IDS_TOOLBAR_ONE_STOP), "Stop");
+            auto str_start = tr("Start");
+            auto str_stop  = tr("Stop");
+            auto str_single  = tr("Single");
+            auto str_instant  = tr("Instant");
+            auto str_one_stop  = tr("Stop");
 
             if (_is_run_as_instant)
             {
@@ -348,13 +355,19 @@ namespace pv
             QString comboBorder = isDark ? "#444444" : "#6b7280";
             QString comboFg     = isDark ? "#d1d5db" : "#374151";
             QString comboHoverBorder = isDark ? "#666666" : "#374151";
+            QString comboDisabledBg = isDark ? "#111111" : "#f3f4f6";
+            QString comboDisabledFg = isDark ? "#555555" : "#9ca3af";
+            QString comboDisabledBorder = isDark ? "#2a2a2a" : "#d1d5db";
             QString comboStyle =
                 QString("QComboBox { background-color: %1; border: 1px solid %2;"
                         " border-radius: 4px; padding: 3px 8px; min-height: 22px;"
                         " color: %3; font-size: 12px; }"
                         "QComboBox:hover { border-color: %4; }"
+                        "QComboBox:disabled { background-color: %5; border-color: %6;"
+                        " color: %7; }"
                         "QComboBox::drop-down { border: none; width: 16px; }")
-                .arg(comboBg, comboBorder, comboFg, comboHoverBorder);
+                .arg(comboBg, comboBorder, comboFg, comboHoverBorder,
+                     comboDisabledBg, comboDisabledBorder, comboDisabledFg);
             _device_selector.setStyleSheet(comboStyle);
             _sample_rate.setStyleSheet(comboStyle);
             _sample_count.setStyleSheet(comboStyle);
@@ -557,18 +570,24 @@ namespace pv
 
             if (_device_agent->have_instance() == false)
             {
-                dsv_info("SamplingBar::update_sample_rate_selector, have no device.");
+                dsv_info("DBG update_sample_rate_selector: have_instance=false, returning early");
+                connect(&_sample_rate, SIGNAL(currentIndexChanged(int)),
+                        this, SLOT(on_samplerate_sel(int)));
                 return;
             }
 
             _updating_sample_rate = true;
 
             gvar_dict = _device_agent->get_config_list(NULL, SR_CONF_SAMPLERATE);
+
             if (gvar_dict == NULL)
             {
                 _sample_rate.clear();
                 _sample_rate.show();
                 _updating_sample_rate = false;
+                connect(&_sample_rate, SIGNAL(currentIndexChanged(int)),
+                        this, SLOT(on_samplerate_sel(int)));
+                update_sample_count_selector();
                 return;
             }
 
@@ -587,9 +606,11 @@ namespace pv
                     g_free(s);
                 }
 
+
                 _sample_rate.show();
                 g_variant_unref(gvar_list);
             }
+
 
             _sample_rate.setMinimumWidth(_sample_rate.sizeHint().width() + 15);
             _sample_rate.view()->setMinimumWidth(_sample_rate.sizeHint().width() + 30);
@@ -1025,8 +1046,8 @@ namespace pv
                 bool ret = _device_agent->get_config_bool(SR_CONF_ZERO, zero);
                 if (ret && zero)
                 {   
-                    QString str1(L_S(STR_PAGE_MSG, S_ID(IDS_MSG_AUTO_CALIB), "Auto Calibration"));
-                    QString str2(L_S(STR_PAGE_MSG, S_ID(IDS_MSG_ADJUST_SAVE), "Please adjust zero skew and save the result"));
+                    QString str1(tr("Auto Calibration"));
+                    QString str2(tr("Please adjust zero skew and save the result"));
                     bool bRet = MsgBox::Confirm(str1, str2);
 
                     if (bRet)
@@ -1094,7 +1115,7 @@ namespace pv
                 bool ret = _device_agent->get_config_bool(SR_CONF_ZERO, zero);
                 if (ret && zero)
                 {  
-                    QString strMsg(L_S(STR_PAGE_MSG,S_ID(IDS_MSG_AUTO_CALIB_START), "Auto Calibration program will be started. Don't connect any probes. \nIt can take a while!"));
+                    QString strMsg(tr("Auto Calibration program will be started. Don't connect any probes. \nIt can take a while!"));
 
                     if (MsgBox::Confirm(strMsg))
                     {
@@ -1136,7 +1157,7 @@ namespace pv
 
             ds_device_handle devHandle = (ds_device_handle)_device_selector.currentData().toULongLong();
             if (_session->have_hardware_data() && _session->is_first_store_confirm()){
-                if (MsgBox::Confirm(L_S(STR_PAGE_MSG, S_ID(IDS_MSG_SAVE_CAPDATE), "Save captured data?")))
+                if (MsgBox::Confirm(tr("Save captured data?")))
                 {
                     _updating_device_list = true;
                     _device_selector.setCurrentIndex(_last_device_index);
@@ -1321,6 +1342,10 @@ namespace pv
 
         void SamplingBar::update_view_status()
         {
+            // Not safe to query hardware state before a device is connected
+            if (!_device_agent->have_instance())
+                return;
+
             int bEnable = _session->is_working() == false;
             int mode = _session->get_device()->get_work_mode();
 
@@ -1434,7 +1459,7 @@ namespace pv
             if (_session->get_device()->is_demo() && bEnable)
             {
                 QString opt_mode = _device_agent->get_demo_operation_mode();
-                
+
                 if (opt_mode != "random" && mode == LOGIC){
                     _sample_rate.setEnabled(false);
                     _sample_count.setEnabled(false);

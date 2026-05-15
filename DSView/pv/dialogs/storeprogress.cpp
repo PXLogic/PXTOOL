@@ -77,7 +77,7 @@ StoreProgress::StoreProgress(SigSession *session, QWidget *parent) :
     _fileLab->setMaximumHeight(50); 
 
     _openButton = new QPushButton(this);
-    _openButton->setText(L_S(STR_PAGE_DLG, S_ID(IDS_DLG_PATH_NAME), "path"));
+    _openButton->setText(tr("path"));
 
     _space = new QWidget(this);
     _space->setMinimumHeight(80);
@@ -154,7 +154,7 @@ void StoreProgress::on_timeout()
 void StoreProgress::accept()
 {
     if (_store_session->GetFileName() == ""){
-        MsgBox::Show(NULL, L_S(STR_PAGE_MSG, S_ID(IDS_MSG_SEL_FILENAME), "You need to select a file name."));
+        MsgBox::Show(NULL, tr("You need to select a file name."));
         return;
     }
 
@@ -198,7 +198,7 @@ void StoreProgress::accept()
         if (dex1 > 0 && dex2 > 0)
         {
             if (dex1 == dex2){
-                QString mStr = L_S(STR_PAGE_MSG, S_ID(IDS_MSG_DATA_RANGE_ERROR), "Data range error");
+                QString mStr = tr("Data range error");
                 MsgBox::Show(mStr);
                 return;
             }
@@ -207,7 +207,7 @@ void StoreProgress::accept()
 
             if (start_index > total_count && end_index > total_count)
             {
-                QString mStr = L_S(STR_PAGE_MSG, S_ID(IDS_MSG_DATA_RANGE_HAVE_NO_DATA), "No data in the data range");
+                QString mStr = tr("No data in the data range");
                 MsgBox::Show(mStr);
                 return;
             }
@@ -238,7 +238,7 @@ void StoreProgress::accept()
         if (_store_session->export_start()){
             _is_done = true;
             _store_session->session()->set_saving(true);             
-            setTitle(L_S(STR_PAGE_DLG, S_ID(IDS_DLG_EXPORTING), "Exporting...")); 
+            setTitle(tr("Exporting...")); 
             m_timer.start();
         }
     }
@@ -246,7 +246,7 @@ void StoreProgress::accept()
         if (_store_session->save_start()){
             _is_done = true;
             _store_session->session()->set_saving(true); 
-            setTitle(L_S(STR_PAGE_DLG, S_ID(IDS_DLG_SAVING), "Saving..."));
+            setTitle(tr("Saving..."));
             m_timer.start();
         }
     }
@@ -260,7 +260,7 @@ void StoreProgress::accept()
 void StoreProgress::save_run(ISessionDataGetter *getter)
 {
     _isExport = false;
-    setTitle(L_S(STR_PAGE_DLG, S_ID(IDS_DLG_SAVE), "Save"));
+    setTitle(tr("Save"));
     QString file = _store_session->MakeSaveFile(false);
     _fileLab->setText(file); 
     _store_session->_sessionDataGetter = getter;
@@ -279,14 +279,14 @@ void StoreProgress::save_run(ISessionDataGetter *getter)
 
         for (int i=0; i<cursor_list.size(); i++){
             //tr
-            QString cursor_name = L_S(STR_PAGE_DLG, S_ID(IDS_DLG_CURSOR), "Cursor") + 
+            QString cursor_name = tr("Cursor") + 
                                 QString::number(i+1);
             _start_cursor->addItem(cursor_name);
             _end_cursor->addItem(cursor_name);
         }
 
-        lay->addRow(L_S(STR_PAGE_DLG, S_ID(IDS_DLG_START_CURSOR), "Start") , _start_cursor);
-        lay->addRow(L_S(STR_PAGE_DLG, S_ID(IDS_DLG_END_CURSOR), "End"), _end_cursor);
+        lay->addRow(tr("Start") , _start_cursor);
+        lay->addRow(tr("End"), _end_cursor);
         _grid->addLayout(lay, 2, 0, 1, 2);
     }
 
@@ -302,11 +302,11 @@ void StoreProgress::export_run()
         bool isOrg = AppConfig::Instance().appOptions.originalData;
 
         _ckOrigin  = new QRadioButton();
-        _ckOrigin->setText(L_S(STR_PAGE_DLG, S_ID(IDS_DLG_ORIGINAL_DATA), "Original data"));   
+        _ckOrigin->setText(tr("Original data"));   
         _ckOrigin->setChecked(isOrg);       
 
         _ckCompress  = new QRadioButton();
-        _ckCompress->setText(L_S(STR_PAGE_DLG, S_ID(IDS_DLG_COMPRESSED_DATA), "Compressed data"));
+        _ckCompress->setText(tr("Compressed data"));
         _ckCompress->setChecked(!isOrg);
 
         _start_cursor = new DsComboBox();
@@ -319,14 +319,14 @@ void StoreProgress::export_run()
         
         for (int i=0; i<cursor_list.size(); i++){
             //tr
-            QString cursor_name = L_S(STR_PAGE_DLG, S_ID(IDS_DLG_CURSOR), "Cursor") + 
+            QString cursor_name = tr("Cursor") + 
                                 QString::number(i+1);
             _start_cursor->addItem(cursor_name);
             _end_cursor->addItem(cursor_name);
         }
 
-        lay->addRow(L_S(STR_PAGE_DLG, S_ID(IDS_DLG_START_CURSOR), "Start") , _start_cursor);
-        lay->addRow(L_S(STR_PAGE_DLG, S_ID(IDS_DLG_END_CURSOR), "End"), _end_cursor);
+        lay->addRow(tr("Start") , _start_cursor);
+        lay->addRow(tr("End"), _end_cursor);
 
         QWidget *space = new QWidget();
         space->setFixedHeight(5);
@@ -341,7 +341,7 @@ void StoreProgress::export_run()
     }
 
     _isExport = true;
-    setTitle(L_S(STR_PAGE_DLG, S_ID(IDS_DLG_EXPORT), "Export"));
+    setTitle(tr("Export"));
     QString file = _store_session->MakeExportFile(false);
     _fileLab->setText(file); 
 

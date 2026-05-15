@@ -46,6 +46,7 @@ class ProtocolDock;
 class MeasureDock;
 class SearchDock;
 class DeviceOptionsDock;
+class LogDock;
 
 class SideBar : public QWidget, public IUiWindow
 {
@@ -58,7 +59,8 @@ public:
         TabMeasures = 2,
         TabSearch   = 3,
         TabOptions  = 4,
-        TabCount    = 5
+        TabLogs     = 5,
+        TabCount    = 6
     };
 
     SideBar(QWidget *parent, view::View &view, SigSession *session);
@@ -70,9 +72,12 @@ public:
     MeasureDock       *measure_widget()        { return _measure_widget; }
     SearchDock        *search_widget()         { return _search_widget; }
     DeviceOptionsDock *device_options_widget() { return _device_options_widget; }
+    LogDock           *log_widget()            { return _log_widget; }
 
     void showTab(Tab tab, bool visible);
     void setDsoMode(bool isDso);
+    void setSession(SigSession *session);
+    void refresh_device_options();
 
     // IUiWindow
     void UpdateLanguage() override;
@@ -102,6 +107,7 @@ private:
     MeasureDock       *_measure_widget;
     SearchDock        *_search_widget;
     DeviceOptionsDock *_device_options_widget;
+    LogDock           *_log_widget;
 
     SigSession     *_session;
 };

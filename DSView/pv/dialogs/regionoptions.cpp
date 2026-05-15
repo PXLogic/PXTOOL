@@ -56,7 +56,7 @@ RegionOptions::RegionOptions(view::View *view, SigSession *session, QWidget *par
         auto &cursor_list = _view->get_cursorList();
 
         for(auto i = cursor_list.begin(); i != cursor_list.end(); i++) {
-            QString curCursor = L_S(STR_PAGE_DLG, S_ID(IDS_DLG_CURSOR), "Cursor")+QString::number(index);
+            QString curCursor = tr("Cursor")+QString::number(index);
             _start_comboBox->addItem(curCursor);
             _end_comboBox->addItem(curCursor);
             index++;
@@ -74,7 +74,7 @@ RegionOptions::RegionOptions(view::View *view, SigSession *session, QWidget *par
     vlayout->addWidget(&_button_box);
 
     layout()->addLayout(vlayout);
-    setTitle(L_S(STR_PAGE_DLG, S_ID(IDS_DLG_REGION), "Region"));
+    setTitle(tr("Region"));
 
     connect(&_button_box, SIGNAL(accepted()), this, SLOT(set_region()));
     connect(_session->device_event_object(), SIGNAL(device_updated()), this, SLOT(reject()));

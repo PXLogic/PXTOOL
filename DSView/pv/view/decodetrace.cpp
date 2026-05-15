@@ -340,7 +340,7 @@ void DecodeTrace::paint_mid(QPainter &p, int left, int right, QColor fore, QColo
                 }
             }
         } else {
-            draw_unshown_row(p, y, annotation_height, left, right, L_S(STR_PAGE_DLG, S_ID(IDS_DLG_UNSHOWN), "Unshown"), fore, back);
+            draw_unshown_row(p, y, annotation_height, left, right, tr("Unshown"), fore, back);
             y += annotation_height;
             _cur_row_headings.push_back(dec->decoder()->name);
         }
@@ -446,7 +446,7 @@ void DecodeTrace::draw_nodetail(QPainter &p,
     (void)back;
 
     const QRectF nodetail_rect(left, y - h/2 + 0.5, right - left, h);
-    QString info = L_S(STR_PAGE_DLG, S_ID(ZOOM_IN_FOR_DETAILS), "Zoom in for details");
+    QString info = tr("Zoom in for details");
     int info_left = nodetail_rect.center().x() - p.boundingRect(QRectF(), 0, info).width();
     int info_right = nodetail_rect.center().x() + p.boundingRect(QRectF(), 0, info).width();
     int height = p.boundingRect(QRectF(), 0, info).height();
@@ -557,9 +557,9 @@ void DecodeTrace::draw_error(QPainter &p, const QString &message,
     p.setPen(Qt::red);
 
     if (bounding_rect.width() < text_rect.width())
-        p.drawText(text_rect, Qt::AlignCenter, L_S(STR_PAGE_DLG, S_ID(IDS_DLG_DECODETRACE_ERROR1), "Error:")+message);
+        p.drawText(text_rect, Qt::AlignCenter, tr("Error:")+message);
     else
-        p.drawText(text_rect, Qt::AlignCenter, L_S(STR_PAGE_DLG, S_ID(IDS_DLG_DECODETRACE_ERROR2), "Error: ..."));
+        p.drawText(text_rect, Qt::AlignCenter, tr("Error: ..."));
 }
 
 void DecodeTrace::draw_unshown_row(QPainter &p, int y, int h, int left,
@@ -737,8 +737,7 @@ bool DecodeTrace::create_popup(bool isnew)
             // Reopen the dialog to select the required probes.
             if (ret && _decoder_stack->check_required_probes() == false)
             {
-                QString errMsg = L_S(STR_PAGE_MSG, S_ID(IDS_MSG_DECODERSTACK_DECODE_WORK_ERROR),
-                            "One or more required channels have not been specified");
+                QString errMsg = tr("One or more required channels have not been specified");
                 MsgBox::Show(errMsg);
     
                 ret = false;

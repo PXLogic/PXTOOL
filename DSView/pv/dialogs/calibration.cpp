@@ -119,12 +119,12 @@ Calibration::~Calibration()
 
 void Calibration::retranslateUi()
 {
-    _save_btn->setText(L_S(STR_PAGE_DLG, S_ID(IDS_DLG_SAVE), "Save"));
-    _abort_btn->setText(L_S(STR_PAGE_DLG, S_ID(IDS_DLG_ABORT), "Abort"));
-    _reset_btn->setText(L_S(STR_PAGE_DLG, S_ID(IDS_DLG_RESET), "Reset"));
-    _exit_btn->setText(L_S(STR_PAGE_DLG, S_ID(IDS_DLG_EXIT), "Exit"));
+    _save_btn->setText(tr("Save"));
+    _abort_btn->setText(tr("Abort"));
+    _reset_btn->setText(tr("Reset"));
+    _exit_btn->setText(tr("Exit"));
 
-    setTitle(L_S(STR_PAGE_DLG, S_ID(IDS_DLG_MANUAL_CALIBRATION), "Manual Calibration"));
+    setTitle(tr("Manual Calibration"));
 }
 
 void Calibration::update_device_info()
@@ -284,9 +284,8 @@ void Calibration::on_save()
     });
 
     Qt::WindowFlags flags = Qt::CustomizeWindowHint;
-    QProgressDialog dlg(L_S(STR_PAGE_DLG, S_ID(IDS_DLG_SAVE_CALIBRATION_RESULTS), 
-                        "Save calibration results... It can take a while."),
-                        L_S(STR_PAGE_DLG, S_ID(IDS_DLG_CANCEL), "Cancel"),
+    QProgressDialog dlg(tr("Save calibration results... It can take a while."),
+                        tr("Cancel"),
                         0,0,this,flags);
     dlg.setWindowModality(Qt::WindowModal);
     dlg.setWindowFlags(Qt::Dialog | Qt::FramelessWindowHint | Qt::WindowSystemMenuHint |
@@ -312,9 +311,8 @@ void Calibration::on_abort()
     });
 
     Qt::WindowFlags flags = Qt::CustomizeWindowHint;
-    QProgressDialog dlg(L_S(STR_PAGE_DLG, S_ID(IDS_DLG_RELOAD_CALIBRATION_RESULTS), 
-                        "Reload last calibration results... It can take a while."),
-                        L_S(STR_PAGE_DLG, S_ID(IDS_DLG_CANCEL), "Cancel"),0,0,this,flags);
+    QProgressDialog dlg(tr("Reload last calibration results... It can take a while."),
+                        tr("Cancel"),0,0,this,flags);
     dlg.setWindowModality(Qt::WindowModal);
     dlg.setWindowFlags(Qt::Dialog | Qt::FramelessWindowHint | Qt::WindowSystemMenuHint |
                        Qt::WindowMinimizeButtonHint | Qt::WindowMaximizeButtonHint);
@@ -361,8 +359,7 @@ void Calibration::reload_value()
 
 void Calibration::on_reset()
 {
-    QString strMsg(L_S(STR_PAGE_MSG, S_ID(IDS_MSG_SET_DEF_CAL_SETTING), 
-        "All calibration settings will become the defualt values!"));
+    QString strMsg(tr("All calibration settings will become the defualt values!"));
 
     if (MsgBox::Confirm(strMsg)) {
         _device_agent->set_config_bool(SR_CONF_ZERO_DEFAULT, true);
@@ -373,10 +370,10 @@ void Calibration::on_reset()
 void Calibration::updateLangText()
 {
     QString sp = " ";
-    VGAIN = sp + L_S(STR_PAGE_DLG, S_ID(IDS_CALIB_VGAIN), "VGAIN");
-    VOFF = sp + L_S(STR_PAGE_DLG, S_ID(IDS_CALIB_VOFF), "VOFF");
-    VCOMB = sp + L_S(STR_PAGE_DLG, S_ID(IDS_CALIB_VCOMB), "VCOMB");
-    CHANNEL_LABEL = L_S(STR_PAGE_DLG, S_ID(IDS_DLG_CHANNEL), "Channel");
+    VGAIN = sp + tr("VGAIN");
+    VOFF = sp + tr("VOFF");
+    VCOMB = sp + tr("VCOMB");
+    CHANNEL_LABEL = tr("Channel");
 }
 
 void Calibration::UpdateLanguage()

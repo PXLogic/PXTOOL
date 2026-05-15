@@ -24,6 +24,7 @@
 
 #include <log/xlog.h>
 #include <QString>
+#include <QList>
 #include <assert.h>
 
 extern xlog_writer *dsv_log;
@@ -41,11 +42,17 @@ void dsv_set_log_file_enable(bool flag);
 
 QString get_dsv_log_path();
 
-#define LOG_PREFIX "" 
-#define dsv_err(fmt, args...) xlog_err(dsv_log, LOG_PREFIX fmt, ## args)
-#define dsv_warn(fmt, args...) xlog_warn(dsv_log, LOG_PREFIX fmt, ## args)
-#define dsv_info(fmt, args...) xlog_info(dsv_log, LOG_PREFIX fmt, ## args)
-#define dsv_dbg(fmt, args...) xlog_dbg(dsv_log, LOG_PREFIX fmt, ## args)
-#define dsv_detail(fmt, args...) xlog_detail(dsv_log, LOG_PREFIX fmt, ## args)
+// UI log buffer — thread-safe, drained by LogDock every 100 ms
+struct UiLogEntry { int level; QString text; };
+void dsv_ui_log(int level, const char *fmt, ...);
+void dsv_set_ui_log_level(int level);
+QList<UiLogEntry> dsv_take_ui_logs();
+
+#define LOG_PREFIX ""
+#define dsv_err(fmt, args...)    do { xlog_err(dsv_log,    LOG_PREFIX fmt, ##args); dsv_ui_log(XLOG_LEVEL_ERR,    LOG_PREFIX fmt, ##args); } while(0)
+#define dsv_warn(fmt, args...)   do { xlog_warn(dsv_log,   LOG_PREFIX fmt, ##args); dsv_ui_log(XLOG_LEVEL_WARN,   LOG_PREFIX fmt, ##args); } while(0)
+#define dsv_info(fmt, args...)   do { xlog_info(dsv_log,   LOG_PREFIX fmt, ##args); dsv_ui_log(XLOG_LEVEL_INFO,   LOG_PREFIX fmt, ##args); } while(0)
+#define dsv_dbg(fmt, args...)    do { xlog_dbg(dsv_log,    LOG_PREFIX fmt, ##args); dsv_ui_log(XLOG_LEVEL_DBG,    LOG_PREFIX fmt, ##args); } while(0)
+#define dsv_detail(fmt, args...) do { xlog_detail(dsv_log, LOG_PREFIX fmt, ##args); dsv_ui_log(XLOG_LEVEL_DETAIL, LOG_PREFIX fmt, ##args); } while(0)
 
 #endif

@@ -322,6 +322,59 @@ static void _saveFont(FontOptions &o, QSettings &st)
 }
 */
 
+//------shortcuts
+static void _loadShortcuts(ShortcutOptions &o, QSettings &st)
+{
+    st.beginGroup("Shortcuts");
+    getFiled("startCollecting",   st, o.startCollecting,   "F1");
+    getFiled("stopCollecting",    st, o.stopCollecting,    "F2");
+    getFiled("switchVernierUp",   st, o.switchVernierUp,   "F3");
+    getFiled("switchVernierDown", st, o.switchVernierDown, "F4");
+    getFiled("parameterMeasure",  st, o.parameterMeasure,  "Ctrl+G");
+    getFiled("vernierCreate",     st, o.vernierCreate,     "Ctrl+H");
+    getFiled("switchPageUp",      st, o.switchPageUp,      "F5");
+    getFiled("switchPageDown",    st, o.switchPageDown,    "F6");
+    getFiled("jumpZero",          st, o.jumpZero,          "F7");
+    getFiled("zoomIn",            st, o.zoomIn,            "F8");
+    getFiled("zoomOut",           st, o.zoomOut,           "F9");
+    getFiled("zoomFull",          st, o.zoomFull,          "F10");
+    getFiled("saveFile",          st, o.saveFile,          "Ctrl+S");
+    getFiled("saveAs",            st, o.saveAs,            "Ctrl+Shift+S");
+    getFiled("exportFile",        st, o.exportFile,        "Ctrl+E");
+    getFiled("deviceConfig",      st, o.deviceConfig,      "Ctrl+1");
+    getFiled("protocolDecode",    st, o.protocolDecode,    "Ctrl+2");
+    getFiled("labelMeasurement",  st, o.labelMeasurement,  "Ctrl+3");
+    getFiled("dataSearch",        st, o.dataSearch,        "Ctrl+F");
+    getFiled("closeSession",      st, o.closeSession,      "Ctrl+W");
+    st.endGroup();
+}
+
+static void _saveShortcuts(ShortcutOptions &o, QSettings &st)
+{
+    st.beginGroup("Shortcuts");
+    setFiled("startCollecting",   st, o.startCollecting);
+    setFiled("stopCollecting",    st, o.stopCollecting);
+    setFiled("switchVernierUp",   st, o.switchVernierUp);
+    setFiled("switchVernierDown", st, o.switchVernierDown);
+    setFiled("parameterMeasure",  st, o.parameterMeasure);
+    setFiled("vernierCreate",     st, o.vernierCreate);
+    setFiled("switchPageUp",      st, o.switchPageUp);
+    setFiled("switchPageDown",    st, o.switchPageDown);
+    setFiled("jumpZero",          st, o.jumpZero);
+    setFiled("zoomIn",            st, o.zoomIn);
+    setFiled("zoomOut",           st, o.zoomOut);
+    setFiled("zoomFull",          st, o.zoomFull);
+    setFiled("saveFile",          st, o.saveFile);
+    setFiled("saveAs",            st, o.saveAs);
+    setFiled("exportFile",        st, o.exportFile);
+    setFiled("deviceConfig",      st, o.deviceConfig);
+    setFiled("protocolDecode",    st, o.protocolDecode);
+    setFiled("labelMeasurement",  st, o.labelMeasurement);
+    setFiled("dataSearch",        st, o.dataSearch);
+    setFiled("closeSession",      st, o.closeSession);
+    st.endGroup();
+}
+
 //------------AppConfig
 
 AppConfig::AppConfig()
@@ -347,11 +400,12 @@ AppConfig::~AppConfig()
  }
 
 void AppConfig::LoadAll()
-{   
+{
     QSettings st(QApplication::organizationName(), QApplication::applicationName());
     _loadApp(appOptions, st);
     _loadHistory(userHistory, st);
     _loadFrame(frameOptions, st);
+    _loadShortcuts(shortcutOptions, st);
 
     //dsv_dbg("Config file path:\"%s\"", st.fileName().toUtf8().data());
 }
@@ -360,6 +414,7 @@ void AppConfig::SaveApp()
 {
     QSettings st(QApplication::organizationName(), QApplication::applicationName());
     _saveApp(appOptions, st);
+    _saveShortcuts(shortcutOptions, st);
 }
 
 void AppConfig::SaveHistory()

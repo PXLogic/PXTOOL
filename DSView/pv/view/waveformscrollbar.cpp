@@ -10,6 +10,8 @@
 
 using namespace pv::view;
 
+const int WaveformScrollBar::MinThumbWidth;
+
 WaveformScrollBar::WaveformScrollBar(View &view, QWidget *parent)
     : QWidget(parent), _view(view)
 {

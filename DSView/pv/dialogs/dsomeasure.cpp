@@ -75,7 +75,7 @@ DsoMeasure::DsoMeasure(SigSession *session, View &parent,
     _layout.addWidget(&_button_box, Qt::AlignHCenter | Qt::AlignBottom);
 
     layout()->addLayout(&_layout);
-    setTitle(L_S(STR_PAGE_DLG, S_ID(IDS_DLG_MEASUREMENTS), "Measurements"));
+    setTitle(tr("Measurements"));
 
     connect(_button_box.button(QDialogButtonBox::Cancel), SIGNAL(clicked()), this, SLOT(reject()));
     connect(_button_box.button(QDialogButtonBox::Reset), SIGNAL(clicked()), this, SLOT(reset()));

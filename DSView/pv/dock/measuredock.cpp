@@ -100,7 +100,7 @@ MeasureDock::MeasureDock(QWidget *parent, View &view, SigSession *session) :
 
     _dist_layout = new QGridLayout(_widget);
     _dist_layout->setVerticalSpacing(5);
-    _add_dec_label = new QLabel(L_S(STR_PAGE_DLG, S_ID(IDS_DLG_TIME_SAMPLES), "Time/Samples"), _widget);
+    _add_dec_label = new QLabel(tr("Time/Samples"), _widget);
     {
         auto *hdr = new QWidget(_widget);
         auto *hdr_lay = new QHBoxLayout(hdr);
@@ -183,22 +183,22 @@ MeasureDock::~MeasureDock()
 
 void MeasureDock::retranslateUi()
 {
-    _mouse_groupBox->setTitle(L_S(STR_PAGE_DLG, S_ID(IDS_DLG_MOUSE_MEASUREMENT), "Mouse measurement"));
-    _fen_checkBox->setText(L_S(STR_PAGE_DLG, S_ID(IDS_DLG_ENABLE_FLOATING_MEASUREMENT), "Enable floating measurement"));
-    _dist_groupBox->setTitle(L_S(STR_PAGE_DLG, S_ID(IDS_DLG_CURSOR_DISTANCE), "Cursor Distance"));
-    _edge_groupBox->setTitle(L_S(STR_PAGE_DLG, S_ID(IDS_DLG_EDGES), "Edges"));
-    _cursor_groupBox->setTitle(L_S(STR_PAGE_DLG, S_ID(IDS_DLG_CURSORS), "Cursors"));
+    _mouse_groupBox->setTitle(tr("Mouse measurement"));
+    _fen_checkBox->setText(tr("Enable floating measurement"));
+    _dist_groupBox->setTitle(tr("Cursor Distance"));
+    _edge_groupBox->setTitle(tr("Edges"));
+    _cursor_groupBox->setTitle(tr("Cursors"));
 
-    _channel_label->setText(L_S(STR_PAGE_DLG, S_ID(IDS_DLG_CHANNEL), "Channel"));
-    _edge_label->setText(L_S(STR_PAGE_DLG, S_ID(IDS_DLG_RIS_OR_FAL_EDGE), "Rising/Falling/Edges"));
-    _time_label->setText(L_S(STR_PAGE_DLG, S_ID(IDS_DLG_TIME_SAMPLES), "Time/Samples"));
+    _channel_label->setText(tr("Channel"));
+    _edge_label->setText(tr("Rising/Falling/Edges"));
+    _time_label->setText(tr("Time/Samples"));
     _add_dec_label->setText(_time_label->text());
 
     /*
-    _w_label->setText(L_S(STR_PAGE_DLG, S_ID(IDS_DLG_W), "W: "));
-    _p_label->setText(L_S(STR_PAGE_DLG, S_ID(IDS_DLG_P), "P: "));
-    _f_label->setText(L_S(STR_PAGE_DLG, S_ID(IDS_DLG_F), "F: "));
-    _d_label->setText(L_S(STR_PAGE_DLG, S_ID(IDS_DLG_D), "D: "));
+    _w_label->setText(tr("W: "));
+    _p_label->setText(tr("P: "));
+    _f_label->setText(tr("F: "));
+    _d_label->setText(tr("D: "));
     */
 
     _w_label->setText("W:");
@@ -562,8 +562,7 @@ void MeasureDock::popup_all_coursors()
     auto &cursor_list = _view.get_cursorList();
 
     if (cursor_list.empty()) {
-        QString strMsg(L_S(STR_PAGE_MSG, S_ID(IDS_MSG_PLEASE_INSERT_CURSOR), 
-                                       "Please insert cursor before using cursor measure."));
+        QString strMsg(tr("Please insert cursor before using cursor measure."));
         MsgBox::Show(strMsg);
         return;
     }

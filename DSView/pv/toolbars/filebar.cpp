@@ -103,15 +103,15 @@ FileBar::~FileBar()
 
 void FileBar::retranslateUi()
 {
-    _file_button.setText(L_S(STR_PAGE_TOOLBAR, S_ID(IDS_TOOLBAR_FILE), "File"));
-    _menu_session->setTitle(L_S(STR_PAGE_TOOLBAR, S_ID(IDS_TOOLBAR_FILE_CONFIG), "Con&fig...")); //load,save session file
-    _action_load->setText(L_S(STR_PAGE_TOOLBAR, S_ID(IDS_TOOLBAR_FILE_CONFIG_LOAD), "&Load..."));
-    _action_store->setText(L_S(STR_PAGE_TOOLBAR, S_ID(IDS_TOOLBAR_FILE_CONFIG_STORE), "S&tore..."));
-    _action_default->setText(L_S(STR_PAGE_TOOLBAR, S_ID(IDS_TOOLBAR_FILE_CONFIG_DEFAULT), "&Default..."));
-    _action_open->setText(L_S(STR_PAGE_TOOLBAR, S_ID(IDS_TOOLBAR_FILE_OPEN), "&Open..."));
-    _action_save->setText(L_S(STR_PAGE_TOOLBAR, S_ID(IDS_TOOLBAR_FILE_SAVE), "&Save..."));
-    _action_export->setText(L_S(STR_PAGE_TOOLBAR, S_ID(IDS_TOOLBAR_FILE_EXPORT), "&Export..."));
-    _action_capture->setText(L_S(STR_PAGE_TOOLBAR, S_ID(IDS_TOOLBAR_FILE_CAPTURE), "&Capture..."));
+    _file_button.setText(tr("File"));
+    _menu_session->setTitle(tr("Con&fig...")); //load,save session file
+    _action_load->setText(tr("&Load..."));
+    _action_store->setText(tr("S&tore..."));
+    _action_default->setText(tr("&Default..."));
+    _action_open->setText(tr("&Open..."));
+    _action_save->setText(tr("&Save..."));
+    _action_export->setText(tr("&Export..."));
+    _action_capture->setText(tr("&Capture..."));
 }
 
 void FileBar::reStyle()
@@ -135,7 +135,7 @@ void FileBar::on_actionOpen_triggered()
     AppConfig &app = AppConfig::Instance(); 
 
     if (_session->have_hardware_data() && _session->is_first_store_confirm()){
-        if (MsgBox::Confirm(L_S(STR_PAGE_MSG, S_ID(IDS_MSG_SAVE_CAPDATE), "Save captured data?"))){
+        if (MsgBox::Confirm(tr("Save captured data?"))){
             sig_save();
             return;
         }
@@ -144,7 +144,7 @@ void FileBar::on_actionOpen_triggered()
     // Show the dialog
     const QString file_name = QFileDialog::getOpenFileName(
         this, 
-        L_S(STR_PAGE_DLG, S_ID(IDS_DLG_OPEN_FILE), "Open File"), 
+        tr("Open File"), 
         app.userHistory.openDir,
         "DSView Data (*.dsl)");
 
@@ -165,7 +165,7 @@ void FileBar::on_actionLoad_triggered()
     AppConfig &app = AppConfig::Instance();      
     const QString file_name = QFileDialog::getOpenFileName(
         this, 
-        L_S(STR_PAGE_DLG, S_ID(IDS_DLG_OPEN_SEESION), "Open Session"), 
+        tr("Open Session"), 
         app.userHistory.sessionDir, 
         "DSView Session (*.dsc)");
 
@@ -184,8 +184,7 @@ void FileBar::on_actionDefault_triggered()
 { 
     QDir dir(GetFirmwareDir());
     if (!dir.exists()) { 
-          MsgBox::Show(NULL, L_S(STR_PAGE_MSG, S_ID(IDS_MSG_NOT_FOND_DEFAULT_PROFILE),
-             "Cannot find default profile for this device!"), this);
+          MsgBox::Show(NULL, tr("Cannot find default profile for this device!"), this);
           return;
     }
    
@@ -213,7 +212,7 @@ void FileBar::on_actionStore_triggered()
 
     QString file_name = QFileDialog::getSaveFileName(
                 this, 
-                L_S(STR_PAGE_DLG, S_ID(IDS_DLG_SAVE_SEESION), "Save Session"),
+                tr("Save Session"),
                 app.userHistory.sessionDir,
                 "DSView Session (*.dsc)");
 

@@ -33,7 +33,7 @@
 #define THEME_STYLE_DARK   "dark"
 #define THEME_STYLE_LIGHT  "light"
 
-#define APP_NAME  "DSView"
+#define APP_NAME  "PXTOOL"
   
 //--------------------api---
 QString GetIconPath();
@@ -137,6 +137,30 @@ struct FontOptions
   FontParam other;
 };
 
+struct ShortcutOptions
+{
+    QString startCollecting   = "F1";
+    QString stopCollecting    = "F2";
+    QString switchVernierUp   = "F3";
+    QString switchVernierDown = "F4";
+    QString parameterMeasure  = "Ctrl+G";
+    QString vernierCreate     = "Ctrl+H";
+    QString switchPageUp      = "F5";
+    QString switchPageDown    = "F6";
+    QString jumpZero          = "F7";
+    QString zoomIn            = "F8";
+    QString zoomOut           = "F9";
+    QString zoomFull          = "F10";
+    QString saveFile          = "Ctrl+S";
+    QString saveAs            = "Ctrl+Shift+S";
+    QString exportFile        = "Ctrl+E";
+    QString deviceConfig      = "Ctrl+1";
+    QString protocolDecode    = "Ctrl+2";
+    QString labelMeasurement  = "Ctrl+3";
+    QString dataSearch        = "Ctrl+F";
+    QString closeSession      = "Ctrl+W";
+};
+
 class AppConfig
 {
 private:
@@ -167,7 +191,8 @@ public:
   QColor GetStyleColor();
 
 public:
-  AppOptions    appOptions;
-  UserHistory   userHistory;
-  FrameOptions  frameOptions;
+  AppOptions      appOptions;
+  UserHistory     userHistory;
+  FrameOptions    frameOptions;
+  ShortcutOptions shortcutOptions;
 };

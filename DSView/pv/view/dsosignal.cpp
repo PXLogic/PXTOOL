@@ -1089,12 +1089,12 @@ void DsoSignal::paint_type_options(QPainter &p, int right, const QPoint pt, QCol
     p.drawText(valueRect, Qt::AlignCenter, pText);
  
     QString strings[6];
-    strings[0] =  L_S(STR_PAGE_DLG, S_ID(IDS_DSO_CTR_EN), "EN");
-    strings[1] =  L_S(STR_PAGE_DLG, S_ID(IDS_DSO_CTR_DIS), "DIS");
-    strings[2] =  L_S(STR_PAGE_DLG, S_ID(IDS_DSO_CTR_GND), "GND");
-    strings[3] =  L_S(STR_PAGE_DLG, S_ID(IDS_DSO_CTR_DC), "DC");
-    strings[4] =  L_S(STR_PAGE_DLG, S_ID(IDS_DSO_CTR_AC), "AC");
-    strings[5] =  L_S(STR_PAGE_DLG, S_ID(IDS_DSO_CTR_AUTO), "AUTO");
+    strings[0] =  tr("EN");
+    strings[1] =  tr("DIS");
+    strings[2] =  tr("GND");
+    strings[3] =  tr("DC");
+    strings[4] =  tr("AC");
+    strings[5] =  tr("AUTO");
 
     p.setPen(Qt::transparent);
     p.setBrush(chEn_rect.contains(pt) ? _colour.darker() : _colour);

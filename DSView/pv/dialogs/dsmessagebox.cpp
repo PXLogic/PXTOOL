@@ -82,7 +82,7 @@ DSMessageBox::DSMessageBox(QWidget *parent,const QString title) :
         _titlebar->setTitle(title);
     }
     else{
-        _titlebar->setTitle(L_S(STR_PAGE_MSG, S_ID(IDS_MSG_MESSAGE), "Message"));
+        _titlebar->setTitle(tr("Message"));
     }
 
     setObjectName("dsMessageBoxDialog");

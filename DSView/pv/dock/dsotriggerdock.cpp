@@ -65,9 +65,9 @@ DsoTriggerDock::DsoTriggerDock(QWidget *parent, SigSession *session) :
     _holdoff_label = new QLabel(_widget);
     _holdoff_comboBox = new DsComboBox(_widget);
     //tr
-    _holdoff_comboBox->addItem(L_S(STR_PAGE_DLG, S_ID(IDS_DLG_S), "S"), QVariant::fromValue(1000000000));
-    _holdoff_comboBox->addItem(L_S(STR_PAGE_DLG, S_ID(IDS_DLG_MS), "mS"), QVariant::fromValue(1000000));
-    _holdoff_comboBox->addItem(L_S(STR_PAGE_DLG, S_ID(IDS_DLG_US), "uS"), QVariant::fromValue(1000));
+    _holdoff_comboBox->addItem(tr("S"), QVariant::fromValue(1000000000));
+    _holdoff_comboBox->addItem(tr("mS"), QVariant::fromValue(1000000));
+    _holdoff_comboBox->addItem(tr("uS"), QVariant::fromValue(1000));
    
     _holdoff_comboBox->setCurrentIndex(0);
     _holdoff_spinBox = new PopupLineEdit(_widget);
@@ -181,19 +181,19 @@ DsoTriggerDock::~DsoTriggerDock()
 
 void DsoTriggerDock::retranslateUi()
 { 
-    _position_label->setText(L_S(STR_PAGE_DLG, S_ID(IDS_DLG_TRIGGER_POSITION), "Trigger Position: "));
-    _holdoff_label->setText(L_S(STR_PAGE_DLG, S_ID(IDS_DLG_HOLD_OFF_TIME), "Hold Off Time: "));
-    _margin_label->setText(L_S(STR_PAGE_DLG, S_ID(IDS_DLG_NOISE_SENSITIVITY), "Noise Sensitivity: "));
-    _tSource_label->setText(L_S(STR_PAGE_DLG, S_ID(IDS_DLG_TRIGGER_SOURCES), "Trigger Sources: "));
-    _tType_label->setText(L_S(STR_PAGE_DLG, S_ID(IDS_DLG_TRIGGER_TYPES), "Trigger Types: "));
-    _rising_radioButton->setText(L_S(STR_PAGE_DLG, S_ID(IDS_DLG_RISING_EDGE), "Rising Edge"));
-    _falling_radioButton->setText(L_S(STR_PAGE_DLG, S_ID(IDS_DLG_FALLING_EDGE), "Falling Edge"));
+    _position_label->setText(tr("Trigger Position: "));
+    _holdoff_label->setText(tr("Hold Off Time: "));
+    _margin_label->setText(tr("Noise Sensitivity: "));
+    _tSource_label->setText(tr("Trigger Sources: "));
+    _tType_label->setText(tr("Trigger Types: "));
+    _rising_radioButton->setText(tr("Rising Edge"));
+    _falling_radioButton->setText(tr("Falling Edge"));
 
-    _auto_radioButton->setText(L_S(STR_PAGE_DLG, S_ID(IDS_DLG_AUTO), "Auto"));
-    _ch0_radioButton->setText(L_S(STR_PAGE_DLG, S_ID(IDS_DLG_CHANNEL_0), "Channel 0"));
-    _ch1_radioButton->setText(L_S(STR_PAGE_DLG, S_ID(IDS_DLG_CHANNEL_1), "Channel 1"));
-    _ch0a1_radioButton->setText(L_S(STR_PAGE_DLG, S_ID(IDS_DLG_CHANNEL_0_AND_1), "Channel 0 && 1"));
-    _ch0o1_radioButton->setText(L_S(STR_PAGE_DLG, S_ID(IDS_DLG_CHANNEL_0_OR_1), "Channel 0 | 1"));
+    _auto_radioButton->setText(tr("Auto"));
+    _ch0_radioButton->setText(tr("Channel 0"));
+    _ch1_radioButton->setText(tr("Channel 1"));
+    _ch0a1_radioButton->setText(tr("Channel 0 && 1"));
+    _ch0o1_radioButton->setText(tr("Channel 0 | 1"));
 }
 
 void DsoTriggerDock::reStyle()
@@ -221,8 +221,7 @@ void DsoTriggerDock::pos_changed(int pos)
                                             SR_CONF_HORIZ_TRIGGERPOS,pos);
     if (!ret) {        
         if (_session->get_device()->is_hardware() || true){
-            QString strMsg(L_S(STR_PAGE_MSG, S_ID(IDS_MSG_CHANGE_HOR_TRI_POS_FAIL), 
-                                       "Change horiz trigger position failed!"));
+            QString strMsg(tr("Change horiz trigger position failed!"));
                                 
             MsgBox::Show(strMsg);
         }
@@ -252,8 +251,7 @@ void DsoTriggerDock::hold_changed(int hold)
                                             SR_CONF_TRIGGER_HOLDOFF,holdoff);
 
     if (!ret) {
-        QString strMsg(L_S(STR_PAGE_MSG, S_ID(IDS_MSG_CHANGE_TRI_HOLDOFF_TIME_FAIL),
-                                      "Change trigger hold off time failed!"));
+        QString strMsg(tr("Change trigger hold off time failed!"));
         MsgBox::Show(strMsg);
     }
 }
@@ -263,8 +261,7 @@ void DsoTriggerDock::margin_changed(int margin)
     int ret;
     ret = _session->get_device()->set_config_byte(SR_CONF_TRIGGER_MARGIN, margin);
     if (!ret) {
-        QString strMsg(L_S(STR_PAGE_MSG, S_ID(IDS_MSG_CHANGE_SENSITIVITY_FAIL), 
-                                      "Change trigger value sensitivity failed!"));
+        QString strMsg(tr("Change trigger value sensitivity failed!"));
         MsgBox::Show(strMsg);
     }
 }
@@ -277,7 +274,7 @@ void DsoTriggerDock::source_changed()
         _ch0a1_radioButton->setChecked(false);
         _ch0o1_radioButton->setChecked(false); 
 
-        QString msg(L_S(STR_PAGE_MSG, S_ID(IDS_MSG_DISABLED_CHANNEL_TRIG), "Disabled channels cannot be used for triggering!"));
+        QString msg(tr("Disabled channels cannot be used for triggering!"));
         MsgBox::Show(msg);        
     }
 
@@ -288,8 +285,7 @@ void DsoTriggerDock::source_changed()
 
     ret = _session->get_device()->set_config_byte(SR_CONF_TRIGGER_SOURCE, id);
     if (!ret) {
-        QString strMsg(L_S(STR_PAGE_MSG, S_ID(IDS_MSG_CHANGE_SOURCE_FAIL), 
-                                      "Change trigger source failed!"));
+        QString strMsg(tr("Change trigger source failed!"));
         MsgBox::Show(strMsg);
     }
 }
@@ -337,8 +333,7 @@ void DsoTriggerDock::channel_changed(int ch)
                                             SR_CONF_TRIGGER_CHANNEL,
                                             int(_channel_comboBox->currentData().toInt()));
     if (!ret) {
-        QString strMsg(L_S(STR_PAGE_MSG, S_ID(IDS_MSG_CHANGE_CHANNEL_FAIL), 
-                                      "Change trigger channel failed!"));
+        QString strMsg(tr("Change trigger channel failed!"));
         MsgBox::Show(strMsg);
     }
 }
@@ -352,8 +347,7 @@ void DsoTriggerDock::type_changed()
                                             SR_CONF_TRIGGER_SLOPE,
                                             id);
     if (!ret) {
-        QString strMsg(L_S(STR_PAGE_MSG, S_ID(IDS_MSG_CHANGE_TYPE_FAIL), 
-                                      "Change trigger type failed!"));
+        QString strMsg(tr("Change trigger type failed!"));
         MsgBox::Show(strMsg);
     }
 }

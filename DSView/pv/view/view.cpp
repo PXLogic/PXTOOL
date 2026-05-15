@@ -1376,6 +1376,40 @@ void View::scroll_to_logic_last_data_time()
     set_scale_offset(scale(), get_logic_lst_data_offset() + 10);
 }
 
+void View::nav_cursor(int delta)
+{
+    auto &lst = get_cursorList();
+    if (lst.empty())
+        return;
+
+    int size = (int)lst.size();
+    _active_cursor_index = (_active_cursor_index + delta + size) % size;
+    set_cursor_middle(_active_cursor_index);
+}
+
+void View::zoom_fit()
+{
+    auto_set_max_scale();
+    set_scale_offset(_scale, 0);
+}
+
+void View::delete_active_cursor()
+{
+    auto &lst = get_cursorList();
+    if (lst.empty())
+        return;
+
+    if (_active_cursor_index < 0 || _active_cursor_index >= (int)lst.size())
+        _active_cursor_index = 0;
+
+    auto it = lst.begin();
+    std::advance(it, _active_cursor_index);
+    del_cursor(*it);
+
+    if (_active_cursor_index >= (int)lst.size())
+        _active_cursor_index = (int)lst.size() - 1;
+}
+
 // -- calibration dialog
 void View::show_calibration()
 {

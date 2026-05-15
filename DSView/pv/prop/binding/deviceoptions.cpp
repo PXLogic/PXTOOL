@@ -258,7 +258,7 @@ void DeviceOptions::bind_samplerate(const QString &name, const QString label,
 
 		_properties.push_back(
 			//tr
-            new Double(name, label, 0, L_S(STR_PAGE_DLG, S_ID(IDS_DLG_HZ), "Hz"),
+            new Double(name, label, 0, tr("Hz"),
 				make_pair((double)elements[0], (double)elements[1]),
 						(double)elements[2],
 				bind(samplerate_double_getter),

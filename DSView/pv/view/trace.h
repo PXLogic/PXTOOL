@@ -58,7 +58,7 @@ public:
     static const int HeightOverrideMin = 20;
     static const int HeightOverrideMax = 800;
 
-    static const QColor PROBE_COLORS[8];
+    static const QColor PROBE_COLORS[16];
 
 protected:
     Trace(QString name, uint16_t index, int type);

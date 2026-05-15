@@ -32,6 +32,7 @@
 #include <assert.h>
 #include <QTimer>
 #include <QGuiApplication>
+#include <QPixmap>
 
 #include "../config/appconfig.h"
 #include "../appcontrol.h"
@@ -63,7 +64,8 @@ TitleBar::TitleBar(bool top, QWidget *parent, ITitleParent *titleParent, bool ha
 
     setObjectName("TitleBar");
     setContentsMargins(0, 0, 0, 0);
-    setFixedHeight(32);
+    // Dialog title bars need a larger icon than the main window bar.
+    setFixedHeight(_isTop ? 32 : 44);
 
     QHBoxLayout *lay1 = new QHBoxLayout(this);
 
@@ -140,46 +142,22 @@ bool TitleBar::ParentIsMaxsized()
 
 void TitleBar::paintEvent(QPaintEvent *event)
 { 
-    //draw logo icon
+    // Draw title bar background from style first.
     QStyleOption o;
     o.initFrom(this);
     QPainter p(this);
     style()->drawPrimitive(QStyle::PE_Widget, &o, &p, this);
 
-    p.setRenderHint(QPainter::Antialiasing, true);
-
-    const int xgap = 2;
-    const int xstart = 10;
-    /* Left stripe logo: uniform scale about its visual center */
-    const qreal logoScale = 0.72;
-    const qreal cx = xstart + 9.0 * xgap;
-    const qreal cy = height() * 0.5;
-    p.save();
-    p.translate(cx, cy);
-    p.scale(logoScale, logoScale);
-    p.translate(-cx, -cy);
-
-    p.setPen(QPen(QColor(213, 15, 37, 255), 2, Qt::SolidLine));
-    p.drawLine(xstart + xgap*0,  height()*0.50, xstart + xgap*0,  height()*0.66);
-    p.drawLine(xstart + xgap*18, height()*0.34, xstart + xgap*18, height()*0.50);
-
-    p.setPen(QPen(QColor(238, 178, 17, 255), 2, Qt::SolidLine));
-    p.drawLine(xstart + xgap*2,  height()*0.50, xstart + xgap*2,  height()*0.83);
-    p.drawLine(xstart + xgap*16, height()*0.17, xstart + xgap*16, height()*0.50);
-
-    p.setPen(QPen(QColor(17, 133, 209,  255), 2, Qt::SolidLine));
-    p.drawLine(xstart + xgap*4,  height()*0.50, xstart + xgap*4,  height()*1.00);
-    p.drawLine(xstart + xgap*14, height()*0.00, xstart + xgap*14, height()*0.50);
-
-    p.setPen(QPen(QColor(0, 153, 37, 200), 2, Qt::SolidLine));
-    p.drawLine(xstart + xgap*6,  height()*0.50, xstart + xgap*6,  height()*0.83);
-    p.drawLine(xstart + xgap*12, height()*0.17, xstart + xgap*12, height()*0.50);
-
-    p.setPen(QPen(QColor(109, 50, 156, 255), 2, Qt::SolidLine));
-    p.drawLine(xstart + xgap*8,  height()*0.50, xstart + xgap*8,  height()*0.66);
-    p.drawLine(xstart + xgap*10, height()*0.34, xstart + xgap*10, height()*0.50);
-
-    p.restore();
+    // Draw the unified app icon used inside DSView title bars.
+    static const QString kTitleIconRes(":/icons/titlebar_wave_icon.png");
+    const QPixmap icon(kTitleIconRes);
+    if (!icon.isNull()) {
+        const int iconLeft = 10;
+        const int iconSize = _isTop ? 20 : 36;
+        const QPixmap scaled = icon.scaled(iconSize, iconSize, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+        const int iconTop = (height() - scaled.height()) / 2;
+        p.drawPixmap(iconLeft, iconTop, scaled);
+    }
 
     QWidget::paintEvent(event);
 }

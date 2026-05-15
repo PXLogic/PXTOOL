@@ -15,7 +15,7 @@ DRY_RUN = "--dry-run" in sys.argv
 
 L_S_RE = re.compile(
     r'L_S\s*\(\s*STR_PAGE_(?:MSG|TOOLBAR|DLG)\s*,'
-    r'\s*S_ID\s*\(\s*\w+\s*\)\s*,\s*"([^"]*)"\s*\)'
+    r'\s*S_ID\s*\(\s*[\w-]+\s*\)\s*,\s*"([^"]*)"\s*\)'
 )
 
 def process(fpath):

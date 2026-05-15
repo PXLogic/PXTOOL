@@ -26,6 +26,7 @@
 #include "measuredock.h"
 #include "searchdock.h"
 #include "deviceoptionsdock.h"
+#include "logdock.h"
 #include "../view/view.h"
 #include <QLabel>
 #include <QIcon>
@@ -141,6 +142,15 @@ SideBar::SideBar(QWidget *parent, view::View &view, SigSession *session)
     ow_layout->addWidget(ow_header);
     ow_layout->addWidget(_device_options_widget, 1);
 
+    // Log tab: LogDock fills the entire panel (has its own internal toolbar)
+    _log_widget = new LogDock(this);
+    auto *log_wrap = new QWidget(this);
+    log_wrap->setObjectName("log_wrap");
+    auto *lw_layout = new QVBoxLayout(log_wrap);
+    lw_layout->setContentsMargins(0, 0, 0, 0);
+    lw_layout->setSpacing(0);
+    lw_layout->addWidget(_log_widget, 1);
+
     // Outer content stack: one page per tab
     _stack = new QStackedWidget(this);
     _stack->addWidget(trigger_wrap);      // page 0: trigger (header + inner stack)
@@ -148,6 +158,7 @@ SideBar::SideBar(QWidget *parent, view::View &view, SigSession *session)
     _stack->addWidget(measure_wrap);      // page 2: measures (header + measure dock)
     _stack->addWidget(search_wrap);       // page 3: search (header + search dock)
     _stack->addWidget(options_wrap);      // page 4: device options panel
+    _stack->addWidget(log_wrap);          // page 5: log panel
     _stack->setVisible(false);
     _stack->setMinimumWidth(200);
 
@@ -165,10 +176,11 @@ SideBar::SideBar(QWidget *parent, view::View &view, SigSession *session)
         ":/icons/sidebar/layers.svg",
         ":/icons/sidebar/ruler.svg",
         ":/icons/sidebar/search.svg",
-        ":/icons/sidebar/settings-2.svg"
+        ":/icons/sidebar/settings-2.svg",
+        ":/icons/sidebar/log.svg"
     };
     static const char *labels[TabCount] = {
-        "TRIGGER", "DECODE", "MEASURE", "SEARCH", "OPTIONS"
+        "TRIGGER", "DECODE", "MEASURE", "SEARCH", "OPTIONS", "LOG"
     };
 
     for (int i = 0; i < TabCount; i++) {
@@ -272,6 +284,17 @@ bool SideBar::eventFilter(QObject *obj, QEvent *event)
         }
     }
     return QWidget::eventFilter(obj, event);
+}
+
+void SideBar::setSession(SigSession *session)
+{
+    _session = session;
+    _device_options_widget->setSession(session);
+}
+
+void SideBar::refresh_device_options()
+{
+    _device_options_widget->rebuild();
 }
 
 void SideBar::UpdateLanguage() {}

@@ -26,10 +26,10 @@
 
 #include <list>
 #include <QMainWindow>
-#include <QTranslator> 
+#include <QTranslator>
 #include "dialogs/dsmessagebox.h"
 #include "interface/icallbacks.h"
-#include "eventobject.h" 
+#include "eventobject.h"
 #include <QJsonDocument>
 #include <chrono>
 #include <QTimer>
@@ -37,6 +37,7 @@
 #include <QHBoxLayout>
 #include <QList>
 #include <QStackedWidget>
+#include <QShortcut>
 #include <libsigrok.h>
 #include "sessioncallback.h"
 
@@ -111,7 +112,7 @@ private slots:
     void on_session_tab_switch(int index);
     void on_session_tab_close(int index);
 	void on_load_file(QString file_name);
-    void on_open_doc();  
+    void on_open_doc();
     void on_protocol(bool visible);
     void on_trigger(bool visible);
     void on_measure(bool visible);
@@ -119,8 +120,31 @@ private slots:
     void on_display_options();
     void on_screenShot();
     void on_save();
-
     void on_export();
+
+    // Shortcut slots
+    void sc_start_collecting();
+    void sc_stop_collecting();
+    void sc_vernier_prev();
+    void sc_vernier_next();
+    void sc_measure();
+    void sc_vernier_create();
+    void sc_page_up();
+    void sc_page_down();
+    void sc_jump_zero();
+    void sc_zoom_in();
+    void sc_zoom_out();
+    void sc_zoom_full();
+    void sc_save();
+    void sc_save_as();
+    void sc_export();
+    void sc_device_config();
+    void sc_protocol_decode();
+    void sc_label_measurement();
+    void sc_data_search();
+    void sc_close_session();
+    void sc_delete_cursor();
+    void on_shortcut_settings();
     bool on_load_session(QString name);  
     bool on_store_session(QString name); 
     void on_data_updated();
@@ -146,9 +170,13 @@ public:
     bool able_to_close();    
     QWidget* GetBodyView();
     
-private: 
+private:
+    void setup_shortcuts();
+    void rebuild_shortcuts();
+
+private:
 	void setup_ui();
-    void retranslateUi(); 
+    void retranslateUi();
     bool eventFilter(QObject *object, QEvent *event);
     void check_usb_device_speed();
     void reset_all_view();
@@ -275,6 +303,8 @@ private:
     void rebuild_tab_buttons();
     void update_tab_bar_style();
     void switch_to_session(int index);
+
+    QList<QShortcut*> _shortcuts;
 };
 
 } // namespace pv

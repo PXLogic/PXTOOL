@@ -83,6 +83,54 @@ DeviceOptionsDock::~DeviceOptionsDock()
     REMOVE_UI(this);
 }
 
+void DeviceOptionsDock::setSession(SigSession *session)
+{
+    if (_session == session)
+        return;
+    dsv_info("DeviceOptionsDock::setSession session@%p _content_built=%d", (void*)session, (int)_content_built);
+    _session = session;
+    _device_agent = session->get_device();
+    _mode_check_timer.stop();
+    if (_content_built) {
+        _content_built = false;
+        // Defer rebuild to next event-loop tick so rebind_device() completes first,
+        // ensuring channel states read from the driver are current.
+        QTimer::singleShot(0, this, [this]() {
+            dsv_info("DeviceOptionsDock::setSession singleShot: _content_built=%d have_instance=%d",
+                     (int)_content_built, (int)_device_agent->have_instance());
+            if (_content_built)
+                return; // panel_shown() already rebuilt it
+            if (_device_agent->have_instance()) {
+                build_content();
+                _content_built = true;
+                if (!_mode_check_timer.isActive()) {
+                    _mode_check_timer.setInterval(100);
+                    _mode_check_timer.start();
+                }
+            }
+            // If device not ready, panel_shown() will build when tab is opened.
+        });
+    } else {
+        dsv_info("DeviceOptionsDock::setSession: _content_built=false, skipping singleShot");
+    }
+}
+
+void DeviceOptionsDock::rebuild()
+{
+    dsv_info("DeviceOptionsDock::rebuild: _content_built=%d have_instance=%d",
+             (int)_content_built, (int)_device_agent->have_instance());
+    if (_content_built)
+        return; // already built (singleShot or panel_shown() got here first)
+    if (!_device_agent->have_instance())
+        return; // device still not ready
+    build_content();
+    _content_built = true;
+    if (!_mode_check_timer.isActive()) {
+        _mode_check_timer.setInterval(100);
+        _mode_check_timer.start();
+    }
+}
+
 void DeviceOptionsDock::panel_shown()
 {
     // Refresh device agent in case it changed
@@ -131,7 +179,7 @@ void DeviceOptionsDock::build_content()
 
     // Mode group box
     QGroupBox *props_box = new QGroupBox(
-        L_S(STR_PAGE_DLG, S_ID(IDS_DLG_MODE), "Mode"), _container_panel);
+        tr("Mode"), _container_panel);
     props_box->setFont(font);
     props_box->setMinimumHeight(70);
     props_box->setAlignment(Qt::AlignTop);
@@ -213,9 +261,15 @@ void DeviceOptionsDock::on_apply()
                 p->commit();
             ++it;
         }
+
+        // Rebuild the session signal list from the driver's (possibly updated)
+        // channel list, then notify the view to re-render. This is necessary
+        // when channel mode changes (e.g. "Use 6 Channels") because the driver
+        // updates sdi->channels immediately on radio-button press but the session
+        // signal list is not refreshed until we do so explicitly here.
+        _session->init_signals();
     } else {
-        QString strMsg(L_S(STR_PAGE_MSG, S_ID(IDS_MSG_ALL_CHANNEL_DISABLE),
-            "All channel disabled! Please enable at least one channel."));
+        QString strMsg(tr("All channel disabled! Please enable at least one channel."));
         MsgBox::Show(strMsg);
     }
 }
@@ -357,9 +411,9 @@ void DeviceOptionsDock::logic_probes(QVBoxLayout &layout)
     line_lay->setSpacing(10);
 
     QPushButton *enable_all  = new QPushButton(
-        L_S(STR_PAGE_DLG, S_ID(IDS_DLG_ENABLE_ALL),  "Enable All"),  this);
+        tr("Enable All"),  this);
     QPushButton *disable_all = new QPushButton(
-        L_S(STR_PAGE_DLG, S_ID(IDS_DLG_DISABLE_ALL), "Disable All"), this);
+        tr("Disable All"), this);
     enable_all->setObjectName("device_ch_btn");
     disable_all->setObjectName("device_ch_btn");
     enable_all->setMaximumHeight(33);
@@ -437,7 +491,7 @@ void DeviceOptionsDock::analog_probes(QGridLayout &layout)
         _probes_checkBox_list.push_back(probe_checkBox);
 
         QLabel *en_label = new QLabel(
-            L_S(STR_PAGE_DLG, S_ID(IDS_DLG_ENABLE), "Enable: "), this);
+            tr("Enable: "), this);
         en_label->setFont(font);
         en_label->setProperty("Enable", true);
         probe_layout->addWidget(en_label,        0, 0, 1, 1);
@@ -496,7 +550,7 @@ QString DeviceOptionsDock::dynamic_widget(QLayout *lay)
         QVBoxLayout *grid = dynamic_cast<QVBoxLayout*>(lay);
         assert(grid);
         logic_probes(*grid);
-        return L_S(STR_PAGE_DLG, S_ID(IDS_DLG_CHANNEL), "Channel");
+        return tr("Channel");
     } else if (mode == DSO) {
         bool have_zero;
         if (_device_agent->get_config_bool(SR_CONF_HAVE_ZERO, have_zero)) {
@@ -508,13 +562,13 @@ QString DeviceOptionsDock::dynamic_widget(QLayout *lay)
 
             if (have_zero) {
                 auto config_button = new QPushButton(
-                    L_S(STR_PAGE_DLG, S_ID(IDS_DLG_AUTO_CALIBRATION), "Auto Calibration"), this);
+                    tr("Auto Calibration"), this);
                 config_button->setFont(font);
                 grid->addWidget(config_button, 0, 0, 1, 1);
                 connect(config_button, SIGNAL(clicked()), this, SLOT(zero_adj()));
 
                 auto cali_button = new QPushButton(
-                    L_S(STR_PAGE_DLG, S_ID(IDS_DLG_MANUAL_CALIBRATION), "Manual Calibration"), this);
+                    tr("Manual Calibration"), this);
                 cali_button->setFont(font);
                 grid->addWidget(cali_button, 1, 0, 1, 1);
                 connect(cali_button, SIGNAL(clicked()), this, SLOT(on_calibration()));
@@ -523,14 +577,14 @@ QString DeviceOptionsDock::dynamic_widget(QLayout *lay)
                 cali_button->setFixedHeight(35);
                 _groupHeight2 = 135;
                 _dynamic_panel->setFixedHeight(_groupHeight2);
-                return L_S(STR_PAGE_DLG, S_ID(IDS_DLG_CALIBRATION), "Calibration");
+                return tr("Calibration");
             }
         }
     } else if (mode == ANALOG) {
         QGridLayout *grid = dynamic_cast<QGridLayout*>(lay);
         assert(grid);
         analog_probes(*grid);
-        return L_S(STR_PAGE_DLG, S_ID(IDS_DLG_CHANNEL), "Channel");
+        return tr("Channel");
     }
     return QString();
 }
@@ -540,16 +594,31 @@ void DeviceOptionsDock::build_dynamic_panel()
     _isBuilding = true;
 
     if (_dynamic_panel != NULL) {
-        _dynamic_panel->deleteLater();
+        // Remove from layout first so the slot is freed synchronously,
+        // then delete; deleteLater() would leave a ghost slot and cause
+        // the replacement to be appended after the stretch spacer.
+        _container_lay->removeWidget(_dynamic_panel);
+        delete _dynamic_panel;
         _dynamic_panel = NULL;
     }
 
     QFont font = this->font();
     font.setPointSizeF(AppConfig::Instance().appOptions.fontSize);
 
-    _dynamic_panel = new QGroupBox("group", _dynamic_panel);
+    _dynamic_panel = new QGroupBox("group", _container_panel);
     _dynamic_panel->setFont(font);
-    _container_lay->addWidget(_dynamic_panel);
+
+    // Insert before the trailing stretch spacer so the Channel group always
+    // sits immediately below the Options group.  On the first call from
+    // build_content() there is no spacer yet, so this reduces to addWidget.
+    int insertIdx = _container_lay->count();
+    for (int i = _container_lay->count() - 1; i >= 0; --i) {
+        if (_container_lay->itemAt(i) && _container_lay->itemAt(i)->spacerItem()) {
+            insertIdx = i;
+            break;
+        }
+    }
+    _container_lay->insertWidget(insertIdx, _dynamic_panel);
 
     if (_device_agent->get_work_mode() == LOGIC)
         _dynamic_panel->setLayout(new QVBoxLayout());
@@ -640,8 +709,7 @@ void DeviceOptionsDock::channel_checkbox_clicked(QCheckBox *sc)
             return;
 
         if (cur_ch_num > vld_ch_num) {
-            QString msg_str(L_S(STR_PAGE_MSG, S_ID(IDS_MSG_MAX_CHANNEL_COUNT_WARNING),
-                                "max count of channels!"));
+            QString msg_str(tr("max count of channels!"));
             msg_str = msg_str.replace("{0}", QString::number(vld_ch_num));
             MsgBox::Show(msg_str);
             sc->setChecked(false);
@@ -717,8 +785,7 @@ void DeviceOptionsDock::on_anlog_tab_changed(int index)
 
 void DeviceOptionsDock::zero_adj()
 {
-    QString strMsg(L_S(STR_PAGE_MSG, S_ID(IDS_MSG_AUTO_CALIB_START),
-        "Auto Calibration program will be started. Don't connect any probes. \nIt can take a while!"));
+    QString strMsg(tr("Auto Calibration program will be started. Don't connect any probes. \nIt can take a while!"));
     if (MsgBox::Confirm(strMsg))
         _device_agent->set_config_bool(SR_CONF_ZERO, true);
     else

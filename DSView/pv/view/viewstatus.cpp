@@ -136,7 +136,7 @@ void ViewStatus::paintEvent(QPaintEvent *)
                            Qt::AlignLeft | Qt::AlignVCenter, title);
             }
             else {
-                p.drawText(rect, Qt::AlignCenter | Qt::AlignVCenter, L_S(STR_PAGE_DLG, S_ID(IDS_DLG_MEASURE), "Measure") + QString::number(i));
+                p.drawText(rect, Qt::AlignCenter | Qt::AlignVCenter, tr("Measure") + QString::number(i));
             }
         }
     }
@@ -189,23 +189,23 @@ void ViewStatus::repeat_unshow()
 
 void ViewStatus::set_trig_time(QDateTime time)
 {
-    _trig_time = L_S(STR_PAGE_DLG, S_ID(IDS_DLG_TRIGGER_TIME), "Trigger Time: ") + time.toString("yyyy-MM-dd hh:mm:ss");
+    _trig_time = tr("Trigger Time: ") + time.toString("yyyy-MM-dd hh:mm:ss");
    // assert(0);
 }
 
 void ViewStatus::set_rle_depth(uint64_t depth)
 {
-    _rle_depth = QString::number(depth) + L_S(STR_PAGE_DLG, S_ID(IDS_DLG_SAMPLES_CAPTURED), "Samples Captured!");
+    _rle_depth = QString::number(depth) + tr("Samples Captured!");
 }
 
 void ViewStatus::set_capture_status(bool triggered, int progess)
 {
     if (triggered) {
-        _capture_status = L_S(STR_PAGE_DLG, S_ID(IDS_DLG_TRIGGERED), "Triggered! ") + QString::number(progess) 
-                        + L_S(STR_PAGE_DLG, S_ID(IDS_DLG_CAPTURED), "% Captured");
+        _capture_status = tr("Triggered! ") + QString::number(progess) 
+                        + tr("% Captured");
     } else {
-        _capture_status = L_S(STR_PAGE_DLG, S_ID(IDS_DLG_WAITING_FOR_TRIGGER), "Waiting for Trigger! ") + QString::number(progess) 
-                        + L_S(STR_PAGE_DLG, S_ID(IDS_DLG_CAPTURED), "% Captured");
+        _capture_status = tr("Waiting for Trigger! ") + QString::number(progess) 
+                        + tr("% Captured");
     }
 }
 

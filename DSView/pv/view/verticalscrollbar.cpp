@@ -10,6 +10,9 @@
 
 using namespace pv::view;
 
+// out-of-class definition required by pre-C++17 when passed by const-ref (std::max)
+const int VerticalScrollBar::MinThumbHeight;
+
 VerticalScrollBar::VerticalScrollBar(View &view, QWidget *parent)
     : QWidget(parent), _view(view)
 {
