@@ -64,11 +64,8 @@ static const struct lang_key_item lang_id_keys[] =
     {31, "en"}
 };
 
-static const struct lang_page_item lange_page_keys[] = 
+static const struct lang_page_item lange_page_keys[] =
 {
-    {STR_PAGE_TOOLBAR, "toolbar.json", false},
-    {STR_PAGE_MSG, "msg.json", false},
-    {STR_PAGE_DLG, "dlg.json", false},
     {STR_PAGE_DSL, "dsl_list.json, dsl_label.json, dsl_channel.json", false},
     {STR_PAGE_DECODER, "dec/0.json,dec/a.json,dec/f.json,dec/k.json,dec/p.json,dec/u.json", true},
 };
@@ -107,8 +104,5 @@ private:
     std::map<std::string, int> _query_decoders;
     mutable std::mutex  _mutex;  
 };
-
-#define S_ID(id) #id
-#define L_S(pid,sid,dv) (LangResource::Instance()->get_lang_text((pid), (sid), (dv)))
 
 #endif
