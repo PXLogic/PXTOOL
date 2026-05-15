@@ -1987,8 +1987,9 @@ QToolButton#sidebar_tab_btn {
     border: none;
     border-left: 2px solid transparent;
     color: #666666;
-    font-size: 8px;
+    font-size: 10px;
     font-weight: bold;
+    text-transform: uppercase;
     padding: 4px 0px 2px 0px;
     margin: 0px;
     text-align: center;
