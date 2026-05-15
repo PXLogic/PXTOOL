@@ -259,6 +259,31 @@ private:
 	QMenu                   *_menu_help;
 	QAction                 *_action_about;
 
+    // File menu actions
+    QMenu   *_menu_session    = nullptr;
+    QAction *_action_load     = nullptr;
+    QAction *_action_store    = nullptr;
+    QAction *_action_default  = nullptr;
+    QAction *_action_save     = nullptr;
+    QAction *_action_export   = nullptr;
+    QAction *_action_capture  = nullptr;
+
+    // Window menu
+    QMenu   *_menu_themes        = nullptr;
+    QAction *_action_dark        = nullptr;
+    QAction *_action_light       = nullptr;
+    QAction *_action_display_opts = nullptr;
+    QAction *_action_shortcuts   = nullptr;
+
+    // Help menu actions
+    QAction *_action_doc     = nullptr;
+    QAction *_action_issue   = nullptr;
+    QAction *_action_update  = nullptr;
+    QAction *_action_log_item = nullptr;
+    QMenu   *_menu_language  = nullptr;
+    QAction *_action_lang_en = nullptr;
+    QAction *_action_lang_cn = nullptr;
+
 	QWidget                 *_central_widget;
 	QVBoxLayout             *_vertical_layout;
 

@@ -140,127 +140,151 @@
     <message>
         <location filename="../pv/mainwindow.cpp" line="217"/>
         <location filename="../pv/mainwindow.cpp" line="222"/>
-        <location filename="../pv/mainwindow.cpp" line="2446"/>
+        <location filename="../pv/mainwindow.cpp" line="2479"/>
         <source>Device</source>
         <translation>设备</translation>
     </message>
     <message>
         <location filename="../pv/mainwindow.cpp" line="259"/>
+        <location filename="../pv/mainwindow.cpp" line="419"/>
         <source>File</source>
         <translation>文件</translation>
     </message>
     <message>
         <location filename="../pv/mainwindow.cpp" line="260"/>
+        <location filename="../pv/mainwindow.cpp" line="424"/>
         <source>Config...</source>
         <translation>配置...</translation>
     </message>
     <message>
         <location filename="../pv/mainwindow.cpp" line="261"/>
+        <location filename="../pv/mainwindow.cpp" line="425"/>
         <source>Load...</source>
         <translation>加载...</translation>
     </message>
     <message>
         <location filename="../pv/mainwindow.cpp" line="262"/>
+        <location filename="../pv/mainwindow.cpp" line="426"/>
         <source>Store...</source>
         <translation>存储...</translation>
     </message>
     <message>
         <location filename="../pv/mainwindow.cpp" line="263"/>
+        <location filename="../pv/mainwindow.cpp" line="427"/>
         <source>Default...</source>
         <translation>默认...</translation>
     </message>
     <message>
         <location filename="../pv/mainwindow.cpp" line="264"/>
+        <location filename="../pv/mainwindow.cpp" line="428"/>
         <source>Open...</source>
         <translation>打开...</translation>
     </message>
     <message>
         <location filename="../pv/mainwindow.cpp" line="265"/>
+        <location filename="../pv/mainwindow.cpp" line="429"/>
         <source>Save...</source>
         <translation>保存...</translation>
     </message>
     <message>
         <location filename="../pv/mainwindow.cpp" line="266"/>
+        <location filename="../pv/mainwindow.cpp" line="430"/>
         <source>Export...</source>
         <translation>导出...</translation>
     </message>
     <message>
         <location filename="../pv/mainwindow.cpp" line="267"/>
+        <location filename="../pv/mainwindow.cpp" line="431"/>
         <source>Capture...</source>
         <translation>采集...</translation>
     </message>
     <message>
         <location filename="../pv/mainwindow.cpp" line="269"/>
+        <location filename="../pv/mainwindow.cpp" line="432"/>
         <source>Exit</source>
         <translation>退出</translation>
     </message>
     <message>
         <location filename="../pv/mainwindow.cpp" line="280"/>
+        <location filename="../pv/mainwindow.cpp" line="420"/>
         <source>Window</source>
         <translation>窗口</translation>
     </message>
     <message>
         <location filename="../pv/mainwindow.cpp" line="281"/>
+        <location filename="../pv/mainwindow.cpp" line="435"/>
         <source>Themes</source>
         <translation>主题(&amp;T)</translation>
     </message>
     <message>
         <location filename="../pv/mainwindow.cpp" line="282"/>
+        <location filename="../pv/mainwindow.cpp" line="436"/>
         <source>Dark</source>
         <translation>暗黑(&amp;D)</translation>
     </message>
     <message>
         <location filename="../pv/mainwindow.cpp" line="283"/>
+        <location filename="../pv/mainwindow.cpp" line="437"/>
         <source>Light</source>
         <translation>清新(&amp;L)</translation>
     </message>
     <message>
         <location filename="../pv/mainwindow.cpp" line="286"/>
+        <location filename="../pv/mainwindow.cpp" line="438"/>
         <source>Display Options...</source>
         <translation>显示选项...</translation>
     </message>
     <message>
         <location filename="../pv/mainwindow.cpp" line="288"/>
+        <location filename="../pv/mainwindow.cpp" line="439"/>
         <source>Keyboard Shortcuts...</source>
         <translation>键盘快捷键...</translation>
     </message>
     <message>
         <location filename="../pv/mainwindow.cpp" line="292"/>
+        <location filename="../pv/mainwindow.cpp" line="421"/>
         <source>Help</source>
         <translation>帮助(&amp;H)</translation>
     </message>
     <message>
         <location filename="../pv/mainwindow.cpp" line="293"/>
+        <location filename="../pv/mainwindow.cpp" line="442"/>
         <source>About</source>
         <translation>关于</translation>
     </message>
     <message>
         <location filename="../pv/mainwindow.cpp" line="294"/>
+        <location filename="../pv/mainwindow.cpp" line="443"/>
         <source>Manual</source>
         <translation>使用手册</translation>
     </message>
     <message>
         <location filename="../pv/mainwindow.cpp" line="295"/>
+        <location filename="../pv/mainwindow.cpp" line="444"/>
         <source>Bug Report</source>
         <translation>问题反馈</translation>
     </message>
     <message>
         <location filename="../pv/mainwindow.cpp" line="296"/>
+        <location filename="../pv/mainwindow.cpp" line="445"/>
         <source>Check for Updates</source>
         <translation>检查更新</translation>
     </message>
     <message>
         <location filename="../pv/mainwindow.cpp" line="297"/>
+        <location filename="../pv/mainwindow.cpp" line="446"/>
         <source>Log Options</source>
         <translation>日志选项</translation>
     </message>
     <message>
         <location filename="../pv/mainwindow.cpp" line="299"/>
+        <location filename="../pv/mainwindow.cpp" line="447"/>
         <source>Language</source>
         <translation>语言</translation>
     </message>
     <message>
         <location filename="../pv/mainwindow.cpp" line="300"/>
+        <location filename="../pv/mainwindow.cpp" line="448"/>
         <source>English</source>
         <translation>&amp;English</translation>
     </message>
@@ -275,103 +299,103 @@
         <translation>打开文件错误!</translation>
     </message>
     <message>
-        <location filename="../pv/mainwindow.cpp" line="512"/>
+        <location filename="../pv/mainwindow.cpp" line="545"/>
         <source>Open file in new comparison tab</source>
         <translation>在新对比标签页中打开文件</translation>
     </message>
     <message>
-        <location filename="../pv/mainwindow.cpp" line="542"/>
+        <location filename="../pv/mainwindow.cpp" line="575"/>
         <source>Session %1</source>
         <translation>会话 %1</translation>
     </message>
     <message>
-        <location filename="../pv/mainwindow.cpp" line="744"/>
+        <location filename="../pv/mainwindow.cpp" line="777"/>
         <source>Failed to load </source>
         <translation>加载失败</translation>
     </message>
     <message>
-        <location filename="../pv/mainwindow.cpp" line="772"/>
+        <location filename="../pv/mainwindow.cpp" line="805"/>
         <source>Hardware Operation Failed</source>
         <translation>硬件操作失败</translation>
     </message>
     <message>
-        <location filename="../pv/mainwindow.cpp" line="773"/>
+        <location filename="../pv/mainwindow.cpp" line="806"/>
         <source>Please replug device to refresh hardware configuration!</source>
         <translation>请重新插入设备以刷新硬件配置!</translation>
     </message>
     <message>
-        <location filename="../pv/mainwindow.cpp" line="778"/>
+        <location filename="../pv/mainwindow.cpp" line="811"/>
         <source>Malloc Error</source>
         <translation>动态内存分配错误</translation>
     </message>
     <message>
-        <location filename="../pv/mainwindow.cpp" line="779"/>
+        <location filename="../pv/mainwindow.cpp" line="812"/>
         <source>Memory is not enough for this sample!
 Please reduce the sample depth!</source>
         <translation>内存不足以支持当前采样！
 请减小采样深度！</translation>
     </message>
     <message>
-        <location filename="../pv/mainwindow.cpp" line="782"/>
+        <location filename="../pv/mainwindow.cpp" line="815"/>
         <source>Packet Error</source>
         <translation>数据包错误</translation>
     </message>
     <message>
-        <location filename="../pv/mainwindow.cpp" line="783"/>
+        <location filename="../pv/mainwindow.cpp" line="816"/>
         <source>the content of received packet are not expected!</source>
         <translation>接收到的数据包格式不正确!</translation>
     </message>
     <message>
-        <location filename="../pv/mainwindow.cpp" line="789"/>
+        <location filename="../pv/mainwindow.cpp" line="822"/>
         <source>Data Overflow</source>
         <translation>数据溢出</translation>
     </message>
     <message>
-        <location filename="../pv/mainwindow.cpp" line="790"/>
+        <location filename="../pv/mainwindow.cpp" line="823"/>
         <source>USB bandwidth can not support current sample rate! 
 Please reduce the sample rate!</source>
         <translation>USB带宽不支持当前采样率！
 请降低采样率！</translation>
     </message>
     <message>
-        <location filename="../pv/mainwindow.cpp" line="793"/>
+        <location filename="../pv/mainwindow.cpp" line="826"/>
         <source>Undefined Error</source>
         <translation>未定义错误</translation>
     </message>
     <message>
-        <location filename="../pv/mainwindow.cpp" line="794"/>
+        <location filename="../pv/mainwindow.cpp" line="827"/>
         <source>Not expected error!</source>
         <translation>意外错误!</translation>
     </message>
     <message>
-        <location filename="../pv/mainwindow.cpp" line="947"/>
+        <location filename="../pv/mainwindow.cpp" line="980"/>
         <source>Save As</source>
         <translation>另存为</translation>
     </message>
     <message>
-        <location filename="../pv/mainwindow.cpp" line="1234"/>
+        <location filename="../pv/mainwindow.cpp" line="1267"/>
         <source>Profile is not compatible with current device or mode!</source>
         <translation>配置文件与当前设备或模式不兼容!</translation>
     </message>
     <message>
-        <location filename="../pv/mainwindow.cpp" line="1612"/>
+        <location filename="../pv/mainwindow.cpp" line="1645"/>
         <source>restore window status error!</source>
         <translation>还原窗口状态错误!</translation>
     </message>
     <message>
-        <location filename="../pv/mainwindow.cpp" line="2150"/>
+        <location filename="../pv/mainwindow.cpp" line="2183"/>
         <source>Plug the device into a USB 2.0 port will seriously affect its performance.
 Please replug it into a USB 3.0 port.</source>
         <translation>设备插入USB 2.0端口会严重影响性能。
 请将其重新插入USB 3.0端口。</translation>
     </message>
     <message>
-        <location filename="../pv/mainwindow.cpp" line="2193"/>
+        <location filename="../pv/mainwindow.cpp" line="2226"/>
         <source>Save captured data?</source>
         <translation>保存采集到的数据?</translation>
     </message>
     <message>
-        <location filename="../pv/mainwindow.cpp" line="2223"/>
+        <location filename="../pv/mainwindow.cpp" line="2256"/>
         <source>Current loading file has an old format. 
 This will lead to a slow loading speed. 
 Please resave it after loaded.</source>
@@ -380,12 +404,12 @@ Please resave it after loaded.</source>
 加载完成后请重新保存。</translation>
     </message>
     <message>
-        <location filename="../pv/mainwindow.cpp" line="2443"/>
+        <location filename="../pv/mainwindow.cpp" line="2476"/>
         <source>Session 1</source>
         <translation>会话 1</translation>
     </message>
     <message>
-        <location filename="../pv/mainwindow.cpp" line="2588"/>
+        <location filename="../pv/mainwindow.cpp" line="2621"/>
         <source>To switch the new device?</source>
         <translation>是否切换到新设备?</translation>
     </message>

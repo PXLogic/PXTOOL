@@ -257,14 +257,14 @@ namespace pv
 
         // File menu
         _menu_file = _menu_bar->addMenu(tr("File"));
-        QMenu *_menu_session = _menu_file->addMenu(tr("Config..."));
-        QAction *_action_load    = _menu_session->addAction(tr("Load..."));
-        QAction *_action_store   = _menu_session->addAction(tr("Store..."));
-        QAction *_action_default = _menu_session->addAction(tr("Default..."));
+        _menu_session = _menu_file->addMenu(tr("Config..."));
+        _action_load    = _menu_session->addAction(tr("Load..."));
+        _action_store   = _menu_session->addAction(tr("Store..."));
+        _action_default = _menu_session->addAction(tr("Default..."));
         _action_open = _menu_file->addAction(tr("Open..."));
-        QAction *_action_save    = _menu_file->addAction(tr("Save..."));
-        QAction *_action_export  = _menu_file->addAction(tr("Export..."));
-        QAction *_action_capture = _menu_file->addAction(tr("Capture..."));
+        _action_save    = _menu_file->addAction(tr("Save..."));
+        _action_export  = _menu_file->addAction(tr("Export..."));
+        _action_capture = _menu_file->addAction(tr("Capture..."));
         _menu_file->addSeparator();
         _action_quit = _menu_file->addAction(tr("Exit"));
         connect(_action_load,    SIGNAL(triggered()), _file_bar, SLOT(on_actionLoad_triggered()));
@@ -278,34 +278,34 @@ namespace pv
 
         // Window menu
         _menu_view = _menu_bar->addMenu(tr("Window"));
-        QMenu *_menu_themes = _menu_view->addMenu(tr("Themes"));
-        QAction *_action_dark  = _menu_themes->addAction(tr("Dark"));
-        QAction *_action_light = _menu_themes->addAction(tr("Light"));
+        _menu_themes = _menu_view->addMenu(tr("Themes"));
+        _action_dark  = _menu_themes->addAction(tr("Dark"));
+        _action_light = _menu_themes->addAction(tr("Light"));
         connect(_action_dark,  SIGNAL(triggered()), _trig_bar, SLOT(on_actionDark_triggered()));
         connect(_action_light, SIGNAL(triggered()), _trig_bar, SLOT(on_actionLight_triggered()));
-        QAction *_action_display_opts  = _menu_view->addAction(tr("Display Options..."));
+        _action_display_opts  = _menu_view->addAction(tr("Display Options..."));
         connect(_action_display_opts, SIGNAL(triggered()), _trig_bar, SLOT(on_display_setting()));
-        QAction *_action_shortcuts = _menu_view->addAction(tr("Keyboard Shortcuts..."));
+        _action_shortcuts = _menu_view->addAction(tr("Keyboard Shortcuts..."));
         connect(_action_shortcuts, &QAction::triggered, this, &MainWindow::on_shortcut_settings);
 
         // Help menu
         _menu_help = _menu_bar->addMenu(tr("Help"));
         _action_about = _menu_help->addAction(tr("About"));
-        QAction *_action_doc    = _menu_help->addAction(tr("Manual"));
-        QAction *_action_issue  = _menu_help->addAction(tr("Bug Report"));
-        QAction *_action_update = _menu_help->addAction(tr("Check for Updates"));
-        QAction *_action_log    = _menu_help->addAction(tr("Log Options"));
+        _action_doc    = _menu_help->addAction(tr("Manual"));
+        _action_issue  = _menu_help->addAction(tr("Bug Report"));
+        _action_update = _menu_help->addAction(tr("Check for Updates"));
+        _action_log_item = _menu_help->addAction(tr("Log Options"));
         _menu_help->addSeparator();
-        QMenu *_menu_language = _menu_help->addMenu(tr("Language"));
-        QAction *_action_lang_en = _menu_language->addAction(tr("English"));
-        QAction *_action_lang_cn = _menu_language->addAction(tr("中文"));
-        connect(_action_about,   SIGNAL(triggered()), _logo_bar, SLOT(on_actionAbout_triggered()));
-        connect(_action_doc,     &QAction::triggered, this, &MainWindow::on_open_doc);
-        connect(_action_issue,   SIGNAL(triggered()), _logo_bar, SLOT(on_actionIssue_triggered()));
-        connect(_action_update,  SIGNAL(triggered()), _logo_bar, SLOT(on_action_update()));
-        connect(_action_log,     SIGNAL(triggered()), _logo_bar, SLOT(on_action_setting_log()));
-        connect(_action_lang_en, SIGNAL(triggered()), _logo_bar, SLOT(on_actionEn_triggered()));
-        connect(_action_lang_cn, SIGNAL(triggered()), _logo_bar, SLOT(on_actionCn_triggered()));
+        _menu_language = _menu_help->addMenu(tr("Language"));
+        _action_lang_en = _menu_language->addAction(tr("English"));
+        _action_lang_cn = _menu_language->addAction(tr("中文"));
+        connect(_action_about,    SIGNAL(triggered()), _logo_bar, SLOT(on_actionAbout_triggered()));
+        connect(_action_doc,      &QAction::triggered, this, &MainWindow::on_open_doc);
+        connect(_action_issue,    SIGNAL(triggered()), _logo_bar, SLOT(on_actionIssue_triggered()));
+        connect(_action_update,   SIGNAL(triggered()), _logo_bar, SLOT(on_action_update()));
+        connect(_action_log_item, SIGNAL(triggered()), _logo_bar, SLOT(on_action_setting_log()));
+        connect(_action_lang_en,  SIGNAL(triggered()), _logo_bar, SLOT(on_actionEn_triggered()));
+        connect(_action_lang_cn,  SIGNAL(triggered()), _logo_bar, SLOT(on_actionCn_triggered()));
 
         // Move File/Window/Help into the title bar and hide the in-window menu bar
         _title_bar->addMenusToTitleBar(_menu_file, _menu_view, _menu_help);
@@ -415,6 +415,39 @@ namespace pv
 
     void MainWindow::retranslateUi()
     {
+        // Menu titles
+        if (_menu_file)  _menu_file->setTitle(tr("File"));
+        if (_menu_view)  _menu_view->setTitle(tr("Window"));
+        if (_menu_help)  _menu_help->setTitle(tr("Help"));
+
+        // File menu items
+        if (_menu_session)   _menu_session->setTitle(tr("Config..."));
+        if (_action_load)    _action_load->setText(tr("Load..."));
+        if (_action_store)   _action_store->setText(tr("Store..."));
+        if (_action_default) _action_default->setText(tr("Default..."));
+        if (_action_open)    _action_open->setText(tr("Open..."));
+        if (_action_save)    _action_save->setText(tr("Save..."));
+        if (_action_export)  _action_export->setText(tr("Export..."));
+        if (_action_capture) _action_capture->setText(tr("Capture..."));
+        if (_action_quit)    _action_quit->setText(tr("Exit"));
+
+        // Window menu items
+        if (_menu_themes)         _menu_themes->setTitle(tr("Themes"));
+        if (_action_dark)         _action_dark->setText(tr("Dark"));
+        if (_action_light)        _action_light->setText(tr("Light"));
+        if (_action_display_opts) _action_display_opts->setText(tr("Display Options..."));
+        if (_action_shortcuts)    _action_shortcuts->setText(tr("Keyboard Shortcuts..."));
+
+        // Help menu items
+        if (_action_about)    _action_about->setText(tr("About"));
+        if (_action_doc)      _action_doc->setText(tr("Manual"));
+        if (_action_issue)    _action_issue->setText(tr("Bug Report"));
+        if (_action_update)   _action_update->setText(tr("Check for Updates"));
+        if (_action_log_item) _action_log_item->setText(tr("Log Options"));
+        if (_menu_language)   _menu_language->setTitle(tr("Language"));
+        if (_action_lang_en)  _action_lang_en->setText(tr("English"));
+
+        // Child widget retranslation
         if (_title_bar)      _title_bar->retranslateUi();
         if (_sampling_bar)   _sampling_bar->retranslateUi();
         if (_sidebar_widget) _sidebar_widget->retranslateUi();
