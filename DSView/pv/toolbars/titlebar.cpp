@@ -327,9 +327,18 @@ void TitleBar::mouseDoubleClickEvent(QMouseEvent *event)
     }
 }
 
+void TitleBar::retranslateUi()
+{
+    static const char *menuLabels[3] = {
+        QT_TR_NOOP("File"), QT_TR_NOOP("Window"), QT_TR_NOOP("Help")
+    };
+    for (int i = 0; i < 3; i++)
+        if (_menuBtns[i]) _menuBtns[i]->setText(tr(menuLabels[i]));
+}
+
 void TitleBar::UpdateLanguage()
 {
-    
+    retranslateUi();
 }
 
 void TitleBar::UpdateTheme()
@@ -376,6 +385,7 @@ void TitleBar::addMenusToTitleBar(QMenu *fileMenu, QMenu *windowMenu, QMenu *hel
         btn->setObjectName("TitleMenuButton");
         btn->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
         lay->insertWidget(0, btn, 0, Qt::AlignVCenter);
+        _menuBtns[i] = btn;
     }
 
     // Left margin reserves space for the painted app logo (~41 px wide)

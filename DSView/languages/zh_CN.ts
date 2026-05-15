@@ -140,7 +140,7 @@
     <message>
         <location filename="../pv/mainwindow.cpp" line="217"/>
         <location filename="../pv/mainwindow.cpp" line="222"/>
-        <location filename="../pv/mainwindow.cpp" line="2444"/>
+        <location filename="../pv/mainwindow.cpp" line="2446"/>
         <source>Device</source>
         <translation>设备</translation>
     </message>
@@ -275,103 +275,103 @@
         <translation>打开文件错误!</translation>
     </message>
     <message>
-        <location filename="../pv/mainwindow.cpp" line="510"/>
+        <location filename="../pv/mainwindow.cpp" line="512"/>
         <source>Open file in new comparison tab</source>
         <translation>在新对比标签页中打开文件</translation>
     </message>
     <message>
-        <location filename="../pv/mainwindow.cpp" line="540"/>
+        <location filename="../pv/mainwindow.cpp" line="542"/>
         <source>Session %1</source>
         <translation>会话 %1</translation>
     </message>
     <message>
-        <location filename="../pv/mainwindow.cpp" line="742"/>
+        <location filename="../pv/mainwindow.cpp" line="744"/>
         <source>Failed to load </source>
         <translation>加载失败</translation>
     </message>
     <message>
-        <location filename="../pv/mainwindow.cpp" line="770"/>
+        <location filename="../pv/mainwindow.cpp" line="772"/>
         <source>Hardware Operation Failed</source>
         <translation>硬件操作失败</translation>
     </message>
     <message>
-        <location filename="../pv/mainwindow.cpp" line="771"/>
+        <location filename="../pv/mainwindow.cpp" line="773"/>
         <source>Please replug device to refresh hardware configuration!</source>
         <translation>请重新插入设备以刷新硬件配置!</translation>
     </message>
     <message>
-        <location filename="../pv/mainwindow.cpp" line="776"/>
+        <location filename="../pv/mainwindow.cpp" line="778"/>
         <source>Malloc Error</source>
         <translation>动态内存分配错误</translation>
     </message>
     <message>
-        <location filename="../pv/mainwindow.cpp" line="777"/>
+        <location filename="../pv/mainwindow.cpp" line="779"/>
         <source>Memory is not enough for this sample!
 Please reduce the sample depth!</source>
         <translation>内存不足以支持当前采样！
 请减小采样深度！</translation>
     </message>
     <message>
-        <location filename="../pv/mainwindow.cpp" line="780"/>
+        <location filename="../pv/mainwindow.cpp" line="782"/>
         <source>Packet Error</source>
         <translation>数据包错误</translation>
     </message>
     <message>
-        <location filename="../pv/mainwindow.cpp" line="781"/>
+        <location filename="../pv/mainwindow.cpp" line="783"/>
         <source>the content of received packet are not expected!</source>
         <translation>接收到的数据包格式不正确!</translation>
     </message>
     <message>
-        <location filename="../pv/mainwindow.cpp" line="787"/>
+        <location filename="../pv/mainwindow.cpp" line="789"/>
         <source>Data Overflow</source>
         <translation>数据溢出</translation>
     </message>
     <message>
-        <location filename="../pv/mainwindow.cpp" line="788"/>
+        <location filename="../pv/mainwindow.cpp" line="790"/>
         <source>USB bandwidth can not support current sample rate! 
 Please reduce the sample rate!</source>
         <translation>USB带宽不支持当前采样率！
 请降低采样率！</translation>
     </message>
     <message>
-        <location filename="../pv/mainwindow.cpp" line="791"/>
+        <location filename="../pv/mainwindow.cpp" line="793"/>
         <source>Undefined Error</source>
         <translation>未定义错误</translation>
     </message>
     <message>
-        <location filename="../pv/mainwindow.cpp" line="792"/>
+        <location filename="../pv/mainwindow.cpp" line="794"/>
         <source>Not expected error!</source>
         <translation>意外错误!</translation>
     </message>
     <message>
-        <location filename="../pv/mainwindow.cpp" line="945"/>
+        <location filename="../pv/mainwindow.cpp" line="947"/>
         <source>Save As</source>
         <translation>另存为</translation>
     </message>
     <message>
-        <location filename="../pv/mainwindow.cpp" line="1232"/>
+        <location filename="../pv/mainwindow.cpp" line="1234"/>
         <source>Profile is not compatible with current device or mode!</source>
         <translation>配置文件与当前设备或模式不兼容!</translation>
     </message>
     <message>
-        <location filename="../pv/mainwindow.cpp" line="1610"/>
+        <location filename="../pv/mainwindow.cpp" line="1612"/>
         <source>restore window status error!</source>
         <translation>还原窗口状态错误!</translation>
     </message>
     <message>
-        <location filename="../pv/mainwindow.cpp" line="2148"/>
+        <location filename="../pv/mainwindow.cpp" line="2150"/>
         <source>Plug the device into a USB 2.0 port will seriously affect its performance.
 Please replug it into a USB 3.0 port.</source>
         <translation>设备插入USB 2.0端口会严重影响性能。
 请将其重新插入USB 3.0端口。</translation>
     </message>
     <message>
-        <location filename="../pv/mainwindow.cpp" line="2191"/>
+        <location filename="../pv/mainwindow.cpp" line="2193"/>
         <source>Save captured data?</source>
         <translation>保存采集到的数据?</translation>
     </message>
     <message>
-        <location filename="../pv/mainwindow.cpp" line="2221"/>
+        <location filename="../pv/mainwindow.cpp" line="2223"/>
         <source>Current loading file has an old format. 
 This will lead to a slow loading speed. 
 Please resave it after loaded.</source>
@@ -380,12 +380,12 @@ Please resave it after loaded.</source>
 加载完成后请重新保存。</translation>
     </message>
     <message>
-        <location filename="../pv/mainwindow.cpp" line="2441"/>
+        <location filename="../pv/mainwindow.cpp" line="2443"/>
         <source>Session 1</source>
         <translation>会话 1</translation>
     </message>
     <message>
-        <location filename="../pv/mainwindow.cpp" line="2586"/>
+        <location filename="../pv/mainwindow.cpp" line="2588"/>
         <source>To switch the new device?</source>
         <translation>是否切换到新设备?</translation>
     </message>
@@ -1760,6 +1760,8 @@ to configure search options</source>
     </message>
     <message>
         <location filename="../pv/dock/sidebar.cpp" line="120"/>
+        <location filename="../pv/dock/sidebar.cpp" line="184"/>
+        <location filename="../pv/dock/sidebar.cpp" line="306"/>
         <source>Search</source>
         <translation>搜索(&amp;R)</translation>
     </message>
@@ -1767,6 +1769,36 @@ to configure search options</source>
         <location filename="../pv/dock/sidebar.cpp" line="137"/>
         <source>Device Options</source>
         <translation>设备选项</translation>
+    </message>
+    <message>
+        <location filename="../pv/dock/sidebar.cpp" line="183"/>
+        <location filename="../pv/dock/sidebar.cpp" line="305"/>
+        <source>Trigger</source>
+        <translation type="unfinished">触发</translation>
+    </message>
+    <message>
+        <location filename="../pv/dock/sidebar.cpp" line="183"/>
+        <location filename="../pv/dock/sidebar.cpp" line="305"/>
+        <source>Decode</source>
+        <translation type="unfinished">解码</translation>
+    </message>
+    <message>
+        <location filename="../pv/dock/sidebar.cpp" line="184"/>
+        <location filename="../pv/dock/sidebar.cpp" line="306"/>
+        <source>Measure</source>
+        <translation type="unfinished">测量</translation>
+    </message>
+    <message>
+        <location filename="../pv/dock/sidebar.cpp" line="185"/>
+        <location filename="../pv/dock/sidebar.cpp" line="307"/>
+        <source>Options</source>
+        <translation type="unfinished">选项</translation>
+    </message>
+    <message>
+        <location filename="../pv/dock/sidebar.cpp" line="185"/>
+        <location filename="../pv/dock/sidebar.cpp" line="307"/>
+        <source>Log</source>
+        <translation type="unfinished">日志</translation>
     </message>
 </context>
 <context>
@@ -2098,76 +2130,100 @@ Capture will Only triggered when all setted channels fullfill at one sample</sou
 <context>
     <name>pv::toolbars::SamplingBar</name>
     <message>
-        <location filename="../pv/toolbars/samplingbar.cpp" line="166"/>
+        <location filename="../pv/toolbars/samplingbar.cpp" line="167"/>
         <source>Show/Hide trigger settings</source>
         <translation>显示/隐藏触发设置</translation>
     </message>
     <message>
-        <location filename="../pv/toolbars/samplingbar.cpp" line="294"/>
+        <location filename="../pv/toolbars/samplingbar.cpp" line="181"/>
+        <location filename="../pv/toolbars/samplingbar.cpp" line="289"/>
+        <source>Device</source>
+        <translation type="unfinished">设备</translation>
+    </message>
+    <message>
+        <location filename="../pv/toolbars/samplingbar.cpp" line="191"/>
+        <location filename="../pv/toolbars/samplingbar.cpp" line="290"/>
+        <source>Sample Rate</source>
+        <translation type="unfinished">采样率</translation>
+    </message>
+    <message>
+        <location filename="../pv/toolbars/samplingbar.cpp" line="196"/>
+        <location filename="../pv/toolbars/samplingbar.cpp" line="291"/>
+        <source>Buffer</source>
+        <translation type="unfinished">缓存</translation>
+    </message>
+    <message>
+        <location filename="../pv/toolbars/samplingbar.cpp" line="202"/>
+        <location filename="../pv/toolbars/samplingbar.cpp" line="292"/>
+        <source>Mode</source>
+        <translation type="unfinished">模式</translation>
+    </message>
+    <message>
+        <location filename="../pv/toolbars/samplingbar.cpp" line="300"/>
         <source>Demo</source>
         <translation>演示</translation>
     </message>
     <message>
-        <location filename="../pv/toolbars/samplingbar.cpp" line="298"/>
+        <location filename="../pv/toolbars/samplingbar.cpp" line="304"/>
         <source>File</source>
         <translation>文件</translation>
     </message>
     <message>
-        <location filename="../pv/toolbars/samplingbar.cpp" line="313"/>
+        <location filename="../pv/toolbars/samplingbar.cpp" line="319"/>
         <source>Options</source>
         <translation>选项(&amp;O)</translation>
     </message>
     <message>
-        <location filename="../pv/toolbars/samplingbar.cpp" line="314"/>
-        <location filename="../pv/toolbars/samplingbar.cpp" line="323"/>
+        <location filename="../pv/toolbars/samplingbar.cpp" line="320"/>
+        <location filename="../pv/toolbars/samplingbar.cpp" line="329"/>
         <source>Single</source>
         <translation>单次(&amp;I)</translation>
     </message>
     <message>
-        <location filename="../pv/toolbars/samplingbar.cpp" line="315"/>
+        <location filename="../pv/toolbars/samplingbar.cpp" line="321"/>
         <source>Repetitive</source>
         <translation>重复(&amp;R)</translation>
     </message>
     <message>
-        <location filename="../pv/toolbars/samplingbar.cpp" line="316"/>
+        <location filename="../pv/toolbars/samplingbar.cpp" line="322"/>
         <source>Loop</source>
         <translation>滚动(&amp;L)</translation>
     </message>
     <message>
-        <location filename="../pv/toolbars/samplingbar.cpp" line="321"/>
+        <location filename="../pv/toolbars/samplingbar.cpp" line="327"/>
         <source>Start</source>
         <translation>开始(&amp;S)</translation>
     </message>
     <message>
-        <location filename="../pv/toolbars/samplingbar.cpp" line="322"/>
-        <location filename="../pv/toolbars/samplingbar.cpp" line="325"/>
+        <location filename="../pv/toolbars/samplingbar.cpp" line="328"/>
+        <location filename="../pv/toolbars/samplingbar.cpp" line="331"/>
         <source>Stop</source>
         <translation>停止(&amp;S)</translation>
     </message>
     <message>
-        <location filename="../pv/toolbars/samplingbar.cpp" line="324"/>
+        <location filename="../pv/toolbars/samplingbar.cpp" line="330"/>
         <source>Instant</source>
         <translation>立即(&amp;I)</translation>
     </message>
     <message>
-        <location filename="../pv/toolbars/samplingbar.cpp" line="1048"/>
+        <location filename="../pv/toolbars/samplingbar.cpp" line="1054"/>
         <source>Auto Calibration</source>
         <translation>自动校准</translation>
     </message>
     <message>
-        <location filename="../pv/toolbars/samplingbar.cpp" line="1049"/>
+        <location filename="../pv/toolbars/samplingbar.cpp" line="1055"/>
         <source>Please adjust zero skew and save the result</source>
         <translation>请调整零偏差并保存结果</translation>
     </message>
     <message>
-        <location filename="../pv/toolbars/samplingbar.cpp" line="1117"/>
+        <location filename="../pv/toolbars/samplingbar.cpp" line="1123"/>
         <source>Auto Calibration program will be started. Don&apos;t connect any probes. 
 It can take a while!</source>
         <translation>自动校准程序即将启动，请勿连接任何探针。
 这可能需要一些时间！</translation>
     </message>
     <message>
-        <location filename="../pv/toolbars/samplingbar.cpp" line="1159"/>
+        <location filename="../pv/toolbars/samplingbar.cpp" line="1165"/>
         <source>Save captured data?</source>
         <translation>保存采集到的数据?</translation>
     </message>
@@ -2175,17 +2231,20 @@ It can take a while!</source>
 <context>
     <name>pv::toolbars::TitleBar</name>
     <message>
-        <location filename="../pv/toolbars/titlebar.cpp" line="364"/>
+        <location filename="../pv/toolbars/titlebar.cpp" line="333"/>
+        <location filename="../pv/toolbars/titlebar.cpp" line="373"/>
         <source>File</source>
         <translation>文件</translation>
     </message>
     <message>
-        <location filename="../pv/toolbars/titlebar.cpp" line="365"/>
+        <location filename="../pv/toolbars/titlebar.cpp" line="333"/>
+        <location filename="../pv/toolbars/titlebar.cpp" line="374"/>
         <source>Window</source>
         <translation>窗口</translation>
     </message>
     <message>
-        <location filename="../pv/toolbars/titlebar.cpp" line="366"/>
+        <location filename="../pv/toolbars/titlebar.cpp" line="333"/>
+        <location filename="../pv/toolbars/titlebar.cpp" line="375"/>
         <source>Help</source>
         <translation>帮助(&amp;H)</translation>
     </message>

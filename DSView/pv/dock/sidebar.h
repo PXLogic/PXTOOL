@@ -78,6 +78,7 @@ public:
     void setDsoMode(bool isDso);
     void setSession(SigSession *session);
     void refresh_device_options();
+    void retranslateUi();
 
     // IUiWindow
     void UpdateLanguage() override;

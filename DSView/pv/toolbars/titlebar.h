@@ -61,6 +61,8 @@ public:
     /** Title QLabel alignment; use AlignHCenter for dialog titles centered in the bar. */
     void setTitleTextAlignment(Qt::Alignment alignment);
 
+    void retranslateUi();
+
     //IUiWindow
     void UpdateLanguage() override;
     void UpdateTheme() override;
@@ -105,6 +107,7 @@ protected:
     QToolButton *_maximizeButton;
     QToolButton *_closeButton;
     QLabel      *_title;
+    QToolButton *_menuBtns[3] = {nullptr, nullptr, nullptr};
   
     bool        _moving;
     bool        _is_draging;

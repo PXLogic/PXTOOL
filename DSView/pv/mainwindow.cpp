@@ -415,7 +415,9 @@ namespace pv
 
     void MainWindow::retranslateUi()
     {
-        (void)0; // sidebar has no visible title bar
+        if (_title_bar)      _title_bar->retranslateUi();
+        if (_sampling_bar)   _sampling_bar->retranslateUi();
+        if (_sidebar_widget) _sidebar_widget->retranslateUi();
     }
 
     // -----------------------------------------------------------------------

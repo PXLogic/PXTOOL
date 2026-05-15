@@ -180,14 +180,16 @@ SideBar::SideBar(QWidget *parent, view::View &view, SigSession *session)
         ":/icons/sidebar/log.svg"
     };
     static const char *labels[TabCount] = {
-        "TRIGGER", "DECODE", "MEASURE", "SEARCH", "OPTIONS", "LOG"
+        QT_TR_NOOP("Trigger"), QT_TR_NOOP("Decode"),
+        QT_TR_NOOP("Measure"), QT_TR_NOOP("Search"),
+        QT_TR_NOOP("Options"), QT_TR_NOOP("Log")
     };
 
     for (int i = 0; i < TabCount; i++) {
         _btns[i] = new QToolButton(this);
         _btns[i]->setObjectName("sidebar_tab_btn");
         _btns[i]->setIcon(QIcon(iconPaths[i]));
-        _btns[i]->setText(labels[i]);
+        _btns[i]->setText(tr(labels[i]));
         _btns[i]->setToolButtonStyle(Qt::ToolButtonTextUnderIcon);
         _btns[i]->setIconSize(QSize(18, 18));
         _btns[i]->setFixedSize(52, 54);
@@ -297,7 +299,18 @@ void SideBar::refresh_device_options()
     _device_options_widget->rebuild();
 }
 
-void SideBar::UpdateLanguage() {}
+void SideBar::retranslateUi()
+{
+    static const char *labels[TabCount] = {
+        QT_TR_NOOP("Trigger"), QT_TR_NOOP("Decode"),
+        QT_TR_NOOP("Measure"), QT_TR_NOOP("Search"),
+        QT_TR_NOOP("Options"), QT_TR_NOOP("Log")
+    };
+    for (int i = 0; i < TabCount; i++)
+        _btns[i]->setText(tr(labels[i]));
+}
+
+void SideBar::UpdateLanguage() { retranslateUi(); }
 void SideBar::UpdateTheme()    {}
 void SideBar::UpdateFont()     {}
 

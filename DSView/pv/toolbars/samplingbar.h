@@ -105,6 +105,8 @@ namespace pv
             /** Reparent capture widgets off \a strip before \a strip is destroyed (member storage safety). */
             void detachFromDeviceBar();
 
+            void retranslateUi();
+
             inline void update_sample_rate_list()
             {
                 update_sample_rate_selector();
@@ -116,7 +118,6 @@ namespace pv
             void sig_store_session_data();
 
         private:
-            void retranslateUi();
             void reStyle();
             void set_sample_rate(uint64_t sample_rate);
             double commit_hori_res();
@@ -188,6 +189,11 @@ namespace pv
             QToolBar            *_capture_strip;
             QWidget             *_capture_container;
             QAction             *_capture_action;
+
+            QLabel              *_lbl_device    = nullptr;
+            QLabel              *_lbl_smplrate  = nullptr;
+            QLabel              *_lbl_buffer    = nullptr;
+            QLabel              *_lbl_mode      = nullptr;
         };
 
     } // namespace toolbars

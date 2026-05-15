@@ -140,14 +140,15 @@ namespace pv
             lay->setContentsMargins(10, 1, 10, 1);
             lay->setSpacing(0);
 
-            // Helper: uppercase label + control in a tight group
-            auto makeGroup = [&](const QString &labelText, QWidget *ctrl) -> QWidget* {
+            // Helper: label + control in a tight group; optionally stores the label pointer
+            auto makeGroup = [&](const QString &labelText, QWidget *ctrl, QLabel **lblOut = nullptr) -> QWidget* {
                 QWidget *g = new QWidget(_capture_container);
                 QHBoxLayout *gl = new QHBoxLayout(g);
                 gl->setContentsMargins(0, 0, 0, 0);
                 gl->setSpacing(5);
                 QLabel *lbl = new QLabel(labelText, g);
                 lbl->setObjectName("device_bar_label");
+                if (lblOut) *lblOut = lbl;
                 gl->addWidget(lbl);
                 gl->addWidget(ctrl);
                 return g;
@@ -177,9 +178,9 @@ namespace pv
                 QHBoxLayout *gl = new QHBoxLayout(g);
                 gl->setContentsMargins(0, 0, 0, 0);
                 gl->setSpacing(4);
-                QLabel *lbl = new QLabel("DEVICE", g);
-                lbl->setObjectName("device_bar_label");
-                gl->addWidget(lbl);
+                _lbl_device = new QLabel(tr("Device"), g);
+                _lbl_device->setObjectName("device_bar_label");
+                gl->addWidget(_lbl_device);
                 gl->addWidget(&_device_selector);
                 lay->addWidget(g);
             }
@@ -187,18 +188,18 @@ namespace pv
             lay->addSpacing(16);
 
             // SAMPLE RATE
-            lay->addWidget(makeGroup("SAMPLE RATE", &_sample_rate));
+            lay->addWidget(makeGroup(tr("Sample Rate"), &_sample_rate, &_lbl_smplrate));
 
             lay->addSpacing(16);
 
             // BUFFER (sample count / duration)
-            lay->addWidget(makeGroup("BUFFER", &_sample_count));
+            lay->addWidget(makeGroup(tr("Buffer"), &_sample_count, &_lbl_buffer));
 
             lay->addSpacing(16);
 
             // MODE
             _mode_button.setObjectName("mode_button");
-            lay->addWidget(makeGroup("MODE", &_mode_button));
+            lay->addWidget(makeGroup(tr("Mode"), &_mode_button, &_lbl_mode));
 
             lay->addStretch(1);
 
@@ -285,6 +286,11 @@ namespace pv
 
         void SamplingBar::retranslateUi()
         {
+            if (_lbl_device)   _lbl_device->setText(tr("Device"));
+            if (_lbl_smplrate) _lbl_smplrate->setText(tr("Sample Rate"));
+            if (_lbl_buffer)   _lbl_buffer->setText(tr("Buffer"));
+            if (_lbl_mode)     _lbl_mode->setText(tr("Mode"));
+
             bool bDev = _device_agent->have_instance();
 
             if (bDev)
