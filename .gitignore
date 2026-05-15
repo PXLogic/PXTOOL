@@ -26,6 +26,8 @@
 # Local install and app build output
 /package-root/
 /build.dir/
+/build/
+/logo/
 
 # Qt generated source files
 **/moc_*.cpp
