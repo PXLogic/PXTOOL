@@ -609,6 +609,20 @@ if(WIN32)
 	add_definitions(-municode)
 endif()
 
+# Qt Linguist: compile zh_CN.ts → zh_CN.qm during build
+if(Qt5Core_FOUND)
+	find_package(Qt5 COMPONENTS LinguistTools QUIET)
+elseif(Qt6Core_FOUND)
+	find_package(Qt6 COMPONENTS LinguistTools QUIET)
+endif()
+
+set(DSVIEW_TS_FILES DSView/languages/zh_CN.ts)
+if(Qt5LinguistTools_FOUND)
+	qt5_add_translation(DSVIEW_QM_FILES ${DSVIEW_TS_FILES})
+elseif(Qt6LinguistTools_FOUND)
+	qt6_add_translation(DSVIEW_QM_FILES ${DSVIEW_TS_FILES})
+endif()
+
 if(Qt5Core_FOUND)
 	qt5_wrap_cpp(DSView_HEADERS_MOC ${DSView_HEADERS})
 	qt5_wrap_ui(DSView_FORMS_HEADERS ${DSView_FORMS})
