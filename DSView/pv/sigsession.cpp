@@ -2116,8 +2116,8 @@ namespace pv
 
         if (ds_active_device(handle) == SR_OK) {
             _device_agent.update();
-            refresh_signal_probes();
             restore_channel_enabled_states();
+            refresh_signal_probes();
         }
         dsv_info("rebind_device done: session@%p has_data=%d",
             (void*)this, (int)have_view_data());
@@ -2149,10 +2149,35 @@ namespace pv
             const sr_channel *ch = (const sr_channel *)l->data;
             _channel_enabled_cache[ch->index] = ch->enabled;
         }
+
+        // Save device-level int16 configs that Device Options can modify.
+        _device_config_int16_cache.clear();
+        int val = 0;
+        if (_device_agent.get_config_int16(SR_CONF_OPERATION_MODE, val))
+            _device_config_int16_cache[SR_CONF_OPERATION_MODE] = val;
+        if (_device_agent.get_config_int16(SR_CONF_CHANNEL_MODE, val))
+            _device_config_int16_cache[SR_CONF_CHANNEL_MODE] = val;
+
+        // Save string configs — SR_CONF_PATTERN_MODE controls "random"/"protocol" demo mode.
+        _device_config_string_cache.clear();
+        QString sval;
+        if (_device_agent.get_config_string(SR_CONF_PATTERN_MODE, sval))
+            _device_config_string_cache[SR_CONF_PATTERN_MODE] = sval;
     }
 
     void SigSession::restore_channel_enabled_states()
     {
+        // Restore string configs first: SR_CONF_PATTERN_MODE sets sample_generator,
+        // and SR_CONF_CHANNEL_MODE (int16) is only applied by the driver when
+        // sample_generator == PATTERN_RANDOM, so order matters.
+        for (auto &kv : _device_config_string_cache)
+            _device_agent.set_config_string(kv.first, kv.second.toUtf8().constData());
+
+        // Restore int16 device configs; SR_CONF_CHANNEL_MODE in particular
+        // affects the valid channel count that limits probe->enabled below.
+        for (auto &kv : _device_config_int16_cache)
+            _device_agent.set_config_int16(kv.first, kv.second);
+
         if (_channel_enabled_cache.empty())
             return;
         for (GSList *l = _device_agent.get_channels(); l; l = l->next) {

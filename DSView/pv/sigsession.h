@@ -630,7 +630,9 @@ private:
     DeviceAgent   _device_agent;
     std::vector<IMessageListener*> _msg_listeners;
     DeviceEventObject   _device_event;
-    std::map<int, bool> _channel_enabled_cache;
+    std::map<int, bool>    _channel_enabled_cache;
+    std::map<int, int>     _device_config_int16_cache;
+    std::map<int, QString> _device_config_string_cache;
     SessionData       *_view_data;
     SessionData       *_capture_data;
     std::vector<SessionData*> _data_list;
