@@ -274,7 +274,7 @@ private:
     dock::SideBar           *_sidebar_widget;
 
     QTranslator     _qtTrans;
-    QTranslator     _myTrans;
+    QTranslator     _appTrans;
     EventObject     _event; 
     SigSession      *_session;
     DeviceAgent     *_device_agent;
