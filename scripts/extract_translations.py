@@ -29,8 +29,9 @@ def load_cn(page_id):
     for fname in PAGE_TO_JSON.get(page_id, []):
         fpath = os.path.join(LANG_CN_DIR, fname)
         if os.path.exists(fpath):
-            for item in json.load(open(fpath, encoding="utf-8")):
-                trans[item["id"]] = item["text"]
+            with open(fpath, encoding="utf-8") as f:
+                for item in json.load(f):
+                    trans[item["id"]] = item["text"]
     return trans
 
 def main():
@@ -46,7 +47,8 @@ def main():
             if not fname.endswith((".cpp", ".h")):
                 continue
             fpath = os.path.join(root, fname)
-            content = open(fpath, encoding="utf-8", errors="ignore").read()
+            with open(fpath, encoding="utf-8", errors="ignore") as f:
+                content = f.read()
             for m in L_S_RE.finditer(content):
                 page_id, string_id, english = m.groups()
                 chinese = cn.get(page_id, {}).get(string_id, "")
@@ -55,7 +57,8 @@ def main():
                 total += 1
 
     out = os.path.join(os.path.dirname(__file__), "translation_map.json")
-    json.dump(mapping, open(out, "w", encoding="utf-8"), ensure_ascii=False, indent=2)
+    with open(out, "w", encoding="utf-8") as f:
+        json.dump(mapping, f, ensure_ascii=False, indent=2)
     print(f"Scanned {total} L_S() calls (MSG/TOOLBAR/DLG only)")
     print(f"Built {len(mapping)} unique English→Chinese mappings")
     print(f"Saved to {out}")
