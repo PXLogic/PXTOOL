@@ -258,28 +258,28 @@ namespace pv
 
         if (ds_get_last_error() == SR_ERR_DEVICE_FIRMWARE_VERSION_LOW)
         {
-            QString strMsg = tr("Please reconnect the device!");
+            QString strMsg = QObject::tr("Please reconnect the device!");
             _callback->delay_prop_msg(strMsg);
             return false;
         }
 
         if (ds_get_last_error() == SR_ERR_FIRMWARE_NOT_EXIST)
         {
-            QString strMsg = tr("Firmware not exist!");
+            QString strMsg = QObject::tr("Firmware not exist!");
             _callback->delay_prop_msg(strMsg);
             return false;
         }
 
         if (ds_get_last_error() == SR_ERR_DEVICE_USB_IO_ERROR)
         {
-            QString strMsg = tr("USB io error!");
+            QString strMsg = QObject::tr("USB io error!");
             _callback->delay_prop_msg(strMsg);
             return false;
         }
 
         if (ds_get_last_error() == SR_ERR_DEVICE_IS_EXCLUSIVE)
         {
-            QString strMsg = tr("Device is busy!");
+            QString strMsg = QObject::tr("Device is busy!");
             if (old_dev != NULL_HANDLE)
                 MsgBox::Show(strMsg);
             else
@@ -643,7 +643,7 @@ namespace pv
 
         if (_device_agent.have_enabled_channel() == false)
         {
-            QString err_str(tr("No channels enabled!"));
+            QString err_str(QObject::tr("No channels enabled!"));
             MsgBox::Show(err_str);
             return false;
         }
@@ -2113,9 +2113,11 @@ namespace pv
             return;
         dsv_info("rebind_device: session@%p has_data=%d handle=%p",
             (void*)this, (int)have_view_data(), handle);
+
         if (ds_active_device(handle) == SR_OK) {
             _device_agent.update();
             refresh_signal_probes();
+            restore_channel_enabled_states();
         }
         dsv_info("rebind_device done: session@%p has_data=%d",
             (void*)this, (int)have_view_data());
@@ -2137,6 +2139,27 @@ namespace pv
                     break;
                 }
             }
+        }
+    }
+
+    void SigSession::save_channel_enabled_states()
+    {
+        _channel_enabled_cache.clear();
+        for (const GSList *l = _device_agent.get_channels(); l; l = l->next) {
+            const sr_channel *ch = (const sr_channel *)l->data;
+            _channel_enabled_cache[ch->index] = ch->enabled;
+        }
+    }
+
+    void SigSession::restore_channel_enabled_states()
+    {
+        if (_channel_enabled_cache.empty())
+            return;
+        for (GSList *l = _device_agent.get_channels(); l; l = l->next) {
+            sr_channel *ch = (sr_channel *)l->data;
+            auto it = _channel_enabled_cache.find(ch->index);
+            if (it != _channel_enabled_cache.end())
+                ch->enabled = it->second;
         }
     }
 
@@ -2308,7 +2331,7 @@ namespace pv
 
         case DS_EV_DEVICE_SPEED_NOT_MATCH:
             {
-                QString strMsg(tr("Speed too low!"));
+                QString strMsg(QObject::tr("Speed too low!"));
                 _callback->delay_prop_msg(strMsg);
             }
             break;

@@ -60,7 +60,7 @@ void ApplicationParamDlg::bind_font_name_list(QComboBox *box, QString v)
 {   
     int selDex = -1;
 
-    QString defName(tr("Default"));
+    QString defName(QObject::tr("Default"));
     box->addItem(defName);
 
     if (_font_name_list.size() == 0)
@@ -113,7 +113,7 @@ bool ApplicationParamDlg::ShowDlg(QWidget *parent)
      * custom footer: outline Cancel (device_cancel_btn), primary OK (device_ok_btn). */
     DSDialog dlg(parent, false, false);
     dlg.setObjectName("displayOptionsDialog");
-    dlg.setTitle(tr("Display options"));
+    dlg.setTitle(QObject::tr("Display options"));
     dlg.setTitleTextAlignment(Qt::AlignHCenter | Qt::AlignVCenter);
     dlg.SetTitleSpace(8);
     dlg.layout()->setSpacing(0);
@@ -154,38 +154,38 @@ bool ApplicationParamDlg::ShowDlg(QWidget *parent)
     bind_font_size_list(ftCbSize, app.appOptions.fontSize);
    
     // Logic group
-    QGroupBox *logicGroup = new QGroupBox(tr("Logic"));
+    QGroupBox *logicGroup = new QGroupBox(QObject::tr("Logic"));
     QGridLayout *logicLay = new QGridLayout();
     logicLay->setContentsMargins(10,15,15,10);
     logicLay->setAlignment(Qt::AlignTop | Qt::AlignLeft);
     logicGroup->setLayout(logicLay);
-    logicLay->addWidget(new QLabel(tr("Quick scroll")), 0, 0, Qt::AlignLeft); 
+    logicLay->addWidget(new QLabel(QObject::tr("Quick scroll")), 0, 0, Qt::AlignLeft); 
     logicLay->addWidget(ck_quickScroll, 0, 1, Qt::AlignRight);
-    logicLay->addWidget(new QLabel(tr("Used abort data")), 1, 0, Qt::AlignLeft); 
+    logicLay->addWidget(new QLabel(QObject::tr("Used abort data")), 1, 0, Qt::AlignLeft); 
     logicLay->addWidget(ck_abortData, 1, 1, Qt::AlignRight);
-    logicLay->addWidget(new QLabel(tr("Auto scoll latest")), 2, 0, Qt::AlignLeft); 
+    logicLay->addWidget(new QLabel(QObject::tr("Auto scoll latest")), 2, 0, Qt::AlignLeft); 
     logicLay->addWidget(ck_autoScrollLatestData, 2, 1, Qt::AlignRight);
     lay->addWidget(logicGroup);
 
     //Scope group
-    QGroupBox *dsoGroup = new QGroupBox(tr("Scope"));
+    QGroupBox *dsoGroup = new QGroupBox(QObject::tr("Scope"));
     QGridLayout *dsoLay = new QGridLayout();
     dsoLay->setContentsMargins(10,15,15,10);
     dsoLay->setAlignment(Qt::AlignTop | Qt::AlignLeft);
     dsoGroup->setLayout(dsoLay);
-    dsoLay->addWidget(new QLabel(tr("Tig pos in middle")), 0, 0, Qt::AlignLeft);
+    dsoLay->addWidget(new QLabel(QObject::tr("Tig pos in middle")), 0, 0, Qt::AlignLeft);
     dsoLay->addWidget(ck_trigInMid, 0, 1, Qt::AlignRight);
     lay->addWidget(dsoGroup);
 
     //UI
-    QGroupBox *uiGroup = new QGroupBox(tr("UI"));
+    QGroupBox *uiGroup = new QGroupBox(QObject::tr("UI"));
     QGridLayout *uiLay = new QGridLayout();
     uiLay->setContentsMargins(10,15,15,10);
     uiLay->setAlignment(Qt::AlignTop | Qt::AlignLeft);
     uiGroup->setLayout(uiLay);
-    uiLay->addWidget(new QLabel(tr("Profile in bar")), 0, 0, Qt::AlignLeft);
+    uiLay->addWidget(new QLabel(QObject::tr("Profile in bar")), 0, 0, Qt::AlignLeft);
     uiLay->addWidget(ck_profileBar, 0, 1, Qt::AlignRight);
-    uiLay->addWidget(new QLabel(tr("Font size")), 1, 0, Qt::AlignLeft);
+    uiLay->addWidget(new QLabel(QObject::tr("Font size")), 1, 0, Qt::AlignLeft);
     uiLay->addWidget(ftCbSize, 1, 1, Qt::AlignRight);
     lay->addWidget(uiGroup);
 
@@ -197,7 +197,7 @@ bool ApplicationParamDlg::ShowDlg(QWidget *parent)
     dlg.layout()->addWidget(bot_sep);
 
     auto *cancel_btn = new QPushButton(
-        tr("Cancel"), &dlg);
+        QObject::tr("Cancel"), &dlg);
     cancel_btn->setObjectName("device_cancel_btn");
     auto *ok_btn = new QPushButton("OK", &dlg);
     ok_btn->setObjectName("device_ok_btn");

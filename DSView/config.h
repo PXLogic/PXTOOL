@@ -22,7 +22,7 @@
 #define _DSVIEW_CONFIG_H
 
 /* Application details */
-#define DS_TITLE "DSView"
+#define DS_TITLE "PXTOOL"
 #define DS_DESCRIPTION "A GUI for instruments of DreamSourceLab"
 #define DS_BIN_NAME "DSView"
 

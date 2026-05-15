@@ -23,6 +23,7 @@
 #ifndef DSVIEW_PV_SIGSESSION_H
 #define DSVIEW_PV_SIGSESSION_H
  
+#include <map>
 #include <set>
 #include <string>
 #include <vector>
@@ -417,6 +418,8 @@ public:
     void set_as_current();
     void rebind_device(ds_device_handle handle);
     void refresh_signal_probes();
+    void save_channel_enabled_states();
+    void restore_channel_enabled_states();
     void broadcast_msg(int msg);    
     bool have_new_realtime_refresh(bool keep);
     view::DecodeTrace* get_decoder_trace(int index);
@@ -627,6 +630,7 @@ private:
     DeviceAgent   _device_agent;
     std::vector<IMessageListener*> _msg_listeners;
     DeviceEventObject   _device_event;
+    std::map<int, bool> _channel_enabled_cache;
     SessionData       *_view_data;
     SessionData       *_capture_data;
     std::vector<SessionData*> _data_list;

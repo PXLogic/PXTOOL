@@ -101,7 +101,7 @@ bool MsgBox::Confirm(const QString text, const QString infoText,
         parent = AppControl::Instance()->GetTopWindow();
     }
 
-    const char *title = tr("Confirm");
+    QString title = QObject::tr("Confirm");
     pv::dialogs::DSMessageBox msg(parent, title);
     msg.mBox()->setText(str);
     msg.mBox()->setStandardButtons(QMessageBox::Yes | QMessageBox::No);

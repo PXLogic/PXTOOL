@@ -258,7 +258,7 @@ void DeviceOptions::bind_samplerate(const QString &name, const QString label,
 
 		_properties.push_back(
 			//tr
-            new Double(name, label, 0, tr("Hz"),
+            new Double(name, label, 0, QObject::tr("Hz"),
 				make_pair((double)elements[0], (double)elements[1]),
 						(double)elements[2],
 				bind(samplerate_double_getter),

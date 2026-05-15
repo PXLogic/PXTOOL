@@ -579,6 +579,10 @@ namespace pv
 
         _is_switching_session = true;
 
+        // Save the outgoing session's channel enabled states while the device is
+        // still active for it.  rebind_device() will restore these when we return.
+        _session_items[_active_tab_index].session->save_channel_enabled_states();
+
         // Deactivate outgoing session:
         // - disable its callback proxy so its async events don't reach MainWindow
         // - stop capture if running

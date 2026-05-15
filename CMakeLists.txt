@@ -27,7 +27,7 @@ project(DSView)
 #= Config Header
 #-------------------------------------------------------------------------------
 
-set(DS_TITLE DSView)
+set(DS_TITLE PXTOOL)
 set(DS_DESCRIPTION "A GUI for instruments of DreamSourceLab")
 
 set(DS_VERSION_MAJOR 1)
@@ -377,6 +377,9 @@ set(DSView_SOURCES
     DSView/pv/ui/xtoolbutton.cpp
     DSView/pv/ui/uimanager.cpp
     DSView/pv/ui/popupdlglist.cpp
+    DSView/pv/dock/logdock.cpp
+    DSView/pv/sessioncallback.cpp
+    DSView/pv/dialogs/shortcutdlg.cpp
 )
 
 # Windows-specific QT source files
@@ -483,6 +486,8 @@ set(DSView_HEADERS
     DSView/pv/deviceagent.h
     DSView/pv/ui/fn.h
     DSView/pv/ui/xtoolbutton.h
+    DSView/pv/dock/logdock.h
+    DSView/pv/dialogs/shortcutdlg.h
 )
  
 # Windows-specific QT headers
