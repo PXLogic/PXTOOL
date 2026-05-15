@@ -14,7 +14,7 @@
     <message>
         <location filename="../pv/dialogs/applicationpardlg.cpp" line="62"/>
         <source>Default</source>
-        <translation type="unfinished"></translation>
+        <translation>默认</translation>
     </message>
     <message>
         <location filename="../pv/dialogs/applicationpardlg.cpp" line="115"/>
@@ -142,7 +142,7 @@
         <location filename="../pv/mainwindow.cpp" line="222"/>
         <location filename="../pv/mainwindow.cpp" line="2444"/>
         <source>Device</source>
-        <translation type="unfinished"></translation>
+        <translation>设备</translation>
     </message>
     <message>
         <location filename="../pv/mainwindow.cpp" line="259"/>
@@ -152,42 +152,42 @@
     <message>
         <location filename="../pv/mainwindow.cpp" line="260"/>
         <source>Config...</source>
-        <translation type="unfinished"></translation>
+        <translation>配置...</translation>
     </message>
     <message>
         <location filename="../pv/mainwindow.cpp" line="261"/>
         <source>Load...</source>
-        <translation type="unfinished"></translation>
+        <translation>加载...</translation>
     </message>
     <message>
         <location filename="../pv/mainwindow.cpp" line="262"/>
         <source>Store...</source>
-        <translation type="unfinished"></translation>
+        <translation>存储...</translation>
     </message>
     <message>
         <location filename="../pv/mainwindow.cpp" line="263"/>
         <source>Default...</source>
-        <translation type="unfinished"></translation>
+        <translation>默认...</translation>
     </message>
     <message>
         <location filename="../pv/mainwindow.cpp" line="264"/>
         <source>Open...</source>
-        <translation type="unfinished"></translation>
+        <translation>打开...</translation>
     </message>
     <message>
         <location filename="../pv/mainwindow.cpp" line="265"/>
         <source>Save...</source>
-        <translation type="unfinished"></translation>
+        <translation>保存...</translation>
     </message>
     <message>
         <location filename="../pv/mainwindow.cpp" line="266"/>
         <source>Export...</source>
-        <translation type="unfinished"></translation>
+        <translation>导出...</translation>
     </message>
     <message>
         <location filename="../pv/mainwindow.cpp" line="267"/>
         <source>Capture...</source>
-        <translation type="unfinished"></translation>
+        <translation>采集...</translation>
     </message>
     <message>
         <location filename="../pv/mainwindow.cpp" line="269"/>
@@ -197,7 +197,7 @@
     <message>
         <location filename="../pv/mainwindow.cpp" line="280"/>
         <source>Window</source>
-        <translation type="unfinished"></translation>
+        <translation>窗口</translation>
     </message>
     <message>
         <location filename="../pv/mainwindow.cpp" line="281"/>
@@ -217,12 +217,12 @@
     <message>
         <location filename="../pv/mainwindow.cpp" line="286"/>
         <source>Display Options...</source>
-        <translation type="unfinished"></translation>
+        <translation>显示选项...</translation>
     </message>
     <message>
         <location filename="../pv/mainwindow.cpp" line="288"/>
         <source>Keyboard Shortcuts...</source>
-        <translation type="unfinished"></translation>
+        <translation>键盘快捷键...</translation>
     </message>
     <message>
         <location filename="../pv/mainwindow.cpp" line="292"/>
@@ -237,17 +237,17 @@
     <message>
         <location filename="../pv/mainwindow.cpp" line="294"/>
         <source>Manual</source>
-        <translation type="unfinished"></translation>
+        <translation>使用手册</translation>
     </message>
     <message>
         <location filename="../pv/mainwindow.cpp" line="295"/>
         <source>Bug Report</source>
-        <translation type="unfinished"></translation>
+        <translation>问题反馈</translation>
     </message>
     <message>
         <location filename="../pv/mainwindow.cpp" line="296"/>
         <source>Check for Updates</source>
-        <translation type="unfinished"></translation>
+        <translation>检查更新</translation>
     </message>
     <message>
         <location filename="../pv/mainwindow.cpp" line="297"/>
@@ -257,7 +257,7 @@
     <message>
         <location filename="../pv/mainwindow.cpp" line="299"/>
         <source>Language</source>
-        <translation type="unfinished"></translation>
+        <translation>语言</translation>
     </message>
     <message>
         <location filename="../pv/mainwindow.cpp" line="300"/>
@@ -277,12 +277,12 @@
     <message>
         <location filename="../pv/mainwindow.cpp" line="510"/>
         <source>Open file in new comparison tab</source>
-        <translation type="unfinished"></translation>
+        <translation>在新对比标签页中打开文件</translation>
     </message>
     <message>
         <location filename="../pv/mainwindow.cpp" line="540"/>
         <source>Session %1</source>
-        <translation type="unfinished"></translation>
+        <translation>会话 %1</translation>
     </message>
     <message>
         <location filename="../pv/mainwindow.cpp" line="742"/>
@@ -308,7 +308,8 @@
         <location filename="../pv/mainwindow.cpp" line="777"/>
         <source>Memory is not enough for this sample!
 Please reduce the sample depth!</source>
-        <translation type="unfinished"></translation>
+        <translation>内存不足以支持当前采样！
+请减小采样深度！</translation>
     </message>
     <message>
         <location filename="../pv/mainwindow.cpp" line="780"/>
@@ -329,7 +330,8 @@ Please reduce the sample depth!</source>
         <location filename="../pv/mainwindow.cpp" line="788"/>
         <source>USB bandwidth can not support current sample rate! 
 Please reduce the sample rate!</source>
-        <translation type="unfinished"></translation>
+        <translation>USB带宽不支持当前采样率！
+请降低采样率！</translation>
     </message>
     <message>
         <location filename="../pv/mainwindow.cpp" line="791"/>
@@ -360,7 +362,8 @@ Please reduce the sample rate!</source>
         <location filename="../pv/mainwindow.cpp" line="2148"/>
         <source>Plug the device into a USB 2.0 port will seriously affect its performance.
 Please replug it into a USB 3.0 port.</source>
-        <translation type="unfinished"></translation>
+        <translation>设备插入USB 2.0端口会严重影响性能。
+请将其重新插入USB 3.0端口。</translation>
     </message>
     <message>
         <location filename="../pv/mainwindow.cpp" line="2191"/>
@@ -372,12 +375,14 @@ Please replug it into a USB 3.0 port.</source>
         <source>Current loading file has an old format. 
 This will lead to a slow loading speed. 
 Please resave it after loaded.</source>
-        <translation type="unfinished"></translation>
+        <translation>当前加载文件格式较旧。
+这将导致加载速度缓慢。
+加载完成后请重新保存。</translation>
     </message>
     <message>
         <location filename="../pv/mainwindow.cpp" line="2441"/>
         <source>Session 1</source>
-        <translation type="unfinished"></translation>
+        <translation>会话 1</translation>
     </message>
     <message>
         <location filename="../pv/mainwindow.cpp" line="2586"/>
@@ -391,7 +396,8 @@ Please resave it after loaded.</source>
         <location filename="../pv/storesession.cpp" line="146"/>
         <source>DSView does not currently support
 file saving for multiple data types.</source>
-        <translation type="unfinished"></translation>
+        <translation>DSView 暂不支持
+多数据类型的文件保存。</translation>
     </message>
     <message>
         <location filename="../pv/storesession.cpp" line="150"/>
@@ -430,40 +436,41 @@ file saving for multiple data types.</source>
         <location filename="../pv/storesession.cpp" line="314"/>
         <location filename="../pv/storesession.cpp" line="399"/>
         <source>Failed to create zip file. Malloc error.</source>
-        <translation type="unfinished"></translation>
+        <translation>创建zip文件失败，内存分配错误。</translation>
     </message>
     <message>
         <location filename="../pv/storesession.cpp" line="326"/>
         <location filename="../pv/storesession.cpp" line="422"/>
         <location filename="../pv/storesession.cpp" line="478"/>
         <source>Failed to create zip file. Please check write permission of this path.</source>
-        <translation type="unfinished"></translation>
+        <translation>创建zip文件失败，请检查该路径的写入权限。</translation>
     </message>
     <message>
         <location filename="../pv/storesession.cpp" line="798"/>
         <source>DSView does not currently support
 file export for multiple data types.</source>
-        <translation type="unfinished"></translation>
+        <translation>DSView 暂不支持
+多数据类型的文件导出。</translation>
     </message>
     <message>
         <location filename="../pv/storesession.cpp" line="814"/>
         <source>No set file name.</source>
-        <translation type="unfinished"></translation>
+        <translation>未设置文件名。</translation>
     </message>
     <message>
         <location filename="../pv/storesession.cpp" line="833"/>
         <source>Invalid export format.</source>
-        <translation type="unfinished"></translation>
+        <translation>无效的导出格式。</translation>
     </message>
     <message>
         <location filename="../pv/storesession.cpp" line="881"/>
         <source>data type don&apos;t support.</source>
-        <translation type="unfinished"></translation>
+        <translation>不支持该数据类型。</translation>
     </message>
     <message>
         <location filename="../pv/storesession.cpp" line="1046"/>
         <source>xbuffer malloc failed.</source>
-        <translation type="unfinished"></translation>
+        <translation>xbuffer内存分配失败。</translation>
     </message>
     <message>
         <location filename="../pv/storesession.cpp" line="1616"/>
@@ -505,27 +512,27 @@ file export for multiple data types.</source>
     <message>
         <location filename="../pv/dialogs/about.cpp" line="78"/>
         <source>&lt;font size=24&gt;DSView %1 (%2)&lt;/font&gt;&lt;br /&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../pv/dialogs/about.cpp" line="87"/>
         <source>Website: &lt;a href=&quot;%1&quot; style=&quot;color:#C0C0C0&quot;&gt;%1&lt;/a&gt;&lt;br /&gt;Github: &lt;a href=&quot;%2&quot; style=&quot;color:#C0C0C0&quot;&gt;%2&lt;/a&gt;&lt;br /&gt;Copyright: &lt;label href=&quot;#&quot; style=&quot;color:#C0C0C0&quot;&gt;%3&lt;/label&gt;&lt;br /&gt;&lt;br /&gt;&lt;br /&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>网站：&lt;a href=&quot;%1&quot; style=&quot;color:#C0C0C0&quot;&gt;%1&lt;/a&gt;&lt;br /&gt;Github：&lt;a href=&quot;%2&quot; style=&quot;color:#C0C0C0&quot;&gt;%2&lt;/a&gt;&lt;br /&gt;版权所有：&lt;label href=&quot;#&quot; style=&quot;color:#C0C0C0&quot;&gt;%3&lt;/label&gt;&lt;br /&gt;&lt;br /&gt;&lt;br /&gt;</translation>
     </message>
     <message>
         <location filename="../pv/dialogs/about.cpp" line="93"/>
         <source>© DreamSourceLab. All rights reserved.</source>
-        <translation type="unfinished"></translation>
+        <translation>© DreamSourceLab. 版权所有。</translation>
     </message>
     <message>
         <location filename="../pv/dialogs/about.cpp" line="95"/>
         <source>&lt;font size=16&gt;Special Thanks&lt;/font&gt;&lt;br /&gt;&lt;a href=&quot;%1&quot; style=&quot;color:#C0C0C0&quot;&gt;All backers on kickstarter&lt;/a&gt;&lt;br /&gt;&lt;a href=&quot;%2&quot; style=&quot;color:#C0C0C0&quot;&gt;All members of Sigrok project&lt;/a&gt;&lt;br /&gt;All contributors of all open-source projects&lt;/a&gt;&lt;br /&gt;&lt;br /&gt;&lt;br /&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../pv/dialogs/about.cpp" line="103"/>
         <source>&lt;font size=16&gt;Changelogs&lt;/font&gt;&lt;br /&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;font size=16&gt;更新日志&lt;/font&gt;&lt;br /&gt;</translation>
     </message>
 </context>
 <context>
@@ -615,7 +622,7 @@ file export for multiple data types.</source>
     <message>
         <location filename="../pv/dialogs/decoderoptionsdlg.cpp" line="132"/>
         <source>Decode Range</source>
-        <translation type="unfinished"></translation>
+        <translation>解码范围</translation>
     </message>
     <message>
         <location filename="../pv/dialogs/decoderoptionsdlg.cpp" line="157"/>
@@ -684,7 +691,8 @@ file export for multiple data types.</source>
         <location filename="../pv/dialogs/deviceoptions.cpp" line="542"/>
         <source>Auto Calibration program will be started. Don&apos;t connect any probes. 
 It can take a while!</source>
-        <translation type="unfinished"></translation>
+        <translation>自动校准程序即将启动，请勿连接任何探针。
+这可能需要一些时间！</translation>
     </message>
     <message>
         <location filename="../pv/dialogs/deviceoptions.cpp" line="671"/>
@@ -728,107 +736,107 @@ It can take a while!</source>
     <message>
         <location filename="../pv/dialogs/dsomeasure.cpp" line="146"/>
         <source>NULL</source>
-        <translation type="unfinished"></translation>
+        <translation>空</translation>
     </message>
     <message>
         <location filename="../pv/dialogs/dsomeasure.cpp" line="147"/>
         <source>Freq</source>
-        <translation type="unfinished"></translation>
+        <translation>频率</translation>
     </message>
     <message>
         <location filename="../pv/dialogs/dsomeasure.cpp" line="147"/>
         <source>Period</source>
-        <translation type="unfinished"></translation>
+        <translation>周期</translation>
     </message>
     <message>
         <location filename="../pv/dialogs/dsomeasure.cpp" line="147"/>
         <source>+Duty</source>
-        <translation type="unfinished"></translation>
+        <translation>+占空比</translation>
     </message>
     <message>
         <location filename="../pv/dialogs/dsomeasure.cpp" line="147"/>
         <source>-Duty</source>
-        <translation type="unfinished"></translation>
+        <translation>-占空比</translation>
     </message>
     <message>
         <location filename="../pv/dialogs/dsomeasure.cpp" line="147"/>
         <source>+Count</source>
-        <translation type="unfinished"></translation>
+        <translation>+计数</translation>
     </message>
     <message>
         <location filename="../pv/dialogs/dsomeasure.cpp" line="148"/>
         <source>Rise</source>
-        <translation type="unfinished"></translation>
+        <translation>上升</translation>
     </message>
     <message>
         <location filename="../pv/dialogs/dsomeasure.cpp" line="148"/>
         <source>Fall</source>
-        <translation type="unfinished"></translation>
+        <translation>下降</translation>
     </message>
     <message>
         <location filename="../pv/dialogs/dsomeasure.cpp" line="148"/>
         <source>+Width</source>
-        <translation type="unfinished"></translation>
+        <translation>+宽度</translation>
     </message>
     <message>
         <location filename="../pv/dialogs/dsomeasure.cpp" line="148"/>
         <source>-Width</source>
-        <translation type="unfinished"></translation>
+        <translation>-宽度</translation>
     </message>
     <message>
         <location filename="../pv/dialogs/dsomeasure.cpp" line="148"/>
         <source>BrstW</source>
-        <translation type="unfinished"></translation>
+        <translation>突发宽</translation>
     </message>
     <message>
         <location filename="../pv/dialogs/dsomeasure.cpp" line="149"/>
         <source>Ampl</source>
-        <translation type="unfinished"></translation>
+        <translation>幅值</translation>
     </message>
     <message>
         <location filename="../pv/dialogs/dsomeasure.cpp" line="149"/>
         <source>High</source>
-        <translation type="unfinished"></translation>
+        <translation>高</translation>
     </message>
     <message>
         <location filename="../pv/dialogs/dsomeasure.cpp" line="149"/>
         <source>Low</source>
-        <translation type="unfinished"></translation>
+        <translation>低</translation>
     </message>
     <message>
         <location filename="../pv/dialogs/dsomeasure.cpp" line="149"/>
         <source>RMS</source>
-        <translation type="unfinished"></translation>
+        <translation>有效值</translation>
     </message>
     <message>
         <location filename="../pv/dialogs/dsomeasure.cpp" line="149"/>
         <source>Mean</source>
-        <translation type="unfinished"></translation>
+        <translation>均值</translation>
     </message>
     <message>
         <location filename="../pv/dialogs/dsomeasure.cpp" line="150"/>
         <source>PK-PK</source>
-        <translation type="unfinished"></translation>
+        <translation>峰峰值</translation>
     </message>
     <message>
         <location filename="../pv/dialogs/dsomeasure.cpp" line="150"/>
         <source>Max</source>
-        <translation type="unfinished"></translation>
+        <translation>最大</translation>
     </message>
     <message>
         <location filename="../pv/dialogs/dsomeasure.cpp" line="150"/>
         <source>Min</source>
-        <translation type="unfinished"></translation>
+        <translation>最小</translation>
     </message>
     <message>
         <location filename="../pv/dialogs/dsomeasure.cpp" line="150"/>
         <source>+Over</source>
-        <translation type="unfinished"></translation>
+        <translation>+过冲</translation>
     </message>
     <message>
         <location filename="../pv/dialogs/dsomeasure.cpp" line="150"/>
         <source>-Over</source>
-        <translation type="unfinished"></translation>
+        <translation>-过冲</translation>
     </message>
 </context>
 <context>
@@ -866,7 +874,7 @@ It can take a while!</source>
     <message>
         <location filename="../pv/dialogs/fftoptions.cpp" line="209"/>
         <source>Y-axis Mode: </source>
-        <translation type="unfinished"></translation>
+        <translation>Y轴模式：</translation>
     </message>
     <message>
         <location filename="../pv/dialogs/fftoptions.cpp" line="211"/>
@@ -1057,7 +1065,12 @@ It can take a while!</source>
 R: Rising edge
 F: Falling edge
 C: Rising/Falling edge</source>
-        <translation type="unfinished"></translation>
+        <translation>X: 不关心
+0: 低电平
+1: 高电平
+R: 上升沿
+F: 下降沿
+C: 上升/下降沿</translation>
     </message>
     <message>
         <location filename="../pv/dialogs/search.cpp" line="128"/>
@@ -1075,87 +1088,87 @@ C: Rising/Falling edge</source>
     <message>
         <location filename="../pv/dialogs/shortcutdlg.cpp" line="45"/>
         <source>Keyboard Shortcuts</source>
-        <translation type="unfinished"></translation>
+        <translation>键盘快捷键</translation>
     </message>
     <message>
         <location filename="../pv/dialogs/shortcutdlg.cpp" line="72"/>
         <source>Start Collecting</source>
-        <translation type="unfinished"></translation>
+        <translation>开始采集</translation>
     </message>
     <message>
         <location filename="../pv/dialogs/shortcutdlg.cpp" line="73"/>
         <source>Stop Collecting</source>
-        <translation type="unfinished"></translation>
+        <translation>停止采集</translation>
     </message>
     <message>
         <location filename="../pv/dialogs/shortcutdlg.cpp" line="74"/>
         <source>Prev Cursor</source>
-        <translation type="unfinished"></translation>
+        <translation>上一光标</translation>
     </message>
     <message>
         <location filename="../pv/dialogs/shortcutdlg.cpp" line="75"/>
         <source>Next Cursor</source>
-        <translation type="unfinished"></translation>
+        <translation>下一光标</translation>
     </message>
     <message>
         <location filename="../pv/dialogs/shortcutdlg.cpp" line="76"/>
         <source>Previous Tab</source>
-        <translation type="unfinished"></translation>
+        <translation>上一标签页</translation>
     </message>
     <message>
         <location filename="../pv/dialogs/shortcutdlg.cpp" line="77"/>
         <source>Next Tab</source>
-        <translation type="unfinished"></translation>
+        <translation>下一标签页</translation>
     </message>
     <message>
         <location filename="../pv/dialogs/shortcutdlg.cpp" line="78"/>
         <source>Jump to Zero</source>
-        <translation type="unfinished"></translation>
+        <translation>跳转到零点</translation>
     </message>
     <message>
         <location filename="../pv/dialogs/shortcutdlg.cpp" line="79"/>
         <source>Zoom In</source>
-        <translation type="unfinished"></translation>
+        <translation>放大</translation>
     </message>
     <message>
         <location filename="../pv/dialogs/shortcutdlg.cpp" line="80"/>
         <source>Zoom Out</source>
-        <translation type="unfinished"></translation>
+        <translation>缩小</translation>
     </message>
     <message>
         <location filename="../pv/dialogs/shortcutdlg.cpp" line="81"/>
         <source>Zoom Fit</source>
-        <translation type="unfinished"></translation>
+        <translation>适应窗口</translation>
     </message>
     <message>
         <location filename="../pv/dialogs/shortcutdlg.cpp" line="82"/>
         <source>Add Cursor</source>
-        <translation type="unfinished"></translation>
+        <translation>添加光标</translation>
     </message>
     <message>
         <location filename="../pv/dialogs/shortcutdlg.cpp" line="83"/>
         <source>Measure Panel</source>
-        <translation type="unfinished"></translation>
+        <translation>测量面板</translation>
     </message>
     <message>
         <location filename="../pv/dialogs/shortcutdlg.cpp" line="84"/>
         <source>Device Config</source>
-        <translation type="unfinished"></translation>
+        <translation>设备配置</translation>
     </message>
     <message>
         <location filename="../pv/dialogs/shortcutdlg.cpp" line="85"/>
         <source>Protocol Decode</source>
-        <translation type="unfinished"></translation>
+        <translation>协议解码</translation>
     </message>
     <message>
         <location filename="../pv/dialogs/shortcutdlg.cpp" line="86"/>
         <source>Label Measurement</source>
-        <translation type="unfinished"></translation>
+        <translation>标签测量</translation>
     </message>
     <message>
         <location filename="../pv/dialogs/shortcutdlg.cpp" line="87"/>
         <source>Data Search</source>
-        <translation type="unfinished"></translation>
+        <translation>数据搜索</translation>
     </message>
     <message>
         <location filename="../pv/dialogs/shortcutdlg.cpp" line="88"/>
@@ -1175,27 +1188,27 @@ C: Rising/Falling edge</source>
     <message>
         <location filename="../pv/dialogs/shortcutdlg.cpp" line="91"/>
         <source>Close Session</source>
-        <translation type="unfinished"></translation>
+        <translation>关闭会话</translation>
     </message>
     <message>
         <location filename="../pv/dialogs/shortcutdlg.cpp" line="96"/>
         <source>Action</source>
-        <translation type="unfinished"></translation>
+        <translation>操作</translation>
     </message>
     <message>
         <location filename="../pv/dialogs/shortcutdlg.cpp" line="96"/>
         <source>Key Sequence</source>
-        <translation type="unfinished"></translation>
+        <translation>按键序列</translation>
     </message>
     <message>
         <location filename="../pv/dialogs/shortcutdlg.cpp" line="114"/>
         <source>Double-click a shortcut cell to edit.  Leave empty to disable.</source>
-        <translation type="unfinished"></translation>
+        <translation>双击快捷键单元格进行编辑，留空则禁用。</translation>
     </message>
     <message>
         <location filename="../pv/dialogs/shortcutdlg.cpp" line="124"/>
         <source>Reset Defaults</source>
-        <translation type="unfinished"></translation>
+        <translation>恢复默认</translation>
     </message>
     <message>
         <location filename="../pv/dialogs/shortcutdlg.cpp" line="126"/>
@@ -1205,17 +1218,17 @@ C: Rising/Falling edge</source>
     <message>
         <location filename="../pv/dialogs/shortcutdlg.cpp" line="128"/>
         <source>OK</source>
-        <translation type="unfinished"></translation>
+        <translation>确定</translation>
     </message>
     <message>
         <location filename="../pv/dialogs/shortcutdlg.cpp" line="189"/>
         <source>Duplicate Shortcut</source>
-        <translation type="unfinished"></translation>
+        <translation>快捷键重复</translation>
     </message>
     <message>
         <location filename="../pv/dialogs/shortcutdlg.cpp" line="190"/>
         <source>&apos;%1&apos; is already assigned to another action.</source>
-        <translation type="unfinished"></translation>
+        <translation>“%1”已分配给其他操作。</translation>
     </message>
 </context>
 <context>
@@ -1339,7 +1352,7 @@ C: Rising/Falling edge</source>
     <message>
         <location filename="../pv/dock/deviceoptionsdock.cpp" line="208"/>
         <source>Apply</source>
-        <translation type="unfinished"></translation>
+        <translation>应用</translation>
     </message>
     <message>
         <location filename="../pv/dock/deviceoptionsdock.cpp" line="272"/>
@@ -1391,7 +1404,8 @@ C: Rising/Falling edge</source>
         <location filename="../pv/dock/deviceoptionsdock.cpp" line="788"/>
         <source>Auto Calibration program will be started. Don&apos;t connect any probes. 
 It can take a while!</source>
-        <translation type="unfinished"></translation>
+        <translation>自动校准程序即将启动，请勿连接任何探针。
+这可能需要一些时间！</translation>
     </message>
 </context>
 <context>
@@ -1512,37 +1526,37 @@ It can take a while!</source>
     <message>
         <location filename="../pv/dock/logdock.cpp" line="47"/>
         <source>Level:</source>
-        <translation type="unfinished"></translation>
+        <translation>级别：</translation>
     </message>
     <message>
         <location filename="../pv/dock/logdock.cpp" line="52"/>
         <location filename="../pv/dock/logdock.cpp" line="182"/>
         <source>Error</source>
-        <translation type="unfinished"></translation>
+        <translation>错误</translation>
     </message>
     <message>
         <location filename="../pv/dock/logdock.cpp" line="53"/>
         <location filename="../pv/dock/logdock.cpp" line="183"/>
         <source>Warning</source>
-        <translation type="unfinished"></translation>
+        <translation>警告</translation>
     </message>
     <message>
         <location filename="../pv/dock/logdock.cpp" line="54"/>
         <location filename="../pv/dock/logdock.cpp" line="184"/>
         <source>Info</source>
-        <translation type="unfinished"></translation>
+        <translation>信息</translation>
     </message>
     <message>
         <location filename="../pv/dock/logdock.cpp" line="55"/>
         <location filename="../pv/dock/logdock.cpp" line="185"/>
         <source>Debug</source>
-        <translation type="unfinished"></translation>
+        <translation>调试</translation>
     </message>
     <message>
         <location filename="../pv/dock/logdock.cpp" line="56"/>
         <location filename="../pv/dock/logdock.cpp" line="186"/>
         <source>Verbose</source>
-        <translation type="unfinished"></translation>
+        <translation>详细</translation>
     </message>
     <message>
         <location filename="../pv/dock/logdock.cpp" line="59"/>
@@ -1680,7 +1694,8 @@ It can take a while!</source>
         <location filename="../pv/dock/searchdock.cpp" line="90"/>
         <source>Click the search pattern
 to configure search options</source>
-        <translation type="unfinished"></translation>
+        <translation>点击搜索模式
+配置搜索选项</translation>
     </message>
     <message>
         <location filename="../pv/dock/searchdock.cpp" line="126"/>
@@ -1731,17 +1746,17 @@ to configure search options</source>
     <message>
         <location filename="../pv/dock/sidebar.cpp" line="65"/>
         <source>Trigger Setting</source>
-        <translation type="unfinished"></translation>
+        <translation>触发设置</translation>
     </message>
     <message>
         <location filename="../pv/dock/sidebar.cpp" line="86"/>
         <source>Decode Protocol</source>
-        <translation type="unfinished"></translation>
+        <translation>协议解码</translation>
     </message>
     <message>
         <location filename="../pv/dock/sidebar.cpp" line="103"/>
         <source>Measurement</source>
-        <translation type="unfinished"></translation>
+        <translation>测量</translation>
     </message>
     <message>
         <location filename="../pv/dock/sidebar.cpp" line="120"/>
@@ -1833,7 +1848,12 @@ to configure search options</source>
 R: Rising edge
 F: Falling edge
 C: Rising/Falling edge</source>
-        <translation type="unfinished"></translation>
+        <translation>X: 不关心
+0: 低电平
+1: 高电平
+R: 上升沿
+F: 下降沿
+C: 上升/下降沿</translation>
     </message>
     <message>
         <location filename="../pv/dock/triggerdock.cpp" line="175"/>
@@ -1889,7 +1909,8 @@ C: Rising/Falling edge</source>
         <location filename="../pv/dock/triggerdock.cpp" line="1014"/>
         <source>Trigger setted on multiple channels!
 Capture will Only triggered when all setted channels fullfill at one sample</source>
-        <translation type="unfinished"></translation>
+        <translation>触发设置在多个通道！
+仅当所有设置通道在同一采样点同时满足条件时才会触发采集</translation>
     </message>
     <message>
         <location filename="../pv/dock/triggerdock.cpp" line="1017"/>
@@ -2079,7 +2100,7 @@ Capture will Only triggered when all setted channels fullfill at one sample</sou
     <message>
         <location filename="../pv/toolbars/samplingbar.cpp" line="166"/>
         <source>Show/Hide trigger settings</source>
-        <translation type="unfinished"></translation>
+        <translation>显示/隐藏触发设置</translation>
     </message>
     <message>
         <location filename="../pv/toolbars/samplingbar.cpp" line="294"/>
@@ -2142,7 +2163,8 @@ Capture will Only triggered when all setted channels fullfill at one sample</sou
         <location filename="../pv/toolbars/samplingbar.cpp" line="1117"/>
         <source>Auto Calibration program will be started. Don&apos;t connect any probes. 
 It can take a while!</source>
-        <translation type="unfinished"></translation>
+        <translation>自动校准程序即将启动，请勿连接任何探针。
+这可能需要一些时间！</translation>
     </message>
     <message>
         <location filename="../pv/toolbars/samplingbar.cpp" line="1159"/>
@@ -2160,7 +2182,7 @@ It can take a while!</source>
     <message>
         <location filename="../pv/toolbars/titlebar.cpp" line="365"/>
         <source>Window</source>
-        <translation type="unfinished"></translation>
+        <translation>窗口</translation>
     </message>
     <message>
         <location filename="../pv/toolbars/titlebar.cpp" line="366"/>
@@ -2336,57 +2358,57 @@ It can take a while!</source>
     <message>
         <location filename="../pv/view/header.cpp" line="565"/>
         <source>Reset Row Height</source>
-        <translation type="unfinished"></translation>
+        <translation>重置行高</translation>
     </message>
     <message>
         <location filename="../pv/view/header.cpp" line="566"/>
         <source>Reset All Row Heights</source>
-        <translation type="unfinished"></translation>
+        <translation>重置所有行高</translation>
     </message>
     <message>
         <location filename="../pv/view/header.cpp" line="569"/>
         <source>Set Channel Height</source>
-        <translation type="unfinished"></translation>
+        <translation>设置通道高度</translation>
     </message>
     <message>
         <location filename="../pv/view/header.cpp" line="570"/>
         <source>Auto (fit to view)</source>
-        <translation type="unfinished"></translation>
+        <translation>自动（适应窗口）</translation>
     </message>
     <message>
         <location filename="../pv/view/header.cpp" line="572"/>
         <source>1X  (30px)</source>
-        <translation type="unfinished"></translation>
+        <translation>1X  (30像素)</translation>
     </message>
     <message>
         <location filename="../pv/view/header.cpp" line="573"/>
         <source>2X  (60px)</source>
-        <translation type="unfinished"></translation>
+        <translation>2X  (60像素)</translation>
     </message>
     <message>
         <location filename="../pv/view/header.cpp" line="574"/>
         <source>4X (120px)</source>
-        <translation type="unfinished"></translation>
+        <translation>4X (120像素)</translation>
     </message>
     <message>
         <location filename="../pv/view/header.cpp" line="575"/>
         <source>8X (240px)</source>
-        <translation type="unfinished"></translation>
+        <translation>8X (240像素)</translation>
     </message>
     <message>
         <location filename="../pv/view/header.cpp" line="593"/>
         <source>Decode Engine</source>
-        <translation type="unfinished"></translation>
+        <translation>解码引擎</translation>
     </message>
     <message>
         <location filename="../pv/view/header.cpp" line="596"/>
         <source>C Decoder</source>
-        <translation type="unfinished"></translation>
+        <translation>C语言解码器</translation>
     </message>
     <message>
         <location filename="../pv/view/header.cpp" line="597"/>
         <source>Python Decoder</source>
-        <translation type="unfinished"></translation>
+        <translation>Python解码器</translation>
     </message>
 </context>
 <context>
