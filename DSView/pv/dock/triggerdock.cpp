@@ -193,6 +193,13 @@ void TriggerDock::retranslateUi()
     for (int i = 0; i < _stage_note_label_list.length(); i++){
         _stage_note_label_list.at(i)->setText(tr("X: Don't care\n0: Low level\n1: High level\nR: Rising edge\nF: Falling edge\nC: Rising/Falling edge"));
     }
+
+    for (auto *combo : _logic_comboBox_list) {
+        int idx = combo->currentIndex();
+        combo->setItemText(0, tr("Or"));
+        combo->setItemText(1, tr("And"));
+        combo->setCurrentIndex(idx);
+    }
 }
 
 void TriggerDock::reStyle()

@@ -211,7 +211,7 @@ void DecoderOptionsDlg::load_options_view()
     // Footer: Cancel + OK
     auto *cancel_btn = new QPushButton(
         tr("Cancel"), dlg);
-    auto *ok_btn = new QPushButton("OK", dlg);
+    auto *ok_btn = new QPushButton(tr("OK"), dlg);
     cancel_btn->setObjectName("device_cancel_btn");
     ok_btn->setObjectName("device_ok_btn");
 

@@ -44,8 +44,9 @@ LogDock::LogDock(QWidget *parent)
     tbLayout->setContentsMargins(8, 4, 8, 4);
     tbLayout->setSpacing(8);
 
-    auto *levelLabel = new QLabel(tr("Level:"), toolbar);
-    levelLabel->setObjectName("log_level_label");
+    _level_label = new QLabel(tr("Level:"), toolbar);
+    _level_label->setObjectName("log_level_label");
+    auto *levelLabel = _level_label;
 
     _level_combo = new DsComboBox(toolbar);
     _level_combo->setObjectName("log_level_combo");
@@ -60,10 +61,10 @@ LogDock::LogDock(QWidget *parent)
     _clear_btn->setObjectName("log_clear_btn");
     _clear_btn->setFixedHeight(24);
 
-    tbLayout->addWidget(levelLabel);
-    tbLayout->addWidget(_level_combo);
+    tbLayout->addWidget(levelLabel,  0, Qt::AlignVCenter);
+    tbLayout->addWidget(_level_combo, 0, Qt::AlignVCenter);
     tbLayout->addStretch();
-    tbLayout->addWidget(_clear_btn);
+    tbLayout->addWidget(_clear_btn,  0, Qt::AlignVCenter);
 
     // Log text area
     _text = new QPlainTextEdit(this);
@@ -176,6 +177,8 @@ void LogDock::onLevelChanged(int index)
 
 void LogDock::UpdateLanguage()
 {
+    if (_level_label)
+        _level_label->setText(tr("Level:"));
     _clear_btn->setText(tr("Clear"));
     int idx = _level_combo->currentIndex();
     _level_combo->clear();

@@ -529,6 +529,10 @@ file export for multiple data types.</source>
 <context>
     <name>pv::dialogs::About</name>
     <message>
+        <source>OK</source>
+        <translation>确定</translation>
+    </message>
+    <message>
         <location filename="../pv/dialogs/about.cpp" line="53"/>
         <source>About</source>
         <translation>关于</translation>
@@ -639,6 +643,10 @@ file export for multiple data types.</source>
 <context>
     <name>pv::dialogs::DecoderOptionsDlg</name>
     <message>
+        <source>OK</source>
+        <translation>确定</translation>
+    </message>
+    <message>
         <location filename="../pv/dialogs/decoderoptionsdlg.cpp" line="95"/>
         <source>Decoder Options</source>
         <translation>解码器选项</translation>
@@ -686,6 +694,10 @@ file export for multiple data types.</source>
 </context>
 <context>
     <name>pv::dialogs::DeviceOptions</name>
+    <message>
+        <source>OK</source>
+        <translation>确定</translation>
+    </message>
     <message>
         <location filename="../pv/dialogs/deviceoptions.cpp" line="143"/>
         <source>Device Options</source>
@@ -1081,6 +1093,10 @@ It can take a while!</source>
 </context>
 <context>
     <name>pv::dialogs::Search</name>
+    <message>
+        <source>OK</source>
+        <translation>确定</translation>
+    </message>
     <message>
         <location filename="../pv/dialogs/search.cpp" line="114"/>
         <source>X: Don&apos;t care
@@ -1787,7 +1803,7 @@ to configure search options</source>
         <location filename="../pv/dock/sidebar.cpp" line="184"/>
         <location filename="../pv/dock/sidebar.cpp" line="306"/>
         <source>Search</source>
-        <translation>搜索(&amp;R)</translation>
+        <translation>搜索</translation>
     </message>
     <message>
         <location filename="../pv/dock/sidebar.cpp" line="137"/>
@@ -1798,31 +1814,31 @@ to configure search options</source>
         <location filename="../pv/dock/sidebar.cpp" line="183"/>
         <location filename="../pv/dock/sidebar.cpp" line="305"/>
         <source>Trigger</source>
-        <translation type="unfinished">触发</translation>
+        <translation>触发</translation>
     </message>
     <message>
         <location filename="../pv/dock/sidebar.cpp" line="183"/>
         <location filename="../pv/dock/sidebar.cpp" line="305"/>
         <source>Decode</source>
-        <translation type="unfinished">解码</translation>
+        <translation>解码</translation>
     </message>
     <message>
         <location filename="../pv/dock/sidebar.cpp" line="184"/>
         <location filename="../pv/dock/sidebar.cpp" line="306"/>
         <source>Measure</source>
-        <translation type="unfinished">测量</translation>
+        <translation>测量</translation>
     </message>
     <message>
         <location filename="../pv/dock/sidebar.cpp" line="185"/>
         <location filename="../pv/dock/sidebar.cpp" line="307"/>
         <source>Options</source>
-        <translation type="unfinished">选项</translation>
+        <translation>选项</translation>
     </message>
     <message>
         <location filename="../pv/dock/sidebar.cpp" line="185"/>
         <location filename="../pv/dock/sidebar.cpp" line="307"/>
         <source>Log</source>
-        <translation type="unfinished">日志</translation>
+        <translation>日志</translation>
     </message>
 </context>
 <context>
@@ -1949,12 +1965,12 @@ C: 上升/下降沿</translation>
     <message>
         <location filename="../pv/dock/triggerdock.cpp" line="596"/>
         <source>Or</source>
-        <translation>Or</translation>
+        <translation>或</translation>
     </message>
     <message>
         <location filename="../pv/dock/triggerdock.cpp" line="597"/>
         <source>And</source>
-        <translation>And</translation>
+        <translation>与</translation>
     </message>
     <message>
         <location filename="../pv/dock/triggerdock.cpp" line="1013"/>
@@ -2059,6 +2075,10 @@ Capture will Only triggered when all setted channels fullfill at one sample</sou
 </context>
 <context>
     <name>pv::toolbars::LogoBar</name>
+    <message>
+        <source>OK</source>
+        <translation>确定</translation>
+    </message>
     <message>
         <location filename="../pv/toolbars/logobar.cpp" line="137"/>
         <source>Help</source>
@@ -2674,6 +2694,13 @@ It can take a while!</source>
         <location filename="../pv/view/viewport.cpp" line="1845"/>
         <source>Duty Cycle: </source>
         <translation>占空比: </translation>
+    </message>
+</context>
+<context>
+    <name>pv::dialogs::ApplicationParamDlg</name>
+    <message>
+        <source>OK</source>
+        <translation>确定</translation>
     </message>
 </context>
 </TS>

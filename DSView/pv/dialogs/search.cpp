@@ -127,7 +127,7 @@ Search::Search(QWidget *parent, SigSession *session, std::map<uint16_t, QString>
     // Footer: plain QPushButtons (QDialogButtonBox ignores app QSS background on macOS)
     auto *cancel_btn = new QPushButton(tr("Cancel"), this);
     cancel_btn->setObjectName("device_cancel_btn");
-    auto *ok_btn = new QPushButton(QStringLiteral("OK"), this);
+    auto *ok_btn = new QPushButton(tr("OK"), this);
     ok_btn->setObjectName("device_ok_btn");
     /* macOS native default-button chrome overrides app QSS; match Device Options (plain QPushButton + flat). */
     cancel_btn->setFlat(true);

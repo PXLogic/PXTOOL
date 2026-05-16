@@ -34,7 +34,7 @@
 #include <vector>
 #include <QGridLayout>
 #include <QPushButton>
-
+#include <QCoreApplication>
 #include "../config/appconfig.h"
 #include "../appcontrol.h"
 #include "../sigsession.h"
@@ -198,7 +198,7 @@ bool ApplicationParamDlg::ShowDlg(QWidget *parent)
     auto *cancel_btn = new QPushButton(
         QObject::tr("Cancel"), &dlg);
     cancel_btn->setObjectName("device_cancel_btn");
-    auto *ok_btn = new QPushButton("OK", &dlg);
+    auto *ok_btn = new QPushButton(QCoreApplication::translate("pv::dialogs::ApplicationParamDlg", "OK"), &dlg);
     ok_btn->setObjectName("device_ok_btn");
     auto *footer_lay = new QHBoxLayout();
     footer_lay->setContentsMargins(12, 10, 12, 10);

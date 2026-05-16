@@ -201,7 +201,7 @@ DeviceOptions::DeviceOptions(QWidget *parent) :
     this->layout()->addWidget(bot_sep);
 
     // Footer: right-aligned OK button
-    auto *ok_btn = new QPushButton("OK", this);
+    auto *ok_btn = new QPushButton(tr("OK"), this);
     ok_btn->setObjectName("device_ok_btn");
     auto *footer_lay = new QHBoxLayout();
     footer_lay->setContentsMargins(12, 10, 12, 10);

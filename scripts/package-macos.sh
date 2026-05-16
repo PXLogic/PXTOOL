@@ -38,11 +38,15 @@ fi
 
 # ── Step 2: Assemble bundle ───────────────────────────────────────────────────
 echo "[2/6] Assembling app bundle..."
-rm -rf "$DIST_DIR"
+rm -rf "$DIST_DIR" || { rm -rf "$DIST_DIR"/* "$DIST_DIR"/.[!.]* 2>/dev/null; true; }
 mkdir -p "$DIST_DIR"
 
 # Start from the built binary + existing bundle shell
 cp -R "$BUILD_APP" "$DIST_APP"
+
+# The build tree may contain symlinks back into package-root (e.g. share ->).
+# Remove them before overlaying the real resources so cp doesn't see identical inodes.
+find "$DIST_APP/Contents/Resources" -type l -delete
 
 # Copy data resources from package-root (res/, decoders, lang, demo, etc.)
 cp -R "$PKG_ROOT/Contents/Resources/" "$DIST_APP/Contents/Resources/"

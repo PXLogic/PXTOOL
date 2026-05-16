@@ -277,13 +277,13 @@ void LogoBar::on_action_setting_log()
     btOpen->setText(tr("Open"));
     btOpen->setObjectName("device_ch_btn");
     _log_open_bt = btOpen;
-    connect(btOpen, SIGNAL(released()), this, SLOT(on_open_log_file()));   
+    connect(btOpen, SIGNAL(clicked()), this, SLOT(on_open_log_file()));   
 
     QPushButton *btClear = new QPushButton();
     btClear->setText(tr("Clear"));
     btClear->setObjectName("device_ch_btn");
     _log_clear_bt = btClear;
-    connect(btClear, SIGNAL(released()), this, SLOT(on_clear_log_file()));
+    connect(btClear, SIGNAL(clicked()), this, SLOT(on_clear_log_file()));
 
     QWidget *btWid = new QWidget();
     QHBoxLayout *btLay = new QHBoxLayout();
@@ -293,12 +293,6 @@ void LogoBar::on_action_setting_log()
     btLay->addWidget(btClear);
 
     lay->addRow("", btWid);
-
-    QFile qf(get_dsv_log_path());
-    if (qf.exists() == false){
-        btOpen->setEnabled(false);
-        btClear->setEnabled(false);
-    }
 
     contentLay->addWidget(panel);
     dlg.layout()->addLayout(contentLay);
@@ -311,7 +305,7 @@ void LogoBar::on_action_setting_log()
     auto *cancel_btn = new QPushButton(
         tr("Cancel"), &dlg);
     cancel_btn->setObjectName("device_cancel_btn");
-    auto *ok_btn = new QPushButton("OK", &dlg);
+    auto *ok_btn = new QPushButton(tr("OK"), &dlg);
     ok_btn->setObjectName("device_ok_btn");
     auto *footer_lay = new QHBoxLayout();
     footer_lay->setContentsMargins(12, 10, 12, 10);
@@ -354,7 +348,11 @@ void LogoBar::on_open_log_file()
 {
     QFile qf(get_dsv_log_path());
     if (qf.exists()){
-        QDesktopServices::openUrl( QUrl("file:///" + get_dsv_log_path()));
+        const QUrl fileUrl = QUrl::fromLocalFile(get_dsv_log_path());
+        if (!QDesktopServices::openUrl(fileUrl)) {
+            QString strMsg(tr("Failed to open log file."));
+            MsgBox::Show(strMsg);
+        }
     }
     else{
         QString strMsg(tr("Not exist!"));

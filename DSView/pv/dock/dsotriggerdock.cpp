@@ -193,6 +193,12 @@ void DsoTriggerDock::retranslateUi()
     _ch1_radioButton->setText(tr("Channel 1"));
     _ch0a1_radioButton->setText(tr("Channel 0 && 1"));
     _ch0o1_radioButton->setText(tr("Channel 0 | 1"));
+
+    int holdoff_idx = _holdoff_comboBox->currentIndex();
+    _holdoff_comboBox->setItemText(0, tr("S"));
+    _holdoff_comboBox->setItemText(1, tr("mS"));
+    _holdoff_comboBox->setItemText(2, tr("uS"));
+    _holdoff_comboBox->setCurrentIndex(holdoff_idx);
 }
 
 void DsoTriggerDock::reStyle()

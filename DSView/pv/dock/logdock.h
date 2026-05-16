@@ -25,6 +25,7 @@
 #include <QWidget>
 #include <QPlainTextEdit>
 #include <QPushButton>
+#include <QLabel>
 #include <QTimer>
 #include <QList>
 #include "../ui/uimanager.h"
@@ -57,6 +58,7 @@ private:
     void rerenderAll();
 
     QPlainTextEdit     *_text;
+    QLabel             *_level_label = nullptr;
     DsComboBox         *_level_combo;
     QPushButton        *_clear_btn;
     QTimer             *_timer;

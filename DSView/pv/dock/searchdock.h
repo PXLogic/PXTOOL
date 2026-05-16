@@ -92,6 +92,7 @@ private:
     QPushButton _nxt_button;
     widgets::FakeLineEdit* _search_value;
     QPushButton *_search_button;
+    QLabel *_hint_label = nullptr;
 };
 
 } // namespace dock

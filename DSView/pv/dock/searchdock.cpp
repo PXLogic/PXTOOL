@@ -87,10 +87,10 @@ SearchDock::SearchDock(QWidget *parent, View &view, SigSession *session) :
     _nxt_button.setIconSize(QSize(16, 16));
 
     // Hint label
-    auto *hint = new QLabel(tr("Click the search pattern\nto configure search options"), this);
-    hint->setObjectName("search_hint_label");
-    hint->setAlignment(Qt::AlignCenter);
-    hint->setWordWrap(true);
+    _hint_label = new QLabel(tr("Click the search pattern\nto configure search options"), this);
+    _hint_label->setObjectName("search_hint_label");
+    _hint_label->setAlignment(Qt::AlignCenter);
+    _hint_label->setWordWrap(true);
 
     // Controls row: [prev] [pattern_container] [next]
     auto *ctrl_lay = new QHBoxLayout();
@@ -106,7 +106,7 @@ SearchDock::SearchDock(QWidget *parent, View &view, SigSession *session) :
     layout->setSpacing(12);
     layout->addStretch(1);
     layout->addLayout(ctrl_lay);
-    layout->addWidget(hint);
+    layout->addWidget(_hint_label);
     layout->addStretch(1);
     setLayout(layout);
 
@@ -124,6 +124,8 @@ SearchDock::~SearchDock()
 void SearchDock::retranslateUi()
 {
     _search_value->setPlaceholderText(tr("search"));
+    if (_hint_label)
+        _hint_label->setText(tr("Click the search pattern\nto configure search options"));
 }
 
 void SearchDock::reStyle()
