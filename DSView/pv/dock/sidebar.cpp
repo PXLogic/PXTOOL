@@ -62,8 +62,9 @@ SideBar::SideBar(QWidget *parent, view::View &view, SigSession *session)
     tw_header->setObjectName("trigger_header_bar");
     auto *tw_hlay = new QHBoxLayout(tw_header);
     tw_hlay->setContentsMargins(12, 8, 12, 8);
-    auto *tw_title = new QLabel(tr("Trigger Setting"), trigger_wrap);
-    tw_title->setObjectName("trigger_panel_title");
+    _title_trigger = new QLabel(tr("Trigger Setting"), trigger_wrap);
+    _title_trigger->setObjectName("trigger_panel_title");
+    auto *tw_title = _title_trigger;
     tw_hlay->addWidget(tw_title);
     tw_hlay->addStretch();
     tw_layout->addWidget(tw_header);
@@ -83,8 +84,9 @@ SideBar::SideBar(QWidget *parent, view::View &view, SigSession *session)
     dw_header->setObjectName("decode_header_bar");
     auto *dw_hlay = new QHBoxLayout(dw_header);
     dw_hlay->setContentsMargins(12, 8, 12, 8);
-    auto *dw_title = new QLabel(tr("Decode Protocol"), dw_header);
-    dw_title->setObjectName("decode_panel_title");
+    _title_decode = new QLabel(tr("Decode Protocol"), dw_header);
+    _title_decode->setObjectName("decode_panel_title");
+    auto *dw_title = _title_decode;
     dw_hlay->addWidget(dw_title);
     dw_hlay->addStretch();
     dw_layout->addWidget(dw_header);
@@ -100,8 +102,9 @@ SideBar::SideBar(QWidget *parent, view::View &view, SigSession *session)
     mw_header->setObjectName("measure_header_bar");
     auto *mw_hlay = new QHBoxLayout(mw_header);
     mw_hlay->setContentsMargins(12, 8, 12, 8);
-    auto *mw_title = new QLabel(tr("Measurement"), mw_header);
-    mw_title->setObjectName("measure_panel_title");
+    _title_measure = new QLabel(tr("Measurement"), mw_header);
+    _title_measure->setObjectName("measure_panel_title");
+    auto *mw_title = _title_measure;
     mw_hlay->addWidget(mw_title);
     mw_hlay->addStretch();
     mw_layout->addWidget(mw_header);
@@ -117,8 +120,9 @@ SideBar::SideBar(QWidget *parent, view::View &view, SigSession *session)
     sw_header->setObjectName("search_header_bar");
     auto *sw_hlay = new QHBoxLayout(sw_header);
     sw_hlay->setContentsMargins(12, 8, 12, 8);
-    auto *sw_title = new QLabel(tr("Search"), sw_header);
-    sw_title->setObjectName("search_panel_title");
+    _title_search = new QLabel(tr("Search"), sw_header);
+    _title_search->setObjectName("search_panel_title");
+    auto *sw_title = _title_search;
     sw_hlay->addWidget(sw_title);
     sw_hlay->addStretch();
     sw_layout->addWidget(sw_header);
@@ -134,8 +138,9 @@ SideBar::SideBar(QWidget *parent, view::View &view, SigSession *session)
     ow_header->setObjectName("options_header_bar");
     auto *ow_hlay = new QHBoxLayout(ow_header);
     ow_hlay->setContentsMargins(12, 8, 12, 8);
-    auto *ow_title = new QLabel(tr("Device Options"), ow_header);
-    ow_title->setObjectName("options_panel_title");
+    _title_options = new QLabel(tr("Device Options"), ow_header);
+    _title_options->setObjectName("options_panel_title");
+    auto *ow_title = _title_options;
     ow_hlay->addWidget(ow_title);
     ow_hlay->addStretch();
     _device_options_widget = new DeviceOptionsDock(options_wrap, session);
@@ -165,7 +170,7 @@ SideBar::SideBar(QWidget *parent, view::View &view, SigSession *session)
     // Icon strip (52px, far right)
     _icon_strip = new QWidget(this);
     _icon_strip->setObjectName("icon_strip");
-    _icon_strip->setFixedWidth(52);
+    _icon_strip->setFixedWidth(62);
 
     auto *stripLayout = new QVBoxLayout(_icon_strip);
     stripLayout->setContentsMargins(0, 8, 0, 8);
@@ -192,7 +197,7 @@ SideBar::SideBar(QWidget *parent, view::View &view, SigSession *session)
         _btns[i]->setText(tr(labels[i]));
         _btns[i]->setToolButtonStyle(Qt::ToolButtonTextUnderIcon);
         _btns[i]->setIconSize(QSize(18, 18));
-        _btns[i]->setFixedSize(52, 54);
+        _btns[i]->setFixedSize(62, 54);
         _btns[i]->setCheckable(true);
 
         stripLayout->addWidget(_btns[i]);
@@ -214,6 +219,11 @@ SideBar::SideBar(QWidget *parent, view::View &view, SigSession *session)
     mainLayout->setSpacing(0);
     mainLayout->addWidget(_stack, 1);
     mainLayout->addWidget(_icon_strip, 0);
+
+    // When Apply commits channel changes, clear all protocol decoders so
+    // decoders that reference now-disabled channels don't error on next Start.
+    connect(_device_options_widget, &DeviceOptionsDock::sig_channels_applied,
+            _protocol_widget, &ProtocolDock::del_all_protocol);
 
     ADD_UI(this);
 }
@@ -296,7 +306,7 @@ void SideBar::setSession(SigSession *session)
 
 void SideBar::refresh_device_options()
 {
-    _device_options_widget->rebuild();
+    _device_options_widget->on_device_changed();
 }
 
 void SideBar::retranslateUi()
@@ -308,6 +318,12 @@ void SideBar::retranslateUi()
     };
     for (int i = 0; i < TabCount; i++)
         _btns[i]->setText(tr(labels[i]));
+
+    if (_title_trigger) _title_trigger->setText(tr("Trigger Setting"));
+    if (_title_decode)  _title_decode->setText(tr("Decode Protocol"));
+    if (_title_measure) _title_measure->setText(tr("Measurement"));
+    if (_title_search)  _title_search->setText(tr("Search"));
+    if (_title_options) _title_options->setText(tr("Device Options"));
 }
 
 void SideBar::UpdateLanguage() { retranslateUi(); }

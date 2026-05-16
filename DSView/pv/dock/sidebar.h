@@ -28,6 +28,7 @@
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QButtonGroup>
+#include <QLabel>
 #include "../ui/uimanager.h"
 
 namespace pv {
@@ -109,6 +110,12 @@ private:
     SearchDock        *_search_widget;
     DeviceOptionsDock *_device_options_widget;
     LogDock           *_log_widget;
+
+    QLabel *_title_trigger  = nullptr;
+    QLabel *_title_decode   = nullptr;
+    QLabel *_title_measure  = nullptr;
+    QLabel *_title_search   = nullptr;
+    QLabel *_title_options  = nullptr;
 
     SigSession     *_session;
 };

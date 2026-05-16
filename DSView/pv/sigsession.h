@@ -410,6 +410,10 @@ public:
         _callback->data_updated();
     }
 
+    inline void notify_signals_changed(){
+        _callback->signals_changed();
+    }
+
     void auto_end();
     bool have_hardware_data();
     struct ds_device_base_info* get_device_list(int &out_count, int &actived_index);

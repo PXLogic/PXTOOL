@@ -61,6 +61,13 @@ public:
     /** Rebuild panel if the device is now ready but content hasn't been built yet. */
     void rebuild();
 
+    /** Call when the active device changes within the current session. */
+    void on_device_changed();
+
+signals:
+    /** Emitted after Apply commits changes and clears the signal list. */
+    void sig_channels_applied();
+
 private:
     void build_content();
     void build_dynamic_panel();
@@ -77,7 +84,7 @@ private:
     void ChannelChecked(int index, QObject *object) override;
 
     // IUiWindow
-    void UpdateLanguage() override {}
+    void UpdateLanguage() override;
     void UpdateTheme()    override {}
     void UpdateFont()     override;
 

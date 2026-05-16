@@ -131,6 +131,29 @@ void DeviceOptionsDock::rebuild()
     }
 }
 
+void DeviceOptionsDock::on_device_changed()
+{
+    _device_agent = _session->get_device();
+    _mode_check_timer.stop();
+    _content_built = false;
+
+    // Defer to the next event-loop tick so that device_updated() and
+    // on_load_config_end() in the mainwindow handler complete before we
+    // query or modify channel state inside build_content().
+    QTimer::singleShot(0, this, [this]() {
+        if (_content_built)
+            return; // panel_shown() already rebuilt it
+        if (!_device_agent->have_instance())
+            return;
+        build_content();
+        _content_built = true;
+        if (!_mode_check_timer.isActive()) {
+            _mode_check_timer.setInterval(100);
+            _mode_check_timer.start();
+        }
+    });
+}
+
 void DeviceOptionsDock::panel_shown()
 {
     // Refresh device agent in case it changed
@@ -221,7 +244,7 @@ void DeviceOptionsDock::build_content()
     if (_device_agent->is_demo())
         _demo_operation_mode = _device_agent->get_demo_operation_mode();
 
-    connect(&_mode_check_timer, SIGNAL(timeout()), this, SLOT(mode_check_timeout()));
+    connect(&_mode_check_timer, SIGNAL(timeout()), this, SLOT(mode_check_timeout()), Qt::UniqueConnection);
     connect(apply_btn, SIGNAL(clicked()), this, SLOT(on_apply()));
 }
 
@@ -268,6 +291,14 @@ void DeviceOptionsDock::on_apply()
         // updates sdi->channels immediately on radio-button press but the session
         // signal list is not refreshed until we do so explicitly here.
         _session->init_signals();
+        // Notify the view to redraw with the new (cleared) signal list.
+        // Without this the old waveform rendering persists even though the
+        // internal data buffers were already cleared by init_signals().
+        _session->notify_signals_changed();
+        // Ask the protocol dock to remove all decoders: after channel config
+        // changes some decoders may reference now-disabled channels, which
+        // causes "required channels not specified" errors on the next Start.
+        emit sig_channels_applied();
     } else {
         QString strMsg(tr("All channel disabled! Please enable at least one channel."));
         MsgBox::Show(strMsg);
@@ -835,6 +866,12 @@ void DeviceOptionsDock::mode_check_timeout()
 // ---------------------------------------------------------------------------
 // IUiWindow
 // ---------------------------------------------------------------------------
+
+void DeviceOptionsDock::UpdateLanguage()
+{
+    if (_content_built)
+        build_content();
+}
 
 void DeviceOptionsDock::UpdateFont()
 {
