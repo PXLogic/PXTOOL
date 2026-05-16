@@ -25,6 +25,7 @@
 #include <QPoint>
 #include <QLineEdit>
 #include <QScrollBar>
+#include <QIcon>
 #include "../config/appconfig.h"
 #include "../appcontrol.h"
 #include "../ui/fn.h"
@@ -54,6 +55,11 @@ SearchComboBox::SearchComboBox(QWidget *parent)
 { 
     _bShow = false;
     _item_click = NULL;
+    _scroll = NULL;
+    _search_edit = NULL;
+    _clear_btn = NULL;
+    _ignore_activation = false;
+    setObjectName("decode_protocol_picker");
     setWindowFlags(Qt::Dialog | Qt::FramelessWindowHint | Qt::WindowSystemMenuHint);
 }
 
@@ -74,7 +80,8 @@ void SearchComboBox::ShowDlg(QWidget *editline)
     
     int w = 350; 
     int h = 550;
-    int eh = 20;
+    const int toolbar_btn_h = 28;
+    int eh = toolbar_btn_h;
 
     if (editline != NULL){
        w = editline->width();
@@ -88,28 +95,47 @@ void SearchComboBox::ShowDlg(QWidget *editline)
     grid->setAlignment(Qt::AlignTop);
     grid->setSpacing(2);
 
-    QLineEdit *edit = new QLineEdit(this);
-    edit->setMaximumWidth(this->width()); 
-    grid->addWidget(edit);    
-    eh = edit->height();
+    QWidget *search_row = new QWidget(this);
+    QHBoxLayout *search_lay = new QHBoxLayout(search_row);
+    search_lay->setContentsMargins(0, 0, 2, 0);
+    search_lay->setSpacing(2);
+
+    search_row->setFixedHeight(eh);
+
+    _search_edit = new QLineEdit(search_row);
+    _search_edit->setFixedHeight(eh);
+    _search_edit->setMaximumWidth(this->width());
+
+    _clear_btn = new QPushButton(search_row);
+    _clear_btn->setFixedSize(14, 14);
+    _clear_btn->setIcon(QIcon(":/icons/sidebar/x.svg"));
+    _clear_btn->setIconSize(QSize(10, 10));
+    _clear_btn->setFlat(true);
+    _clear_btn->setVisible(false);
+    _clear_btn->setToolTip(tr("Clear"));
+
+    search_lay->addWidget(_search_edit, 1);
+    search_lay->addWidget(_clear_btn);
+    grid->addWidget(search_row);
 
     QWidget *panel= new QWidget(this);
     panel->setContentsMargins(0,0,0,0);
     panel->setFixedSize(w, h - eh);
     grid->addWidget(panel);   
 
-    QWidget *listPanel =  new QWidget(panel);
+    QWidget *listPanel = new QWidget(panel);
+    listPanel->setObjectName("decode_protocol_list");
     QVBoxLayout *listLay = new QVBoxLayout(listPanel);
     listLay->setContentsMargins(2, 2, 20, 2);
-    listLay->setSpacing(0);
+    listLay->setSpacing(4);
     listLay->setAlignment(Qt::AlignTop);
 
     QFont font = this->font();
     font.setPointSizeF(AppConfig::Instance().appOptions.fontSize);
 
-    for(auto o : _items)
+    for (auto o : _items)
     { 
-        ComboButtonItem *bt = new ComboButtonItem(panel, this, o);
+        ComboButtonItem *bt = new ComboButtonItem(listPanel, this, o);
         bt->setText(o->_name);
         bt->setObjectName("flat");
         bt->setMaximumWidth(w - 20);
@@ -126,21 +152,19 @@ void SearchComboBox::ShowDlg(QWidget *editline)
     _scroll->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     _scroll->setFixedSize(w, h - eh);
 
+    connect(_search_edit, SIGNAL(textChanged(const QString &)),
+            this, SLOT(on_search_text_changed(const QString &)));
+    connect(_clear_btn, SIGNAL(clicked()), this, SLOT(on_clear_clicked()));
+
+    _ignore_activation = true;
+    show();
+
+    // Top-level popup: screen coordinates from anchor top-left (keyword container).
     if (editline != NULL)
-    {
-        QPoint p1 = editline->pos();
-        QPoint p2 = editline->mapToGlobal(p1);
-        int x = p2.x() - p1.x();
-        int y = p2.y() - p1.y();
-        this->move(x, y);       
-    } 
+        move(editline->mapToGlobal(QPoint(0, 0)));
 
-    edit->setFocus();
-
-    connect(edit, SIGNAL(textEdited(const QString &)), 
-                    this, SLOT(on_keyword_changed(const QString &)));
-
-    this->show();
+    _search_edit->setFocus();
+    _ignore_activation = false;
 }
 
 void SearchComboBox::AddDataItem(QString id, QString name, void *data_handle)
@@ -154,12 +178,12 @@ void SearchComboBox::AddDataItem(QString id, QString name, void *data_handle)
 
  void SearchComboBox::changeEvent(QEvent *event)
  {
-    if (event->type() == QEvent::ActivationChange){
-        if (this->isActiveWindow() == false){
-            this->close();
-            this->deleteLater();
-            return;
-        }
+    if (!_ignore_activation
+        && event->type() == QEvent::ActivationChange
+        && this->isActiveWindow() == false){
+        this->close();
+        this->deleteLater();
+        return;
     }
     
     QWidget::changeEvent(event);
@@ -170,12 +194,27 @@ void SearchComboBox::AddDataItem(QString id, QString name, void *data_handle)
     (void)sender;
 
      if (data_handle != NULL && _item_click){
-         SearchDataItem *item = (SearchDataItem*)data_handle;        
-          this->close();
-          ISearchItemClick *click = _item_click;
-          this->deleteLater();
-         click->OnItemClick(this, item->_data_handle);
+         SearchDataItem *item = (SearchDataItem*)data_handle;
+         ISearchItemClick *click = _item_click;
+         void *handle = item->_data_handle;
+         this->close();
+         click->OnItemClick(this, handle);
+         this->deleteLater();
      }
+ }
+
+ void SearchComboBox::on_search_text_changed(const QString &value)
+ {
+     if (_clear_btn != NULL)
+         _clear_btn->setVisible(!value.isEmpty());
+     on_keyword_changed(value);
+ }
+
+ void SearchComboBox::on_clear_clicked()
+ {
+     if (_search_edit == NULL)
+         return;
+     _search_edit->clear();
  }
 
  void SearchComboBox::on_keyword_changed(const QString &value)
@@ -197,5 +236,6 @@ void SearchComboBox::AddDataItem(QString id, QString name, void *data_handle)
          }
      }
      
-    _scroll->verticalScrollBar()->setValue(0);
+    if (_scroll != NULL && _scroll->verticalScrollBar() != NULL)
+        _scroll->verticalScrollBar()->setValue(0);
  }

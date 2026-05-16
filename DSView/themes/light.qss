@@ -70,6 +70,20 @@ QPushButton#flat:hover
     color: #801dae;
 }
 
+/* Protocol picker list: keep flat rows, not sidebar panel button chrome */
+QDialog#decode_protocol_picker QPushButton#flat {
+    text-align: left;
+    border: none;
+    border-radius: 0px;
+    background-color: transparent;
+    padding: 4px 8px;
+    min-height: 0px;
+}
+QDialog#decode_protocol_picker QPushButton#flat:hover {
+    background-color: #44cef6;
+    color: #2a2a2a;
+}
+
 QCheckBox
 {
     spacing: 0px;
@@ -2465,13 +2479,20 @@ QWidget#decode_search_container QLineEdit#decode_ann_search_edit {
     padding: 0px;
 }
 
-/* ── Decode Panel top toolbar inputs (light) ────────────────────── */
+/* ── Decode Panel top toolbar: Decoder search trigger (light) ───── */
 QWidget#sidebar QLineEdit#decode_keyword_edit {
-    background-color: transparent;
-    border: none;
+    background-color: #ffffff;
+    border: 1px solid #cccccc;
+    border-radius: 4px;
     color: #555555;
     font-size: 12px;
     selection-background-color: #7c3aed;
+    min-height: 28px;
+    max-height: 28px;
+    padding: 0px 6px;
+}
+QWidget#sidebar QLineEdit#decode_keyword_edit:focus {
+    border-color: #7c3aed;
 }
 
 /* ── Decode Panel match row (light) ─────────────────────────────── */

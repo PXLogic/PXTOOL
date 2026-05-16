@@ -122,19 +122,23 @@ ProtocolDock::ProtocolDock(QWidget *parent, view::View &view, SigSession *sessio
     _del_all_button->setCheckable(true);
     _del_all_button->setObjectName("decode_del_btn");
     _del_all_button->setFixedSize(28, 28);
+    const int decode_toolbar_btn_h = 28;
+
     _pro_keyword_edit = new KeywordLineEdit(top_panel, this);
     _pro_keyword_edit->setReadOnly(true);
     _pro_keyword_edit->setObjectName("decode_keyword_edit");
+    _pro_keyword_edit->setFixedHeight(decode_toolbar_btn_h);
 
     _pro_search_button = new XToolButton(top_panel);
     _pro_search_button->setObjectName("decode_search_btn");
-    _pro_search_button->setFixedSize(28, 28);
+    _pro_search_button->setFixedSize(decode_toolbar_btn_h, decode_toolbar_btn_h);
     QHBoxLayout *pro_search_lay = new QHBoxLayout();
     pro_search_lay->setSpacing(6);
-    pro_search_lay->addWidget(_pro_add_button);
-    pro_search_lay->addWidget(_del_all_button);
-    pro_search_lay->addWidget(_pro_keyword_edit, 1); 
-    pro_search_lay->addWidget(_pro_search_button);
+    pro_search_lay->setAlignment(Qt::AlignVCenter);
+    pro_search_lay->addWidget(_pro_add_button, 0, Qt::AlignVCenter);
+    pro_search_lay->addWidget(_del_all_button, 0, Qt::AlignVCenter);
+    pro_search_lay->addWidget(_pro_keyword_edit, 1, Qt::AlignVCenter);
+    pro_search_lay->addWidget(_pro_search_button, 0, Qt::AlignVCenter);
   
     // Scroll area that holds decoder item rows — allows scrolling when >4 items
     _items_container = new QWidget();
@@ -1058,7 +1062,8 @@ bool ProtocolDock::protocol_sort_callback(const DecoderInfoItem *o1, const Decod
 
   void ProtocolDock::show_protocol_select()
   {
-      SearchComboBox *panel = new SearchComboBox(this);
+      // Top-level so move() uses screen coordinates (ProtocolDock is a QScrollArea).
+      SearchComboBox *panel = new SearchComboBox(nullptr);
 
       for (auto info : _decoderInfoList)
       {
@@ -1071,6 +1076,7 @@ bool ProtocolDock::protocol_sort_callback(const DecoderInfoItem *o1, const Decod
       ui::set_form_font(panel, font);
 
       panel->SetItemClickHandle(this);
+
       panel->ShowDlg(_pro_keyword_edit);
   }
 
@@ -1155,7 +1161,8 @@ void ProtocolDock::UpdateFont()
     QRect rc = fm.boundingRect(str); 
 
     int lineHeight = rc.height() + 15;
-    _pro_keyword_edit->setFixedHeight(rc.height() + 5);
+    const int toolbarRowH = 28;
+    _pro_keyword_edit->setFixedHeight(toolbarRowH);
 
     // Scroll area must always show at least 4 items; more items scroll.
     const int minVisibleItems = 4;
@@ -1164,7 +1171,7 @@ void ProtocolDock::UpdateFont()
 
     // Top panel minimum = search bar row + scroll area min + layout margins + spacing
     // margins: contentsMargins top(8) + bottom(8), spacing between rows(6)
-    int topPanelMin = _pro_keyword_edit->height() + minScrollH + 8 + 8 + 6;
+    int topPanelMin = toolbarRowH + minScrollH + 8 + 8 + 6;
     _top_panel->setMinimumHeight(topPanelMin);
  }
 

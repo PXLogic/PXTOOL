@@ -32,6 +32,8 @@
 #include <QEvent>
 #include <QScrollArea>
 
+class QLineEdit;
+
 class ISearchItemClick{
 public:
     virtual void OnItemClick(void *sender, void *data_handle)=0;
@@ -85,16 +87,21 @@ protected:
 
 private slots:
     void on_keyword_changed(const QString &value);
- 
+    void on_search_text_changed(const QString &value);
+    void on_clear_clicked();
+
 private:
     //ISearchItemClick
     void OnItemClick(void *sender, void *data_handle);
 
 private: 
     bool    _bShow;
+    bool    _ignore_activation;
     std::vector<SearchDataItem*> _items;
     ISearchItemClick *_item_click;
     QScrollArea *_scroll;
+    QLineEdit *_search_edit;
+    QPushButton *_clear_btn;
 };
 
 #endif // SEARCHCOMBOBOX_H
