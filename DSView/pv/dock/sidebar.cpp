@@ -20,6 +20,7 @@
  */
 
 #include "sidebar.h"
+#include <QTimer>
 #include "triggerdock.h"
 #include "dsotriggerdock.h"
 #include "protocoldock.h"
@@ -247,7 +248,6 @@ QDockWidget *SideBar::findParentDock() const
 
 void SideBar::adjustDockWidth(bool expand)
 {
-    if (_suppress_adjust_dock_width) return;
     QDockWidget *dock = findParentDock();
     if (!dock) return;
     QMainWindow *mw = qobject_cast<QMainWindow*>(dock->parentWidget());
@@ -262,6 +262,27 @@ void SideBar::adjustDockWidth(bool expand)
         _stack->updateGeometry();
         mw->resizeDocks({dock}, {kIconStripWidth}, Qt::Horizontal);
     }
+}
+
+void SideBar::closePanel()
+{
+    // Reset sidebar to clean state for a new session tab:
+    // close the panel, resize dock to icon strip only, and reset the saved
+    // panel width so the next open uses the default rather than a stale drag width.
+    if (_panel_visible) {
+        _panel_visible = false;
+        _stack->setVisible(false);
+        if (_active_tab >= 0 && _active_tab < TabCount)
+            _btns[_active_tab]->setChecked(false);
+        _active_tab = -1;
+    }
+    // Defer resize so Qt finishes the setVisible(false) layout pass before
+    // resizeDocks() collapses the dock — otherwise the dock can end up offset
+    // when the panel was at a user-dragged width.
+    QTimer::singleShot(0, this, [this]() {
+        adjustDockWidth(false);
+        _saved_panel_width = kDefaultDockWidth;
+    });
 }
 
 void SideBar::onButtonClicked(int tab)

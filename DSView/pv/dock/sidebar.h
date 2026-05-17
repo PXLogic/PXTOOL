@@ -79,14 +79,14 @@ public:
 
     static constexpr int kIconStripWidth    = 62;
     static constexpr int kStackMinWidth     = 200;
-    static constexpr int kDefaultDockWidth  = 300;
+    static constexpr int kDefaultDockWidth  = 700;
 
     void showTab(Tab tab, bool visible);
     void setDsoMode(bool isDso);
     void setSession(SigSession *session);
     void refresh_device_options();
     void retranslateUi();
-    void setSuppressAdjustDockWidth(bool suppress) { _suppress_adjust_dock_width = suppress; }
+    void closePanel();
 
     // IUiWindow
     void UpdateLanguage() override;
@@ -127,7 +127,6 @@ private:
     QLabel *_title_options  = nullptr;
 
     SigSession     *_session;
-    bool            _suppress_adjust_dock_width = false;
 
     QDockWidget *findParentDock() const;
     void adjustDockWidth(bool expand);

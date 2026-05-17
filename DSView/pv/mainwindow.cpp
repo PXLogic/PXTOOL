@@ -685,7 +685,12 @@ namespace pv
                 });
             }
         } else if (index != 0) {
-            // First visit to a new extra session: run full device init.
+            // First visit to a new extra session: close any open sidebar panel
+            // so the new session starts with a clean state (icons at the right
+            // edge) and then re-opens at the default panel width during init.
+            _sidebar_widget->closePanel();
+
+            // Run full device init.
             // Capture sessToInit so that if the user switches away before the
             // timer fires, set_default_device() is still called on the CORRECT
             // session rather than whatever _session points to at fire time.
@@ -2469,16 +2474,6 @@ namespace pv
                 bool isDeviceTab = (_session_items.isEmpty() ||
                                     _session == _session_items[0].session);
 
-                // For extra-session tabs (session 2, 3, …), reset_all_view() calls
-                // _trig_bar->reload() which emits panel-visibility signals.  Those
-                // signals can reach adjustDockWidth(true) with a stale saved width
-                // from a prior drag in session 1, shifting the sidebar unexpectedly.
-                // Suppress dock-width changes for the duration of the init sequence;
-                // the Device tab (session 1) is unaffected so its normal file-open /
-                // device-change behaviour remains unchanged.
-                if (!isDeviceTab)
-                    _sidebar_widget->setSuppressAdjustDockWidth(true);
-
                 reset_all_view();
                 load_device_config();
                 update_title_bar_text();
@@ -2563,9 +2558,6 @@ namespace pv
                 if (_device_agent->is_hardware() && _device_agent->is_new_device()){
                     check_usb_device_speed();
                 }
-
-                if (!isDeviceTab)
-                    _sidebar_widget->setSuppressAdjustDockWidth(false);
 
                 break;
             }
