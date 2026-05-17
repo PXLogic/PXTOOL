@@ -2151,6 +2151,23 @@ namespace pv
         }
     }
 
+    bool SigSession::is_channel_enabled(int ch_index)
+    {
+        // Prefer the per-session cache: restore_channel_enabled_states() may have
+        // written another session's enabled flags into the shared sr_channel structs,
+        // making _probe->enabled unreliable for inactive sessions.
+        auto it = _channel_enabled_cache.find(ch_index);
+        if (it != _channel_enabled_cache.end())
+            return it->second;
+        // Cache empty — session hasn't been swapped out yet; probe state is current.
+        for (const GSList *l = _device_agent.get_channels(); l; l = l->next) {
+            const sr_channel *ch = (const sr_channel *)l->data;
+            if (ch->index == ch_index)
+                return ch->enabled;
+        }
+        return true;
+    }
+
     void SigSession::save_channel_enabled_states()
     {
         _channel_enabled_cache.clear();

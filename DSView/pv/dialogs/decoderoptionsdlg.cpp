@@ -58,6 +58,7 @@ namespace dialogs {
 DecoderOptionsDlg::DecoderOptionsDlg(QWidget *parent)
 :DSDialog(parent)
 {
+    _session = nullptr;
     _cursor1 = 0;
     _cursor2 = 0;
     _contentHeight = 0;
@@ -67,6 +68,14 @@ DecoderOptionsDlg::DecoderOptionsDlg(QWidget *parent)
 
 DecoderOptionsDlg::~DecoderOptionsDlg()
 {
+    // Disconnect region comboboxes before destroying _bindings.
+    // Qt can fire currentIndexChanged during widget destruction, which would
+    // call update_decode_range() on partially-freed members and crash.
+    if (_start_comboBox)
+        disconnect(_start_comboBox, nullptr, this, nullptr);
+    if (_end_comboBox)
+        disconnect(_end_comboBox, nullptr, this, nullptr);
+
     for(auto p : _bindings){
         delete p;
     }
@@ -77,6 +86,7 @@ void DecoderOptionsDlg::load_options(view::DecodeTrace *trace)
 {
     assert(trace);
     _trace = trace;
+    _session = trace->get_session();
 
     const char *dec_id = trace->decoder()->get_root_decoder_id();
 
@@ -278,11 +288,8 @@ void DecoderOptionsDlg::load_decoder_forms(QWidget *container)
 	using pv::data::decode::Decoder; 
 	assert(container); 
 
-    int dex = 0;
- 
     for(auto dec : _trace->decoder()->stack()) 
     { 
-        ++dex;
         QWidget *panel = new QWidget(container);
         QFormLayout *form = new QFormLayout();
         form->setContentsMargins(0,0,0,0);
@@ -296,33 +303,47 @@ void DecoderOptionsDlg::load_decoder_forms(QWidget *container)
 }
  
 
+pv::SigSession* DecoderOptionsDlg::effectiveSession()
+{
+    if (_session) {
+        for (auto s : _session->get_signals()) {
+            if (s->signal_type() == SR_CHANNEL_LOGIC &&
+                _session->is_channel_enabled(s->get_index()))
+                return _session;
+        }
+    }
+    return AppControl::Instance()->GetSession();
+}
+
 DsComboBox* DecoderOptionsDlg::create_probe_selector(
     QWidget *parent, const data::decode::Decoder *dec,
 	const srd_channel *const pdch)
 {
 	assert(dec);
     
-    const auto &sigs = AppControl::Instance()->GetSession()->get_signals();
+    pv::SigSession *eff = effectiveSession();
+    const auto &sigs = eff->get_signals();
 
     data::decode::Decoder *decoder = const_cast<data::decode::Decoder*>(dec);
- 
+
 	DsComboBox *selector = new DsComboBox(parent);
     selector->addItem("-", QVariant::fromValue(-1));
-  
+
     int dex = 0;
     const int binded_index = decoder->binded_probe_index(pdch);
 
-	for(auto s : sigs) 
+	for(auto s : sigs)
     {
         dex++;
 
-        if (s->signal_type() == SR_CHANNEL_LOGIC && s->enabled()){
+        if (s->signal_type() == SR_CHANNEL_LOGIC &&
+            eff->is_channel_enabled(s->get_index())) {
 			selector->addItem(s->get_name(),QVariant::fromValue(s->get_index()));
-            
+
             if (binded_index == s->get_index()){
                 selector->setCurrentIndex(dex);
             }
-		} 
+		}
 	}
 
     if (binded_index == -1){
@@ -351,7 +372,7 @@ void DecoderOptionsDlg::update_decode_range()
         decode_start = 0;
         _cursor1 = 0;
 
-    } else {
+    } else if (view) {
         _cursor1 = _start_comboBox->itemData(index1).toULongLong();
         int cusrsor_index = view->get_cursor_index_by_key(_cursor1);
         if (cusrsor_index != -1){
@@ -360,14 +381,17 @@ void DecoderOptionsDlg::update_decode_range()
         else{
             decode_start = 0;
             _cursor1 = 0;
-        }        
+        }
+    } else {
+        decode_start = 0;
+        _cursor1 = 0;
     }
 
     if (index2 == 0) {
         decode_end = last_samples;
         _cursor2 = 0;
 
-    } else {
+    } else if (view) {
         _cursor2 = _end_comboBox->itemData(index2).toULongLong();
         int cusrsor_index = view->get_cursor_index_by_key(_cursor2);
         if (cusrsor_index != -1){
@@ -376,7 +400,10 @@ void DecoderOptionsDlg::update_decode_range()
         else{
             decode_end = last_samples;
             _cursor2 = 0;
-        }       
+        }
+    } else {
+        decode_end = last_samples;
+        _cursor2 = 0;
     }
 
     if (decode_start > last_samples)
@@ -506,7 +533,7 @@ void DecoderOptionsDlg::commit_decoder_probes(data::decode::Decoder *dec)
 	assert(dec); 
 
     std::map<const srd_channel*, int> probe_map;
-    const auto &sigs = AppControl::Instance()->GetSession()->get_signals();
+    const auto &sigs = effectiveSession()->get_signals();
 
     std::list<int> index_list;
 

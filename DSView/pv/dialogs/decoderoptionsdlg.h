@@ -36,6 +36,7 @@ struct srd_channel;
 #include "dsdialog.h"
 
 namespace pv {
+    class SigSession;
     namespace data{
         class DecoderStack;
 
@@ -106,7 +107,13 @@ private:
 
     void commit_probes();    
     void commit_decoder_probes(data::decode::Decoder *dec);
-    void update_decode_range(); 
+    void update_decode_range();
+
+    // Returns _session when it has at least one enabled LOGIC signal,
+    // otherwise falls back to AppControl::GetSession() so that a freshly
+    // created session tab (whose device initialisation may still be pending)
+    // can still display meaningful channel names from the active session.
+    pv::SigSession* effectiveSession();
  
 private slots:
     void on_region_set(int index);
@@ -118,6 +125,7 @@ private:
     DsComboBox 		*_start_comboBox;
 	DsComboBox 		*_end_comboBox;
     view::DecodeTrace   *_trace;
+    pv::SigSession      *_session;
     uint64_t     _cursor1; //cursor key
     uint64_t     _cursor2;
     int          _contentHeight;

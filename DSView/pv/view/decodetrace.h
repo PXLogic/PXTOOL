@@ -93,14 +93,19 @@ public:
 public:
     ~DecodeTrace();
 
-	bool enabled();
+	bool enabled() override;
 
 	inline pv::data::DecoderStack* decoder()
 	{
 		return _decoder_stack;
 	}
 
-	void set_view(pv::view::View *view);
+    inline pv::SigSession* get_session() const
+    {
+        return _session;
+    }
+
+	void set_view(pv::view::View *view) override;
 
 	/**
 	 * Paints the background layer of the trace with a QPainter
@@ -108,7 +113,7 @@ public:
 	 * @param left the x-coordinate of the left edge of the signal.
 	 * @param right the x-coordinate of the right edge of the signal.
 	 **/
-    void paint_back(QPainter &p, int left, int right, QColor fore, QColor back);
+    void paint_back(QPainter &p, int left, int right, QColor fore, QColor back) override;
 
 	/**
 	 * Paints the mid-layer of the trace with a QPainter
@@ -116,7 +121,7 @@ public:
 	 * @param left the x-coordinate of the left edge of the signal
 	 * @param right the x-coordinate of the right edge of the signal
 	 **/
-    void paint_mid(QPainter &p, int left, int right, QColor fore, QColor back);
+    void paint_mid(QPainter &p, int left, int right, QColor fore, QColor back) override;
 
 	/**
 	 * Paints the foreground layer of the trace with a QPainter
@@ -124,9 +129,9 @@ public:
 	 * @param left the x-coordinate of the left edge of the signal
 	 * @param right the x-coordinate of the right edge of the signal
 	 **/
-    void paint_fore(QPainter &p, int left, int right, QColor fore, QColor back);
+    void paint_fore(QPainter &p, int left, int right, QColor fore, QColor back) override;
  
-    int rows_size();
+    int rows_size() override;
 
     QRectF get_rect(DecodeSetRegions type, int y, int right);
 
@@ -145,7 +150,7 @@ public:
     int get_name_width() override;
 
 protected:
-    void paint_type_options(QPainter &p, int right, const QPoint pt, QColor fore);
+    void paint_type_options(QPainter &p, int right, const QPoint pt, QColor fore) override;
 
 private: 
  

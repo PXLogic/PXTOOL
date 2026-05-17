@@ -366,9 +366,9 @@ private:
 
     void clear();
     void reconstruct();  
-	bool eventFilter(QObject *object, QEvent *event);
-	bool viewportEvent(QEvent *e);
-	void resizeEvent(QResizeEvent *e);
+	bool eventFilter(QObject *object, QEvent *event) override;
+	bool viewportEvent(QEvent *e) override;
+	void resizeEvent(QResizeEvent *e) override;
 
 public:
     static bool compare_trace_view_index(const Trace *a, const Trace *b);
