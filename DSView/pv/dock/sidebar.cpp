@@ -33,6 +33,9 @@
 #include <QSize>
 #include <QSizePolicy>
 #include <QEvent>
+#include <QMainWindow>
+#include <QDockWidget>
+#include <QtGlobal>
 
 namespace pv {
 namespace dock {
@@ -42,6 +45,7 @@ SideBar::SideBar(QWidget *parent, view::View &view, SigSession *session)
     , _session(session)
     , _active_tab(-1)
     , _panel_visible(false)
+    , _saved_panel_width(kDefaultDockWidth)
 {
     setObjectName("sidebar");
 
@@ -165,12 +169,12 @@ SideBar::SideBar(QWidget *parent, view::View &view, SigSession *session)
     _stack->addWidget(options_wrap);      // page 4: device options panel
     _stack->addWidget(log_wrap);          // page 5: log panel
     _stack->setVisible(false);
-    _stack->setMinimumWidth(200);
+    _stack->setMinimumWidth(kStackMinWidth);
 
-    // Icon strip (52px, far right)
+    // Icon strip (far right)
     _icon_strip = new QWidget(this);
     _icon_strip->setObjectName("icon_strip");
-    _icon_strip->setFixedWidth(62);
+    _icon_strip->setFixedWidth(kIconStripWidth);
 
     auto *stripLayout = new QVBoxLayout(_icon_strip);
     stripLayout->setContentsMargins(0, 8, 0, 8);
@@ -233,6 +237,32 @@ SideBar::~SideBar()
     REMOVE_UI(this);
 }
 
+QDockWidget *SideBar::findParentDock() const
+{
+    QWidget *p = parentWidget();
+    while (p && !qobject_cast<QDockWidget*>(p))
+        p = p->parentWidget();
+    return qobject_cast<QDockWidget*>(p);
+}
+
+void SideBar::adjustDockWidth(bool expand)
+{
+    QDockWidget *dock = findParentDock();
+    if (!dock) return;
+    QMainWindow *mw = qobject_cast<QMainWindow*>(dock->parentWidget());
+    if (!mw) return;
+
+    if (expand) {
+        _stack->setMinimumWidth(kStackMinWidth);
+        mw->resizeDocks({dock}, {_saved_panel_width}, Qt::Horizontal);
+    } else {
+        _saved_panel_width = qMax(kStackMinWidth + kIconStripWidth, dock->width());
+        _stack->setMinimumWidth(0);
+        _stack->updateGeometry();
+        mw->resizeDocks({dock}, {kIconStripWidth}, Qt::Horizontal);
+    }
+}
+
 void SideBar::onButtonClicked(int tab)
 {
     if (_active_tab == tab && _panel_visible) {
@@ -245,8 +275,10 @@ void SideBar::onButtonClicked(int tab)
             emit sig_search_visible(false);
         if (tab == TabOptions)
             _device_options_widget->panel_shown(); // stop timer when hidden
+        adjustDockWidth(false);
     } else {
         // Switch to (or re-open) this tab
+        bool wasHidden = !_panel_visible;
         bool prevWasSearch = (_active_tab == TabSearch && _panel_visible);
         if (_active_tab >= 0 && _active_tab < TabCount)
             _btns[_active_tab]->setChecked(false);
@@ -256,6 +288,9 @@ void SideBar::onButtonClicked(int tab)
         _stack->setCurrentIndex(tab);
         _stack->setVisible(true);
         _btns[tab]->setChecked(true);
+
+        if (wasHidden)
+            adjustDockWidth(true);
 
         if (tab == TabSearch)
             emit sig_search_visible(true);

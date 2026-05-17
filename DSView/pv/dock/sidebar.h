@@ -31,6 +31,8 @@
 #include <QLabel>
 #include "../ui/uimanager.h"
 
+class QDockWidget;
+
 namespace pv {
 
 class SigSession;
@@ -75,6 +77,10 @@ public:
     DeviceOptionsDock *device_options_widget() { return _device_options_widget; }
     LogDock           *log_widget()            { return _log_widget; }
 
+    static constexpr int kIconStripWidth    = 62;
+    static constexpr int kStackMinWidth     = 200;
+    static constexpr int kDefaultDockWidth  = 300;
+
     void showTab(Tab tab, bool visible);
     void setDsoMode(bool isDso);
     void setSession(SigSession *session);
@@ -101,6 +107,7 @@ private:
     QToolButton    *_btns[TabCount];
     int             _active_tab;
     bool            _panel_visible;
+    int             _saved_panel_width;
 
     QStackedWidget    *_trigger_stack;
     TriggerDock       *_trigger_widget;
@@ -118,6 +125,9 @@ private:
     QLabel *_title_options  = nullptr;
 
     SigSession     *_session;
+
+    QDockWidget *findParentDock() const;
+    void adjustDockWidth(bool expand);
 };
 
 } // namespace dock

@@ -1655,6 +1655,11 @@ namespace pv
         // Ensure the sidebar dock is always visible regardless of saved state
         _sidebar_dock->setVisible(true);
 
+        // The panel starts closed; collapse the dock to icon-strip width so
+        // the icon strip is flush with the right window edge even if the
+        // saved window state recorded a wider dock (panel was open when saved).
+        resizeDocks({_sidebar_dock}, {dock::SideBar::kIconStripWidth}, Qt::Horizontal);
+
         // Resotre the dock pannel.
         if (_device_agent->have_instance())
             _trig_bar->reload();

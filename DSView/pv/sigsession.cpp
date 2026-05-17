@@ -246,7 +246,17 @@ namespace pv
         _view_data->clear();
         _capture_data->clear();
         _capture_data = _view_data;
- 
+
+        // Reset all probes to enabled before building the signal list.
+        // The demo device driver is a global singleton; if another session
+        // previously disabled some channels, this session would otherwise
+        // inherit those disabled states. Session switching restores per-session
+        // states via restore_channel_enabled_states(), which runs after this call.
+        for (GSList *l = _device_agent.get_channels(); l; l = l->next) {
+            sr_channel *probe = (sr_channel *)l->data;
+            probe->enabled = true;
+        }
+
         init_signals();
 
         set_cur_snap_samplerate(_device_agent.get_sample_rate());

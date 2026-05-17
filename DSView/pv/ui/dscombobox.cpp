@@ -53,6 +53,7 @@ void DsComboBox::measureSize()
             maxWidth = rc.width();
         }
         height = rc.height();
+
     }
 
     // Append the size rule to whatever stylesheet is already set so we don't
