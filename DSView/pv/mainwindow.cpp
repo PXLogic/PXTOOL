@@ -2469,6 +2469,16 @@ namespace pv
                 bool isDeviceTab = (_session_items.isEmpty() ||
                                     _session == _session_items[0].session);
 
+                // For extra-session tabs (session 2, 3, …), reset_all_view() calls
+                // _trig_bar->reload() which emits panel-visibility signals.  Those
+                // signals can reach adjustDockWidth(true) with a stale saved width
+                // from a prior drag in session 1, shifting the sidebar unexpectedly.
+                // Suppress dock-width changes for the duration of the init sequence;
+                // the Device tab (session 1) is unaffected so its normal file-open /
+                // device-change behaviour remains unchanged.
+                if (!isDeviceTab)
+                    _sidebar_widget->setSuppressAdjustDockWidth(true);
+
                 reset_all_view();
                 load_device_config();
                 update_title_bar_text();
@@ -2553,6 +2563,9 @@ namespace pv
                 if (_device_agent->is_hardware() && _device_agent->is_new_device()){
                     check_usb_device_speed();
                 }
+
+                if (!isDeviceTab)
+                    _sidebar_widget->setSuppressAdjustDockWidth(false);
 
                 break;
             }

@@ -86,6 +86,7 @@ public:
     void setSession(SigSession *session);
     void refresh_device_options();
     void retranslateUi();
+    void setSuppressAdjustDockWidth(bool suppress) { _suppress_adjust_dock_width = suppress; }
 
     // IUiWindow
     void UpdateLanguage() override;
@@ -94,6 +95,7 @@ public:
 
 protected:
     bool eventFilter(QObject *obj, QEvent *event) override;
+    void resizeEvent(QResizeEvent *event) override;
 
 signals:
     void sig_search_visible(bool visible);
@@ -125,6 +127,7 @@ private:
     QLabel *_title_options  = nullptr;
 
     SigSession     *_session;
+    bool            _suppress_adjust_dock_width = false;
 
     QDockWidget *findParentDock() const;
     void adjustDockWidth(bool expand);

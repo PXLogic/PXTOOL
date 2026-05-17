@@ -247,6 +247,7 @@ QDockWidget *SideBar::findParentDock() const
 
 void SideBar::adjustDockWidth(bool expand)
 {
+    if (_suppress_adjust_dock_width) return;
     QDockWidget *dock = findParentDock();
     if (!dock) return;
     QMainWindow *mw = qobject_cast<QMainWindow*>(dock->parentWidget());
@@ -320,6 +321,19 @@ void SideBar::setDsoMode(bool isDso)
         _dso_trigger_widget->update_view();
     else
         _trigger_widget->update_view();
+}
+
+void SideBar::resizeEvent(QResizeEvent *event)
+{
+    QWidget::resizeEvent(event);
+    // While the panel is open, track the user's live drag width so that
+    // a subsequent collapse/reopen restores the actual dragged size rather
+    // than the stale default.
+    if (_panel_visible) {
+        int w = event->size().width();
+        if (w > kIconStripWidth + 10)
+            _saved_panel_width = w;
+    }
 }
 
 bool SideBar::eventFilter(QObject *obj, QEvent *event)
