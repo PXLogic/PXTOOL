@@ -79,7 +79,7 @@ public:
 
     static constexpr int kIconStripWidth    = 62;
     static constexpr int kStackMinWidth     = 200;
-    static constexpr int kDefaultDockWidth  = 700;
+    static constexpr int kDefaultDockWidth  = 600;
 
     void showTab(Tab tab, bool visible);
     void setDsoMode(bool isDso);

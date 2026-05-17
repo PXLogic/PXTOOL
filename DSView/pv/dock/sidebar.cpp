@@ -311,8 +311,12 @@ void SideBar::onButtonClicked(int tab)
         _stack->setVisible(true);
         _btns[tab]->setChecked(true);
 
-        if (wasHidden)
+        if (wasHidden) {
+            // Always use the configured default width when reopening from the
+            // collapsed icon-strip state.
+            _saved_panel_width = kDefaultDockWidth;
             adjustDockWidth(true);
+        }
 
         if (tab == TabSearch)
             emit sig_search_visible(true);
