@@ -82,11 +82,12 @@ void CDecoderRegistry::load_c_decoders(const std::string &dir_path)
             continue;
         }
 
-        if (def->api_version != C_DECODER_API_VERSION) {
-            dsv_err("API version mismatch in %s (expected %u, got %u)",
+        if (def->api_version < 1 || def->api_version > C_DECODER_API_VERSION) {
+            dsv_err("Unsupported C decoder API version in %s "
+                    "(decoder reports %u, host supports 1..%u)",
                     path.c_str(),
-                    static_cast<unsigned>(C_DECODER_API_VERSION),
-                    static_cast<unsigned>(def->api_version));
+                    static_cast<unsigned>(def->api_version),
+                    static_cast<unsigned>(C_DECODER_API_VERSION));
             dlclose(handle);
             continue;
         }
@@ -97,8 +98,40 @@ void CDecoderRegistry::load_c_decoders(const std::string &dir_path)
             continue;
         }
 
-        if (!def->id || !def->decode) {
-            dsv_err("C decoder in %s missing id or decode function", path.c_str());
+        if (!def->id) {
+            dsv_err("C decoder in %s has NULL id", path.c_str());
+            dlclose(handle);
+            continue;
+        }
+
+        const bool has_batch = (def->decode != nullptr);
+        bool has_streaming = false;
+        if (def->api_version >= 2) {
+            const int triple_count =
+                (def->create       != nullptr) +
+                (def->decode_chunk != nullptr) +
+                (def->destroy      != nullptr);
+            if (triple_count == 3) {
+                has_streaming = true;
+            } else if (triple_count != 0) {
+                dsv_err("C decoder '%s' in %s has a partial streaming triple "
+                        "(create=%p, decode_chunk=%p, destroy=%p); ignoring "
+                        "streaming entries",
+                        def->id, path.c_str(),
+                        (void*)def->create, (void*)def->decode_chunk,
+                        (void*)def->destroy);
+                /* Demote to batch-only: zero the partial fields so the host
+                 * dispatcher only sees fully-formed triples. */
+                def->create = nullptr;
+                def->decode_chunk = nullptr;
+                def->destroy = nullptr;
+            }
+        }
+
+        if (!has_batch && !has_streaming) {
+            dsv_err("C decoder '%s' in %s exposes neither batch decode nor "
+                    "streaming triple; rejecting",
+                    def->id, path.c_str());
             dlclose(handle);
             continue;
         }
@@ -110,7 +143,11 @@ void CDecoderRegistry::load_c_decoders(const std::string &dir_path)
          * conflicts with srd_decoder_register. */
         _c_decoder_by_id[def->id] = def;
         _dl_handles.push_back(handle);
-        dsv_info("C decoder '%s' loaded from %s", def->id, path.c_str());
+        dsv_info("C decoder '%s' loaded from %s (api=v%u, batch=%s, streaming=%s)",
+                 def->id, path.c_str(),
+                 static_cast<unsigned>(def->api_version),
+                 has_batch ? "yes" : "no",
+                 has_streaming ? "yes" : "no");
     }
 
     closedir(dir);
