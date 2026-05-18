@@ -59,3 +59,42 @@ cp spi.so ~/.local/share/DreamSourceLab/PXTOOL/cdecoders/
 Restart DSView. When you add an SPI decoder, its title will show `[C]` if
 the C decoder was loaded successfully. Right-click the decoder title to
 switch between C and Python engines.
+
+## Streaming (ABI v2)
+
+As of `C_DECODER_API_VERSION = 2` this example also exposes the streaming
+triple:
+
+| Function | Role |
+|----------|------|
+| `spi_create(samplerate, num_channels)` | Allocates a zeroed `spi_state` struct |
+| `spi_decode_chunk(inst, start, end, n, ch, put, ctx, stop)` | Decodes a contiguous chunk; protocol state persists across calls via `inst` |
+| `spi_destroy(inst)` | Frees the state |
+
+The legacy `spi_decode()` is kept and now forwards to the same per-sample
+loop using a transient stack-allocated state. Hosts that do not implement
+streaming (older DSView builds, batch-only callers) still get correct
+output via the v1 entry — just without progressive updates during a live
+capture.
+
+The host always picks streaming when all three new function pointers are
+non-NULL — this matches the Python decoder path's behaviour (waits for
+data, feeds chunks as they arrive, emits annotations progressively).
+
+Rebuild after pulling:
+
+```sh
+cd pv/cdecoders/example_spi
+cmake -S . -B build
+cmake --build build
+# macOS
+cp build/spi.dylib ~/Library/Application\ Support/DSView/cdecoders/
+# Linux
+cp build/spi.so ~/.local/share/DSView/cdecoders/
+```
+
+You should see this in the DSView log at startup:
+
+```
+C decoder 'spi' loaded from <path>/spi.dylib (api=v2, batch=yes, streaming=yes)
+```
