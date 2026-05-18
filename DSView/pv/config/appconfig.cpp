@@ -638,9 +638,14 @@ QString GetDecodeScriptDir()
 QString GetCDecodeDir()
 {
     // Use the user-writable data directory so users can install C decoders
-    // without modifying the app bundle.
-    // macOS: ~/Library/Application Support/DSView/cdecoders
-    // Linux: ~/.local/share/DSView/cdecoders
+    // without modifying the app bundle. The exact directory comes from Qt's
+    // QStandardPaths::AppDataLocation, which expands to
+    //   <OS user data root>/<QCoreApplication::organizationName()>/<applicationName()>/cdecoders
+    // For DSView/PXTOOL that resolves to (at runtime, may differ per build):
+    //   macOS:   ~/Library/Application Support/DreamSourceLab/PXTOOL/cdecoders
+    //   Linux:   ~/.local/share/DreamSourceLab/PXTOOL/cdecoders
+    //   Windows: %APPDATA%/DreamSourceLab/PXTOOL/cdecoders
+    // The startup log always prints the resolved path (see appcontrol.cpp).
     return GetUserDataDir() + "/cdecoders";
 }
 

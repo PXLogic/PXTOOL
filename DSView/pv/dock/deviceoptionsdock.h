@@ -28,6 +28,7 @@
 #include <QPushButton>
 #include <QCheckBox>
 #include <QRadioButton>
+#include <QSet>
 #include <QTimer>
 #include <vector>
 
@@ -65,8 +66,13 @@ public:
     void on_device_changed();
 
 signals:
-    /** Emitted after Apply commits changes and clears the signal list. */
-    void sig_channels_applied();
+    /** Emitted after Apply commits channel changes. The set of channel
+     * indices that went from enabled -> disabled is passed so listeners
+     * (e.g. ProtocolDock) can selectively remove decoders that depend on a
+     * now-disabled probe instead of nuking every decoder unconditionally.
+     * An empty set means no channels were disabled (e.g. user clicked
+     * "Enable All"); listeners should not remove anything in that case. */
+    void sig_channels_applied(const QSet<int> &disabled_channel_indices);
 
 private:
     void build_content();

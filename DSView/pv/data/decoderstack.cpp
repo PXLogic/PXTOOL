@@ -964,6 +964,159 @@ static void c_put_annotation_cb(void *ctx, uint64_t ss, uint64_t es,
     DecoderStack::annotation_callback(&pdata, pctx->status);
 }
 
+/* Normalize a label for fuzzy matching: lowercase, strip non-alphanumeric.
+ * So "MOSI-bit", "mosi_bit", "mosi bit" and "MosiBit" all collapse to
+ * "mosibit". Writes up to dst_cap-1 chars and NUL-terminates dst. */
+static void normalize_label(const char *src, char *dst, size_t dst_cap)
+{
+    size_t w = 0;
+    if (!dst || dst_cap == 0) return;
+    if (!src) { dst[0] = 0; return; }
+    for (const char *p = src; *p && w + 1 < dst_cap; ++p) {
+        unsigned char c = static_cast<unsigned char>(*p);
+        if (c >= 'A' && c <= 'Z') c = c - 'A' + 'a';
+        if ((c >= 'a' && c <= 'z') || (c >= '0' && c <= '9'))
+            dst[w++] = static_cast<char>(c);
+    }
+    dst[w] = 0;
+}
+
+/* Map a single C decoder channel id (from CDecoderDef::channel_ids[]) to the
+ * signal index bound to the matching srd_channel in front_dec. We match by
+ * name in a case-insensitive way against srd_channel::id then srd_channel::name
+ * (some Python decoders use lowercase ids like "clk" while C decoders tend to
+ * use uppercase). Returns -1 when nothing matches or the slot is unbound. */
+static int lookup_c_channel_binding(const srd_decoder *root_srd,
+                                    decode::Decoder *front_dec,
+                                    const char *want)
+{
+    if (!root_srd || !front_dec || !want)
+        return -1;
+
+    char want_norm[64];
+    normalize_label(want, want_norm, sizeof(want_norm));
+    if (!want_norm[0]) return -1;
+
+    auto matches = [&](const char *cand) {
+        char buf[64];
+        normalize_label(cand, buf, sizeof(buf));
+        return buf[0] && std::strcmp(buf, want_norm) == 0;
+    };
+
+    const GSList *lists[2] = { root_srd->channels, root_srd->opt_channels };
+    for (const GSList *list : lists) {
+        for (const GSList *l = list; l; l = l->next) {
+            const srd_channel *pdch = static_cast<const srd_channel*>(l->data);
+            if (!pdch) continue;
+            if (matches(pdch->id) || matches(pdch->name))
+                return front_dec->binded_probe_index(pdch);
+        }
+    }
+    return -1;
+}
+
+/* Translate a C decoder ann_class label ("mosi-bit", "miso_byte", ...) to the
+ * matching Python decoder's `annotations` tuple index, so the host's
+ * _class_rows map can route the annotation into the correct Python row.
+ *
+ * Why: the host UI is built from the Python decoder's annotations +
+ * annotation_rows. annotation_callback looks up _class_rows[(decoder, k)]
+ * where k must be the Python tuple index of the class. If the C decoder
+ * emits its own flat ann_classes index instead, every annotation either
+ * lands in the wrong row or, when the Python row is hidden by default
+ * (rows whose title contains "bit" / "warning"), disappears entirely —
+ * which is exactly the "no annotations visible" symptom reported.
+ *
+ * Returns the Python class index on success, -1 if no match. Note that the
+ * srd_decoder->annotations GSList is reversed relative to the Python tuple
+ * because libsigrokdecode builds it with g_slist_prepend; convert via
+ * (g_slist_length - 1 - position) to recover the original tuple index. */
+static int find_py_class_index(const srd_decoder *root_srd, const char *want_label)
+{
+    if (!root_srd || !root_srd->annotations || !want_label) return -1;
+
+    char want_norm[64];
+    normalize_label(want_label, want_norm, sizeof(want_norm));
+    if (!want_norm[0]) return -1;
+
+    const guint total = g_slist_length(root_srd->annotations);
+    guint pos = 0;
+    for (const GSList *l = root_srd->annotations; l; l = l->next, ++pos) {
+        char **annpair = static_cast<char**>(l->data);
+        if (!annpair || !annpair[0]) continue;
+        char have_norm[64];
+        normalize_label(annpair[0], have_norm, sizeof(have_norm));
+        if (have_norm[0] && std::strcmp(have_norm, want_norm) == 0)
+            return static_cast<int>(total - 1 - pos);
+    }
+    return -1;
+}
+
+/* Build row_class_map[ann_row][ann_class_within_row] = python_class_index.
+ *
+ * c_def->ann_row_ids[r] is the C decoder's row id (e.g. "bits"); the entries
+ * in c_def->ann_classes are "row_id:label" tokens (e.g. "bits:mosi-bit").
+ * For each (row, in-row-position) we find the matching Python class index by
+ * fuzzy name match against root_srd->annotations. If no Python class matches
+ * we fall back to the flat C index `k` and log a warning so the decoder
+ * author can fix their labels. */
+static void build_c_decoder_row_class_map(
+    const srd_decoder *root_srd, const CDecoderDef *c_def,
+    std::vector<std::vector<int>> &row_class_map)
+{
+    row_class_map.clear();
+    if (!c_def || !c_def->ann_row_ids || !c_def->ann_classes) return;
+
+    int nrows = 0;    while (c_def->ann_row_ids[nrows]) nrows++;
+    int nclasses = 0; while (c_def->ann_classes[nclasses]) nclasses++;
+
+    std::vector<int> row_count(nrows, 0);
+    for (int k = 0; k < nclasses; k++) {
+        const char *entry = c_def->ann_classes[k];
+        const char *colon = std::strchr(entry, ':');
+        if (!colon) continue;
+        size_t plen = static_cast<size_t>(colon - entry);
+        for (int r = 0; r < nrows; r++) {
+            if (std::strlen(c_def->ann_row_ids[r]) == plen &&
+                std::strncmp(c_def->ann_row_ids[r], entry, plen) == 0) {
+                row_count[r]++;
+                break;
+            }
+        }
+    }
+
+    row_class_map.resize(nrows);
+    for (int r = 0; r < nrows; r++)
+        row_class_map[r].assign(row_count[r], -1);
+
+    std::vector<int> row_idx(nrows, 0);
+    for (int k = 0; k < nclasses; k++) {
+        const char *entry = c_def->ann_classes[k];
+        const char *colon = std::strchr(entry, ':');
+        if (!colon) continue;
+        size_t plen = static_cast<size_t>(colon - entry);
+        for (int r = 0; r < nrows; r++) {
+            if (std::strlen(c_def->ann_row_ids[r]) != plen ||
+                std::strncmp(c_def->ann_row_ids[r], entry, plen) != 0)
+                continue;
+            const char *label = colon + 1;
+            int py_idx = find_py_class_index(root_srd, label);
+            if (py_idx < 0) {
+                dsv_warn("C decoder '%s' ann_class label '%s' (row '%s') "
+                         "doesn't map to any Python annotation id; falling "
+                         "back to flat index %d. Update the C decoder's "
+                         "ann_classes to match the Python decoder's "
+                         "annotations[] ids exactly.",
+                         root_srd ? root_srd->id : "?", label,
+                         c_def->ann_row_ids[r], k);
+                py_idx = k;
+            }
+            row_class_map[r][row_idx[r]++] = py_idx;
+            break;
+        }
+    }
+}
+
 void DecoderStack::execute_c_decode_stack()
 {
     assert(_snapshot);
@@ -989,6 +1142,11 @@ void DecoderStack::execute_c_decode_stack()
         c_def->destroy      != nullptr;
     const bool batch_capable = (c_def->decode != nullptr);
 
+    dsv_info("C decoder dispatch '%s': api=v%u, streaming_capable=%d, batch_capable=%d -> %s",
+             root_srd->id, c_def->api_version,
+             streaming_capable ? 1 : 0, batch_capable ? 1 : 0,
+             streaming_capable ? "STREAMING" : (batch_capable ? "BATCH" : "NONE"));
+
     if (streaming_capable) {
         execute_c_decode_stack_streaming(c_def);
     } else if (batch_capable) {
@@ -1008,19 +1166,23 @@ void DecoderStack::execute_c_decode_stack_streaming(CDecoderDef *c_def)
     const srd_decoder *root_srd = _stack.front()->decoder();
     decode::Decoder   *front_dec = _stack.front();
 
-    /* ---------- channel layout (same as batch path) ---------- */
+    /* ---------- channel layout (same as batch path) ----------
+     * c_def->channel_ids[] declares the order in which the C decoder wants
+     * its `samples[][i]` rows. We must map each of those slots to a bound
+     * LA signal by NAME against the underlying Python decoder's
+     * `channels` + `opt_channels`. Positional mapping breaks the moment the
+     * C decoder author chooses any order different from the Python
+     * decoder's (e.g. Python SPI orders opt_channels as MISO/MOSI/CS while
+     * the C example uses MOSI/MISO/CS — positional binding silently swaps
+     * MOSI and MISO). */
     int num_channels = 0;
     if (c_def->channel_ids)
         while (c_def->channel_ids[num_channels]) num_channels++;
 
     std::vector<int> sig_indices(num_channels, -1);
-    {
-        int ch_idx = 0;
-        for (const GSList *l = root_srd->channels; l && ch_idx < num_channels;
-             l = l->next, ch_idx++) {
-            const srd_channel *const pdch = static_cast<const srd_channel*>(l->data);
-            sig_indices[ch_idx] = front_dec->binded_probe_index(pdch);
-        }
+    for (int ch_idx = 0; ch_idx < num_channels; ch_idx++) {
+        sig_indices[ch_idx] = lookup_c_channel_binding(
+            root_srd, front_dec, c_def->channel_ids[ch_idx]);
     }
 
     /* ---------- per-run decoder state ---------- */
@@ -1033,45 +1195,7 @@ void DecoderStack::execute_c_decode_stack_streaming(CDecoderDef *c_def)
 
     /* ---------- annotation glue (identical to batch path) ---------- */
     std::vector<std::vector<int>> row_class_map;
-    if (c_def->ann_row_ids && c_def->ann_classes) {
-        int nrows = 0;
-        while (c_def->ann_row_ids[nrows]) nrows++;
-        int nclasses = 0;
-        while (c_def->ann_classes[nclasses]) nclasses++;
-
-        std::vector<int> row_count(nrows, 0);
-        for (int k = 0; k < nclasses; k++) {
-            const char *entry = c_def->ann_classes[k];
-            const char *colon = std::strchr(entry, ':');
-            if (!colon) continue;
-            size_t plen = static_cast<size_t>(colon - entry);
-            for (int r = 0; r < nrows; r++) {
-                if (std::strlen(c_def->ann_row_ids[r]) == plen &&
-                    std::strncmp(c_def->ann_row_ids[r], entry, plen) == 0) {
-                    row_count[r]++;
-                    break;
-                }
-            }
-        }
-        row_class_map.resize(nrows);
-        for (int r = 0; r < nrows; r++)
-            row_class_map[r].assign(row_count[r], -1);
-
-        std::vector<int> row_idx(nrows, 0);
-        for (int k = 0; k < nclasses; k++) {
-            const char *entry = c_def->ann_classes[k];
-            const char *colon = std::strchr(entry, ':');
-            if (!colon) continue;
-            size_t plen = static_cast<size_t>(colon - entry);
-            for (int r = 0; r < nrows; r++) {
-                if (std::strlen(c_def->ann_row_ids[r]) == plen &&
-                    std::strncmp(c_def->ann_row_ids[r], entry, plen) == 0) {
-                    row_class_map[r][row_idx[r]++] = k;
-                    break;
-                }
-            }
-        }
-    }
+    build_c_decoder_row_class_map(root_srd, c_def, row_class_map);
 
     srd_decoder_inst fake_di = {};
     fake_di.decoder = const_cast<srd_decoder*>(root_srd);
@@ -1090,39 +1214,85 @@ void DecoderStack::execute_c_decode_stack_streaming(CDecoderDef *c_def)
     bool bCheckEnd = false;
     int  rc = 0;
 
-    /* Classify channels: "bound" = sig_idx >= 0 AND snapshot has data for it.
-     * Unbound channels are silently zero-filled per chunk to match the batch
-     * path's behaviour (which pre-fills sample_bufs with zeros). */
+    /* Classify channels: "bound" = the user assigned a signal in the decoder
+     * options (sig_idx >= 0). We must NOT consult _snapshot->has_data() here
+     * because at streaming start the ring is typically empty -> every channel
+     * would be misclassified as "unbound" and the loop would never call
+     * decode_chunk(). The batch path makes the same choice: it dispatches by
+     * sig_idx >= 0 and lets get_samples() decide what to return at fetch
+     * time. */
     std::vector<bool> ch_is_bound(num_channels, false);
     for (int ch = 0; ch < num_channels; ch++)
-        ch_is_bound[ch] = (sig_indices[ch] >= 0 && _snapshot->has_data(sig_indices[ch]));
+        ch_is_bound[ch] = (sig_indices[ch] >= 0);
+
+    dsv_info("C decoder '%s' streaming START: samplerate=%llu, channels=%d, "
+             "decode_start=%llu, decode_end=%llu, is_capture_end=%d, ring=%llu",
+             root_srd->id, (unsigned long long)_samplerate, num_channels,
+             (unsigned long long)i, (unsigned long long)end_index,
+             _is_capture_end ? 1 : 0,
+             (unsigned long long)_snapshot->get_ring_sample_count());
+    {
+        std::string bound_str;
+        for (int ch = 0; ch < num_channels; ch++) {
+            bound_str += "[";
+            bound_str += c_def->channel_ids[ch];
+            bound_str += "=sig";
+            bound_str += std::to_string(sig_indices[ch]);
+            bound_str += ch_is_bound[ch] ? ":bound]" : ":unbound]";
+        }
+        dsv_info("C decoder '%s' channel map: %s", root_srd->id, bound_str.c_str());
+    }
 
     _progress    = 0;
     _is_decoding = true;
 
+    uint64_t loop_iters = 0;
+    uint64_t loop_sleeps = 0;
     while (i <= end_index && !_no_memory && !_stask_stauts->_bStop && !stop_flag)
     {
+        loop_iters++;
         /* Wait-for-data / end-of-capture alignment — same shape as decode_data() */
         if (_is_capture_end) {
             if (!bCheckEnd) {
                 bCheckEnd = true;
                 uint64_t avail = _snapshot->get_ring_sample_count();
-                if (avail == 0) break;
+                if (avail == 0) {
+                    dsv_info("C streaming: capture ended with empty ring, exiting");
+                    break;
+                }
                 if (end_index >= avail) {
                     end_index = avail - 1;
-                    dsv_info("C streaming: capped end_index to %llu",
-                             (unsigned long long)end_index);
+                    dsv_info("C streaming: capped end_index to %llu (avail=%llu)",
+                             (unsigned long long)end_index,
+                             (unsigned long long)avail);
                 }
-                if (i > end_index) break;
+                if (i > end_index) {
+                    dsv_info("C streaming: i (%llu) > end_index (%llu), exiting",
+                             (unsigned long long)i, (unsigned long long)end_index);
+                    break;
+                }
             }
         } else if (i >= _snapshot->get_ring_sample_count()) {
+            loop_sleeps++;
+            if (loop_sleeps == 1 || (loop_sleeps % 50) == 0) {
+                dsv_info("C streaming: waiting for data, i=%llu, ring=%llu, sleeps=%llu",
+                         (unsigned long long)i,
+                         (unsigned long long)_snapshot->get_ring_sample_count(),
+                         (unsigned long long)loop_sleeps);
+            }
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
             continue;
         }
 
         /* Pass 1: fetch BOUND channels and shrink chunk_end to the minimum end.
-         * If any bound channel returns NULL the ring isn't filled past `i` yet —
-         * wait and retry. */
+         * Two policies depending on whether the capture is still live:
+         *   - Live (!_is_capture_end): if a bound channel returns NULL the
+         *     ring isn't filled past `i` yet — wait and retry on the next
+         *     iteration.
+         *   - Ended (_is_capture_end && bCheckEnd): never wait. A NULL here
+         *     means the assigned sig_idx is bogus or the snapshot dropped the
+         *     range. Match the batch path: leave the channel zero-filled and
+         *     keep going so the loop can finish. */
         uint64_t chunk_end       = end_index;
         bool     needs_wait      = false;
         bool     any_bound_ready = false;
@@ -1132,7 +1302,11 @@ void DecoderStack::execute_c_decode_stack_streaming(CDecoderDef *c_def)
             uint64_t ce = end_index;
             void *lbp = nullptr;
             const uint8_t *data = _snapshot->get_samples(i, ce, sig_indices[ch], &lbp);
-            if (!data) { needs_wait = true; break; }
+            if (!data) {
+                if (!_is_capture_end) { needs_wait = true; break; }
+                /* capture ended, sig_idx unusable -> treat as unbound, zero-fill */
+                continue;
+            }
             if (ce < chunk_end) chunk_end = ce;
             ch_ptrs[ch] = data;
             any_bound_ready = true;
@@ -1143,7 +1317,17 @@ void DecoderStack::execute_c_decode_stack_streaming(CDecoderDef *c_def)
             }
         }
 
-        if (needs_wait || (!any_bound_ready && num_channels > 0)) {
+        /* Wait only while capture is still live; once it has ended we must
+         * make forward progress (any_bound_ready may be false if every
+         * bound channel returned NULL, which we handle by zero-filling). */
+        if (!_is_capture_end && (needs_wait || (!any_bound_ready && num_channels > 0))) {
+            loop_sleeps++;
+            if (loop_sleeps == 1 || (loop_sleeps % 50) == 0) {
+                dsv_info("C streaming: bound channel not ready, i=%llu, ring=%llu, sleeps=%llu",
+                         (unsigned long long)i,
+                         (unsigned long long)_snapshot->get_ring_sample_count(),
+                         (unsigned long long)loop_sleeps);
+            }
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
             continue;
         }
@@ -1192,10 +1376,20 @@ void DecoderStack::execute_c_decode_stack_streaming(CDecoderDef *c_def)
     _progress    = 100;
     _is_decoding = false;
 
-    dsv_info("C decoder '%s' streaming decoded %llu samples, %llu annotations",
+    dsv_info("C decoder '%s' streaming EXIT: decoded %llu samples, %llu annotations "
+             "(iters=%llu, sleeps=%llu, final i=%llu/end=%llu, capture_end=%d, "
+             "bStop=%d, stop_flag=%d, no_memory=%d)",
              root_srd->id,
              (unsigned long long)(i - front_dec->decode_start()),
-             (unsigned long long)_result_count);
+             (unsigned long long)_result_count,
+             (unsigned long long)loop_iters,
+             (unsigned long long)loop_sleeps,
+             (unsigned long long)i,
+             (unsigned long long)end_index,
+             _is_capture_end ? 1 : 0,
+             _stask_stauts ? (_stask_stauts->_bStop ? 1 : 0) : -1,
+             stop_flag,
+             _no_memory ? 1 : 0);
 
     new_decode_data();
 }
@@ -1227,14 +1421,12 @@ void DecoderStack::execute_c_decode_stack_batch(CDecoderDef *c_def)
     if (c_def->channel_ids)
         while (c_def->channel_ids[num_channels]) num_channels++;
 
+    /* Map each c_def->channel_ids[] slot to the bound LA signal by name;
+     * see the streaming path for the full rationale. */
     std::vector<int> sig_indices(num_channels, -1);
-    {
-        int ch_idx = 0;
-        for (const GSList *l = root_srd->channels; l && ch_idx < num_channels;
-             l = l->next, ch_idx++) {
-            const srd_channel *const pdch = static_cast<const srd_channel*>(l->data);
-            sig_indices[ch_idx] = front_dec->binded_probe_index(pdch);
-        }
+    for (int ch_idx = 0; ch_idx < num_channels; ch_idx++) {
+        sig_indices[ch_idx] = lookup_c_channel_binding(
+            root_srd, front_dec, c_def->channel_ids[ch_idx]);
     }
 
     uint64_t num_samples = decode_end - decode_start + 1;
@@ -1313,46 +1505,7 @@ void DecoderStack::execute_c_decode_stack_batch(CDecoderDef *c_def)
     if (_stask_stauts->_bStop) return;
 
     std::vector<std::vector<int>> row_class_map;
-    if (c_def->ann_row_ids && c_def->ann_classes) {
-        int nrows = 0;
-        while (c_def->ann_row_ids[nrows]) nrows++;
-        int nclasses = 0;
-        while (c_def->ann_classes[nclasses]) nclasses++;
-
-        std::vector<int> row_count(nrows, 0);
-        for (int k = 0; k < nclasses; k++) {
-            const char *entry = c_def->ann_classes[k];
-            const char *colon = std::strchr(entry, ':');
-            if (!colon) continue;
-            size_t plen = static_cast<size_t>(colon - entry);
-            for (int r = 0; r < nrows; r++) {
-                if (std::strlen(c_def->ann_row_ids[r]) == plen &&
-                    std::strncmp(c_def->ann_row_ids[r], entry, plen) == 0) {
-                    row_count[r]++;
-                    break;
-                }
-            }
-        }
-
-        row_class_map.resize(nrows);
-        for (int r = 0; r < nrows; r++)
-            row_class_map[r].assign(row_count[r], -1);
-
-        std::vector<int> row_idx(nrows, 0);
-        for (int k = 0; k < nclasses; k++) {
-            const char *entry = c_def->ann_classes[k];
-            const char *colon = std::strchr(entry, ':');
-            if (!colon) continue;
-            size_t plen = static_cast<size_t>(colon - entry);
-            for (int r = 0; r < nrows; r++) {
-                if (std::strlen(c_def->ann_row_ids[r]) == plen &&
-                    std::strncmp(c_def->ann_row_ids[r], entry, plen) == 0) {
-                    row_class_map[r][row_idx[r]++] = k;
-                    break;
-                }
-            }
-        }
-    }
+    build_c_decoder_row_class_map(root_srd, c_def, row_class_map);
 
     srd_decoder_inst fake_di = {};
     fake_di.decoder = const_cast<srd_decoder*>(root_srd);

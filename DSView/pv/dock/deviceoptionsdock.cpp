@@ -261,14 +261,22 @@ void DeviceOptionsDock::on_apply()
     for (auto p : dev_props)
         p->commit();
 
-    // Commit probe enabled state
+    // Commit probe enabled state; track which probe indices went from
+    // enabled -> disabled so we can selectively notify listeners (the
+    // ProtocolDock used to nuke every decoder on any Apply, which deleted
+    // decoders even when the user was only ENABLING more channels).
+    QSet<int> disabled_channels;
     int mode = _device_agent->get_work_mode();
     if (mode == LOGIC || mode == ANALOG) {
         int index = 0;
         for (const GSList *l = _device_agent->get_channels(); l; l = l->next) {
             sr_channel *const probe = (sr_channel*)l->data;
             assert(probe);
-            probe->enabled = _probes_checkBox_list.at(index)->isChecked();
+            const bool was_enabled = probe->enabled;
+            const bool will_enable = _probes_checkBox_list.at(index)->isChecked();
+            probe->enabled = will_enable;
+            if (was_enabled && !will_enable)
+                disabled_channels.insert(probe->index);
             index++;
             if (probe->enabled)
                 hasEnabled = true;
@@ -295,10 +303,10 @@ void DeviceOptionsDock::on_apply()
         // Without this the old waveform rendering persists even though the
         // internal data buffers were already cleared by init_signals().
         _session->notify_signals_changed();
-        // Ask the protocol dock to remove all decoders: after channel config
-        // changes some decoders may reference now-disabled channels, which
-        // causes "required channels not specified" errors on the next Start.
-        emit sig_channels_applied();
+        // Notify listeners (ProtocolDock) so they can drop just the decoders
+        // that now reference a disabled channel. An empty set means the user
+        // only enabled new channels — decoders must be preserved in that case.
+        emit sig_channels_applied(disabled_channels);
     } else {
         QString strMsg(tr("All channel disabled! Please enable at least one channel."));
         MsgBox::Show(strMsg);

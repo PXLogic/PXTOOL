@@ -627,6 +627,7 @@ namespace pv
         if (oldItem.session->is_working())
             oldItem.session->stop_capture();
         oldItem.session->remove_msg_listener(this);
+        oldItem.session->set_decoder_pannel(nullptr);
 
         // Activate incoming session
         _active_tab_index = index;
@@ -648,6 +649,7 @@ namespace pv
         _sampling_bar->set_view(_view);
         _session_stack->setCurrentWidget(_view);
         _sidebar_widget->setSession(_session);
+        _session->set_decoder_pannel(_sidebar_widget->protocol_widget());
 
         _is_switching_session = false;
 
@@ -747,6 +749,7 @@ namespace pv
             _sampling_bar->set_view(_view);
             _session_stack->setCurrentWidget(_view);
             _sidebar_widget->setSession(_session);
+            _session->set_decoder_pannel(_sidebar_widget->protocol_widget());
             update_toolbar_view_status();
         } else if (_active_tab_index > index) {
             _active_tab_index--;

@@ -47,6 +47,7 @@
 #include "../widgets/decodergroupbox.h"
 #include "../view/decodetrace.h"
 #include "../ui/msgbox.h"
+#include "../log.h"
 
 #include "../ui/langresource.h"
 #include "../config/appconfig.h"
@@ -315,6 +316,19 @@ pv::SigSession* DecoderOptionsDlg::effectiveSession()
     return AppControl::Instance()->GetSession();
 }
 
+// Normalize a channel name for fuzzy auto-binding: lowercase, drop '#', '_',
+// '-' and whitespace. This lets us match e.g. "CS#" <-> "cs", "I2C_SDA" <-> "sda".
+static QString normalize_chname(const QString &s)
+{
+    QString out;
+    out.reserve(s.size());
+    for (QChar c : s) {
+        if (c.isLetterOrNumber())
+            out.append(c.toLower());
+    }
+    return out;
+}
+
 DsComboBox* DecoderOptionsDlg::create_probe_selector(
     QWidget *parent, const data::decode::Decoder *dec,
 	const srd_channel *const pdch)
@@ -332,6 +346,12 @@ DsComboBox* DecoderOptionsDlg::create_probe_selector(
     int dex = 0;
     const int binded_index = decoder->binded_probe_index(pdch);
 
+    // Track the combo entry that fuzz-matches this decoder channel by name,
+    // so we can auto-select it when the user hasn't bound this channel yet.
+    int auto_match_combo_dex = -1;
+    const QString want = pdch ? normalize_chname(QString::fromUtf8(pdch->name))
+                              : QString();
+
 	for(auto s : sigs)
     {
         dex++;
@@ -343,11 +363,20 @@ DsComboBox* DecoderOptionsDlg::create_probe_selector(
             if (binded_index == s->get_index()){
                 selector->setCurrentIndex(dex);
             }
+
+            if (binded_index == -1 && auto_match_combo_dex == -1 && !want.isEmpty()) {
+                const QString have = normalize_chname(s->get_name());
+                if (!have.isEmpty() && have == want)
+                    auto_match_combo_dex = dex;
+            }
 		}
 	}
 
     if (binded_index == -1){
-        selector->setCurrentIndex(0);
+        if (auto_match_combo_dex >= 0)
+            selector->setCurrentIndex(auto_match_combo_dex);
+        else
+            selector->setCurrentIndex(0);
     }
 
 	return selector;
@@ -544,16 +573,22 @@ void DecoderOptionsDlg::commit_decoder_probes(data::decode::Decoder *dec)
 
         const int selection = p._combo->itemData(p._combo->currentIndex()).value<int>();
 
+        bool matched = false;
         for(auto s : sigs){
             if(s->get_index() == selection) {
                 probe_map[p._pdch] = selection;
                 index_list.push_back(selection);
+                matched = true;
 				break;
 			}
         }
+        dsv_info("DecoderOptionsDlg::apply_setting: pdch='%s' selection=%d matched=%d",
+                 p._pdch ? p._pdch->name : "?", selection, matched ? 1 : 0);
 	}
 
 	dec->set_probes(probe_map);
+    dsv_info("DecoderOptionsDlg::apply_setting: committed %zu probe bindings",
+             probe_map.size());
 
     if (index_list.size())
         _trace->set_index_list(index_list);

@@ -24,6 +24,7 @@
 #include <QVBoxLayout>
 #include <QPoint>
 #include <QLineEdit>
+#include <QPointer>
 #include <QScrollBar>
 #include <QIcon>
 #include "../config/appconfig.h"
@@ -197,9 +198,23 @@ void SearchComboBox::AddDataItem(QString id, QString name, void *data_handle)
          SearchDataItem *item = (SearchDataItem*)data_handle;
          ISearchItemClick *click = _item_click;
          void *handle = item->_data_handle;
+
+         /* close() loses activation -> changeEvent() would otherwise call
+          * deleteLater() on us first; combined with the trailing deleteLater()
+          * below that becomes a use-after-free once click->OnItemClick opens
+          * a modal dialog (DecoderOptionsDlg) and runs a nested event loop,
+          * which processes the queued deletion before we return.
+          * Suppress the activation-change auto-delete for the duration of
+          * this call so only the trailing deleteLater() takes effect. */
+         _ignore_activation = true;
          this->close();
+
+         /* Defensive QPointer in case `click` decides to delete us anyway
+          * (e.g. via parent reset). */
+         QPointer<SearchComboBox> alive(this);
          click->OnItemClick(this, handle);
-         this->deleteLater();
+         if (alive)
+             alive->deleteLater();
      }
  }
 

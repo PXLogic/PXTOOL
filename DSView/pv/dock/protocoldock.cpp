@@ -278,6 +278,8 @@ ProtocolDock::ProtocolDock(QWidget *parent, view::View &view, SigSession *sessio
 
 ProtocolDock::~ProtocolDock()
 {
+   disconnect_decode_progress_signals();
+
     //destroy protocol item layers
    for (auto it = _protocol_lay_items.begin(); it != _protocol_lay_items.end(); it++){
        DESTROY_QT_LATER(*it);
@@ -326,6 +328,121 @@ void ProtocolDock::reStyle()
     for (auto item : _protocol_lay_items){
         item->ResetStyle();
     }
+}
+
+void ProtocolDock::disconnect_decode_progress_signals()
+{
+    if (_session == NULL)
+        return;
+
+    const auto &decode_sigs = _session->get_decode_signals();
+    for (auto d : decode_sigs) {
+        disconnect(d, SIGNAL(decoded_progress(int)), this, SLOT(decoded_progress(int)));
+    }
+}
+
+void ProtocolDock::clear_protocol_list_ui()
+{
+    disconnect_decode_progress_signals();
+
+    for (auto lay : _protocol_lay_items){
+        _items_layout->removeItem(lay);
+        DESTROY_QT_LATER(lay);
+    }
+    _protocol_lay_items.clear();
+
+    while (_items_layout->count() > 1) {
+        QLayoutItem *item = _items_layout->takeAt(0);
+        delete item;
+    }
+}
+
+void ProtocolDock::sync_protocol_list_from_session()
+{
+    if (_session == NULL)
+        return;
+
+    const auto &decode_sigs = _session->get_decode_signals();
+
+    for (auto trace : decode_sigs) {
+        auto stack = trace->decoder();
+        if (stack == NULL || stack->stack().empty())
+            continue;
+
+        auto dec = stack->stack().front()->decoder();
+        QString protocolName = trace->get_name();
+        if (protocolName.isEmpty())
+            protocolName = QString(dec->name);
+        QString protocolId(dec->id);
+
+        ProtocolItemLayer *layer = new ProtocolItemLayer(_items_container, protocolName, this);
+        _protocol_lay_items.push_back(layer);
+        _items_layout->insertLayout(_protocol_lay_items.size() - 1, layer);
+        layer->m_decoderStatus = static_cast<DecoderStatus*>(stack->get_key_handel());
+        layer->m_protocolId = protocolId;
+        layer->_trace = trace;
+
+        string fmt = AppConfig::Instance().GetProtocolFormat(protocolId.toStdString());
+        if (fmt != "")
+        {
+            layer->SetProtocolFormat(fmt.c_str());
+            if (layer->m_decoderStatus != NULL)
+                layer->m_decoderStatus->m_format = DecoderDataFormat::Parse(fmt.c_str());
+        }
+
+        QString err;
+        int pg = trace->get_progress();
+        if (stack->out_of_memory())
+            err = tr("Out of Memory");
+        layer->SetProgress(pg, err);
+        if (pg == 100 && layer->m_decoderStatus != NULL)
+            layer->enable_format(layer->m_decoderStatus->m_bNumeric);
+
+        connect(trace, SIGNAL(decoded_progress(int)), this, SLOT(decoded_progress(int)), Qt::UniqueConnection);
+    }
+}
+
+pv::view::View* ProtocolDock::active_view() const
+{
+    if (_session == NULL)
+        return NULL;
+
+    const auto &decode_sigs = _session->get_decode_signals();
+    for (auto d : decode_sigs) {
+        if (d->get_view())
+            return d->get_view();
+    }
+
+    for (auto s : _session->get_signals()) {
+        if (s->get_view())
+            return s->get_view();
+    }
+
+    return NULL;
+}
+
+void ProtocolDock::setSession(SigSession *session)
+{
+    if (session == NULL || session == _session)
+        return;
+
+    dsv_info("ProtocolDock::setSession %p -> %p", (void*)_session, (void*)session);
+
+    clear_protocol_list_ui();
+    _session = session;
+
+    _table_view->setModel(_session->get_decoder_model());
+    _model_proxy.setSourceModel(_session->get_decoder_model());
+
+    sync_protocol_list_from_session();
+    update_model();
+    update_view_status();
+    adjustPannelSize();
+
+    _pro_keyword_edit->ResetText();
+    _selected_protocol_id.clear();
+
+    emit protocol_updated();
 }
 
 int ProtocolDock::decoder_name_cmp(const void *a, const void *b)
@@ -466,7 +583,7 @@ bool ProtocolDock::add_protocol_by_id(QString id, bool silent, std::list<pv::dat
     // progress connection
     const auto &decode_sigs = _session->get_decode_signals();   
     protocol_updated();
-    connect(decode_sigs.back(), SIGNAL(decoded_progress(int)), this, SLOT(decoded_progress(int)));
+    connect(decode_sigs.back(), SIGNAL(decoded_progress(int)), this, SLOT(decoded_progress(int)), Qt::UniqueConnection);
 
     adjustPannelSize();
 
@@ -489,18 +606,58 @@ void ProtocolDock::del_all_protocol()
 {  
     if (_protocol_lay_items.size() > 0)
     {
+        clear_protocol_list_ui();
         _session->clear_all_decoder();
-
-        for (auto it = _protocol_lay_items.begin(); it != _protocol_lay_items.end(); it++)
-        {
-             DESTROY_QT_LATER((*it)); //destory control
-        }
-
-        _protocol_lay_items.clear();
         this->update();
         protocol_updated();
 
         adjustPannelSize();
+    }
+}
+
+void ProtocolDock::del_protocols_using_channels(const QSet<int> &disabled_channel_indices)
+{
+    // Policy: NEVER auto-delete the user's decoders just because some channel
+    // went away. Even if a decoder now references a disabled channel, the
+    // decoder will surface a "required channels not specified" error on the
+    // next Start, at which point the user can reconfigure or remove it
+    // intentionally. Silent destruction of user state is worse than a clear
+    // error.
+    //
+    // We keep this slot wired to DeviceOptionsDock::sig_channels_applied so
+    // any future per-decoder "channel binding became stale" handling has a
+    // single funnel point. For now we only log a hint when the set is
+    // non-empty, so the user can correlate "decoder later complained" with
+    // "I disabled channel N" in the log.
+    if (disabled_channel_indices.isEmpty() || _session == nullptr)
+        return;
+
+    QStringList parts;
+    for (int idx : disabled_channel_indices)
+        parts << QString::number(idx);
+    const QString joined = parts.join(",");
+
+    const auto &decode_sigs = _session->get_decode_signals();
+    for (auto sig : decode_sigs) {
+        if (!sig || !sig->decoder())
+            continue;
+        const auto &stack = sig->decoder()->stack();
+        for (auto dec : stack) {
+            if (!dec) continue;
+            for (const srd_channel *pdch : dec->binded_probe_list()) {
+                const int sig_idx = dec->binded_probe_index(pdch);
+                if (sig_idx >= 0 && disabled_channel_indices.contains(sig_idx)) {
+                    dsv_info("Protocol decoder '%s' references channel %d which was "
+                             "just disabled; the decoder is preserved and will report "
+                             "'required channels not specified' on next Start unless "
+                             "reconfigured. (disabled channels: %s)",
+                             dec->get_dec_handel() ? dec->get_dec_handel()->id : "?",
+                             sig_idx,
+                             joined.toUtf8().constData());
+                    break;
+                }
+            }
+        }
     }
 }
 
@@ -682,7 +839,11 @@ void ProtocolDock::nav_table_view()
 
     auto decoder_stack = decoder_model->getDecoderStack();
     if (decoder_stack) {
-        uint64_t offset = _view.offset() * (decoder_stack->samplerate() * _view.scale());
+        auto view = active_view();
+        if (view == NULL)
+            return;
+
+        uint64_t offset = view->offset() * (decoder_stack->samplerate() * view->scale());
         std::map<const pv::data::decode::Row, bool> rows = decoder_stack->get_rows_lshow();
         int column = _model_proxy.filterKeyColumn();
         for (std::map<const pv::data::decode::Row, bool>::const_iterator i = rows.begin();
@@ -710,8 +871,8 @@ void ProtocolDock::nav_table_view()
                 }
 
                 decoder_stack->set_mark_index((ann.start_sample()+ann.end_sample())/2);
-                _view.set_all_update(true);
-                _view.update();
+                view->set_all_update(true);
+                view->update();
             }           
         }
     }

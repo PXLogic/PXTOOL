@@ -31,6 +31,7 @@
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QScrollArea>
+#include <QSet>
 #include <QSplitter>
 #include <QTableView>
 #include <QSortFilterProxyModel>
@@ -82,8 +83,16 @@ public:
     ProtocolDock(QWidget *parent, view::View &view, SigSession *session);
     ~ProtocolDock();
 
+    void setSession(SigSession *session);
     void del_all_protocol(); 
     bool add_protocol_by_id(QString id, bool silent, std::list<pv::data::decode::Decoder*> &sub_decoders);
+
+    /** Remove only the decoder traces that bind to a channel whose physical
+     * index appears in @p disabled_channel_indices. Decoders that don't
+     * reference any of those channels are preserved. An empty set is a
+     * no-op. Used by Device Options Apply so enabling channels never wipes
+     * out the user's decoders. */
+    void del_protocols_using_channels(const QSet<int> &disabled_channel_indices);
 
     void reset_view();
     void update_view_status();
@@ -98,6 +107,10 @@ private:
     static int decoder_name_cmp(const void *a, const void *b);
     void resize_table_view(data::DecoderModel *decoder_model);
     static bool protocol_sort_callback(const DecoderInfoItem *o1, const DecoderInfoItem *o2);
+    void disconnect_decode_progress_signals();
+    void clear_protocol_list_ui();
+    void sync_protocol_list_from_session();
+    pv::view::View* active_view() const;
 
     //IProtocolItemLayerCallback
     void OnProtocolSetting(void *handle) override;

@@ -225,10 +225,11 @@ SideBar::SideBar(QWidget *parent, view::View &view, SigSession *session)
     mainLayout->addWidget(_stack, 1);
     mainLayout->addWidget(_icon_strip, 0);
 
-    // When Apply commits channel changes, clear all protocol decoders so
-    // decoders that reference now-disabled channels don't error on next Start.
+    // When Apply commits channel changes, only drop the decoders that bind
+    // to a channel that just got disabled. Enabling channels (e.g. Enable All)
+    // emits an empty set, so existing decoders are preserved.
     connect(_device_options_widget, &DeviceOptionsDock::sig_channels_applied,
-            _protocol_widget, &ProtocolDock::del_all_protocol);
+            _protocol_widget, &ProtocolDock::del_protocols_using_channels);
 
     ADD_UI(this);
 }
@@ -376,6 +377,7 @@ void SideBar::setSession(SigSession *session)
 {
     _session = session;
     _device_options_widget->setSession(session);
+    _protocol_widget->setSession(session);
 }
 
 void SideBar::refresh_device_options()

@@ -216,12 +216,19 @@ static const char *ch_names[] = { "Clock", "MOSI", "MISO", "Chip Select", NULL }
 static const char *row_ids[]   = { "bits",       "data",       NULL };
 static const char *row_descs[] = { "Individual bits", "Decoded bytes", NULL };
 
-/* --- Annotation classes (row_id:class_label) --- */
+/* --- Annotation classes (row_id:class_label) ---
+ * The label after the ':' MUST match the id of an entry in the partnering
+ * Python decoder's `annotations` tuple (case-insensitive, ignoring '-' / '_'
+ * separators). The host walks the Python decoder's annotation tuple to
+ * translate these into row routing — if the labels don't match, every
+ * annotation falls back to a positional class index and ends up in the wrong
+ * row (or a hidden bits/warning row, where it becomes invisible). See the
+ * "Annotation routing contract" section in README.md. */
 static const char *ann_classes[] = {
-    "bits:mosi_bit",
-    "bits:miso_bit",
-    "data:mosi_byte",
-    "data:miso_byte",
+    "bits:mosi-bit",
+    "bits:miso-bit",
+    "data:mosi-data",
+    "data:miso-data",
     NULL
 };
 
