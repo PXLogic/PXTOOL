@@ -257,8 +257,12 @@ void Trace::paint_label(QPainter &p, int right, const QPoint pt, QColor fore)
             p.setBrush(_colour);
             p.drawPolygon(points, countof(points));
         } else {
-            QColor color = PROBE_COLORS[*_index_list.begin() % countof(PROBE_COLORS)];
-            p.setBrush(color);
+            // Use _colour so the right-side arrow label matches the left colour
+            // swatch.  Previously PROBE_COLORS[_index_list.front()] was used
+            // here, which diverges from _colour when signals are rebuilt via
+            // the copy constructor (copy inherits the old _index_list while
+            // _colour is re-derived from the new probe index).
+            p.setBrush(_colour);
             p.drawPolygon(points, countof(points));
         }
 
