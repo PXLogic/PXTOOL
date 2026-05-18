@@ -312,6 +312,7 @@ set(DSView_SOURCES
     pv/cdecoders/c_decoder_registry.cpp
     DSView/pv/prop/binding/decoderoptions.cpp
     DSView/pv/widgets/fakelineedit.cpp
+    DSView/pv/widgets/searchedgeflagedit.cpp
     DSView/pv/widgets/decodermenu.cpp
     DSView/pv/widgets/decodergroupbox.cpp
     DSView/pv/prop/string.cpp
@@ -427,6 +428,7 @@ set(DSView_HEADERS
     DSView/pv/data/decoderstack.h
     DSView/pv/view/decodetrace.h
     DSView/pv/widgets/fakelineedit.h
+    DSView/pv/widgets/searchedgeflagedit.h
     DSView/pv/widgets/decodermenu.h
     DSView/pv/widgets/decodergroupbox.h
     DSView/pv/prop/string.h

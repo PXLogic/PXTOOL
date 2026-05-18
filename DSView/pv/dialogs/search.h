@@ -30,20 +30,23 @@
 
 #include "../sigsession.h"
 #include "../toolbars/titlebar.h"
+#include "../widgets/searchedgeflagedit.h"
 #include "dsdialog.h"
- 
+
 namespace pv {
 namespace dialogs {
 
-class SearchEdgeFlagEdit: public QLineEdit
-{
-public:
-    SearchEdgeFlagEdit(QWidget *parent);
+// Alias for backwards compatibility; the actual class now lives in pv::widgets so
+// SearchDock can reuse it without taking a dependency on this dialog header.
+using SearchEdgeFlagEdit = pv::widgets::SearchEdgeFlagEdit;
 
-protected:
-    void focusInEvent(QFocusEvent *e) override;
-};
-
+/**
+ * @deprecated since 2026-05-18.
+ * The "Search Options" UI has been merged into SearchDock; this dialog is
+ * retained only as a fallback / for tests. New code should NOT instantiate it.
+ *
+ * See docs/superpowers/specs/2026-05-18-search-options-merge-into-dock.md
+ */
 class Search : public DSDialog
 {
     Q_OBJECT

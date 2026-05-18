@@ -25,22 +25,27 @@
 
 #include <QDockWidget>
 #include <QPushButton>
+#include <QToolButton>
 #include <QLabel>
 #include <QRadioButton>
+#include <QScrollArea>
 #include <QSlider>
 #include <QLineEdit>
 #include <QSpinBox>
 #include <QTableWidget>
 #include <QCheckBox>
+#include <QRegularExpressionValidator>
 
 #include <QVector>
 #include <QGridLayout>
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 
+#include <map>
 #include <vector>
 
 #include "../widgets/fakelineedit.h"
+#include "../widgets/searchedgeflagedit.h"
 #include "../ui/dscombobox.h"
 #include "../interface/icallbacks.h"
 #include "../ui/uimanager.h"
@@ -55,11 +60,12 @@ namespace view {
 
 namespace widgets {
     class FakeLineEdit;
+    class SearchEdgeFlagEdit;
 }
 
 namespace dock {
 
-class SearchDock : public QWidget, public IUiWindow
+class SearchDock : public QScrollArea, public IUiWindow
 {
     Q_OBJECT
 
@@ -67,11 +73,15 @@ public:
     SearchDock(QWidget *parent, pv::view::View &view, SigSession *session);
     ~SearchDock();
 
-    void paintEvent(QPaintEvent *);
-
 private:     
     void retranslateUi();
     void reStyle();
+
+    void build_nav_bar(QWidget *host);
+    void build_toggle_row(QWidget *host);
+    void build_editor_container(QWidget *host);
+    void rebuild_channel_rows();
+    void refresh_pattern_summary();
 
     //IUiWindow
     void UpdateLanguage() override;
@@ -81,18 +91,36 @@ private:
 public slots:
     void on_previous();
     void on_next();
-    void on_set();
+    void on_toggle_editor(bool force_expand = false);
+    void on_channel_edit_finished();
+    void on_device_updated();
 
 private:
     SigSession *_session;
     view::View &_view;
     std::map<uint16_t, QString> _pattern;
 
+    // NavBar widgets (top, outside the scroll area logically — sits in the same host
+    // but stays at the top because EditorContainer can be collapsed/expanded).
     QPushButton _pre_button;
     QPushButton _nxt_button;
-    widgets::FakeLineEdit* _search_value;
-    QPushButton *_search_button;
-    QLabel *_hint_label = nullptr;
+    widgets::FakeLineEdit* _search_value = nullptr;
+    QPushButton *_search_button = nullptr;
+
+    // Toggle + editor section
+    QToolButton *_toggle_btn = nullptr;
+    QWidget     *_editor_container = nullptr;
+    QGridLayout *_channel_grid = nullptr;
+    QLabel      *_legend_lbl = nullptr;
+    bool         _editor_expanded = false;
+
+    // Channel rows; parallel arrays kept in sync by rebuild_channel_rows().
+    QVector<widgets::SearchEdgeFlagEdit *> _channel_edits;
+    QVector<uint16_t>                      _channel_indices;
+
+    // Shared validator instance for all channel line edits; reused across rebuilds
+    // to avoid leaking validators on each device_updated.
+    QRegularExpressionValidator *_value_validator = nullptr;
 };
 
 } // namespace dock

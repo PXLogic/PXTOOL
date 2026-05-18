@@ -2780,6 +2780,51 @@ QDialog#searchDialog QPushButton#device_cancel_btn:flat:hover {
     border-color: #aaaaaa;
 }
 
+/* ── Search Dock embedded editor (light) ────────────────────────── */
+QScrollArea#search_dock_scroll {
+    background: transparent;
+    border: none;
+}
+QScrollArea#search_dock_scroll > QWidget > QWidget#search_dock_host {
+    background: transparent;
+}
+QWidget#search_editor_toggle QToolButton#search_editor_toggle_btn {
+    background: transparent;
+    border: none;
+    color: #666666;
+    font-size: 11px;
+    padding: 4px 8px;
+}
+QWidget#search_editor_toggle QToolButton#search_editor_toggle_btn:hover {
+    color: #222222;
+}
+QWidget#search_editor_container QLabel#search_dock_ch_name {
+    color: #666666;
+    font-size: 12px;
+}
+QWidget#search_editor_container QLabel#search_dock_ch_idx {
+    color: #444444;
+    font-size: 12px;
+}
+QWidget#search_editor_container QLineEdit#search_dock_ch_edit {
+    background-color: #f0f0f0;
+    border: 1px solid #cccccc;
+    border-radius: 3px;
+    color: #222222;
+    font-size: 12px;
+    padding: 2px 4px;
+    min-height: 22px;
+    selection-background-color: #7c3aed;
+}
+QWidget#search_editor_container QLineEdit#search_dock_ch_edit:focus {
+    border-color: #7c3aed;
+}
+QWidget#search_editor_container QLabel#search_dock_legend {
+    color: #888888;
+    font-size: 10px;
+    line-height: 1.6;
+}
+
 /* ── Device Options Dialog (light) ─────────────────────────────── */
 QDialog#deviceOptionsDialog QWidget#TitleBar QLabel,
 QDialog#decoderOptionsDialog QWidget#TitleBar QLabel,

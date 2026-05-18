@@ -19,11 +19,17 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
  */
 
+/*
+ * NOTE: dialogs::Search is @deprecated since 2026-05-18 — its UI has been merged
+ * into SearchDock. See docs/superpowers/specs/2026-05-18-search-options-merge-into-dock.md.
+ * The class is kept here only for backwards compatibility; no DSView code path
+ * currently instantiates it.
+ */
+
 #include "search.h"
 #include "../view/logicsignal.h"
 #include <assert.h>
 #include <QRegularExpressionValidator>
-#include <QTimer>
 #include <QPushButton>
 #include <QHBoxLayout>
  
@@ -31,19 +37,9 @@
 namespace pv {
 namespace dialogs {
 
-SearchEdgeFlagEdit::SearchEdgeFlagEdit(QWidget *parent)
-    :QLineEdit(parent)
-{
-}
-
-void SearchEdgeFlagEdit::focusInEvent(QFocusEvent *e)
-{ 
-    QLineEdit::focusInEvent(e);
-
-    QTimer::singleShot(50, this, [this](){  
-        selectAll();
-    });    
-}
+// SearchEdgeFlagEdit implementation moved to pv::widgets — see
+// DSView/pv/widgets/searchedgeflagedit.{h,cpp}. The `using` declaration in
+// search.h keeps existing callers compiling.
 
 Search::Search(QWidget *parent, SigSession *session, std::map<uint16_t, QString> pattern) :
     DSDialog(parent),
