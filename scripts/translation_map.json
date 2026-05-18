@@ -227,7 +227,7 @@
   "Please adjust zero skew and save the result": "请调整零偏差并保存结果",
   "At least one of selected channels are not enabled.": "至少有一个需要解码的通道未使能.",
   "Failed to create decoder instance": "未能创建解码实例",
-  "Decoder s_ann_search_editearch...": "解码器搜索",
+  "Decoder search": "解码器搜索",
   "Any decoder have repeated id or name:": "存在重复id或name的解码器:",
   "search": "查找",
   "Matching Items:": "匹配项:",

@@ -239,10 +239,18 @@ void DecoderOptionsDlg::load_options_view()
 
     this->update_font();
 
-    // Size calculation
-    int content_height = _contentHeight;
-    content_height += region_box->sizeHint().height() + 6;
-    content_height += h_ex2;
+    // Size calculation.
+    //
+    // Activate the container layout so that QFormLayout / nested widgets
+    // publish their final sizeHint() values, then ask the layout itself
+    // for the total required height.  This includes the layout's
+    // contentsMargins (8+8) AND the per-widget setSpacing(6) gaps between
+    // every pair of children — both of which the previous manual sum
+    // missed (it only added one spacing for region_box).  With multiple
+    // decoders in the stack the under-count was 6-12 px and clipped the
+    // bottom of "Decode Range" / footer.
+    container_panel->layout()->activate();
+    const int content_height = container_panel->layout()->sizeHint().height();
 
     QSize tsize = dlg->sizeHint();
     int w = tsize.width();
@@ -251,15 +259,17 @@ void DecoderOptionsDlg::load_options_view()
     int cursor_line_w = lb1->sizeHint().width() + _start_comboBox->sizeHint().width() + 24;
     if (w < cursor_line_w) w = cursor_line_w;
 
-    // overhead: titlebar + titleSpace + top_sep + footer + bottom_sep + container margins
-    int overhead = 130;
+    // overhead: titlebar(44) + titleSpace(8) + top_sep(1) + bot_sep(1)
+    //         + main_layout top/bottom margins(5+10) + footer(margins 10+10
+    //         + button ~32) ≈ ~110, plus a small buffer for font metrics.
+    int overhead = 140;
 #ifdef Q_OS_DARWIN
     overhead += 20;
 #endif
 
     float sk = QGuiApplication::primaryScreen()->logicalDotsPerInch() / 96;
     const int srcHeight = 600;
-    container_panel->setFixedHeight(content_height + 16);
+    container_panel->setFixedHeight(content_height);
 
     if ((content_height + overhead) * sk > srcHeight) {
         QScrollArea *scroll = new QScrollArea(scroll_panel);

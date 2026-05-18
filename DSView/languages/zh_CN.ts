@@ -5,7 +5,7 @@
     <name>KeywordLineEdit</name>
     <message>
         <location filename="../pv/dock/keywordlineedit.cpp" line="54"/>
-        <source>Decoder s_ann_search_editearch...</source>
+        <source>Decoder search</source>
         <translation>解码器搜索</translation>
     </message>
 </context>

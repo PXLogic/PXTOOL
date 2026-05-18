@@ -556,63 +556,6 @@ void Viewport::paintProgress(QPainter &p, QColor fore, QColor back)
     p.setPen(QPen(View::Green, 4, Qt::SolidLine));
     p.drawArc(cenPos.x() - radius, cenPos.y() - radius, 2* radius, 2 * radius, 180 * 16, progress);
 
-    p.setPen(Qt::gray);
-
-    const QPoint logoPoints[] = {
-        QPoint(cenPos.x() - 0.75 * radius, cenPos.y()),
-        QPoint(cenPos.x() - 0.75 * radius, cenPos.y() + 0.15 * radius),
-        QPoint(cenPos.x() - 0.6 * radius, cenPos.y()),
-        QPoint(cenPos.x() - 0.6 * radius, cenPos.y() + 0.3 * radius),
-        QPoint(cenPos.x() - 0.45 * radius, cenPos.y()),
-        QPoint(cenPos.x() - 0.45 * radius, cenPos.y() + 0.45 * radius),
-        QPoint(cenPos.x() - 0.3 * radius, cenPos.y()),
-        QPoint(cenPos.x() - 0.3 * radius, cenPos.y() + 0.3 * radius),
-        QPoint(cenPos.x() - 0.15 * radius, cenPos.y()),
-        QPoint(cenPos.x() - 0.15 * radius, cenPos.y() + 0.15 * radius),
-        QPoint(cenPos.x() + 0.15 * radius, cenPos.y()),
-        QPoint(cenPos.x() + 0.15 * radius, cenPos.y() - 0.15 * radius),
-        QPoint(cenPos.x() + 0.3 * radius, cenPos.y()),
-        QPoint(cenPos.x() + 0.3 * radius, cenPos.y() - 0.3 * radius),
-        QPoint(cenPos.x() + 0.45 * radius, cenPos.y()),
-        QPoint(cenPos.x() + 0.45 * radius, cenPos.y() - 0.45 * radius),
-        QPoint(cenPos.x() + 0.6 * radius, cenPos.y()),
-        QPoint(cenPos.x() + 0.6 * radius, cenPos.y() - 0.3 * radius),
-        QPoint(cenPos.x() + 0.75 * radius, cenPos.y()),
-        QPoint(cenPos.x() + 0.75 * radius, cenPos.y() - 0.15 * radius)
-    };
-
-    const int logoRadius = 10;
-    p.drawLine(logoPoints[0], logoPoints[1]);
-    p.drawLine(logoPoints[2], logoPoints[3]);
-    p.drawLine(logoPoints[4], logoPoints[5]);
-    p.drawLine(logoPoints[6], logoPoints[7]);
-    p.drawLine(logoPoints[8], logoPoints[9]);
-    p.drawLine(logoPoints[10], logoPoints[11]);
-    p.drawLine(logoPoints[12], logoPoints[13]);
-    p.drawLine(logoPoints[14], logoPoints[15]);
-    p.drawLine(logoPoints[16], logoPoints[17]);
-    p.drawLine(logoPoints[18], logoPoints[19]);
-    p.drawEllipse(logoPoints[1].x() - 0.5 * logoRadius, logoPoints[1].y(),
-            logoRadius, logoRadius);
-    p.drawEllipse(logoPoints[3].x() - 0.5 * logoRadius, logoPoints[3].y(),
-            logoRadius, logoRadius);
-    p.drawEllipse(logoPoints[5].x() - 0.5 * logoRadius, logoPoints[5].y(),
-            logoRadius, logoRadius);
-    p.drawEllipse(logoPoints[7].x() - 0.5 * logoRadius, logoPoints[7].y(),
-            logoRadius, logoRadius);
-    p.drawEllipse(logoPoints[9].x() - 0.5 * logoRadius, logoPoints[9].y(),
-            logoRadius, logoRadius);
-    p.drawEllipse(logoPoints[11].x() - 0.5 * logoRadius, logoPoints[11].y() - logoRadius,
-            logoRadius, logoRadius);
-    p.drawEllipse(logoPoints[13].x() - 0.5 * logoRadius, logoPoints[13].y() - logoRadius,
-            logoRadius, logoRadius);
-    p.drawEllipse(logoPoints[15].x() - 0.5 * logoRadius, logoPoints[15].y() - logoRadius,
-            logoRadius, logoRadius);
-    p.drawEllipse(logoPoints[17].x() - 0.5 * logoRadius, logoPoints[17].y() - logoRadius,
-            logoRadius, logoRadius);
-    p.drawEllipse(logoPoints[19].x() - 0.5 * logoRadius, logoPoints[19].y() - logoRadius,
-            logoRadius, logoRadius);
-
     if (!_transfer_started) {
         const int width = _view.get_view_width();
         const QPoint cenLeftPos = QPoint(width / 2 - 0.05 * width, height() / 2);

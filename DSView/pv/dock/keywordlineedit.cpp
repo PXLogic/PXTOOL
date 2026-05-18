@@ -51,7 +51,7 @@ void KeywordLineEdit::ResetText()
         return;         
     }
 
-    this->setText(tr("Decoder s_ann_search_editearch..."));
+    this->setText(tr("Decoder search"));
 }
 
 void KeywordLineEdit::SetInputText(QString text)
