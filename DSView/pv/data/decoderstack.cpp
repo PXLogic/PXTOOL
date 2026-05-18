@@ -1001,15 +1001,203 @@ void DecoderStack::execute_c_decode_stack()
 
 void DecoderStack::execute_c_decode_stack_streaming(CDecoderDef *c_def)
 {
-    /* Filled in by Task 4. For now, fall back to batch so the build stays
-     * working and the dispatcher exercises the new code path under test. */
+    assert(_snapshot);
     assert(c_def);
-    if (c_def->decode) {
-        execute_c_decode_stack_batch(c_def);
-    } else {
-        _error_message = "Streaming path not implemented and no batch entry";
-        dsv_err("C decoder streaming path not implemented");
+    assert(c_def->create && c_def->decode_chunk && c_def->destroy);
+
+    const srd_decoder *root_srd = _stack.front()->decoder();
+    decode::Decoder   *front_dec = _stack.front();
+
+    /* ---------- channel layout (same as batch path) ---------- */
+    int num_channels = 0;
+    if (c_def->channel_ids)
+        while (c_def->channel_ids[num_channels]) num_channels++;
+
+    std::vector<int> sig_indices(num_channels, -1);
+    {
+        int ch_idx = 0;
+        for (const GSList *l = root_srd->channels; l && ch_idx < num_channels;
+             l = l->next, ch_idx++) {
+            const srd_channel *const pdch = static_cast<const srd_channel*>(l->data);
+            sig_indices[ch_idx] = front_dec->binded_probe_index(pdch);
+        }
     }
+
+    /* ---------- per-run decoder state ---------- */
+    void *inst = c_def->create(static_cast<uint64_t>(_samplerate), num_channels);
+    if (!inst) {
+        _error_message = "C decoder create() returned NULL";
+        dsv_err("C decoder '%s' create() returned NULL", root_srd->id);
+        return;
+    }
+
+    /* ---------- annotation glue (identical to batch path) ---------- */
+    std::vector<std::vector<int>> row_class_map;
+    if (c_def->ann_row_ids && c_def->ann_classes) {
+        int nrows = 0;
+        while (c_def->ann_row_ids[nrows]) nrows++;
+        int nclasses = 0;
+        while (c_def->ann_classes[nclasses]) nclasses++;
+
+        std::vector<int> row_count(nrows, 0);
+        for (int k = 0; k < nclasses; k++) {
+            const char *entry = c_def->ann_classes[k];
+            const char *colon = std::strchr(entry, ':');
+            if (!colon) continue;
+            size_t plen = static_cast<size_t>(colon - entry);
+            for (int r = 0; r < nrows; r++) {
+                if (std::strlen(c_def->ann_row_ids[r]) == plen &&
+                    std::strncmp(c_def->ann_row_ids[r], entry, plen) == 0) {
+                    row_count[r]++;
+                    break;
+                }
+            }
+        }
+        row_class_map.resize(nrows);
+        for (int r = 0; r < nrows; r++)
+            row_class_map[r].assign(row_count[r], -1);
+
+        std::vector<int> row_idx(nrows, 0);
+        for (int k = 0; k < nclasses; k++) {
+            const char *entry = c_def->ann_classes[k];
+            const char *colon = std::strchr(entry, ':');
+            if (!colon) continue;
+            size_t plen = static_cast<size_t>(colon - entry);
+            for (int r = 0; r < nrows; r++) {
+                if (std::strlen(c_def->ann_row_ids[r]) == plen &&
+                    std::strncmp(c_def->ann_row_ids[r], entry, plen) == 0) {
+                    row_class_map[r][row_idx[r]++] = k;
+                    break;
+                }
+            }
+        }
+    }
+
+    srd_decoder_inst fake_di = {};
+    fake_di.decoder = const_cast<srd_decoder*>(root_srd);
+    srd_pd_output fake_pdo = {};
+    fake_pdo.output_type = SRD_OUTPUT_ANN;
+    fake_pdo.di          = &fake_di;
+    volatile int stop_flag = 0;
+    CPutFnCtx put_ctx = { this, _stask_stauts, &fake_pdo, &row_class_map, &stop_flag };
+
+    /* ---------- streaming loop ---------- */
+    uint64_t i         = front_dec->decode_start();
+    uint64_t end_index = front_dec->decode_end();
+    std::vector<void*>          lbp_per_ch(num_channels, nullptr);
+    std::vector<const uint8_t*> ch_ptrs(num_channels, nullptr);
+    std::vector<uint8_t>        zero_buf;   /* on-demand zero-fill for unbound channels */
+    bool bCheckEnd = false;
+    int  rc = 0;
+
+    /* Classify channels: "bound" = sig_idx >= 0 AND snapshot has data for it.
+     * Unbound channels are silently zero-filled per chunk to match the batch
+     * path's behaviour (which pre-fills sample_bufs with zeros). */
+    std::vector<bool> ch_is_bound(num_channels, false);
+    for (int ch = 0; ch < num_channels; ch++)
+        ch_is_bound[ch] = (sig_indices[ch] >= 0 && _snapshot->has_data(sig_indices[ch]));
+
+    _progress    = 0;
+    _is_decoding = true;
+
+    while (i <= end_index && !_no_memory && !_stask_stauts->_bStop && !stop_flag)
+    {
+        /* Wait-for-data / end-of-capture alignment — same shape as decode_data() */
+        if (_is_capture_end) {
+            if (!bCheckEnd) {
+                bCheckEnd = true;
+                uint64_t avail = _snapshot->get_ring_sample_count();
+                if (avail == 0) break;
+                if (end_index >= avail) {
+                    end_index = avail - 1;
+                    dsv_info("C streaming: capped end_index to %llu",
+                             (unsigned long long)end_index);
+                }
+                if (i > end_index) break;
+            }
+        } else if (i >= _snapshot->get_ring_sample_count()) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            continue;
+        }
+
+        /* Pass 1: fetch BOUND channels and shrink chunk_end to the minimum end.
+         * If any bound channel returns NULL the ring isn't filled past `i` yet —
+         * wait and retry. */
+        uint64_t chunk_end       = end_index;
+        bool     needs_wait      = false;
+        bool     any_bound_ready = false;
+        for (int ch = 0; ch < num_channels; ch++) {
+            ch_ptrs[ch] = nullptr;
+            if (!ch_is_bound[ch]) continue;
+            uint64_t ce = end_index;
+            void *lbp = nullptr;
+            const uint8_t *data = _snapshot->get_samples(i, ce, sig_indices[ch], &lbp);
+            if (!data) { needs_wait = true; break; }
+            if (ce < chunk_end) chunk_end = ce;
+            ch_ptrs[ch] = data;
+            any_bound_ready = true;
+            if (!_snapshot->is_able_free() && lbp) {
+                if (lbp_per_ch[ch] && lbp_per_ch[ch] != lbp)
+                    _snapshot->free_decode_lpb(lbp_per_ch[ch]);
+                lbp_per_ch[ch] = lbp;
+            }
+        }
+
+        if (needs_wait || (!any_bound_ready && num_channels > 0)) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            continue;
+        }
+
+        /* Pass 2: zero-fill UNBOUND channels for the chunk's length so the
+         * decoder always sees non-NULL ch[k]. */
+        uint64_t chunk_len = chunk_end - i + 1;
+        if (zero_buf.size() < chunk_len) zero_buf.assign(chunk_len, 0);
+        for (int ch = 0; ch < num_channels; ch++) {
+            if (ch_ptrs[ch] == nullptr) ch_ptrs[ch] = zero_buf.data();
+        }
+
+        /* Feed this chunk to the decoder */
+        rc = c_def->decode_chunk(inst, i, chunk_end,
+                                  num_channels, ch_ptrs.data(),
+                                  c_put_annotation_cb, &put_ctx, &stop_flag);
+        if (rc != 0) {
+            _error_message =
+                QString("C decoder decode_chunk returned %1").arg(rc);
+            dsv_err("C decoder '%s' decode_chunk returned %d",
+                    root_srd->id, rc);
+            break;
+        }
+
+        /* Progress + UI notify per chunk */
+        i = chunk_end + 1;
+        uint64_t total = end_index - front_dec->decode_start() + 1;
+        _progress = total ? (int)((i - front_dec->decode_start()) * 100 / total) : 100;
+        {
+            std::lock_guard<std::mutex> lock(_output_mutex);
+            _samples_decoded += static_cast<int64_t>(chunk_len);
+        }
+        new_decode_data();
+
+        if (_is_capture_end && i > end_index) break;
+    }
+
+    /* ---------- cleanup ---------- */
+    for (int ch = 0; ch < num_channels; ch++) {
+        if (lbp_per_ch[ch]) _snapshot->free_decode_lpb(lbp_per_ch[ch]);
+        lbp_per_ch[ch] = nullptr;
+    }
+
+    c_def->destroy(inst);
+
+    _progress    = 100;
+    _is_decoding = false;
+
+    dsv_info("C decoder '%s' streaming decoded %llu samples, %llu annotations",
+             root_srd->id,
+             (unsigned long long)(i - front_dec->decode_start()),
+             (unsigned long long)_result_count);
+
+    new_decode_data();
 }
 
 void DecoderStack::execute_c_decode_stack_batch(CDecoderDef *c_def)
