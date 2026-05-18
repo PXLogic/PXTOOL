@@ -213,7 +213,13 @@ void Header::mousePressEvent(QMouseEvent *event)
 {
 	assert(event);
 
-    _mouse_is_down = true;
+    // Only the left button starts a header drag. Right-button presses pop up
+    // a modal context menu that swallows the matching release event, which
+    // would otherwise leave _mouse_is_down stuck at true and block wheel
+    // zoom on the viewport via header_is_draging().
+    if (event->button() & Qt::LeftButton) {
+        _mouse_is_down = true;
+    }
 
     std::vector<Trace*> traces;
     _view.get_traces(ALL_VIEW, traces);
@@ -549,6 +555,11 @@ void Header::leaveEvent(QEvent*)
 
 void Header::contextMenuEvent(QContextMenuEvent *event)
 {
+    // The modal QMenu::exec() below consumes the right-button release event,
+    // so make sure the header is not left in a "dragging" state which would
+    // disable wheel zoom on the viewport.
+    _mouse_is_down = false;
+
     int action;
     const auto t = get_mTrace(action, _mouse_point);
 
