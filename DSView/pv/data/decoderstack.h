@@ -218,6 +218,8 @@ private:
     void decode_data(const uint64_t decode_start, const uint64_t decode_end, srd_session *const session);
 	void execute_decode_stack();
     void execute_c_decode_stack();
+    void execute_c_decode_stack_batch(CDecoderDef *c_def);
+    void execute_c_decode_stack_streaming(CDecoderDef *c_def);
     void do_decode_work();
     void join_own_thread();
   

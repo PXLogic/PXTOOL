@@ -967,18 +967,58 @@ static void c_put_annotation_cb(void *ctx, uint64_t ss, uint64_t es,
 void DecoderStack::execute_c_decode_stack()
 {
     assert(_snapshot);
-    // Note: C decoders don't support real-time streaming mode (pre-allocates all samples).
-    // In streaming mode, the Python path is used instead.
-
     const srd_decoder *root_srd = _stack.front()->decoder();
     CDecoderDef *c_def =
         pv::cdecoders::CDecoderRegistry::instance().get_c_decoder_def_by_id(root_srd->id);
-    if (!c_def || !c_def->decode) {
-        _error_message = "C decoder has no decode function";
-        dsv_err("C decoder '%s' has no decode function", root_srd->id);
+    if (!c_def) {
+        _error_message = "C decoder definition not found";
+        dsv_err("C decoder '%s' not in registry", root_srd->id);
         return;
     }
 
+    /* Dispatch policy (spec Resolved Decision #1):
+     * If the decoder is v2 streaming-capable, ALWAYS go through the streaming
+     * path, regardless of whether the capture is live or already finished —
+     * this matches the Python decoder path (decode_data()).
+     * Fall back to the existing batch body only for v1 decoders or v2
+     * decoders that only expose `decode`. */
+    const bool streaming_capable =
+        c_def->api_version >= 2 &&
+        c_def->create       != nullptr &&
+        c_def->decode_chunk != nullptr &&
+        c_def->destroy      != nullptr;
+    const bool batch_capable = (c_def->decode != nullptr);
+
+    if (streaming_capable) {
+        execute_c_decode_stack_streaming(c_def);
+    } else if (batch_capable) {
+        execute_c_decode_stack_batch(c_def);
+    } else {
+        _error_message = "C decoder exposes neither streaming nor batch entry";
+        dsv_err("C decoder '%s' has no usable decode entry", root_srd->id);
+    }
+}
+
+void DecoderStack::execute_c_decode_stack_streaming(CDecoderDef *c_def)
+{
+    /* Filled in by Task 4. For now, fall back to batch so the build stays
+     * working and the dispatcher exercises the new code path under test. */
+    assert(c_def);
+    if (c_def->decode) {
+        execute_c_decode_stack_batch(c_def);
+    } else {
+        _error_message = "Streaming path not implemented and no batch entry";
+        dsv_err("C decoder streaming path not implemented");
+    }
+}
+
+void DecoderStack::execute_c_decode_stack_batch(CDecoderDef *c_def)
+{
+    assert(_snapshot);
+    assert(c_def);
+    assert(c_def->decode);
+
+    const srd_decoder *root_srd = _stack.front()->decoder();
     decode::Decoder *front_dec = _stack.front();
     _sample_count = _snapshot->get_ring_sample_count();
     if (_sample_count == 0) {
