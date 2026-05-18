@@ -21,6 +21,7 @@
 
 #include "sidebar.h"
 #include <QTimer>
+#include <QPointer>
 #include "triggerdock.h"
 #include "dsotriggerdock.h"
 #include "protocoldock.h"
@@ -255,12 +256,44 @@ void SideBar::adjustDockWidth(bool expand)
     if (!mw) return;
 
     if (expand) {
+        // Panel open.  The dock may be coming out of the locked-collapsed
+        // state (min == max == kIconStripWidth), in which case neither
+        // releasing the max followed by an inline resizeDocks() nor doing
+        // it in a deferred lambda reliably gets the dock back to the
+        // configured panel width — QMainWindowLayout caches the old
+        // constraint and clamps the request.  Robust recipe: release max
+        // first, then *temporarily* pin min to the target width so the
+        // layout has to honour the size; resizeDocks() then snaps the dock
+        // there.  Once the layout has settled (next event loop iteration),
+        // relax min back to the normal floor so the user can drag the
+        // QMainWindow separator narrower.
+        const int target = _saved_panel_width;
+
         _stack->setMinimumWidth(kStackMinWidth);
-        mw->resizeDocks({dock}, {_saved_panel_width}, Qt::Horizontal);
+        _stack->updateGeometry();
+
+        dock->setMaximumWidth(QWIDGETSIZE_MAX);
+        dock->setMinimumWidth(target);
+        mw->resizeDocks({dock}, {target}, Qt::Horizontal);
+
+        QPointer<QDockWidget> dockPtr(dock);
+        QTimer::singleShot(0, this, [dockPtr]() {
+            if (dockPtr)
+                dockPtr->setMinimumWidth(kStackMinWidth + kIconStripWidth);
+        });
     } else {
+        // Panel collapsed: lock the dock to the icon-strip width so the
+        // user cannot drag the QMainWindow separator and leave a blank
+        // (invisible-_stack) gap between the waveform area and the icon
+        // strip.  Re-opening a tab restores the expanded constraints above.
         _saved_panel_width = qMax(kStackMinWidth + kIconStripWidth, dock->width());
         _stack->setMinimumWidth(0);
         _stack->updateGeometry();
+        // Release the min first so we can shrink the dock down to the
+        // icon strip width before clamping max.
+        dock->setMinimumWidth(0);
+        dock->setMaximumWidth(kIconStripWidth);
+        dock->setMinimumWidth(kIconStripWidth);
         mw->resizeDocks({dock}, {kIconStripWidth}, Qt::Horizontal);
     }
 }

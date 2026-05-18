@@ -1666,6 +1666,12 @@ namespace pv
         // The panel starts closed; collapse the dock to icon-strip width so
         // the icon strip is flush with the right window edge even if the
         // saved window state recorded a wider dock (panel was open when saved).
+        // Also clamp the dock to that width so the QMainWindow separator
+        // cannot be dragged to widen the collapsed dock and reveal a blank
+        // (invisible-stack) gap between the waveform area and the icon strip.
+        // SideBar::adjustDockWidth() releases the clamp when a tab is opened.
+        _sidebar_dock->setMinimumWidth(dock::SideBar::kIconStripWidth);
+        _sidebar_dock->setMaximumWidth(dock::SideBar::kIconStripWidth);
         resizeDocks({_sidebar_dock}, {dock::SideBar::kIconStripWidth}, Qt::Horizontal);
 
         // Resotre the dock pannel.
@@ -2756,11 +2762,20 @@ namespace pv
             case DSV_MSG_END_DEVICE_OPTIONS:
             case DSV_MSG_DEMO_OPERATION_MODE_CHNAGED:
             {
-                bool isDeviceTab = (_session_items.isEmpty() ||
-                                    _session == _session_items[0].session);
-                if(isDeviceTab && _device_agent->is_demo() &&_device_agent->get_work_mode() == LOGIC){                
-                    QString pattern_mode = _device_agent->get_demo_operation_mode();       
-                    
+                // The demo driver's sr_channel list is a *global* shared
+                // resource: changing SR_CONF_PATTERN_MODE calls
+                // load_virtual_device_session() which sr_dev_probes_free()s
+                // the existing channels and allocates a new set. Every
+                // session that holds LogicSignal objects bound to those
+                // probes now has dangling pointers, so we must rebuild
+                // signals for the currently-active session regardless of
+                // whether it is the device tab. (Restricting this to the
+                // device tab caused waveforms to disappear from extra
+                // sessions on mode switch because their _signals retained
+                // freed sr_channel*.)
+                if(_device_agent->is_demo() && _device_agent->get_work_mode() == LOGIC){
+                    QString pattern_mode = _device_agent->get_demo_operation_mode();
+
                     if(pattern_mode != _pattern_mode)
                     {
                         _pattern_mode = pattern_mode; 
@@ -2768,6 +2783,11 @@ namespace pv
                         _device_agent->update();
                         _session->clear_view_data();
                         _session->init_signals();
+                        // Notify the view so it redraws against the freshly
+                        // bound (and cleared) signal list, instead of
+                        // keeping the stale rendering from the previous
+                        // pattern.
+                        _session->notify_signals_changed();
                         update_toolbar_view_status();
                         _sampling_bar->update_sample_rate_list();
                         _sidebar_widget->protocol_widget()->del_all_protocol();
