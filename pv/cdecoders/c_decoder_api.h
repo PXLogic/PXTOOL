@@ -18,8 +18,12 @@
 
 #include <stdint.h>
 
-/** ABI version — set CDecoderDef::api_version to this value. */
-#define C_DECODER_API_VERSION 1
+/** ABI version — set CDecoderDef::api_version to this value.
+ *  v1 (1): synchronous batch-only decoders. Only the `decode` field is used.
+ *  v2 (2): adds optional streaming triple (`create`, `decode_chunk`,
+ *          `destroy`). v1 decoders continue to load and run.
+ */
+#define C_DECODER_API_VERSION 2
 
 /**
  * CDecoderDef — interface struct that every C decoder must implement.
@@ -106,6 +110,85 @@ typedef struct CDecoderDef {
         void *ctx,
         volatile int *stop_flag
     );
+
+    /* --- v2 streaming interface (optional; all three must be set together) -----
+     *
+     * If a decoder sets all of `create`, `decode_chunk`, and `destroy`, the host
+     * will call them instead of `decode` whenever it has a streaming-capable
+     * runtime (always, in the current host). This lets the decoder retain
+     * protocol state across chunks and emit annotations progressively while
+     * the capture is still running.
+     *
+     * If any of the three is NULL the host treats the decoder as batch-only
+     * (v1 semantics) and falls back to calling `decode` once with the full
+     * sample range.
+     *
+     * Threading: `create`, `decode_chunk` calls, and `destroy` are all made
+     * sequentially from the same worker thread. The decoder must not assume
+     * any other threading model.
+     */
+
+    /**
+     * create — Allocate and initialise per-run decoder state.
+     *
+     * Called once before the first decode_chunk(). Return NULL on
+     * allocation failure; the host will abort the run cleanly without
+     * calling decode_chunk() or destroy().
+     *
+     * Parameters:
+     *   samplerate    — capture sample rate in Hz (constant for the run)
+     *   num_channels  — number of channels (== length of channel_ids)
+     */
+    void *(*create)(uint64_t samplerate, int num_channels);
+
+    /**
+     * decode_chunk — Decode one contiguous range of samples.
+     *
+     * Called repeatedly with non-overlapping, monotonically increasing
+     * chunk ranges: chunk_start_sample of the (n+1)-th call equals
+     * chunk_end_sample of the n-th call + 1.
+     *
+     * Returns 0 on success, negative on unrecoverable error (host stops
+     * the run and still calls destroy()).
+     *
+     * Parameters:
+     *   inst                — pointer returned by create()
+     *   chunk_start_sample  — absolute sample index of channel_samples[ch][0]
+     *   chunk_end_sample    — absolute sample index of the last sample
+     *                         (inclusive); chunk length = end - start + 1
+     *   num_channels        — number of channels (matches create())
+     *   channel_samples     — channel_samples[ch][k] is sample value at
+     *                         absolute index chunk_start_sample + k.
+     *                         Pointers are valid ONLY for the duration of
+     *                         this call. Do not cache across calls.
+     *                         Channels the user did not bind are silently
+     *                         substituted with a host-owned zero-filled
+     *                         buffer for the chunk's length.
+     *   put_annotation      — same as v1; emits absolute-indexed annotations
+     *   ctx                 — opaque; pass unchanged to put_annotation
+     *   stop_flag           — poll periodically; return promptly when non-zero
+     */
+    int (*decode_chunk)(
+        void *inst,
+        uint64_t chunk_start_sample,
+        uint64_t chunk_end_sample,
+        int       num_channels,
+        const uint8_t **channel_samples,
+        void (*put_annotation)(void *ctx, uint64_t start_sample, uint64_t end_sample,
+                               unsigned int ann_row, unsigned int ann_class,
+                               const char *text),
+        void *ctx,
+        volatile int *stop_flag
+    );
+
+    /**
+     * destroy — Release decoder state allocated by create().
+     *
+     * Called exactly once after the last decode_chunk(), regardless of
+     * how the run ended (success, error return, stop_flag, OOM). No
+     * further callbacks into the decoder happen after destroy() returns.
+     */
+    void (*destroy)(void *inst);
 } CDecoderDef;
 
 /**
