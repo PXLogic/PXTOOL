@@ -2679,6 +2679,42 @@ QWidget#search_header_bar QLabel#search_panel_title {
     font-weight: 600;
 }
 
+/* ── Glitch Filter Panel header bar (dark) ──────────────────────── */
+QWidget#filter_header_bar {
+    background: #1a1a1a;
+    border-bottom: 1px solid #333333;
+}
+QWidget#filter_header_bar QLabel#filter_panel_title {
+    color: #e0e0e0;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+/* ── Glitch Filter Panel content (dark) ─────────────────────────── */
+QWidget#glitchFilterWidget QGroupBox {
+    background: transparent;
+    border: 1px solid #333333;
+    border-radius: 4px;
+    margin-top: 10px;
+    padding: 8px 6px 6px 6px;
+    color: #eff0f1;
+    font-size: 11px;
+    font-weight: normal;
+}
+QWidget#glitchFilterWidget QGroupBox::title {
+    subcontrol-origin: margin;
+    subcontrol-position: top left;
+    left: 8px;
+    padding: 0 4px;
+    color: #eff0f1;
+    font-size: 11px;
+    font-weight: normal;
+}
+QWidget#glitchFilterWidget QLabel {
+    color: #aaaaaa;
+    font-size: 12px;
+}
+
 /* ── Device Options Panel header bar (dark) ─────────────────────── */
 QWidget#options_header_bar {
     background: #1a1a1a;
