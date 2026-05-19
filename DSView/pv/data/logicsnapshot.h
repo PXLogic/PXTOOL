@@ -108,6 +108,13 @@ public:
 
     bool get_sample(uint64_t index, int sig_index);
 
+    // Bulk in-place modification: write `value` into samples [start_index, end_index).
+    // Single mutex acquisition for the entire range. Must NOT be called during
+    // active capture and must NOT be called when is_loop() is true.
+    // Used by the glitch filter post-process and its undo path.
+    void set_sample_block(uint64_t start_index, uint64_t end_index,
+                          int sig_index, bool value);
+
     void capture_ended();
 
     bool get_display_edges(std::vector<std::pair<bool, bool>> &edges,
@@ -172,6 +179,14 @@ private:
     void calc_mipmap(unsigned int order, uint8_t index0, uint8_t index1, uint64_t samples, bool isEnd);
 
     void append_cross_payload(const sr_datafeed_logic &logic);
+
+    // Refresh node.first / node.last / node.tog and rebuild mipmap levels 1-3
+    // for a single leaf block. Caller must hold _mutex.
+    void refresh_block_after_write(int order, uint64_t index0, uint64_t index1,
+                                   uint64_t block_samples);
+
+    // Rebuild mipmap levels 1-3 from level-0 raw bits for a single leaf block.
+    static void rebuild_block_mipmaps(void *lbp_buf, uint64_t samples_in_block);
 
     bool lbp_nxt_edge(uint64_t &index, uint64_t root_index, uint64_t lbp_tog, uint8_t lbp_tog_pos,
                       bool aft_tog, uint8_t aft_pos, bool last_sample, int sig_index);

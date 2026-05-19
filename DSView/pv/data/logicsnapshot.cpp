@@ -24,6 +24,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <math.h>
+#include <algorithm>
  
 #include "logicsnapshot.h"
 #include "../dsvdef.h"
@@ -31,6 +32,62 @@
 #include "../utility/array.h"
 
 using namespace std;
+
+namespace {
+
+// Write bit `value` into the bit range [cur, write_end) of `lbp`, where bit s
+// is at lbp[(s & LeafMask) >> ScalePower] bit (s & LevelMask[0]).
+// Writes head partial word, word-aligned middle, tail partial word.
+// Caller must guarantee [cur, write_end) lies within a single leaf block.
+inline void write_bits(uint64_t *lbp, uint64_t cur, uint64_t write_end, bool value)
+{
+    if (cur >= write_end) return;
+
+    // Mirror of LogicSnapshot::LeafMask (private static const). The leaf block
+    // is 2^24 samples, so the in-block bit index is `s & ((1<<24)-1)` and the
+    // in-block word index is that >> 6.
+    constexpr uint64_t LeafMaskLocal = (1ULL << 24) - 1;
+
+    const uint64_t fill_word    = value ? ~0ULL : 0ULL;
+    const uint64_t cur_bit      = cur & 63;              // bit within first word
+    const uint64_t end_bit_incl = (write_end - 1) & 63;  // bit within last word, inclusive
+    const uint64_t fw_local     = (cur & LeafMaskLocal) >> 6;
+    const uint64_t lw_local     = ((write_end - 1) & LeafMaskLocal) >> 6;
+
+    if (fw_local == lw_local) {
+        // Single-word range: build a mask covering [cur_bit, end_bit_incl]
+        uint64_t mask = (~0ULL << cur_bit);
+        if (end_bit_incl != 63)
+            mask &= ~(~0ULL << (end_bit_incl + 1));
+        if (value) lbp[fw_local] |=  mask;
+        else       lbp[fw_local] &= ~mask;
+        return;
+    }
+
+    // Head partial word: bits [cur_bit, 63]
+    if (cur_bit != 0) {
+        uint64_t mask = ~0ULL << cur_bit;
+        if (value) lbp[fw_local] |=  mask;
+        else       lbp[fw_local] &= ~mask;
+    } else {
+        lbp[fw_local] = fill_word;
+    }
+
+    // Word-aligned middle: full 64-bit words
+    for (uint64_t w = fw_local + 1; w < lw_local; ++w)
+        lbp[w] = fill_word;
+
+    // Tail partial word: bits [0, end_bit_incl]
+    if (end_bit_incl != 63) {
+        uint64_t mask = ~(~0ULL << (end_bit_incl + 1));
+        if (value) lbp[lw_local] |=  mask;
+        else       lbp[lw_local] &= ~mask;
+    } else {
+        lbp[lw_local] = fill_word;
+    }
+}
+
+} // anonymous namespace
 
 namespace pv {
 namespace data {
@@ -1514,6 +1571,181 @@ int LogicSnapshot::get_block_with_sample(uint64_t index, uint64_t *out_offset)
     int block =  index / LeafBlockSamples;
     *out_offset = index % LeafBlockSamples;
     return block;
+}
+
+// ---------------------------------------------------------------------------
+// Glitch-filter support: bulk in-place sample write with mipmap maintenance
+// ---------------------------------------------------------------------------
+
+/* static */ void LogicSnapshot::rebuild_block_mipmaps(void *lbp_buf, uint64_t samples)
+{
+    const uint64_t L0_bytes = LeafBlockSamples / 8;
+    const uint64_t L1_bytes = LeafBlockSamples / Scale / 8;
+    const uint64_t L2_bytes = LeafBlockSamples / Scale / Scale / 8;
+
+    uint64_t *l0 = reinterpret_cast<uint64_t *>(lbp_buf);
+    uint64_t *l1 = reinterpret_cast<uint64_t *>(static_cast<uint8_t *>(lbp_buf) + L0_bytes);
+    uint64_t *l2 = reinterpret_cast<uint64_t *>(static_cast<uint8_t *>(lbp_buf) + L0_bytes + L1_bytes);
+    uint64_t *l3 = reinterpret_cast<uint64_t *>(static_cast<uint8_t *>(lbp_buf) + L0_bytes + L1_bytes + L2_bytes);
+
+    std::memset(l1, 0, L1_bytes);
+    std::memset(l2, 0, L2_bytes);
+    std::memset(l3, 0, sizeof(uint64_t));
+
+    // Level 1: bit set when adjacent 64-sample words differ in any bit
+    uint64_t last = (*l0 & LSB) ? ~0ULL : 0ULL;
+    for (uint64_t i = 0; i < samples / Scale; i++) {
+        if (last ^ l0[i])
+            l1[i / Scale] |= (1ULL << (i % Scale));
+        last = (l0[i] & MSB) ? ~0ULL : 0ULL;
+    }
+
+    // Level 2: bit set when any level-1 word is nonzero
+    for (uint64_t i = 0; i < LeafBlockSamples / Scale / Scale; i++) {
+        if (l1[i])
+            l2[i / Scale] |= (1ULL << (i % Scale));
+    }
+
+    // Level 3: bit set when any level-2 word is nonzero (single output uint64_t)
+    for (uint64_t i = 0; i < Scale; i++) {
+        if (l2[i])
+            l3[0] |= (1ULL << i);
+    }
+}
+
+void LogicSnapshot::refresh_block_after_write(int order, uint64_t index0, uint64_t index1,
+                                              uint64_t block_samples)
+{
+    RootNode &node = _ch_data[order][index0];
+    uint64_t root_pos_mask = 1ULL << index1;
+
+    assert(node.lbp[index1] != nullptr);  // caller must have allocated
+
+    uint64_t *lbp = reinterpret_cast<uint64_t *>(node.lbp[index1]);
+
+    // Rebuild mipmap pyramid first
+    rebuild_block_mipmaps(lbp, block_samples);
+
+    // node.first <- LSB of first level-0 word
+    if (lbp[0] & LSB)
+        node.first |=  root_pos_mask;
+    else
+        node.first &= ~root_pos_mask;
+
+    // node.last <- bit at position (block_samples - 1) of level-0
+    uint64_t last_word_off = (block_samples - 1) >> ScalePower;
+    uint64_t last_bit_mask = 1ULL << ((block_samples - 1) & LevelMask[0]);
+    if (lbp[last_word_off] & last_bit_mask)
+        node.last |=  root_pos_mask;
+    else
+        node.last &= ~root_pos_mask;
+
+    // node.tog <- whether the block contains any edge (level-3 nonzero)
+    const uint64_t L0_bytes = LeafBlockSamples / 8;
+    const uint64_t L1_bytes = LeafBlockSamples / Scale / 8;
+    const uint64_t L2_bytes = LeafBlockSamples / Scale / Scale / 8;
+    uint64_t l3 = *reinterpret_cast<uint64_t *>(static_cast<uint8_t *>(node.lbp[index1])
+                  + L0_bytes + L1_bytes + L2_bytes);
+    if (l3 != 0)
+        node.tog |=  root_pos_mask;
+    else
+        node.tog &= ~root_pos_mask;
+    // Note: we intentionally keep lbp allocated even if the block is now uniform,
+    // so subsequent set_sample_block calls don't need to re-allocate. The small
+    // memory cost is acceptable for the post-process filter use case.
+}
+
+void LogicSnapshot::set_sample_block(uint64_t start_index, uint64_t end_index,
+                                     int sig_index, bool value)
+{
+    if (start_index >= end_index) return;
+
+    std::lock_guard<std::mutex> lock(_mutex);
+
+    int order = get_ch_order(sig_index);
+    if (order == -1) return;
+    if (_ch_data.empty() || (size_t)order >= _ch_data.size()) return;
+
+    // Glitch filter is only valid for non-loop captures.
+    if (_is_loop) return;
+
+    // Note: index0/index1 calculations below assume _loop_offset == 0
+    // (guaranteed because we reject _is_loop captures above). If this
+    // function is ever extended to support loop mode, mirror the
+    // `index += _loop_offset` adjustment from get_sample_unlock.
+
+    if (end_index > _ring_sample_count)
+        end_index = _ring_sample_count;
+    if (start_index >= end_index) return;
+
+    // We modify by leaf block. Track which blocks were touched so we
+    // refresh first/last/tog and the mipmap pyramid exactly once per block.
+    uint64_t cur = start_index;
+    uint64_t prev_index0 = 0;
+    uint64_t prev_index1 = 0;
+    bool prev_valid = false;
+
+    while (cur < end_index) {
+        uint64_t index0        = cur >> (LeafBlockPower + RootScalePower);
+        uint64_t index1        = (cur & RootMask) >> LeafBlockPower;
+        uint64_t root_pos_mask = 1ULL << index1;
+
+        // Refresh the previous block FIRST (before any potential malloc that
+        // could fail and force an early return). This guarantees that
+        // already-written blocks are always left in a consistent state.
+        if (prev_valid && (index0 != prev_index0 || index1 != prev_index1)) {
+            uint64_t prev_block_start = (prev_index0 * RootScale + prev_index1) * LeafBlockSamples;
+            uint64_t prev_samples = std::min<uint64_t>(LeafBlockSamples,
+                                                      _ring_sample_count - prev_block_start);
+            refresh_block_after_write(order, prev_index0, prev_index1, prev_samples);
+        }
+
+        RootNode &node = _ch_data[order][index0];
+
+        // If the leaf block is uniform (lbp == NULL or tog bit == 0), expand it
+        // to a full bit array so we can write individual bits.
+        if ((node.tog & root_pos_mask) == 0 || node.lbp[index1] == nullptr) {
+            bool cur_val = (node.first & root_pos_mask) != 0;
+            uint8_t fill_byte = cur_val ? 0xFF : 0x00;
+
+            void *lbp_buf = node.lbp[index1];
+            if (lbp_buf == nullptr) {
+                lbp_buf = malloc(LeafBlockSpace);
+                if (!lbp_buf) {
+                    dsv_err("LogicSnapshot::set_sample_block, malloc failed");
+                    return;
+                }
+                node.lbp[index1] = lbp_buf;
+            }
+            memset(lbp_buf, fill_byte, LeafBlockSamples / 8);
+            // Mipmap levels will be rebuilt by refresh_block_after_write.
+            memset(static_cast<uint8_t *>(lbp_buf) + LeafBlockSamples / 8,
+                   0, LeafBlockSpace - LeafBlockSamples / 8);
+            // Force tog ON during writes so get_sample sees the block buffer;
+            // refresh_block_after_write will re-derive it from level3.
+            node.tog |= root_pos_mask;
+        }
+
+        // Block-relative range
+        uint64_t block_first_sample = (index0 * RootScale + index1) * LeafBlockSamples;
+        uint64_t block_last_sample  = block_first_sample + LeafBlockSamples;
+        uint64_t write_end          = std::min(block_last_sample, end_index);
+
+        uint64_t *lbp = reinterpret_cast<uint64_t *>(node.lbp[index1]);
+
+        write_bits(lbp, cur, write_end, value);
+
+        bool last_iter = (write_end >= end_index);
+        if (last_iter) {
+            uint64_t samples = std::min<uint64_t>(LeafBlockSamples,
+                                                  _ring_sample_count - block_first_sample);
+            refresh_block_after_write(order, index0, index1, samples);
+        }
+        prev_index0 = index0;
+        prev_index1 = index1;
+        prev_valid  = true;
+        cur = write_end;
+    }
 }
 
 } // namespace data
