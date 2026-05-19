@@ -649,6 +649,22 @@ QString GetCDecodeDir()
     return GetUserDataDir() + "/cdecoders";
 }
 
+QString GetBundledCDecodeDir()
+{
+    // C decoders shipped with the app live next to res/, demo/, lang/ under the
+    // resource share/DSView directory. CMake installs them via:
+    //   install(TARGETS spi LIBRARY DESTINATION ${MAC_RES_PREFIX}share/DSView/cdecoders)
+    // So on macOS the dylib ends up at:
+    //   <App>.app/Contents/Resources/share/DSView/cdecoders/spi.dylib
+    // and on Linux at:
+    //   <prefix>/share/DSView/cdecoders/spi.so
+    // Both paths are reachable as GetAppDataDir() + "/cdecoders".
+    QString path = GetAppDataDir() + "/cdecoders";
+    if (QDir(path).exists())
+        return path;
+    return QString();
+}
+
 QString GetProfileDir()
 {
  #if QT_VERSION >= 0x050400

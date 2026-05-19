@@ -721,6 +721,22 @@ if(WIN32)
 set_target_properties(${PROJECT_NAME} PROPERTIES LINK_FLAGS "-mwindows")
 endif()
 
+#===============================================================================
+#= Bundled C decoders (shipped inside the app bundle)
+#-------------------------------------------------------------------------------
+# Build the example SPI C decoder as a loadable module so it can be dlopen'd by
+# CDecoderRegistry at startup. Installing it into <bundle>/Contents/Resources/
+# share/DSView/cdecoders/ (macOS) or <prefix>/share/DSView/cdecoders/ (Linux)
+# makes it discoverable via GetBundledCDecodeDir() = GetAppDataDir()+"/cdecoders".
+add_library(spi MODULE pv/cdecoders/example_spi/spi_c_decoder.c)
+set_target_properties(spi PROPERTIES
+    PREFIX ""        # no "lib" prefix; produce spi.dylib / spi.so
+    C_STANDARD 99
+)
+if(APPLE)
+    set_target_properties(spi PROPERTIES SUFFIX ".dylib")
+endif()
+
 if(APPLE)
     set_target_properties(${PROJECT_NAME} PROPERTIES
         BUNDLE TRUE
@@ -796,6 +812,11 @@ install(FILES ug31.pdf DESTINATION ${MAC_RES_PREFIX}share/DSView RENAME ug31.pdf
 
 install(DIRECTORY libsigrokdecode4DSL/decoders DESTINATION ${MAC_RES_PREFIX}share/libsigrokdecode4DSL)
 install(DIRECTORY lang DESTINATION ${MAC_RES_PREFIX}share/DSView)
+
+# Bundled C decoders go alongside res/, demo/, lang/ under share/DSView.
+# On macOS MAC_RES_PREFIX expands to <bundle>/Contents/Resources/, on Linux it
+# is empty so the destination resolves to <prefix>/share/DSView/cdecoders.
+install(TARGETS spi LIBRARY DESTINATION ${MAC_RES_PREFIX}share/DSView/cdecoders)
 
 #===============================================================================
 #= Packaging (handled by CPack)

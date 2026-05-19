@@ -73,6 +73,16 @@ for lib in libglib-2.0.0.dylib libusb-1.0.0.dylib libfftw3.3.dylib; do
   fi
 done
 
+# Confirm bundled C decoders survived the copy from package-root/.
+CDECODERS_DIR="$DIST_APP/Contents/Resources/share/DSView/cdecoders"
+for dylib in spi.dylib; do
+  if [ -f "$CDECODERS_DIR/$dylib" ]; then
+    echo "  OK: cdecoders/$dylib"
+  else
+    echo "  WARNING: cdecoders/$dylib missing — did 'make install' populate package-root?"
+  fi
+done
+
 # ── Step 5: Bundle Python.framework + fix remaining homebrew paths ────────────
 echo "[5/6] Bundling Python.framework and verifying dependencies..."
 

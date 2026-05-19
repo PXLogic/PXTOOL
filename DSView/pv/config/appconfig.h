@@ -42,6 +42,7 @@ QString GetFirmwareDir();
 QString GetUserDataDir();
 QString GetDecodeScriptDir();
 QString GetCDecodeDir();
+QString GetBundledCDecodeDir();
 QString GetProfileDir();
 
 //------------------class

@@ -18,6 +18,7 @@
 
 #include <dlfcn.h>
 #include <dirent.h>
+#include <cerrno>
 #include <cstring>
 #include <string>
 
@@ -45,9 +46,20 @@ CDecoderRegistry::~CDecoderRegistry()
 
 void CDecoderRegistry::load_c_decoders(const std::string &dir_path)
 {
+    errno = 0;
     DIR *dir = opendir(dir_path.c_str());
     if (!dir) {
-        dsv_err("Cannot open directory: %s", dir_path.c_str());
+        // ENOENT is the normal case for the user-installed decoders dir that
+        // hasn't been created yet — don't scare end users with a red ERROR for
+        // an entirely expected condition. Anything else (permission denied,
+        // too many symlinks, etc.) is still surfaced as a real error.
+        if (errno == ENOENT) {
+            dsv_info("C decoder directory not present, skipping: %s",
+                     dir_path.c_str());
+        } else {
+            dsv_err("Cannot open directory: %s (errno=%d)",
+                    dir_path.c_str(), errno);
+        }
         return;
     }
 

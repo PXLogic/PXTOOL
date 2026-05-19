@@ -125,9 +125,23 @@ bool AppControl::Init()
         return false;
     }
 
+    // Two-tier C decoder loading:
+    //   1) Bundled decoders shipped inside the app (always loaded first).
+    //      On macOS: <App>.app/Contents/Resources/share/DSView/cdecoders/.
+    //   2) User-installed decoders in the writable data directory
+    //      (~/Library/Application Support/.../cdecoders on macOS, etc.).
+    //      Any ID present here is skipped because the bundled one already
+    //      registered it — but a user may add new IDs the app didn't ship.
+    QString bundled_cdir = GetBundledCDecodeDir();
+    if (!bundled_cdir.isEmpty()) {
+        std::string s = pv::path::ConvertPath(bundled_cdir);
+        dsv_info("Loading bundled C decoders from: %s", s.c_str());
+        pv::cdecoders::CDecoderRegistry::instance().load_c_decoders(s);
+    }
+
     QString cdir = GetCDecodeDir();
     std::string cdir_str = pv::path::ConvertPath(cdir);
-    dsv_info("Loading C decoders from: %s", cdir_str.c_str());
+    dsv_info("Loading user C decoders from: %s", cdir_str.c_str());
     pv::cdecoders::CDecoderRegistry::instance().load_c_decoders(cdir_str);
 
     return true;
