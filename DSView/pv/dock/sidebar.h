@@ -50,6 +50,7 @@ class MeasureDock;
 class SearchDock;
 class DeviceOptionsDock;
 class LogDock;
+class GlitchFilterDock;
 
 class SideBar : public QWidget, public IUiWindow
 {
@@ -63,7 +64,8 @@ public:
         TabSearch   = 3,
         TabOptions  = 4,
         TabLogs     = 5,
-        TabCount    = 6
+        TabFilter   = 6,
+        TabCount    = 7
     };
 
     SideBar(QWidget *parent, view::View &view, SigSession *session);
@@ -76,6 +78,7 @@ public:
     SearchDock        *search_widget()         { return _search_widget; }
     DeviceOptionsDock *device_options_widget() { return _device_options_widget; }
     LogDock           *log_widget()            { return _log_widget; }
+    GlitchFilterDock *glitch_filter_widget() { return _glitch_filter_widget; }
 
     static constexpr int kIconStripWidth    = 62;
     static constexpr int kStackMinWidth     = 200;
@@ -119,12 +122,14 @@ private:
     SearchDock        *_search_widget;
     DeviceOptionsDock *_device_options_widget;
     LogDock           *_log_widget;
+    GlitchFilterDock *_glitch_filter_widget = nullptr;
 
     QLabel *_title_trigger  = nullptr;
     QLabel *_title_decode   = nullptr;
     QLabel *_title_measure  = nullptr;
     QLabel *_title_search   = nullptr;
     QLabel *_title_options  = nullptr;
+    QLabel *_title_filter  = nullptr;
 
     SigSession     *_session;
 

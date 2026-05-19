@@ -29,6 +29,7 @@
 #include "searchdock.h"
 #include "deviceoptionsdock.h"
 #include "logdock.h"
+#include "glitchfilterdock.h"
 #include "../view/view.h"
 #include <QLabel>
 #include <QIcon>
@@ -162,6 +163,24 @@ SideBar::SideBar(QWidget *parent, view::View &view, SigSession *session)
     lw_layout->setSpacing(0);
     lw_layout->addWidget(_log_widget, 1);
 
+    // Filter tab: "Glitch Filter" header + GlitchFilterDock
+    _glitch_filter_widget = new GlitchFilterDock(this, session);
+    auto *filter_wrap = new QWidget(this);
+    filter_wrap->setObjectName("filter_wrap");
+    auto *fw_layout = new QVBoxLayout(filter_wrap);
+    fw_layout->setContentsMargins(0, 0, 0, 0);
+    fw_layout->setSpacing(0);
+    auto *fw_header = new QWidget(filter_wrap);
+    fw_header->setObjectName("filter_header_bar");
+    auto *fw_hlay = new QHBoxLayout(fw_header);
+    fw_hlay->setContentsMargins(12, 8, 12, 8);
+    _title_filter = new QLabel(tr("Glitch Filter"), fw_header);
+    _title_filter->setObjectName("filter_panel_title");
+    fw_hlay->addWidget(_title_filter);
+    fw_hlay->addStretch();
+    fw_layout->addWidget(fw_header);
+    fw_layout->addWidget(_glitch_filter_widget, 1);
+
     // Outer content stack: one page per tab
     _stack = new QStackedWidget(this);
     _stack->addWidget(trigger_wrap);      // page 0: trigger (header + inner stack)
@@ -170,6 +189,7 @@ SideBar::SideBar(QWidget *parent, view::View &view, SigSession *session)
     _stack->addWidget(search_wrap);       // page 3: search (header + search dock)
     _stack->addWidget(options_wrap);      // page 4: device options panel
     _stack->addWidget(log_wrap);          // page 5: log panel
+    _stack->addWidget(filter_wrap);       // page 6: glitch filter
     _stack->setVisible(false);
     _stack->setMinimumWidth(kStackMinWidth);
 
@@ -188,12 +208,14 @@ SideBar::SideBar(QWidget *parent, view::View &view, SigSession *session)
         ":/icons/sidebar/ruler.svg",
         ":/icons/sidebar/search.svg",
         ":/icons/sidebar/settings-2.svg",
-        ":/icons/sidebar/log.svg"
+        ":/icons/sidebar/log.svg",
+        ":/icons/sidebar/filter.svg"
     };
     static const char *labels[TabCount] = {
         QT_TR_NOOP("Trigger"), QT_TR_NOOP("Decode"),
         QT_TR_NOOP("Measure"), QT_TR_NOOP("Search"),
-        QT_TR_NOOP("Options"), QT_TR_NOOP("Log")
+        QT_TR_NOOP("Options"), QT_TR_NOOP("Log"),
+        QT_TR_NOOP("Filter")
     };
 
     for (int i = 0; i < TabCount; i++) {
@@ -411,6 +433,8 @@ void SideBar::setSession(SigSession *session)
     _session = session;
     _device_options_widget->setSession(session);
     _protocol_widget->setSession(session);
+    if (_glitch_filter_widget)
+        _glitch_filter_widget->setSession(session);
 }
 
 void SideBar::refresh_device_options()
@@ -423,7 +447,8 @@ void SideBar::retranslateUi()
     static const char *labels[TabCount] = {
         QT_TR_NOOP("Trigger"), QT_TR_NOOP("Decode"),
         QT_TR_NOOP("Measure"), QT_TR_NOOP("Search"),
-        QT_TR_NOOP("Options"), QT_TR_NOOP("Log")
+        QT_TR_NOOP("Options"), QT_TR_NOOP("Log"),
+        QT_TR_NOOP("Filter")
     };
     for (int i = 0; i < TabCount; i++)
         _btns[i]->setText(tr(labels[i]));
@@ -433,6 +458,7 @@ void SideBar::retranslateUi()
     if (_title_measure) _title_measure->setText(tr("Measurement"));
     if (_title_search)  _title_search->setText(tr("Search"));
     if (_title_options) _title_options->setText(tr("Device Options"));
+    if (_title_filter)  _title_filter->setText(tr("Glitch Filter"));
 }
 
 void SideBar::UpdateLanguage() { retranslateUi(); }
