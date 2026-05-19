@@ -46,6 +46,7 @@
 #include "data/logicsnapshot.h"
 #include "data/analogsnapshot.h"
 #include "data/dsosnapshot.h"
+#include "data/glitchfilter.h"
  
 struct srd_decoder;
 struct srd_channel;
@@ -442,6 +443,29 @@ public:
     }
 
     void clear_view_data();
+    // Glitch filter (post-process). Apply runs on the dock's worker thread;
+    // the dock calls finalize_glitch_filter() on the UI thread when the
+    // worker emits finished_ok.
+    //
+    // Undo any active filter, but keep _glitch_cfg in place. Called by the
+    // dock immediately before launching a new worker so the algorithm sees
+    // unfiltered data; the new cfg+undo_log will arrive via finalize().
+    void apply_glitch_filter_undo();
+    // Called by the dock on the UI thread when its worker finishes;
+    // commits the new filter state and notifies the view.
+    void finalize_glitch_filter(const data::GlitchFilterConfig &cfg,
+                                std::vector<data::FlippedRegion> undo_log);
+    // User-initiated clear: undo, reset cfg to defaults, notify.
+    void clear_glitch_filter();
+    bool is_glitch_filter_applied() const { return _glitch_filter_applied; }
+    const data::GlitchFilterConfig& glitch_filter_config() const { return _glitch_cfg; }
+    // Returns the active view-data LogicSnapshot, or nullptr if no view exists.
+    // PRECONDITION: capture must NOT be running (see is_working()). The pointer
+    // remains valid only until any operation that replaces _view_data
+    // (clear_view_data, refresh, capture restart, etc.). Callers that hold
+    // the pointer across thread boundaries must guarantee no such mutation
+    // happens during use.
+    data::LogicSnapshot* get_view_logic_snapshot();
     void set_trace_name(view::Trace *trace, QString name);
     void set_decoder_row_label(int index, QString label);
 
@@ -640,6 +664,14 @@ private:
     std::map<int, QString> _device_config_string_cache;
     SessionData       *_view_data;
     SessionData       *_capture_data;
+    // Glitch filter state (applies to _view_data->get_logic())
+    data::GlitchFilterConfig         _glitch_cfg;
+    std::vector<data::FlippedRegion> _glitch_undo_log;
+    bool                             _glitch_filter_applied = false;
+    // Invalidate any pending glitch-filter state. Called from every code path
+    // that replaces or reinitialises _view_data->get_logic(), because the
+    // undo-log indices reference absolute sample positions in that snapshot.
+    void invalidate_glitch_filter_state();
     std::vector<SessionData*> _data_list;
     IDecoderPannel  *_decoder_pannel;
     sr_status       _dso_status;

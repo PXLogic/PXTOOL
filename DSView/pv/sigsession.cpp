@@ -246,6 +246,7 @@ namespace pv
         _view_data->clear();
         _capture_data->clear();
         _capture_data = _view_data;
+        invalidate_glitch_filter_state();
 
         // Reset all probes to enabled before building the signal list.
         // The demo device driver is a global singleton; if another session
@@ -561,7 +562,8 @@ namespace pv
         
         dsv_info("SigSession::start_capture() clearing data for session@%p", (void*)this);
         _capture_data->clear();
-        _view_data->clear();       
+        _view_data->clear();
+        invalidate_glitch_filter_state();
         _is_stream_mode = false;
         _capture_times = 0;
         _dso_packet_count = 0;
@@ -900,6 +902,7 @@ namespace pv
         dsv_info("SigSession::init_signals() clearing data for session@%p", (void*)this);
         _capture_data->clear();
         _view_data->clear();
+        invalidate_glitch_filter_state();
         set_cur_snap_samplerate(_device_agent.get_sample_rate());
         set_cur_samplelimits(_device_agent.get_sample_limit());    
 
@@ -1116,6 +1119,7 @@ namespace pv
 
         data_lock();
         _view_data->get_logic()->init();
+        invalidate_glitch_filter_state();
 
         clear_all_decode_task2();
         clear_decode_result();
@@ -2353,7 +2357,8 @@ namespace pv
                         if (_view_data != _capture_data)
                             _view_data->clear();
                         
-                        _view_data = _capture_data; 
+                        _view_data = _capture_data;
+                        invalidate_glitch_filter_state();
                         attach_data_to_signal(_view_data); 
                         set_session_time(_trig_time);
 
@@ -2422,8 +2427,9 @@ namespace pv
 
             _capture_data->clear();
             _view_data->clear();
-            _capture_data = _view_data;              
-            
+            _capture_data = _view_data;
+            invalidate_glitch_filter_state();
+
             init_signals();
 
             set_cur_snap_samplerate(_device_agent.get_sample_rate());
@@ -2543,6 +2549,8 @@ namespace pv
 
     void SigSession::clear_view_data()
     {
+        // Replacing view data invalidates any pending glitch-filter undo.
+        invalidate_glitch_filter_state();
         _view_data->clear();
         data_updated();
     }
@@ -2662,6 +2670,64 @@ namespace pv
     void SigSession::apply_samplerate()
     {
         on_load_config_end();
+    }
+
+    pv::data::LogicSnapshot* SigSession::get_view_logic_snapshot()
+    {
+        // Preconditions: capture must be ended (no concurrent writers).
+        // The dock checks is_working() before calling.
+        assert(!is_working());
+        if (!_view_data) return nullptr;
+        return _view_data->get_logic();
+    }
+
+    void SigSession::apply_glitch_filter_undo()
+    {
+        ds_lock_guard lock(_data_mutex);
+        if (!_glitch_filter_applied) return;
+        if (!_view_data) return;
+        data::GlitchFilter::undo(_view_data->get_logic(), _glitch_undo_log);
+        _glitch_undo_log.clear();
+        _glitch_filter_applied = false;
+    }
+
+    void SigSession::finalize_glitch_filter(const data::GlitchFilterConfig &cfg,
+                                            std::vector<data::FlippedRegion> undo_log)
+    {
+        // Called on the UI thread by GlitchFilterDock when its worker finishes.
+        ds_lock_guard lock(_data_mutex);
+        _glitch_cfg            = cfg;
+        _glitch_undo_log       = std::move(undo_log);
+        _glitch_filter_applied = !_glitch_undo_log.empty();
+        if (_callback) _callback->data_updated();
+    }
+
+    void SigSession::clear_glitch_filter()
+    {
+        ds_lock_guard lock(_data_mutex);
+        // Reset cfg + notify even when there's no view data so the dock UI
+        // stays consistent (Important #4).
+        bool need_undo = _glitch_filter_applied && _view_data;
+        if (need_undo) {
+            data::GlitchFilter::undo(_view_data->get_logic(), _glitch_undo_log);
+            _glitch_undo_log.clear();
+            _glitch_filter_applied = false;
+        }
+        _glitch_cfg = data::GlitchFilterConfig{};
+        if (_callback) _callback->data_updated();
+    }
+
+    void SigSession::invalidate_glitch_filter_state()
+    {
+        // Must NOT acquire _data_mutex: refresh() (and any future caller
+        // already holding _data_mutex) would self-deadlock. The other call
+        // sites (set_device, start_capture, init_signals, OnMessage swap,
+        // switch_work_mode, clear_view_data) are gated by !_is_working, so
+        // no concurrent UI mutator can race.
+        // Keep _glitch_cfg so the dock UI retains user settings across
+        // capture restarts; the user can re-Apply on the new data.
+        _glitch_undo_log.clear();
+        _glitch_filter_applied = false;
     }
 
 } // namespace pv
