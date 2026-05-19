@@ -323,8 +323,14 @@ public:
     }
 
     inline bool is_working(){
-        return _is_working || _device_status == ST_RUNNING;
+        return _is_working || _device_status == ST_RUNNING || _filter_in_progress;
     }
+
+    // Set/clear by GlitchFilterDock around its worker run, so the dock-level
+    // post-process is visible to is_working() and prevents other UI actions
+    // (refresh, capture restart, etc.) from racing the worker on _view_data.
+    void set_filter_in_progress(bool v) { _filter_in_progress = v; }
+    bool is_filter_in_progress() const { return _filter_in_progress; }
 
     inline bool is_init_status(){
         return _device_status == ST_INIT;
@@ -668,6 +674,7 @@ private:
     data::GlitchFilterConfig         _glitch_cfg;
     std::vector<data::FlippedRegion> _glitch_undo_log;
     bool                             _glitch_filter_applied = false;
+    bool                             _filter_in_progress = false;
     // Invalidate any pending glitch-filter state. Called from every code path
     // that replaces or reinitialises _view_data->get_logic(), because the
     // undo-log indices reference absolute sample positions in that snapshot.
