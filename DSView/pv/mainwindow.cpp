@@ -77,6 +77,7 @@
 #include "dock/searchdock.h"
 #include "dock/protocoldock.h"
 #include "dock/sidebar.h"
+#include "dock/glitchfilterdock.h"
 
 #include "view/view.h"
 #include "view/trace.h"
@@ -2063,6 +2064,8 @@ namespace pv
     {
         _sidebar_widget->measure_widget()->reCalc();
         _view->data_updated();
+        if (auto *gfd = _sidebar_widget->glitch_filter_widget())
+            gfd->onDataUpdated();
     }
 
     void MainWindow::on_open_doc()
@@ -2124,6 +2127,15 @@ namespace pv
     void MainWindow::on_frame_ended()
     {
         _view->receive_end();
+        // LOGIC mode never invokes the data_updated callback during capture
+        // (SigSession::data_feed_in skips it for LOGIC). frame_ended is the
+        // signal that fires when LOGIC capture buffer is finalized, so the
+        // glitch-filter dock has to be re-evaluated here too. This is what
+        // turns Apply on after Start->capture-complete in LOGIC mode.
+        if (_sidebar_widget) {
+            if (auto *gfd = _sidebar_widget->glitch_filter_widget())
+                gfd->onDataUpdated();
+        }
     }
 
     void MainWindow::frame_began()

@@ -41,6 +41,13 @@ public:
     void setSession(SigSession *session);
     void reload();
 
+    // Lightweight refresh hook for SigSession data-updated events. Intentionally
+    // does NOT touch checkbox/spinbox state (would clobber the user's pending
+    // selection mid-interaction); only refreshes the Apply button's enabled
+    // state so it tracks data presence (e.g. enables itself once a capture
+    // produces samples after the user has already chosen channels/thresholds).
+    void onDataUpdated();
+
     // IUiWindow
     void UpdateLanguage() override;
     void UpdateTheme()    override;
@@ -50,6 +57,14 @@ private slots:
     void onApply();
     void onClear();
     void onWorkerFinished();
+
+protected:
+    // Refresh channel rows whenever the panel becomes visible. The dock is
+    // typically constructed before any data is loaded, so the channel count
+    // reported by SigSession::get_ch_num() may be 0 at construction time.
+    // showEvent() ensures the rows are populated once the user switches to
+    // the Filter tab after a capture/file is loaded.
+    void showEvent(QShowEvent *event) override;
 
 private:
     void buildUi();

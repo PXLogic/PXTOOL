@@ -465,6 +465,10 @@ public:
     void clear_glitch_filter();
     bool is_glitch_filter_applied() const { return _glitch_filter_applied; }
     const data::GlitchFilterConfig& glitch_filter_config() const { return _glitch_cfg; }
+    // Count of contiguous flipped regions in the active filter, or 0 if
+    // no filter is currently applied. Used by the dock for quick visual
+    // verification ("Applied (N regions flipped)").
+    size_t glitch_filter_region_count() const { return _glitch_undo_log.size(); }
     // Returns the active view-data LogicSnapshot, or nullptr if no view exists.
     // PRECONDITION: capture must NOT be running (see is_working()). The pointer
     // remains valid only until any operation that replaces _view_data

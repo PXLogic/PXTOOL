@@ -10,6 +10,7 @@
 #include "../data/logicsnapshot.h"
 #include <libsigrok.h>
 #include <QScrollBar>
+#include <QShowEvent>
 
 namespace pv {
 namespace dock {
@@ -44,6 +45,7 @@ GlitchFilterDock::~GlitchFilterDock()
 void GlitchFilterDock::buildUi()
 {
     _content_widget = new QWidget(this);
+    _content_widget->setObjectName("glitchFilterWidget");
     setWidget(_content_widget);
 
     auto *main_layout = new QVBoxLayout(_content_widget);
@@ -144,7 +146,19 @@ void GlitchFilterDock::updateApplyEnabled()
         if (row.enable_cb->isChecked()) { any = true; break; }
     }
     bool busy = (_session && _session->is_working());
-    _apply_btn->setEnabled(any && _session != nullptr && !busy && _worker == nullptr);
+
+    // Only enable Apply when a capture/file has actually produced samples.
+    // Without this guard, hitting Apply before Start (or before opening a
+    // file) yields a confusing "No data" message. We only peek at the
+    // snapshot when no concurrent writer is active (busy guard above);
+    // get_view_logic_snapshot() asserts !is_working() in debug builds.
+    bool has_data = false;
+    if (_session && !busy) {
+        pv::data::LogicSnapshot *snap = _session->get_view_logic_snapshot();
+        has_data = snap && snap->have_data();
+    }
+    _apply_btn->setEnabled(any && _session != nullptr && !busy
+                           && _worker == nullptr && has_data);
 }
 
 void GlitchFilterDock::setStatus(StatusState s)
@@ -152,7 +166,15 @@ void GlitchFilterDock::setStatus(StatusState s)
     _status = s;
     switch (s) {
         case StatusState::NotApplied:      _status_label->setText(tr("Not applied")); break;
-        case StatusState::Applied:         _status_label->setText(tr("Applied")); break;
+        case StatusState::Applied: {
+            // Show how many runs were flipped so the user has immediate
+            // verification that the algorithm found and removed pulses.
+            size_t n = _session ? _session->glitch_filter_region_count() : 0;
+            _status_label->setText(n > 0
+                ? tr("Applied (%1 region(s) flipped)").arg(n)
+                : tr("Applied"));
+            break;
+        }
         case StatusState::Applying:        _status_label->setText(tr("Applying...")); break;
         case StatusState::NoData:          _status_label->setText(tr("No data")); break;
         case StatusState::NoChannels:      _status_label->setText(tr("No channels enabled")); break;
@@ -251,8 +273,10 @@ void GlitchFilterDock::onClear()
 {
     if (!_session) return;
     _session->clear_glitch_filter();
-    _clear_btn->setEnabled(false);
-    setStatus(StatusState::NotApplied);
+    // reload() pulls the now-cleared cfg from the session into the UI
+    // (unchecks every channel, resets thresholds to default, updates status
+    // and the Clear button enabled state).
+    reload();
 }
 
 void GlitchFilterDock::setSession(SigSession *session)
@@ -293,6 +317,28 @@ void GlitchFilterDock::reload()
             _ch_rows[i].enable_cb->setChecked(false);
         }
     }
+}
+
+void GlitchFilterDock::onDataUpdated()
+{
+    // Called from MainWindow::on_data_updated and on_frame_ended. Cheap
+    // refresh that tracks capture data arriving / being cleared.
+    //
+    // Do NOT call reload() here: reload() resets checkbox/spinbox state from
+    // SigSession's saved cfg and would clobber any in-progress user selection
+    // (e.g. user has just checked D0/threshold but hasn't pressed Apply yet).
+    updateApplyEnabled();
+}
+
+void GlitchFilterDock::showEvent(QShowEvent *event)
+{
+    QScrollArea::showEvent(event);
+    // Refresh row visibility from the current channel count. The dock is
+    // typically constructed before any data is loaded, so reload() at
+    // construction time hides every row. Re-running it on each show picks
+    // up the latest channel count without needing an explicit hook from
+    // MainWindow when a file/device is loaded.
+    if (_session) reload();
 }
 
 void GlitchFilterDock::UpdateLanguage() { retranslateUi(); }
