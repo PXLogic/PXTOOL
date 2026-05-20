@@ -66,6 +66,21 @@ const QColor DecodeTrace::DecodeColours[4] = {
 	QColor(0x72, 0x9F, 0xCF)	// Blue
 };
 
+/* Independent 8-colour palette for the MOSI (second-tier) annotation rows.
+ * These are visually distinct from Trace::PROBE_COLORS so MISO and MOSI
+ * blocks can be told apart at a glance, while still being easy to read with
+ * white label text on top.  Indexed by (_trace_order % 8). */
+const QColor DecodeTrace::MosiColours[8] = {
+    QColor(0x20, 0x80, 0xC0),  // 0: Steel Blue
+    QColor(0xC0, 0x50, 0x10),  // 1: Burnt Orange
+    QColor(0x90, 0x00, 0x28),  // 2: Dark Crimson
+    QColor(0x18, 0x78, 0x38),  // 3: Forest Green
+    QColor(0xA0, 0x70, 0x00),  // 4: Dark Amber
+    QColor(0x58, 0x28, 0x78),  // 5: Deep Purple
+    QColor(0x00, 0x68, 0x78),  // 6: Dark Teal
+    QColor(0x98, 0x18, 0x58),  // 7: Deep Rose
+};
+
 const QColor DecodeTrace::ErrorBgColour = QColor(0xEF, 0x29, 0x29);
 const QColor DecodeTrace::NoDecodeColour = QColor(0x88, 0x8A, 0x85);
 
@@ -118,7 +133,14 @@ DecodeTrace::DecodeTrace(pv::SigSession *session,
 {
     assert(decoder_stack);
 
-    _colour = DecodeColours[index % countof(DecodeColours)];
+    /* Store the sequential decoder order (0, 1, 2 …) before channel binding
+     * can overwrite _index_list.  This is the stable key for colour lookups. */
+    _trace_order = index;
+
+    /* Pin the header marker to PROBE_COLORS[_trace_order % 16]: the same 16-
+     * colour palette used by the left-side physical channel labels, so the
+     * decoder header and its annotation blocks all come from the same set. */
+    _colour = Trace::PROBE_COLORS[_trace_order % countof(Trace::PROBE_COLORS)];
  
     _decode_start = 0;
     _decode_end  = INT64_MAX; 
@@ -321,11 +343,37 @@ void DecodeTrace::paint_mid(QPainter &p, int left, int right, QColor fore, QColo
                             if (!annotations.empty()) {
                                 double last_x = -1;
 
+                                /* Resolve the fill colour for every annotation
+                                 * in this row:
+                                 *   miso-… rows → Trace::PROBE_COLORS[_trace_order % 16]
+                                 *                 (matches the decoder's header marker)
+                                 *   mosi-… rows → DecodeTrace::MosiColours[_trace_order % 8]
+                                 *                 (independent 8-colour palette, never
+                                 *                  conflicts with PROBE_COLORS)
+                                 *   other rows  → Trace::PROBE_COLORS[_trace_order % 16]
+                                 *
+                                 * _trace_order is fixed at construction time and
+                                 * is unaffected by later channel-binding changes. */
+                                const QString row_id_str =
+                                    (row.row() && row.row()->id)
+                                    ? QString::fromUtf8(row.row()->id)
+                                    : QString();
+                                const bool is_mosi =
+                                    row_id_str.startsWith("mosi",
+                                        Qt::CaseInsensitive);
+                                const QColor row_fill =
+                                    is_mosi
+                                    ? MosiColours[static_cast<size_t>(
+                                          _trace_order) % countof(MosiColours)]
+                                    : Trace::PROBE_COLORS[static_cast<size_t>(
+                                          _trace_order) % countof(Trace::PROBE_COLORS)];
+
                                 for(Annotation *a : annotations){
                                     draw_annotation(*a, p, get_text_colour(),
                                         annotation_height, left, right,
                                         samples_per_pixel, pixels_offset, y,
-                                        0, min_annWidth, fore, back, last_x);
+                                        0, min_annWidth, fore, back, last_x,
+                                        row_fill);
                                 }
                             }
                         }
@@ -360,16 +408,23 @@ void DecodeTrace::paint_fore(QPainter &p, int left, int right, QColor fore, QCol
 void DecodeTrace::draw_annotation(const pv::data::decode::Annotation &a,
     QPainter &p, QColor text_color, int h, int left, int right,
     double samples_per_pixel, double pixels_offset, int y,
-    size_t base_colour, double min_annWidth, QColor fore, QColor back, double &last_x)
+    size_t /*base_colour*/, double min_annWidth, QColor fore, QColor back, double &last_x,
+    QColor fill_colour)
 {
     const double start = max(a.start_sample() / samples_per_pixel -
         pixels_offset, (double)left);
     const double end = min(a.end_sample() / samples_per_pixel -
         pixels_offset, (double)right);
 
-    const size_t colour = ((base_colour + a.type()) % MaxAnnType) % countof(Colours);
-	const QColor &fill = Colours[colour];
-	const QColor &outline = OutlineColours[colour];
+    /* fill_colour is pre-resolved by paint_mid:
+     *   MISO rows  → Trace::PROBE_COLORS[_trace_order % 16]   (= header colour)
+     *   MOSI rows  → DecodeTrace::MosiColours[_trace_order % 8] (independent palette)
+     *   other rows → Trace::PROBE_COLORS[_trace_order % 16]
+     * If no explicit fill was supplied (legacy call-sites), fall back to the
+     * first PROBE_COLORS entry so the code still compiles without warnings. */
+    const QColor &fill = fill_colour.isValid() ? fill_colour
+                                               : Trace::PROBE_COLORS[0];
+    const QColor outline = fill.darker(150);
 
 	if (start > right + DrawPadding || end < left - DrawPadding){
 		return;

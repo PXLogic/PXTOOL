@@ -855,10 +855,11 @@ void DecoderStack::annotation_callback(srd_proto_data *pdata, void *self)
         const char *txt = (ad && ad->ann_text && ad->ann_text[0])
                         ? ad->ann_text[0] : "";
         std::fprintf(stderr,
-                     "ANN-PY,%llu,%llu,%d,-,-,\"%s\"\n",
+                     "ANN-PY,%llu,%llu,%d,t=%d,-,\"%s\"\n",
                      (unsigned long long)pdata->start_sample,
                      (unsigned long long)pdata->end_sample,
                      ad ? ad->ann_class : -1,
+                     ad ? ad->ann_type : -1,
                      txt);
         std::fflush(stderr);
     }
@@ -1033,9 +1034,18 @@ static void c_put_annotation_cb(void *ctx, uint64_t ss, uint64_t es,
 
     const char *texts[2] = { text ? text : "", nullptr };
 
+    /* Mirror libsigrokdecode's auto-incrementing ann_type assignment for
+     * 2-tuple annotations (libsigrokdecode4DSL/decoder.c:465-513): the first
+     * declared class gets type 7, the next gets 8, and so on. We replay that
+     * sequence here so the C decoder's annotations end up on the same
+     * Colours[] slots as the Python decoder's — without this, every C
+     * annotation would land on Colours[base+0] and the whole row would be
+     * painted in a single hue. */
+    const int auto_ann_type = 7 + global_class;
+
     srd_proto_data_annotation ann_data = {};
     ann_data.ann_class = global_class;
-    ann_data.ann_type  = 0;
+    ann_data.ann_type  = auto_ann_type;
     ann_data.ann_text  = const_cast<char**>(texts);
 
     srd_proto_data pdata = {};
