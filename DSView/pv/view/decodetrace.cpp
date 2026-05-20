@@ -200,7 +200,10 @@ void DecodeTrace::paint_back(QPainter &p, int left, int right, QColor fore, QCol
     QPen pen(backFore);
     pen.setStyle(Qt::DotLine);
     p.setPen(pen);
-    const double sigY = get_y() - (_totalHeight - _view->get_signalHeight())*0.5;
+    const int row_height = (get_height_override() > 0)
+        ? get_height_override()
+        : _view->get_signalHeight();
+    const double sigY = get_y() - (_totalHeight - row_height)*0.5;
     p.drawLine(left, sigY, right, sigY);
 
     // --draw decode region control
@@ -227,7 +230,6 @@ void DecodeTrace::paint_back(QPainter &p, int left, int right, QColor fore, QCol
 
     // --draw headings (QRectF + double coords: avoids Qt6 int overflow asserts
     // when get_y() is large or right < left)
-    const int row_height = _view->get_signalHeight();
     const double text_w = static_cast<double>(right) - left;
     if (text_w <= 0)
         return;
@@ -295,7 +297,9 @@ void DecodeTrace::paint_mid(QPainter &p, int left, int right, QColor fore, QColo
     if (end_sample < start_sample)
         return;
 
-    const int annotation_height = _view->get_signalHeight();
+    const int annotation_height = (get_height_override() > 0)
+        ? get_height_override()
+        : _view->get_signalHeight();
 
     // Iterate through the rows
     assert(_view);
@@ -600,7 +604,13 @@ void DecodeTrace::on_new_decode_data()
 
     if (_view && _view->session().is_stopped_status())
         _view->data_updated();
-    if (_totalHeight/_view->get_signalHeight() != rows_size())
+    if (!_view)
+        return;
+
+    const int row_height = (get_height_override() > 0)
+        ? get_height_override()
+        : _view->get_signalHeight();
+    if (row_height > 0 && _totalHeight / row_height != rows_size())
         _view->signals_changed(NULL);
 }
 

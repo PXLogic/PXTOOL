@@ -78,7 +78,7 @@ Viewport::Viewport(View &parent, View_type type) :
     _xcurs_moved(false),
     _divider_resize_trace(nullptr),
     _divider_resize_start_y(0),
-    _divider_resize_start_h(0)
+    _divider_resize_start_total(0)
 {
 	setMouseTracking(true);
 	setAutoFillBackground(true);
@@ -641,9 +641,7 @@ void Viewport::mousePressEvent(QMouseEvent *event)
         if (dt) {
             _divider_resize_trace  = dt;
             _divider_resize_start_y = event->pos().y();
-            _divider_resize_start_h = (dt->get_height_override() > 0)
-                                      ? dt->get_height_override()
-                                      : dt->get_totalHeight() / dt->rows_size();
+            _divider_resize_start_total = dt->get_totalHeight();
             set_action(DIVIDER_RESIZE);
             setCursor(Qt::SplitVCursor);
             _view.set_hovered_divider(dt);
@@ -799,9 +797,12 @@ void Viewport:: mouseMoveEvent(QMouseEvent *event)
 
     // Handle divider resize drag
     if (_action_type == DIVIDER_RESIZE && _divider_resize_trace) {
-        int delta = event->pos().y() - _divider_resize_start_y;
-        int newH  = qMax(_divider_resize_start_h + delta, (int)Trace::HeightOverrideMin);
-        _divider_resize_trace->set_height_override(newH);
+        const int rows = qMax(1, _divider_resize_trace->rows_size());
+        const int delta = event->pos().y() - _divider_resize_start_y;
+        const int min_total = rows * (int)Trace::HeightOverrideMin;
+        const int new_total = qMax(min_total, _divider_resize_start_total + delta);
+        const int new_per_row = qMax((int)Trace::HeightOverrideMin, new_total / rows);
+        _divider_resize_trace->set_height_override(new_per_row);
         _view.signals_changed(nullptr);
         update(UpdateEventType::UPDATE_EV_MS_MOVE);
         return;

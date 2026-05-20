@@ -105,7 +105,7 @@ private:
 
     Trace*  _resize_trace   = nullptr;
     int     _resize_start_y = 0;
-    int     _resize_start_h = 0;
+    int     _resize_start_total = 0;
 };
 
 } // namespace view

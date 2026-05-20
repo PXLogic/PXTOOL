@@ -220,7 +220,7 @@ private:
     Signal      *_drag_sig;
     Trace       *_divider_resize_trace;
     int          _divider_resize_start_y;
-    int          _divider_resize_start_h;
+    int          _divider_resize_start_total;
     uint64_t    _hover_index;
     bool        _hover_hit;
     uint16_t    _hover_sig_index;

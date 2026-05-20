@@ -234,9 +234,7 @@ void Header::mousePressEvent(QMouseEvent *event)
         if (rt) {
             _resize_trace   = rt;
             _resize_start_y = event->pos().y();
-            _resize_start_h = (rt->get_height_override() > 0)
-                                  ? rt->get_height_override()
-                                  : _view.get_signalHeight();
+            _resize_start_total = rt->get_totalHeight();
             setCursor(Qt::SplitVCursor);
             return;
         }
@@ -476,9 +474,12 @@ void Header::mouseMoveEvent(QMouseEvent *event)
 
     // Active resize drag
     if (_resize_trace) {
-        int delta = event->pos().y() - _resize_start_y;
-        int newH  = qMax(_resize_start_h + delta, (int)Trace::HeightOverrideMin);
-        _resize_trace->set_height_override(newH);
+        const int rows = qMax(1, _resize_trace->rows_size());
+        const int delta = event->pos().y() - _resize_start_y;
+        const int min_total = rows * (int)Trace::HeightOverrideMin;
+        const int new_total = qMax(min_total, _resize_start_total + delta);
+        const int new_per_row = qMax((int)Trace::HeightOverrideMin, new_total / rows);
+        _resize_trace->set_height_override(new_per_row);
         _view.signals_changed(nullptr);
         update();
         return;
