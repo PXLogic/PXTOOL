@@ -1034,9 +1034,13 @@ static void c_put_annotation_cb(void *ctx, uint64_t ss, uint64_t es,
 
     const char *texts[2] = { text ? text : "", nullptr };
 
+    /* libsigrokdecode assigns ann_type starting at 7 for the first 2-tuple
+     * annotation class, incrementing by 1 per class (decoder.c:465-513).
+     * Mirror that here so C decoder annotations land on the same Colours[]
+     * slots as the Python decoder — matching colours row-for-row. */
     srd_proto_data_annotation ann_data = {};
     ann_data.ann_class = global_class;
-    ann_data.ann_type  = 0;
+    ann_data.ann_type  = 7 + global_class;
     ann_data.ann_text  = const_cast<char**>(texts);
 
     srd_proto_data pdata = {};
