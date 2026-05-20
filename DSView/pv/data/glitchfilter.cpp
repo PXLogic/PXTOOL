@@ -30,8 +30,30 @@ std::vector<FlippedRegion> GlitchFilter::apply(LogicSnapshot *snap,
     if (total_samples == 0) return undo_log;
 
     for (int ch = 0; ch < total_ch && ch < GLITCH_FILTER_MAX_CH; ch++) {
-        if (!cfg.enabled[ch] || cfg.threshold[ch] == 0) continue;
         if (!snap->has_data(ch)) continue;
+
+        // Optional per-channel polarity invert: flip every contiguous run.
+        // This preserves edge positions and is fully reversible via undo_log.
+        if (cfg.invert[ch]) {
+            uint64_t pos = 0;
+            while (pos < total_samples) {
+                bool current_val = snap->get_sample(pos, ch);
+
+                uint64_t next_pos = pos + 1;
+                bool found = (next_pos < total_samples)
+                           ? snap->get_nxt_edge(next_pos, current_val,
+                                                total_samples - 1, 0.0, ch)
+                           : false;
+                if (!found) next_pos = total_samples;
+
+                bool flip_to = !current_val;
+                snap->set_sample_block(pos, next_pos, ch, flip_to);
+                undo_log.push_back({pos, next_pos, ch, flip_to});
+                pos = next_pos;
+            }
+        }
+
+        if (!cfg.enabled[ch] || cfg.threshold[ch] == 0) continue;
 
         const uint64_t threshold = cfg.threshold[ch];
         const FilterMode mode    = cfg.mode[ch];

@@ -261,6 +261,15 @@ void DeviceOptionsDock::on_apply()
     for (auto p : dev_props)
         p->commit();
 
+    int op_mode = -1;
+    bool stream_cfg = false;
+    const bool has_op_mode = _device_agent->get_config_int16(SR_CONF_OPERATION_MODE, op_mode);
+    const bool has_stream_cfg = _device_agent->get_config_bool(SR_CONF_STREAM, stream_cfg);
+    dsv_info("DeviceOptionsDock::on_apply after commit op_mode(valid=%d,val=%d) stream_cfg(valid=%d,val=%d) helper_stream=%d",
+             (int)has_op_mode, op_mode,
+             (int)has_stream_cfg, (int)stream_cfg,
+             (int)_device_agent->is_stream_mode());
+
     // Commit probe enabled state; track which probe indices went from
     // enabled -> disabled so we can selectively notify listeners (the
     // ProtocolDock used to nuke every decoder on any Apply, which deleted
@@ -850,6 +859,12 @@ void DeviceOptionsDock::mode_check_timeout()
         int mode;
         if (_device_agent->get_config_int16(SR_CONF_OPERATION_MODE, mode)) {
             if (mode != _opt_mode) {
+                bool stream_cfg = false;
+                const bool has_stream_cfg = _device_agent->get_config_bool(SR_CONF_STREAM, stream_cfg);
+                dsv_info("DeviceOptionsDock::mode_check_timeout op_mode changed %d -> %d stream_cfg(valid=%d,val=%d) helper_stream=%d",
+                         _opt_mode, mode,
+                         (int)has_stream_cfg, (int)stream_cfg,
+                         (int)_device_agent->is_stream_mode());
                 _opt_mode = mode;
                 build_dynamic_panel();
             }

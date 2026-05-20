@@ -1208,8 +1208,19 @@ namespace pv
         void SamplingBar::reload()
         {
             QString iconPath = GetIconPath();
+    int op_mode = -1;
+    bool stream_cfg = false;
+    const bool has_op_mode = _device_agent->get_config_int16(SR_CONF_OPERATION_MODE, op_mode);
+    const bool has_stream_cfg = _device_agent->get_config_bool(SR_CONF_STREAM, stream_cfg);
+    const bool stream_by_helper = _device_agent->is_stream_mode();
+    dsv_info("SamplingBar::reload mode=%d dev=%s op_mode(valid=%d,val=%d) stream_cfg(valid=%d,val=%d) helper_stream=%d demo=%d",
+             _device_agent->get_work_mode(),
+             _device_agent->name().toUtf8().data(),
+             (int)has_op_mode, op_mode,
+             (int)has_stream_cfg, (int)stream_cfg,
+             (int)stream_by_helper, (int)_device_agent->is_demo());
 
-            // Disable Loop item by default; re-enable only for stream/demo LOGIC mode
+            // Disable Loop item by default; re-enable for LOGIC non-file devices.
             if (auto *m = qobject_cast<QStandardItemModel*>(_mode_button.model()))
                 m->item(2)->setEnabled(false);
 
@@ -1224,14 +1235,8 @@ namespace pv
                     update_mode_icon();
                     _mode_button.setVisible(true);
 
-                    if (_session->is_loop_mode() && _device_agent->is_stream_mode() == false
-                        && _device_agent->is_hardware()){
-                        _session->set_collect_mode(COLLECT_SINGLE);
-                    }
-
-                    if (_device_agent->is_stream_mode() || _device_agent->is_demo())
-                        if (auto *m = qobject_cast<QStandardItemModel*>(_mode_button.model()))
-                            m->item(2)->setEnabled(true);
+                    if (auto *m = qobject_cast<QStandardItemModel*>(_mode_button.model()))
+                        m->item(2)->setEnabled(true);
                 }
                 _run_stop_button.setVisible(true);
                 _instant_button.setVisible(true);      
@@ -1252,6 +1257,8 @@ namespace pv
             retranslateUi();
             reStyle();
             update();
+        if (auto *m = qobject_cast<QStandardItemModel*>(_mode_button.model()))
+            dsv_info("SamplingBar::reload LoopItemEnabled=%d", (int)m->item(2)->isEnabled());
         }
 
         void SamplingBar::on_mode_changed(int index)
@@ -1353,12 +1360,16 @@ namespace pv
 
             int bEnable = _session->is_working() == false;
             int mode = _session->get_device()->get_work_mode();
+            int op_mode = -1;
+            bool stream_cfg = false;
+            const bool has_op_mode = _session->get_device()->get_config_int16(SR_CONF_OPERATION_MODE, op_mode);
+            const bool has_stream_cfg = _session->get_device()->get_config_bool(SR_CONF_STREAM, stream_cfg);
 
             _device_type.setEnabled(bEnable);
             _mode_button.setEnabled(bEnable);
             _configure_button.setEnabled(bEnable);
             _device_selector.setEnabled(bEnable);
-            // Disable Loop item by default; re-enable for stream/demo LOGIC mode
+            // Disable Loop item by default; re-enable for LOGIC non-file devices.
             if (auto *m = qobject_cast<QStandardItemModel*>(_mode_button.model()))
                 m->item(2)->setEnabled(false);
 
@@ -1391,11 +1402,19 @@ namespace pv
                 }
 
                 if (mode == LOGIC && _device_agent->is_file() == false){
-                    if (_device_agent->is_stream_mode() || _device_agent->is_demo())
-                        if (auto *m = qobject_cast<QStandardItemModel*>(_mode_button.model()))
-                            m->item(2)->setEnabled(true);
+                    if (auto *m = qobject_cast<QStandardItemModel*>(_mode_button.model()))
+                        m->item(2)->setEnabled(true);
                 }
             }
+
+            if (auto *m = qobject_cast<QStandardItemModel*>(_mode_button.model()))
+                dsv_info("SamplingBar::update_view_status mode=%d op_mode(valid=%d,val=%d) stream_cfg(valid=%d,val=%d) helper_stream=%d demo=%d LoopItemEnabled=%d",
+                         mode,
+                         (int)has_op_mode, op_mode,
+                         (int)has_stream_cfg, (int)stream_cfg,
+                         (int)_device_agent->is_stream_mode(),
+                         (int)_device_agent->is_demo(),
+                         (int)m->item(2)->isEnabled());
 
             if (_session->is_working()){
                 if (_is_run_as_instant)

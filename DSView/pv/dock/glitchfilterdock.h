@@ -18,6 +18,7 @@
 #include <QGroupBox>
 #include <QVBoxLayout>
 #include <QHBoxLayout>
+#include <QFrame>
 #include <vector>
 
 #include "../ui/uimanager.h"
@@ -70,6 +71,7 @@ protected:
 private:
     void buildUi();
     void retranslateUi();
+    void updateChannelGridRows(int total_ch);
     void updateApplyEnabled();
 
     SigSession *_session;
@@ -84,13 +86,18 @@ private:
     QLabel      *_status_label;
 
     QLabel      *_hdr_ch;
+    QLabel      *_hdr_polarity;
+    QLabel      *_hdr_filter;
     QLabel      *_hdr_enable;
+    QLabel      *_hdr_invert;
     QLabel      *_hdr_threshold;
     QLabel      *_hdr_unit;
     QLabel      *_hdr_mode;
+    QFrame      *_col_splitter;
 
     struct ChannelRow {
         QCheckBox *enable_cb;
+        QCheckBox *invert_cb;
         QSpinBox  *threshold_sb;
         QLabel    *unit_label;
         QLabel    *ch_label;

@@ -240,6 +240,16 @@ namespace pv
         else
             dsv_info("Switch to device \"%s\" done.", _device_agent.name().toUtf8().data());
 
+        int op_mode = -1;
+        bool stream_cfg = false;
+        const bool has_op_mode = _device_agent.get_config_int16(SR_CONF_OPERATION_MODE, op_mode);
+        const bool has_stream_cfg = _device_agent.get_config_bool(SR_CONF_STREAM, stream_cfg);
+        dsv_info("SigSession::set_device device=%s op_mode(valid=%d,val=%d) stream_cfg(valid=%d,val=%d) helper_stream=%d",
+                 _device_agent.name().toUtf8().data(),
+                 (int)has_op_mode, op_mode,
+                 (int)has_stream_cfg, (int)stream_cfg,
+                 (int)_device_agent.is_stream_mode());
+
         clear_all_decoder();
 
         dsv_info("SigSession::set_device() clearing data for session@%p", (void*)this);
@@ -591,10 +601,6 @@ namespace pv
                 _is_stream_mode = true;
             }
 
-            if (is_loop_mode() && !_is_stream_mode){
-                set_collect_mode(COLLECT_SINGLE); // Reset the capture mode.
-            }
-
             if (is_loop_mode() && _device_agent.is_demo())
             {
                 QString opt_mode = _device_agent.get_demo_operation_mode();
@@ -604,7 +610,7 @@ namespace pv
             }
 
             if (_device_agent.is_hardware() || _device_agent.is_demo()){
-                bool bv = is_loop_mode() && _is_stream_mode;
+                bool bv = is_loop_mode();
                 _device_agent.set_config_bool(SR_CONF_LOOP_MODE, bv);
             }
         }

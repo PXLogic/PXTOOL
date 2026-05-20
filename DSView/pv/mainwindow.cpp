@@ -1068,6 +1068,14 @@ namespace pv
 
         std::string file_name = pv::path::ToUnicodePath(file);
         dsv_info("Load device profile: \"%s\"", file_name.c_str());
+    int op_mode_before = -1;
+    bool stream_before = false;
+    const bool has_op_mode_before = _device_agent->get_config_int16(SR_CONF_OPERATION_MODE, op_mode_before);
+    const bool has_stream_before = _device_agent->get_config_bool(SR_CONF_STREAM, stream_before);
+    dsv_info("MainWindow::load_config_from_file before load op_mode(valid=%d,val=%d) stream_cfg(valid=%d,val=%d) helper_stream=%d",
+             (int)has_op_mode_before, op_mode_before,
+             (int)has_stream_before, (int)stream_before,
+             (int)_device_agent->is_stream_mode());
         
         QFile sf(file);
 
@@ -1088,6 +1096,15 @@ namespace pv
 
         bool bDecoder = false;
         int ret = load_config_from_json(doc, bDecoder);
+    int op_mode_after = -1;
+    bool stream_after = false;
+    const bool has_op_mode_after = _device_agent->get_config_int16(SR_CONF_OPERATION_MODE, op_mode_after);
+    const bool has_stream_after = _device_agent->get_config_bool(SR_CONF_STREAM, stream_after);
+    dsv_info("MainWindow::load_config_from_file after load ret=%d op_mode(valid=%d,val=%d) stream_cfg(valid=%d,val=%d) helper_stream=%d",
+             ret,
+             (int)has_op_mode_after, op_mode_after,
+             (int)has_stream_after, (int)stream_after,
+             (int)_device_agent->is_stream_mode());
 
         if (ret && _device_agent->get_work_mode() == DSO)
         {

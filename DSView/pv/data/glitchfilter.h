@@ -33,12 +33,13 @@ enum class FilterMode : uint8_t {
 // Per-channel configuration. threshold==0 OR enabled==false means disabled.
 struct GlitchFilterConfig {
     bool       enabled[GLITCH_FILTER_MAX_CH]   = {};
+    bool       invert[GLITCH_FILTER_MAX_CH]    = {};
     uint32_t   threshold[GLITCH_FILTER_MAX_CH] = {};
     FilterMode mode[GLITCH_FILTER_MAX_CH]       = {}; // default = Both
 
     bool any_enabled() const {
         for (int i = 0; i < GLITCH_FILTER_MAX_CH; i++)
-            if (enabled[i] && threshold[i] > 0) return true;
+            if (invert[i] || (enabled[i] && threshold[i] > 0)) return true;
         return false;
     }
 };

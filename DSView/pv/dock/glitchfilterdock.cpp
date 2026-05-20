@@ -66,19 +66,42 @@ void GlitchFilterDock::buildUi()
     _ch_grid->setSpacing(4);
 
     _hdr_ch        = new QLabel(_ch_group);
+    _hdr_polarity  = new QLabel(_ch_group);
+    _hdr_filter    = new QLabel(_ch_group);
     _hdr_enable    = new QLabel(_ch_group);
+    _hdr_invert    = new QLabel(_ch_group);
     _hdr_threshold = new QLabel(_ch_group);
     _hdr_unit      = new QLabel(_ch_group); // kept but not in grid; unit shown via spinbox suffix
     _hdr_mode      = new QLabel(_ch_group);
+    _col_splitter = new QFrame(_ch_group);
+    _col_splitter->setFrameShape(QFrame::NoFrame);
+    _col_splitter->setFixedWidth(1);
+    _col_splitter->setStyleSheet("background-color: rgba(255,255,255,0.45);");
+    _hdr_ch->setAlignment(Qt::AlignCenter);
+    _hdr_polarity->setAlignment(Qt::AlignCenter);
+    _hdr_filter->setAlignment(Qt::AlignCenter);
+    _hdr_invert->setAlignment(Qt::AlignCenter);
+    _hdr_enable->setAlignment(Qt::AlignCenter);
+    _hdr_threshold->setAlignment(Qt::AlignCenter);
+    _hdr_mode->setAlignment(Qt::AlignCenter);
+    _ch_grid->setColumnMinimumWidth(3, 10); // spacer between splitter and Enable group
+
+    // Group row
     _ch_grid->addWidget(_hdr_ch,        0, 0);
-    _ch_grid->addWidget(_hdr_enable,    0, 1);
-    _ch_grid->addWidget(_hdr_threshold, 0, 2);
-    _ch_grid->addWidget(_hdr_mode,      0, 3);
+    _ch_grid->addWidget(_hdr_polarity,  0, 1);
+    _ch_grid->addWidget(_hdr_filter,    0, 4, 1, 3);
+
+    // Column header row
+    _ch_grid->addWidget(_hdr_invert,    1, 1);
+    _ch_grid->addWidget(_hdr_enable,    1, 4);
+    _ch_grid->addWidget(_hdr_threshold, 1, 5);
+    _ch_grid->addWidget(_hdr_mode,      1, 6);
 
     for (int i = 0; i < MaxChannels; i++) {
         ChannelRow row;
         row.ch_label     = new QLabel(QString("D%1").arg(i), _ch_group);
         row.enable_cb    = new QCheckBox(_ch_group);
+        row.invert_cb    = new QCheckBox(_ch_group);
         row.threshold_sb = new QSpinBox(_ch_group);
         row.threshold_sb->setRange(1, 9999);
         row.threshold_sb->setValue(3);
@@ -92,10 +115,12 @@ void GlitchFilterDock::buildUi()
         row.mode_cb->addItem(tr("Low only"),  static_cast<int>(data::FilterMode::LowOnly));
         row.mode_cb->setEnabled(false);
 
-        _ch_grid->addWidget(row.ch_label,     i + 1, 0);
-        _ch_grid->addWidget(row.enable_cb,    i + 1, 1);
-        _ch_grid->addWidget(row.threshold_sb, i + 1, 2);
-        _ch_grid->addWidget(row.mode_cb,      i + 1, 3);
+        row.ch_label->setAlignment(Qt::AlignCenter);
+        _ch_grid->addWidget(row.ch_label,     i + 2, 0, 1, 1, Qt::AlignCenter);
+        _ch_grid->addWidget(row.invert_cb,    i + 2, 1, 1, 1, Qt::AlignCenter);
+        _ch_grid->addWidget(row.enable_cb,    i + 2, 4, 1, 1, Qt::AlignCenter);
+        _ch_grid->addWidget(row.threshold_sb, i + 2, 5, 1, 1, Qt::AlignCenter);
+        _ch_grid->addWidget(row.mode_cb,      i + 2, 6, 1, 1, Qt::AlignCenter);
 
         connect(row.enable_cb, &QCheckBox::toggled, this,
                 [this, i](bool checked) {
@@ -103,10 +128,15 @@ void GlitchFilterDock::buildUi()
                     _ch_rows[i].mode_cb->setEnabled(checked);
                     updateApplyEnabled();
                 });
+        connect(row.invert_cb, &QCheckBox::toggled, this,
+                [this](bool) { updateApplyEnabled(); });
 
         _ch_rows.push_back(row);
     }
+    updateChannelGridRows(_session
+        ? static_cast<int>(_session->get_ch_num(SR_CHANNEL_LOGIC)) : 0);
     main_layout->addWidget(_ch_group);
+    _ch_group->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Maximum);
 
     _status_label = new QLabel(_content_widget);
     _status_label->setAlignment(Qt::AlignCenter);
@@ -131,12 +161,18 @@ void GlitchFilterDock::buildUi()
 void GlitchFilterDock::retranslateUi()
 {
     _help_group->setTitle(tr("How it works"));
-    _help_label->setText(tr("Enable a channel and set its threshold (in sample periods). "
-                            "Pulses shorter than or equal to the threshold will be flipped. "
-                            "Use Mode to restrict filtering to high or low pulses only. "
-                            "Use Clear to revert."));
+    _help_label->setText(tr(
+        "Per channel: check Invert to flip the entire waveform polarity "
+        "(e.g. when sampled logic is opposite to the bus). Check Enable to "
+        "remove glitches (pulses no longer than Threshold, in sample periods); "
+        "use Mode to limit removal to high-only or low-only short pulses. You "
+        "may use Invert alone or together with glitch removal. Apply writes "
+        "changes to the capture; Clear restores the original data."));
     _ch_group->setTitle(tr("Channel Settings"));
     _hdr_ch->setText(tr("Ch"));
+    _hdr_polarity->setText(tr("Polarity"));
+    _hdr_filter->setText(tr("Glitch filter"));
+    _hdr_invert->setText(tr("Invert"));
     _hdr_enable->setText(tr("Enable"));
     _hdr_threshold->setText(tr("Threshold"));
     _hdr_mode->setText(tr("Mode"));
@@ -157,11 +193,24 @@ void GlitchFilterDock::retranslateUi()
     setStatus(_status);
 }
 
+void GlitchFilterDock::updateChannelGridRows(int total_ch)
+{
+    const int row_count = total_ch + 2; // 2 header rows + visible channel rows
+
+    _ch_grid->removeWidget(_col_splitter);
+    _ch_grid->addWidget(_col_splitter, 0, 2, row_count, 1);
+
+    for (int r = total_ch + 2; r < MaxChannels + 2; r++)
+        _ch_grid->setRowMinimumHeight(r, 0);
+
+    _ch_group->updateGeometry();
+}
+
 void GlitchFilterDock::updateApplyEnabled()
 {
     bool any = false;
     for (const auto &row : _ch_rows) {
-        if (row.enable_cb->isChecked()) { any = true; break; }
+        if (row.enable_cb->isChecked() || row.invert_cb->isChecked()) { any = true; break; }
     }
     bool busy = (_session && _session->is_working());
 
@@ -195,7 +244,7 @@ void GlitchFilterDock::setStatus(StatusState s)
         }
         case StatusState::Applying:        _status_label->setText(tr("Applying...")); break;
         case StatusState::NoData:          _status_label->setText(tr("No data")); break;
-        case StatusState::NoChannels:      _status_label->setText(tr("No channels enabled")); break;
+        case StatusState::NoChannels:      _status_label->setText(tr("No channels selected")); break;
         case StatusState::CaptureRunning:  _status_label->setText(tr("Capture is running")); break;
         case StatusState::LoopUnsupported: _status_label->setText(tr("Filter unavailable for loop captures")); break;
         case StatusState::NoGlitches:      _status_label->setText(tr("No glitches found")); break;
@@ -228,6 +277,7 @@ void GlitchFilterDock::onApply()
     _pending_cfg = data::GlitchFilterConfig{};
     for (int i = 0; i < MaxChannels && i < GLITCH_FILTER_MAX_CH; i++) {
         _pending_cfg.enabled[i]   = _ch_rows[i].enable_cb->isChecked();
+        _pending_cfg.invert[i]    = _ch_rows[i].invert_cb->isChecked();
         _pending_cfg.threshold[i] = static_cast<uint32_t>(_ch_rows[i].threshold_sb->value());
         _pending_cfg.mode[i]      = static_cast<data::FilterMode>(_ch_rows[i].mode_cb->currentIndex());
     }
@@ -317,6 +367,7 @@ void GlitchFilterDock::reload()
     const data::GlitchFilterConfig &cfg = _session->glitch_filter_config();
     for (int i = 0; i < MaxChannels && i < GLITCH_FILTER_MAX_CH; i++) {
         _ch_rows[i].enable_cb->setChecked(cfg.enabled[i]);
+        _ch_rows[i].invert_cb->setChecked(cfg.invert[i]);
         _ch_rows[i].threshold_sb->setValue(cfg.threshold[i] > 0 ? cfg.threshold[i] : 3);
         _ch_rows[i].threshold_sb->setEnabled(cfg.enabled[i]);
         _ch_rows[i].mode_cb->setCurrentIndex(static_cast<int>(cfg.mode[i]));
@@ -332,12 +383,15 @@ void GlitchFilterDock::reload()
         bool visible = (i < total_ch);
         _ch_rows[i].ch_label->setVisible(visible);
         _ch_rows[i].enable_cb->setVisible(visible);
+        _ch_rows[i].invert_cb->setVisible(visible);
         _ch_rows[i].threshold_sb->setVisible(visible);
         _ch_rows[i].mode_cb->setVisible(visible);
         if (!visible) {
             _ch_rows[i].enable_cb->setChecked(false);
+            _ch_rows[i].invert_cb->setChecked(false);
         }
     }
+    updateChannelGridRows(total_ch);
 }
 
 void GlitchFilterDock::onDataUpdated()
