@@ -25,6 +25,8 @@
 #include <algorithm>
 #include <assert.h>
 #include <cstring>
+#include <cstdio>
+#include <cstdlib>
 
 #include "decoderstack.h"
 #include "logicsnapshot.h"
@@ -836,6 +838,31 @@ void DecoderStack::annotation_callback(srd_proto_data *pdata, void *self)
     }
     d->_result_count++;
 
+    /* -------- [DEBUG] dump every Python-decoder annotation --------------
+     * Mirror of the ANN-C dump in c_put_annotation_cb. Guarded by:
+     *   (a) DSV_DUMP_ANN env var (same switch),
+     *   (b) !_use_c_decoder so the C path (which also routes through this
+     *       callback after c_put_annotation_cb) does not produce ANN-PY
+     *       duplicates of its own ANN-C output.
+     * Format: ANN-PY,<ss>,<es>,<class>,-,-,"<text>"
+     * The empty row_c / class_local_c slots keep the column count identical
+     * to ANN-C so awk/cut field indexing matches on both streams.
+     * -------------------------------------------------------------------- */
+    static const bool s_dump_ann_py = (std::getenv("DSV_DUMP_ANN") != nullptr);
+    if (s_dump_ann_py && !d->_use_c_decoder) {
+        srd_proto_data_annotation *ad =
+            static_cast<srd_proto_data_annotation*>(pdata->data);
+        const char *txt = (ad && ad->ann_text && ad->ann_text[0])
+                        ? ad->ann_text[0] : "";
+        std::fprintf(stderr,
+                     "ANN-PY,%llu,%llu,%d,-,-,\"%s\"\n",
+                     (unsigned long long)pdata->start_sample,
+                     (unsigned long long)pdata->end_sample,
+                     ad ? ad->ann_class : -1,
+                     txt);
+        std::fflush(stderr);
+    }
+
 	// Find the row
 	// These are asserted in debug; add explicit guards for release builds
 	// to prevent a NULL-dereference crash (far=0x10 = NULL+offsetof(pdo,di)).
@@ -923,6 +950,40 @@ const char* DecoderStack::get_root_decoder_id()
     return NULL;
 }
 
+/* Unpack `chunk_len` consecutive logic samples starting at absolute sample
+ * index `start_sample` from a LogicSnapshot packed-bit byte view (as returned
+ * by LogicSnapshot::get_samples) into an output buffer where each byte is
+ * either 0 or 1.
+ *
+ * LogicSnapshot stores each channel as a packed-bit stream: 64 consecutive
+ * samples per uint64_t, sample `s` lives in bit `s & 63` of word
+ * `(s & LeafMask) >> 6` -- equivalently bit `s & 7` of byte
+ * `(s & LeafMask) >> 3`. See LogicSnapshot::get_sample_self for the
+ * canonical reader of this layout. `get_samples()` already byte-aligned the
+ * returned pointer to `(start_sample & ~7)`, so the in-byte offset of
+ * `start_sample` from `packed[0]` is `start_sample & 7`.
+ *
+ * Without this unpack the host would hand the C decoder the raw packed
+ * stream, which the decoder must interpret as 0/1-per-byte per the
+ * c_decoder_api.h contract, causing a 1:8 sample-index distortion in every
+ * downstream annotation.
+ *
+ * Cost: ~chunk_len simple integer ops per channel per chunk, completely
+ * dominated by the surrounding decode work.
+ */
+static inline void c_unpack_packed_bits(const uint8_t *packed,
+                                        uint64_t start_sample,
+                                        uint64_t chunk_len,
+                                        uint8_t *out_unpacked)
+{
+    const uint64_t bit_off = start_sample & 7u;
+    for (uint64_t k = 0; k < chunk_len; k++) {
+        const uint64_t bit_pos = bit_off + k;
+        out_unpacked[k] =
+            static_cast<uint8_t>((packed[bit_pos >> 3] >> (bit_pos & 7u)) & 1u);
+    }
+}
+
 // Helper context for the C put_annotation callback
 struct CPutFnCtx {
     DecoderStack *stack;
@@ -946,6 +1007,28 @@ static void c_put_annotation_cb(void *ctx, uint64_t ss, uint64_t es,
     const auto &rcm = *(pctx->row_class_map);
     if (ann_row < rcm.size() && ann_class < rcm[ann_row].size()) {
         global_class = rcm[ann_row][ann_class];
+    }
+
+    /* -------- [DEBUG] dump every C-decoder annotation -----------------
+     * Enable at runtime with: export DSV_DUMP_ANN=1
+     * Format: ANN-C,<ss>,<es>,<class_py>,<row_c>,<class_local_c>,"<text>"
+     * - class_py is the Python annotation tuple index after row_class_map
+     *   translation; identical numbering as ANN-PY rows so the two streams
+     *   can be diff'd field-for-field.
+     * Output goes to stderr (NOT dsv_info) to avoid flooding the UI log
+     * panel with thousands of bit-level annotations.
+     * ------------------------------------------------------------------ */
+    static const bool s_dump_ann = (std::getenv("DSV_DUMP_ANN") != nullptr);
+    if (s_dump_ann) {
+        std::fprintf(stderr,
+                     "ANN-C,%llu,%llu,%d,%u,%u,\"%s\"\n",
+                     (unsigned long long)ss,
+                     (unsigned long long)es,
+                     global_class,
+                     ann_row,
+                     ann_class,
+                     text ? text : "");
+        std::fflush(stderr);
     }
 
     const char *texts[2] = { text ? text : "", nullptr };
@@ -1210,9 +1293,13 @@ void DecoderStack::execute_c_decode_stack_streaming(CDecoderDef *c_def)
     uint64_t end_index = front_dec->decode_end();
     std::vector<void*>          lbp_per_ch(num_channels, nullptr);
     std::vector<const uint8_t*> ch_ptrs(num_channels, nullptr);
+    std::vector<std::vector<uint8_t>> unpacked_per_ch(num_channels);
     std::vector<uint8_t>        zero_buf;   /* on-demand zero-fill for unbound channels */
     bool bCheckEnd = false;
     int  rc = 0;
+    bool dumped_unpack_preview = false;
+    /* Allow opt-in extra diagnostics (env var matches the ANN dump switch). */
+    const bool s_unpack_dbg = (std::getenv("DSV_DUMP_ANN") != nullptr);
 
     /* Classify channels: "bound" = the user assigned a signal in the decoder
      * options (sig_idx >= 0). We must NOT consult _snapshot->has_data() here
@@ -1340,6 +1427,71 @@ void DecoderStack::execute_c_decode_stack_streaming(CDecoderDef *c_def)
             if (ch_ptrs[ch] == nullptr) ch_ptrs[ch] = zero_buf.data();
         }
 
+        /* Pass 3: unpack packed-bit storage to 0/1 bytes for BOUND channels.
+         * LogicSnapshot::get_samples returns a uint8_t view over packed-bit
+         * memory (8 samples / byte). The C decoder API contract
+         * (c_decoder_api.h) is "channel_samples[ch][k] is 0 or 1", so we
+         * must convert before invoking decode_chunk(). UNBOUND channels
+         * already point at zero_buf so we leave them alone.
+         *
+         * This is the fix for the host-side bug that caused C decoders to
+         * see a 1:8 sample-index distortion (validated against the SPI
+         * Python decoder using DSV_DUMP_ANN=1 logs). */
+        for (int ch = 0; ch < num_channels; ch++) {
+            if (!ch_is_bound[ch]) continue;
+            if (ch_ptrs[ch] == zero_buf.data()) continue;   /* fell back to zero-fill */
+            const uint8_t *packed = ch_ptrs[ch];
+            auto &unpacked = unpacked_per_ch[ch];
+            if (unpacked.size() < chunk_len) unpacked.resize(chunk_len);
+            c_unpack_packed_bits(packed, i, chunk_len, unpacked.data());
+            ch_ptrs[ch] = unpacked.data();
+        }
+
+        /* Optional diagnostics: dump the first chunk's packed -> unpacked
+         * mapping for each bound channel so log readers can sanity-check
+         * the unpacking against the raw bytes. Cap at the first call and a
+         * small prefix to avoid log spam. */
+        if (s_unpack_dbg && !dumped_unpack_preview) {
+            uint64_t preview_n = chunk_len < 16 ? chunk_len : 16;
+            for (int ch = 0; ch < num_channels; ch++) {
+                if (!ch_is_bound[ch]) continue;
+                if (ch_ptrs[ch] == zero_buf.data()) continue;
+                std::string packed_hex, unpacked_str;
+                /* We can't recover the original packed pointer here (it's
+                 * been replaced with unpacked.data()), so re-derive packed
+                 * bytes by re-fetching for the preview only. */
+                void *lbp_dbg = nullptr;
+                uint64_t ce_dbg = chunk_end;
+                const uint8_t *pkd =
+                    _snapshot->get_samples(i, ce_dbg, sig_indices[ch], &lbp_dbg);
+                if (pkd) {
+                    /* Need enough packed bytes to cover preview_n samples,
+                     * starting at the in-byte offset (i & 7). */
+                    uint64_t need_bytes = ((i & 7u) + preview_n + 7u) / 8u;
+                    char hexbuf[8];
+                    for (uint64_t b = 0; b < need_bytes; b++) {
+                        std::snprintf(hexbuf, sizeof(hexbuf),
+                                      b ? " %02X" : "%02X", pkd[b]);
+                        packed_hex += hexbuf;
+                    }
+                    for (uint64_t k = 0; k < preview_n; k++) {
+                        unpacked_str += (unpacked_per_ch[ch][k] ? '1' : '0');
+                    }
+                    dsv_info("C decoder unpack preview [ch=%d %s] "
+                             "chunk_start=%llu, bit_off=%llu: "
+                             "packed[%llu]=%s -> unpacked[%llu]=%s",
+                             ch, c_def->channel_ids[ch],
+                             (unsigned long long)i,
+                             (unsigned long long)(i & 7u),
+                             (unsigned long long)need_bytes,
+                             packed_hex.c_str(),
+                             (unsigned long long)preview_n,
+                             unpacked_str.c_str());
+                }
+            }
+            dumped_unpack_preview = true;
+        }
+
         /* Feed this chunk to the decoder */
         rc = c_def->decode_chunk(inst, i, chunk_end,
                                   num_channels, ch_ptrs.data(),
@@ -1456,17 +1608,21 @@ void DecoderStack::execute_c_decode_stack_batch(CDecoderDef *c_def)
             const uint8_t *data = _snapshot->get_samples(pos, ce, sig_idx, &lbp);
             if (!data) continue;
             chunk_end = (ce < decode_end) ? ce : decode_end;
-            // Copy this channel
+            // Unpack this channel's packed-bit stream into sample_bufs[ch].
+            // Same fix as the streaming path: LogicSnapshot stores 8
+            // samples/byte but the C decoder ABI requires 1 byte == 1
+            // sample. memcpy'ing the packed view directly would silently
+            // cause a 1:8 sample-index distortion in every annotation.
             uint64_t copy_len = chunk_end - pos + 1;
             uint64_t buf_offset = pos - decode_start;
             if (buf_offset + copy_len > num_samples) copy_len = num_samples - buf_offset;
-            std::memcpy(&sample_bufs[ch][buf_offset], data, copy_len);
+            c_unpack_packed_bits(data, pos, copy_len, &sample_bufs[ch][buf_offset]);
             if (!_snapshot->is_able_free() && lbp) {
                 if (lbp_per_ch[ch] && lbp_per_ch[ch] != lbp)
                     _snapshot->free_decode_lpb(lbp_per_ch[ch]);
                 lbp_per_ch[ch] = lbp;
             }
-            // Fill remaining channels
+            // Fill remaining channels (same unpack treatment)
             for (int ch2 = ch + 1; ch2 < num_channels; ch2++) {
                 int sig_idx2 = sig_indices[ch2];
                 if (sig_idx2 < 0 || !_snapshot->has_data(sig_idx2)) continue;
@@ -1476,7 +1632,8 @@ void DecoderStack::execute_c_decode_stack_batch(CDecoderDef *c_def)
                 if (!data2) continue;
                 uint64_t clen2 = (ce2 < chunk_end ? ce2 : chunk_end) - pos + 1;
                 if (pos - decode_start + clen2 > num_samples) clen2 = num_samples - (pos - decode_start);
-                std::memcpy(&sample_bufs[ch2][pos - decode_start], data2, clen2);
+                c_unpack_packed_bits(data2, pos, clen2,
+                                     &sample_bufs[ch2][pos - decode_start]);
                 if (!_snapshot->is_able_free() && lbp2) {
                     if (lbp_per_ch[ch2] && lbp_per_ch[ch2] != lbp2)
                         _snapshot->free_decode_lpb(lbp_per_ch[ch2]);

@@ -142,11 +142,18 @@ static int spi_decode_samples(spi_state *st,
             st->bit_count++;
 
             if (st->bit_count == 8) {
-                /* Emit assembled bytes */
-                snprintf(text_buf, sizeof(text_buf), "MOSI: 0x%02X", st->mosi_byte);
+                /* Emit assembled bytes.
+                 *
+                 * Format string mirrors the Python decoder's `"%02x"` (lower
+                 * case, 2 digits, no "0x"/"MOSI: " prefix) -- the
+                 * MOSI vs MISO distinction is already conveyed by the
+                 * annotation row, so a prefix on the text just makes
+                 * cross-engine log diffs noisy. See pd.py:222 / pd.py:209.
+                 */
+                snprintf(text_buf, sizeof(text_buf), "%02x", st->mosi_byte);
                 put_annotation(ctx, st->byte_start, bit_end, ROW_DATA, CLASS_DATA_MOSI, text_buf);
 
-                snprintf(text_buf, sizeof(text_buf), "MISO: 0x%02X", st->miso_byte);
+                snprintf(text_buf, sizeof(text_buf), "%02x", st->miso_byte);
                 put_annotation(ctx, st->byte_start, bit_end, ROW_DATA, CLASS_DATA_MISO, text_buf);
 
                 st->mosi_byte = 0;

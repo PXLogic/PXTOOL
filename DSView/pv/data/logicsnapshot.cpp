@@ -105,6 +105,15 @@ const uint64_t LogicSnapshot::LevelOffset[LogicSnapshot::ScaleLevel] = {
     (uint64_t)pow(Scale, 3) + (uint64_t)pow(Scale, 2) + (uint64_t)pow(Scale, 1),
 };
 
+/* Out-of-line definitions for the static const integral members below.
+ * C++11 only treats class-scope `static const` integral members as
+ * declarations; any ODR use (e.g. binding to a const& parameter such as
+ * std::min<uint64_t>(LeafBlockSamples, x)) requires an explicit definition
+ * here, otherwise the linker errors with "Undefined symbols: LeafBlockSamples".
+ * Only the members that are actually ODR-used need a definition; the rest
+ * keep their header-only declarations. */
+const uint64_t LogicSnapshot::LeafBlockSamples;
+
 LogicSnapshot::LogicSnapshot() :
     Snapshot(1, 0, 0)
 {
