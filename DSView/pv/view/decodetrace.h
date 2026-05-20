@@ -69,7 +69,6 @@ private:
 
 private:
 	static const QColor DecodeColours[4];
-    static const QColor MosiColours[8];
 	static const QColor ErrorBgColour;
 	static const QColor NoDecodeColour;
 
@@ -158,8 +157,7 @@ private:
     void draw_annotation(const pv::data::decode::Annotation &a, QPainter &p,
         QColor text_colour, int text_height, int left, int right,
         double samples_per_pixel, double pixels_offset, int y,
-        size_t base_colour, double min_annWidth, QColor fore, QColor back, double &last_x,
-        QColor fill_colour = QColor());
+        size_t base_colour, double min_annWidth, QColor fore, QColor back, double &last_x);
 
     void draw_nodetail(QPainter &p,
         int text_height, int left, int right, int y,
@@ -191,11 +189,6 @@ private slots:
 private:
 	pv::SigSession 			*_session;
 	pv::data::DecoderStack 	*_decoder_stack;
-
-    /* Sequential order (0, 1, 2 …) assigned at construction time and never
-     * changed.  Used to pick per-decoder colours from PROBE_COLORS without
-     * being affected by channel-binding updates to _index_list. */
-    int _trace_order;
 
 	uint64_t 		_decode_start;
 	uint64_t	 	_decode_end;
