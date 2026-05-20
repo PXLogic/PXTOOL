@@ -11,6 +11,7 @@
 #include <libsigrok.h>
 #include <QScrollBar>
 #include <QShowEvent>
+#include <QComboBox>
 
 namespace pv {
 namespace dock {
@@ -67,11 +68,12 @@ void GlitchFilterDock::buildUi()
     _hdr_ch        = new QLabel(_ch_group);
     _hdr_enable    = new QLabel(_ch_group);
     _hdr_threshold = new QLabel(_ch_group);
-    _hdr_unit      = new QLabel(_ch_group);
+    _hdr_unit      = new QLabel(_ch_group); // kept but not in grid; unit shown via spinbox suffix
+    _hdr_mode      = new QLabel(_ch_group);
     _ch_grid->addWidget(_hdr_ch,        0, 0);
     _ch_grid->addWidget(_hdr_enable,    0, 1);
     _ch_grid->addWidget(_hdr_threshold, 0, 2);
-    _ch_grid->addWidget(_hdr_unit,      0, 3);
+    _ch_grid->addWidget(_hdr_mode,      0, 3);
 
     for (int i = 0; i < MaxChannels; i++) {
         ChannelRow row;
@@ -80,17 +82,25 @@ void GlitchFilterDock::buildUi()
         row.threshold_sb = new QSpinBox(_ch_group);
         row.threshold_sb->setRange(1, 9999);
         row.threshold_sb->setValue(3);
+        row.threshold_sb->setSuffix(tr(" smp")); // unit embedded in spinbox
         row.threshold_sb->setEnabled(false);
-        row.unit_label   = new QLabel(_ch_group);
+        row.unit_label   = new QLabel(_ch_group); // kept but not in grid
+        row.mode_cb      = new QComboBox(_ch_group);
+        // Items are re-set in retranslateUi(); indices match FilterMode enum.
+        row.mode_cb->addItem(tr("Both"),      static_cast<int>(data::FilterMode::Both));
+        row.mode_cb->addItem(tr("High only"), static_cast<int>(data::FilterMode::HighOnly));
+        row.mode_cb->addItem(tr("Low only"),  static_cast<int>(data::FilterMode::LowOnly));
+        row.mode_cb->setEnabled(false);
 
         _ch_grid->addWidget(row.ch_label,     i + 1, 0);
         _ch_grid->addWidget(row.enable_cb,    i + 1, 1);
         _ch_grid->addWidget(row.threshold_sb, i + 1, 2);
-        _ch_grid->addWidget(row.unit_label,   i + 1, 3);
+        _ch_grid->addWidget(row.mode_cb,      i + 1, 3);
 
         connect(row.enable_cb, &QCheckBox::toggled, this,
                 [this, i](bool checked) {
                     _ch_rows[i].threshold_sb->setEnabled(checked);
+                    _ch_rows[i].mode_cb->setEnabled(checked);
                     updateApplyEnabled();
                 });
 
@@ -122,16 +132,24 @@ void GlitchFilterDock::retranslateUi()
 {
     _help_group->setTitle(tr("How it works"));
     _help_label->setText(tr("Enable a channel and set its threshold (in sample periods). "
-                            "Pulses shorter than or equal to the threshold will be flipped "
-                            "to the opposite level. Use Clear to revert."));
+                            "Pulses shorter than or equal to the threshold will be flipped. "
+                            "Use Mode to restrict filtering to high or low pulses only. "
+                            "Use Clear to revert."));
     _ch_group->setTitle(tr("Channel Settings"));
     _hdr_ch->setText(tr("Ch"));
     _hdr_enable->setText(tr("Enable"));
     _hdr_threshold->setText(tr("Threshold"));
-    _hdr_unit->setText(tr("Unit"));
+    _hdr_mode->setText(tr("Mode"));
 
-    for (auto &row : _ch_rows)
-        row.unit_label->setText(tr("samples"));
+    for (auto &row : _ch_rows) {
+        // Refresh spinbox suffix and preserve the combo selection on language change.
+        row.threshold_sb->setSuffix(tr(" smp"));
+        int cur = row.mode_cb->currentIndex();
+        row.mode_cb->setItemText(0, tr("Both"));
+        row.mode_cb->setItemText(1, tr("High only"));
+        row.mode_cb->setItemText(2, tr("Low only"));
+        row.mode_cb->setCurrentIndex(cur);
+    }
 
     _apply_btn->setText(tr("Apply"));
     _clear_btn->setText(tr("Clear"));
@@ -211,6 +229,7 @@ void GlitchFilterDock::onApply()
     for (int i = 0; i < MaxChannels && i < GLITCH_FILTER_MAX_CH; i++) {
         _pending_cfg.enabled[i]   = _ch_rows[i].enable_cb->isChecked();
         _pending_cfg.threshold[i] = static_cast<uint32_t>(_ch_rows[i].threshold_sb->value());
+        _pending_cfg.mode[i]      = static_cast<data::FilterMode>(_ch_rows[i].mode_cb->currentIndex());
     }
     if (!_pending_cfg.any_enabled()) {
         setStatus(StatusState::NoChannels);
@@ -300,6 +319,8 @@ void GlitchFilterDock::reload()
         _ch_rows[i].enable_cb->setChecked(cfg.enabled[i]);
         _ch_rows[i].threshold_sb->setValue(cfg.threshold[i] > 0 ? cfg.threshold[i] : 3);
         _ch_rows[i].threshold_sb->setEnabled(cfg.enabled[i]);
+        _ch_rows[i].mode_cb->setCurrentIndex(static_cast<int>(cfg.mode[i]));
+        _ch_rows[i].mode_cb->setEnabled(cfg.enabled[i]);
     }
     _status = _session->is_glitch_filter_applied() ? StatusState::Applied : StatusState::NotApplied;
     setStatus(_status);
@@ -312,7 +333,7 @@ void GlitchFilterDock::reload()
         _ch_rows[i].ch_label->setVisible(visible);
         _ch_rows[i].enable_cb->setVisible(visible);
         _ch_rows[i].threshold_sb->setVisible(visible);
-        _ch_rows[i].unit_label->setVisible(visible);
+        _ch_rows[i].mode_cb->setVisible(visible);
         if (!visible) {
             _ch_rows[i].enable_cb->setChecked(false);
         }

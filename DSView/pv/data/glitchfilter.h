@@ -20,10 +20,21 @@ namespace data {
 
 class LogicSnapshot;
 
+// Which pulse polarity to remove for a given channel.
+//   Both     – remove any short run regardless of level (default)
+//   HighOnly – remove only short HIGH runs (0→1→0 spikes on a LOW line)
+//   LowOnly  – remove only short LOW  runs (1→0→1 dips  on a HIGH line)
+enum class FilterMode : uint8_t {
+    Both     = 0,
+    HighOnly = 1,
+    LowOnly  = 2,
+};
+
 // Per-channel configuration. threshold==0 OR enabled==false means disabled.
 struct GlitchFilterConfig {
-    bool     enabled[GLITCH_FILTER_MAX_CH]   = {};
-    uint32_t threshold[GLITCH_FILTER_MAX_CH] = {};
+    bool       enabled[GLITCH_FILTER_MAX_CH]   = {};
+    uint32_t   threshold[GLITCH_FILTER_MAX_CH] = {};
+    FilterMode mode[GLITCH_FILTER_MAX_CH]       = {}; // default = Both
 
     bool any_enabled() const {
         for (int i = 0; i < GLITCH_FILTER_MAX_CH; i++)

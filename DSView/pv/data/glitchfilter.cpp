@@ -34,13 +34,15 @@ std::vector<FlippedRegion> GlitchFilter::apply(LogicSnapshot *snap,
         if (!snap->has_data(ch)) continue;
 
         const uint64_t threshold = cfg.threshold[ch];
+        const FilterMode mode    = cfg.mode[ch];
         uint64_t pos       = 0;
         // safe_back is the start of the most recently KEPT run (run length
-        // strictly > threshold). Because a kept run's length is > threshold,
-        // the backstep formula `next_pos - threshold - 1` is guaranteed to
-        // land at or after safe_back, so we never re-examine data we already
-        // confirmed cannot be a glitch. This monotonic non-decreasing
-        // invariant is what guarantees algorithm termination.
+        // strictly > threshold, or skipped due to FilterMode). Because a kept
+        // run's length is > threshold, the backstep formula
+        // `next_pos - threshold - 1` is guaranteed to land at or after
+        // safe_back, so we never re-examine data we already confirmed cannot
+        // be a glitch. This monotonic non-decreasing invariant is what
+        // guarantees algorithm termination.
         uint64_t safe_back = 0;
 
         while (pos < total_samples) {
@@ -57,6 +59,17 @@ std::vector<FlippedRegion> GlitchFilter::apply(LogicSnapshot *snap,
             uint64_t run_len = next_pos - pos;
 
             if (run_len <= threshold) {
+                // Skip runs whose polarity does not match the requested mode.
+                // Treat them as "kept" (safe_back advances) so the monotonic
+                // termination invariant is preserved.
+                bool skip = (mode == FilterMode::HighOnly && !current_val)
+                         || (mode == FilterMode::LowOnly  &&  current_val);
+                if (skip) {
+                    safe_back = pos;
+                    pos = next_pos;
+                    continue;
+                }
+
                 // Flip the entire short run in a single locked operation.
                 bool flip_to = !current_val;
                 snap->set_sample_block(pos, next_pos, ch, flip_to);

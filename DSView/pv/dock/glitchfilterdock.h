@@ -10,6 +10,7 @@
 
 #include <QScrollArea>
 #include <QCheckBox>
+#include <QComboBox>
 #include <QSpinBox>
 #include <QLabel>
 #include <QPushButton>
@@ -86,12 +87,16 @@ private:
     QLabel      *_hdr_enable;
     QLabel      *_hdr_threshold;
     QLabel      *_hdr_unit;
+    QLabel      *_hdr_mode;
 
     struct ChannelRow {
         QCheckBox *enable_cb;
         QSpinBox  *threshold_sb;
         QLabel    *unit_label;
         QLabel    *ch_label;
+        // Polarity selector: index maps to FilterMode enum value
+        // (0=Both, 1=HighOnly, 2=LowOnly). Disabled when enable_cb is off.
+        QComboBox *mode_cb;
     };
     std::vector<ChannelRow> _ch_rows;
 
