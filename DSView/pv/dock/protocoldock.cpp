@@ -27,6 +27,7 @@
 #include "../dialogs/protocollist.h"
 #include "../dialogs/protocolexp.h" 
 #include "../view/view.h"
+#include "c_decoder_registry.h"
 
 #include <QObject>
 #include <QHBoxLayout>
@@ -77,15 +78,44 @@ ProtocolDock::ProtocolDock(QWidget *parent, view::View &view, SigSession *sessio
     std::map<std::string, int> pro_key_table;
     QString repeatNammes;
 
+    /* Build the protocol picker entries. For every srd decoder we always
+     * create one entry; additionally, if a native C decoder is registered
+     * for the same id (e.g. SPI), we split the entry in two:
+     *   "<name> [C]"  -> _engine_hint = 1 (force C)
+     *   "<name> [Py]" -> _engine_hint = 2 (force Python)
+     * This lets the user pick the decoding engine directly from the protocol
+     * list, instead of going through the per-trace context menu. Protocols
+     * that don't have a C implementation keep their single, plain entry. */
+    auto &c_reg = pv::cdecoders::CDecoderRegistry::instance();
+
     for(; l; l = l->next)
     {
         const srd_decoder *const d = (srd_decoder*)l->data;
         assert(d);
 
-        DecoderInfoItem *info = new DecoderInfoItem();
         srd_decoder *dec = (srd_decoder *)(l->data);
-        info->_data_handle = dec;
-        _decoderInfoList.push_back(info);
+        const QString plain_name = QString::fromUtf8(dec->name);
+        const bool has_c = c_reg.has_c_decoder_for_id(dec->id);
+
+        if (has_c) {
+            DecoderInfoItem *info_c = new DecoderInfoItem();
+            info_c->_data_handle  = dec;
+            info_c->_display_name = plain_name + " [C]";
+            info_c->_engine_hint  = 1;
+            _decoderInfoList.push_back(info_c);
+
+            DecoderInfoItem *info_py = new DecoderInfoItem();
+            info_py->_data_handle  = dec;
+            info_py->_display_name = plain_name + " [Py]";
+            info_py->_engine_hint  = 2;
+            _decoderInfoList.push_back(info_py);
+        } else {
+            DecoderInfoItem *info = new DecoderInfoItem();
+            info->_data_handle  = dec;
+            info->_display_name = plain_name;
+            info->_engine_hint  = 0;
+            _decoderInfoList.push_back(info);
+        }
 
         std::string prokey(dec->id);
         if (pro_key_table.find(prokey) != pro_key_table.end())
@@ -441,6 +471,7 @@ void ProtocolDock::setSession(SigSession *session)
 
     _pro_keyword_edit->ResetText();
     _selected_protocol_id.clear();
+    _selected_info = nullptr;
 
     emit protocol_updated();
 }
@@ -476,11 +507,20 @@ void ProtocolDock::on_add_protocol()
         return;
     }
 
-    int dex = this->get_protocol_index_by_id(_selected_protocol_id);
-    assert(dex >= 0);
-
-    //check the base protocol
-    srd_decoder *const dec = (srd_decoder *)(_decoderInfoList[dex]->_data_handle);
+    /* Prefer the exact list entry the user clicked (set in OnItemClick).
+     * That preserves the [C]/[Py] choice when the same id appears twice in
+     * the list. Fall back to a name-based lookup if we somehow get called
+     * without a recorded selection (e.g. legacy keyword flow). */
+    srd_decoder *dec = nullptr;
+    int engine_hint = 0;
+    if (_selected_info != nullptr) {
+        dec = (srd_decoder *)(_selected_info->_data_handle);
+        engine_hint = _selected_info->_engine_hint;
+    } else {
+        int dex = this->get_protocol_index_by_id(_selected_protocol_id);
+        assert(dex >= 0);
+        dec = (srd_decoder *)(_decoderInfoList[dex]->_data_handle);
+    }
     QString pro_id(dec->id);
     std::list<data::decode::Decoder*> sub_decoders;
     
@@ -527,10 +567,15 @@ void ProtocolDock::on_add_protocol()
         return;
     }
 
-    add_protocol_by_id(pro_id, false, sub_decoders);
+    add_protocol_by_id(pro_id, false, sub_decoders, engine_hint);
+    /* one-shot: clear the cached pointer so a stale entry can't bleed into
+     * the next invocation (the SearchComboBox is destroyed after a pick). */
+    _selected_info = nullptr;
 }
 
-bool ProtocolDock::add_protocol_by_id(QString id, bool silent, std::list<pv::data::decode::Decoder*> &sub_decoders)
+bool ProtocolDock::add_protocol_by_id(QString id, bool silent,
+                                      std::list<pv::data::decode::Decoder*> &sub_decoders,
+                                      int engine_hint)
 {
     if (_session->get_device()->get_work_mode() != LOGIC) {
         dsv_info("Protocol Analyzer\nProtocol Analyzer is only valid in Digital Mode!");
@@ -561,6 +606,21 @@ bool ProtocolDock::add_protocol_by_id(QString id, bool silent, std::list<pv::dat
 
     if (_session->add_decoder(decoder, silent, dstatus, sub_decoders, trace) == false){
         return false;
+    }
+
+    /* Apply the forced engine hint, if any, to the decoder stack that
+     * SigSession::add_decoder just created. The constructor of DecoderStack
+     * defaults to "use C if registered", so explicit Python (hint == 2)
+     * needs to override that. A hint of 1 (force C) is a no-op when the C
+     * decoder exists, but we still set it explicitly so the contract is
+     * obvious. */
+    if (engine_hint != 0) {
+        pv::view::DecodeTrace *dt = dynamic_cast<pv::view::DecodeTrace*>(trace);
+        if (dt && dt->decoder()
+            && pv::cdecoders::CDecoderRegistry::instance()
+                   .has_c_decoder_for_id(decoder->id)) {
+            dt->decoder()->set_use_c_decoder(engine_hint == 1);
+        }
     }
 
     // create item layer — parent is _items_container so child widgets live there
@@ -1129,10 +1189,18 @@ void ProtocolDock::OnProtocolFormatChanged(QString format, void *handle){
 
 bool ProtocolDock::protocol_sort_callback(const DecoderInfoItem *o1, const DecoderInfoItem *o2)
 {
-    srd_decoder *dec1 = (srd_decoder *)(o1->_data_handle);
-    srd_decoder *dec2 = (srd_decoder *)(o2->_data_handle);
-    const char *s1 = dec1->name;
-    const char *s2 = dec2->name;
+    /* Sort by display name (which already carries the [C]/[Py] suffix when
+     * applicable) so the two engine variants of the same protocol stay next
+     * to each other in the list. Fall back to the raw decoder name if the
+     * display name is somehow empty. */
+    QByteArray b1 = o1->_display_name.isEmpty()
+        ? QByteArray(((srd_decoder *)(o1->_data_handle))->name)
+        : o1->_display_name.toUtf8();
+    QByteArray b2 = o2->_display_name.isEmpty()
+        ? QByteArray(((srd_decoder *)(o2->_data_handle))->name)
+        : o2->_display_name.toUtf8();
+    const char *s1 = b1.constData();
+    const char *s2 = b2.constData();
     char c1 = 0;
     char c2 = 0;
 
@@ -1229,7 +1297,10 @@ bool ProtocolDock::protocol_sort_callback(const DecoderInfoItem *o1, const Decod
       for (auto info : _decoderInfoList)
       {
           srd_decoder *dec = (srd_decoder *)(info->_data_handle);
-          panel->AddDataItem(QString(dec->id), QString(dec->name), info);
+          /* Use the suffixed display name (e.g. "SPI [C]" / "SPI [Py]")
+           * for the visible label so the engine choice is part of the list
+           * itself. Keep the raw id for keyword search matching. */
+          panel->AddDataItem(QString(dec->id), info->_display_name, info);
       }
 
       QFont font = this->font();
@@ -1248,8 +1319,12 @@ bool ProtocolDock::protocol_sort_callback(const DecoderInfoItem *o1, const Decod
      if (data_handle != NULL){
          DecoderInfoItem *info = (DecoderInfoItem*)data_handle;
          srd_decoder *dec = (srd_decoder *)(info->_data_handle); 
-         this->_pro_keyword_edit->SetInputText(QString(dec->name)); 
+         this->_pro_keyword_edit->SetInputText(info->_display_name);
          _selected_protocol_id = QString(dec->id);
+         /* Remember the exact list entry the user clicked so on_add_protocol
+          * can read its _engine_hint; the id alone no longer disambiguates
+          * once the C/Py split puts two entries with the same id in the list. */
+         _selected_info = info;
          this->on_add_protocol();       
      }
  }

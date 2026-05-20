@@ -24,7 +24,6 @@
   
 #include <QColorDialog>
 #include <QInputDialog>
-#include <QActionGroup>
 #include <QMenu>
 #include <QMouseEvent>
 #include <QPainter>
@@ -48,9 +47,6 @@
 #include "../config/appconfig.h"
 #include "../ui/fn.h"
 #include "../log.h"
-#include "c_decoder_registry.h"
-#include "../data/decoderstack.h"
-#include "../data/decode/decoder.h"
  
 using namespace std;
 
@@ -593,27 +589,11 @@ void Header::contextMenuEvent(QContextMenuEvent *event)
     h4x->setCheckable(true);    h4x->setChecked(curMul == 4);
     h8x->setCheckable(true);    h8x->setChecked(curMul == 8);
 
-    QAction *useC  = nullptr;
-    QAction *usePy = nullptr;
-    DecodeTrace *dt = dynamic_cast<DecodeTrace*>(t);
-
-    if (dt && !dt->decoder()->stack().empty()) {
-        const srd_decoder *root_srd = dt->decoder()->stack().front()->decoder();
-        if (pv::cdecoders::CDecoderRegistry::instance().has_c_decoder_for_id(root_srd->id)) {
-            menu.addSeparator();
-            QMenu *engMenu = menu.addMenu(tr("Decode Engine"));
-            QActionGroup *engGroup = new QActionGroup(engMenu);
-            engGroup->setExclusive(true);
-            useC  = engMenu->addAction(tr("C Decoder"));
-            usePy = engMenu->addAction(tr("Python Decoder"));
-            useC->setCheckable(true);
-            usePy->setCheckable(true);
-            engGroup->addAction(useC);
-            engGroup->addAction(usePy);
-            useC->setChecked(dt->decoder()->use_c_decoder());
-            usePy->setChecked(!dt->decoder()->use_c_decoder());
-        }
-    }
+    /* "Decode Engine" submenu intentionally removed: the C / Python choice
+     * is now made up-front when the user picks the protocol from the
+     * protocol-list (entries appear as e.g. "SPI [C]" and "SPI [Py]").
+     * Per-trace switching here was confusing because the engine choice is
+     * really a property of the trace itself, not a runtime toggle. */
 
     QAction *chosen = menu.exec(event->globalPos());
 
@@ -643,16 +623,6 @@ void Header::contextMenuEvent(QContextMenuEvent *event)
             AppConfig::Instance().SaveApp();
         }
         _view.reset_height_overrides();
-    } else if (useC && chosen == useC) {
-        if (!dt->decoder()->use_c_decoder()) {
-            dt->decoder()->set_use_c_decoder(true);
-            _view.session().rst_decoder_by_key_handel(dt->get_key_handel());
-        }
-    } else if (usePy && chosen == usePy) {
-        if (dt->decoder()->use_c_decoder()) {
-            dt->decoder()->set_use_c_decoder(false);
-            _view.session().rst_decoder_by_key_handel(dt->get_key_handel());
-        }
     }
 }
 

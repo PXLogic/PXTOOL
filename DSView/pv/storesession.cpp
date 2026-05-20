@@ -1298,6 +1298,10 @@ bool StoreSession::gen_decoders_json(QJsonArray &array)
         dec_obj["label"] = QString(s->get_name().toUtf8().data());
         dec_obj["stacked decoders"] = stack_array;
         dec_obj["view_index"] = s->get_view_index();
+        /* Remember which engine the user picked for this protocol so it
+         * round-trips through Save/Open. 1 = force C, 2 = force Python.
+         * Only meaningful for protocols that have both implementations. */
+        dec_obj["engine_hint"] = stack->use_c_decoder() ? 1 : 2;
 
         auto rows = stack->get_rows_gshow();
         for (auto i = rows.begin(); i != rows.end(); i++) {
@@ -1354,7 +1358,10 @@ bool StoreSession::load_decoders(dock::ProtocolDock *widget, QJsonArray &dec_arr
         }
 
         //create protocol
-        bool ret = widget->add_protocol_by_id(dec_obj["id"].toString(), true, sub_decoders);
+        const int engine_hint = dec_obj.contains("engine_hint")
+            ? dec_obj["engine_hint"].toInt(0)
+            : 0;
+        bool ret = widget->add_protocol_by_id(dec_obj["id"].toString(), true, sub_decoders, engine_hint);
         if (!ret)
         {
             for(auto sub : sub_decoders){

@@ -47,7 +47,23 @@
 #include "../ui/uimanager.h"
 
 struct DecoderInfoItem{
-    void  *_data_handle; //srd_decoder* type
+    void   *_data_handle; //srd_decoder* type
+
+    /* Display name shown in the protocol picker. For protocols that have
+     * both a Python and a C implementation we expand the list into two
+     * entries with " [C]" / " [Py]" suffixes so the user picks the engine
+     * directly from the list; for protocols without a C implementation this
+     * is just the decoder's plain name. */
+    QString _display_name;
+
+    /* Which engine to force on the resulting decoder stack:
+     *   0 = automatic (current default: use C if a C decoder exists for the
+     *       protocol's id, otherwise Python),
+     *   1 = always use the C decoder,
+     *   2 = always use the Python decoder.
+     * The C/Py forced entries are only emitted for protocols that actually
+     * have both implementations available. */
+    int _engine_hint;
 };
 
 namespace pv {
@@ -85,7 +101,15 @@ public:
 
     void setSession(SigSession *session);
     void del_all_protocol(); 
-    bool add_protocol_by_id(QString id, bool silent, std::list<pv::data::decode::Decoder*> &sub_decoders);
+    /* engine_hint:  0 = automatic (default - use C if a C implementation is
+     *               registered for @p id, otherwise Python),
+     *               1 = always create the trace with the C decoder,
+     *               2 = always create the trace with the Python decoder.
+     * Forced hints (1/2) only have effect if a C implementation actually
+     * exists for @p id; otherwise they degrade to automatic. */
+    bool add_protocol_by_id(QString id, bool silent,
+                            std::list<pv::data::decode::Decoder*> &sub_decoders,
+                            int engine_hint = 0);
 
     /** Remove only the decoder traces that bind to a channel whose physical
      * index appears in @p disabled_channel_indices. Decoders that don't
@@ -186,6 +210,11 @@ private:
     std::vector<DecoderInfoItem*> _decoderInfoList;
     KeywordLineEdit *_pro_keyword_edit;
     QString     _selected_protocol_id;
+    /* The list entry the user just clicked in the protocol picker. We need
+     * to keep the pointer (not just the id) because the C/Py split inserts
+     * two entries with the same srd id but different _engine_hint, so the
+     * id alone is no longer enough to disambiguate. */
+    DecoderInfoItem *_selected_info = nullptr;
     XToolButton *_pro_search_button; 
 
     mutable std::mutex _search_mutex;

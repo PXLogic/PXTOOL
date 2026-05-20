@@ -32,6 +32,7 @@
 #include <QDialogButtonBox>
 #include <QScrollArea>
 #include <QApplication>
+#include <climits>
 #include "decodetrace.h"
 #include "../sigsession.h"
 #include "../data/decoderstack.h"
@@ -189,6 +190,11 @@ void DecodeTrace::paint_back(QPainter &p, int left, int right, QColor fore, QCol
 {
     (void)back;
 
+    /* Not yet laid out in the viewport — get_y() is INT_MAX and int-based
+     * QRect math (especially center()) triggers Qt6 QCheckedIntegers asserts. */
+    if (get_v_offset() == INT_MAX)
+        return;
+
     QColor backFore = fore;
     backFore.setAlpha(View::BackAlpha);
     QPen pen(backFore);
@@ -219,30 +225,34 @@ void DecodeTrace::paint_back(QPainter &p, int left, int right, QColor fore, QCol
     p.drawPolygon(start_points, countof(start_points));
     p.drawPolygon(end_points, countof(end_points));
 
-    // --draw headings
+    // --draw headings (QRectF + double coords: avoids Qt6 int overflow asserts
+    // when get_y() is large or right < left)
     const int row_height = _view->get_signalHeight();
+    const double text_w = static_cast<double>(right) - left;
+    if (text_w <= 0)
+        return;
+
     for (size_t i = 0; i < _cur_row_headings.size(); i++)
     {
-        const int y = i * row_height + get_y() - _totalHeight * 0.5;
+        const double row_top = static_cast<double>(i) * row_height
+            + get_y() - _totalHeight * 0.5;
+        const double text_h = row_height * 0.5;
+        const double center_y = row_top + text_h * 0.5;
 
         p.setPen(QPen(Qt::NoPen));
         p.setBrush(QApplication::palette().brush(QPalette::WindowText));
 
-        const QRect r(left + ArrowSize * 2, y,
-            right - left, row_height / 2);
-        const QString h(_cur_row_headings[i]);
-        const int f = Qt::AlignLeft | Qt::AlignVCenter |
-            Qt::TextDontClip;
+        const QRectF text_rect(left + ArrowSize * 2, row_top, text_w, text_h);
         const QPointF points[] = {
-            QPointF(left, r.center().y() - ArrowSize),
-            QPointF(left + ArrowSize, r.center().y()),
-            QPointF(left, r.center().y() + ArrowSize)
+            QPointF(left, center_y - ArrowSize),
+            QPointF(left + ArrowSize, center_y),
+            QPointF(left, center_y + ArrowSize)
         };
         p.drawPolygon(points, countof(points));
 
-        // Draw the text
         p.setPen(fore);
-        p.drawText(r, f, h);
+        p.drawText(text_rect, Qt::AlignLeft | Qt::AlignVCenter | Qt::TextDontClip,
+                   _cur_row_headings[i]);
     }
 }
 
