@@ -27,8 +27,82 @@
 #include <QGridLayout>
 #include <QHBoxLayout>
 #include <QGuiApplication>
+#include <QResizeEvent>
 #include <QScreen>
 #include <assert.h>
+
+// ---------------------------------------------------------------------------
+// Lightweight flex-wrap container for ChannelLabel items.
+// Items are placed left-to-right with fixed spacing; when a row is full they
+// wrap onto the next row. The widget resizes its own height automatically.
+// ---------------------------------------------------------------------------
+class ChannelFlowWidget : public QWidget
+{
+public:
+    explicit ChannelFlowWidget(int spacing, QWidget *parent = nullptr)
+        : QWidget(parent), _spacing(spacing)
+    {
+        setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
+    }
+
+    void addItem(QWidget *w)
+    {
+        w->setParent(this);
+        _items.push_back(w);
+    }
+
+    QSize sizeHint() const override { return minimumSizeHint(); }
+
+    QSize minimumSizeHint() const override
+    {
+        int h = doLayout(QRect(0, 0, qMax(width(), 1), 0), false);
+        return QSize(0, h);
+    }
+
+protected:
+    void resizeEvent(QResizeEvent *e) override
+    {
+        QWidget::resizeEvent(e);
+        int h = doLayout(contentsRect(), true);
+        setFixedHeight(qMax(h, 1));
+    }
+
+private:
+    // Performs (or simulates) the flow layout. Returns the total height needed.
+    // If apply=true, moves the child widgets to their computed positions.
+    int doLayout(const QRect &r, bool apply) const
+    {
+        if (_items.empty()) return 0;
+
+        int x = r.x();
+        int y = r.y();
+        int rowH = 0;
+
+        for (QWidget *w : _items) {
+            QSize s = w->sizeHint();
+            if (s.isEmpty()) s = w->size();
+
+            // Wrap if we exceed the right boundary (but always place at least
+            // one item per row to avoid infinite loops with very narrow panels).
+            if (x != r.x() && x + s.width() > r.x() + r.width()) {
+                x = r.x();
+                y += rowH + _spacing;
+                rowH = 0;
+            }
+
+            if (apply)
+                w->move(x, y);
+
+            x    += s.width() + _spacing;
+            rowH  = qMax(rowH, s.height());
+        }
+
+        return y + rowH - r.y();
+    }
+
+    int                   _spacing;
+    std::vector<QWidget*> _items;
+};
 
 #include "../prop/property.h"
 #include "../config/appconfig.h"
@@ -416,14 +490,10 @@ void DeviceOptionsDock::logic_probes(QVBoxLayout &layout)
 
     _device_agent->get_config_int16(SR_CONF_VLD_CH_NUM, vld_ch_num);
 
-    QWidget *channel_pannel = new QWidget();
-    QGridLayout *channel_grid = new QGridLayout();
-    channel_grid->setContentsMargins(0, 0, 0, 0);
-    channel_grid->setSpacing(0);
-    channel_pannel->setLayout(channel_grid);
+    // Use a flex-wrap flow panel so items reflow when the dock is resized.
+    const int CH_SPACING = 4;
+    ChannelFlowWidget *channel_pannel = new ChannelFlowWidget(CH_SPACING);
 
-    int channel_row    = 0;
-    int channel_column = 0;
     int channel_line_height = 0;
     row2++;
 
@@ -435,17 +505,10 @@ void DeviceOptionsDock::logic_probes(QVBoxLayout &layout)
             probe->enabled = false;
 
         ChannelLabel *ch_item = new ChannelLabel(this, NULL, probe->index);
-        channel_grid->addWidget(ch_item, channel_row, channel_column++, Qt::AlignCenter);
+        channel_pannel->addItem(ch_item);
         _probes_checkBox_list.push_back(ch_item->getCheckBox());
         ch_item->getCheckBox()->setCheckState(probe->enabled ? Qt::Checked : Qt::Unchecked);
         channel_line_height = ch_item->height();
-
-        if (channel_column == 8) {
-            channel_column = 0;
-            channel_row++;
-            if (l->next != NULL)
-                row2++;
-        }
     }
     layout.addWidget(channel_pannel);
 
@@ -489,14 +552,21 @@ void DeviceOptionsDock::logic_probes(QVBoxLayout &layout)
 #endif
 
     contentHeight += enable_all->sizeHint().height();
-    contentHeight += channel_line_height * row2 + 50;
+    // The flow widget determines its own height dynamically; just provide a
+    // reasonable minimum so the panel is never too short.
+    const int estimated_rows = qMax(2, row2);
+    contentHeight += (channel_line_height + CH_SPACING) * estimated_rows + 50;
     _groupHeight2  = contentHeight + (row1 + row2) * 2 + 38;
 
 #ifdef Q_OS_DARWIN
     _groupHeight2 += 5;
 #endif
 
-    _dynamic_panel->setFixedHeight(_groupHeight2);
+    // Use setMinimumHeight so the flow widget can expand beyond the estimate
+    // when items wrap onto more rows.
+    _dynamic_panel->setMinimumHeight(_groupHeight2);
+    _dynamic_panel->setMaximumHeight(QWIDGETSIZE_MAX);
+    _dynamic_panel->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
 }
 
 // ---------------------------------------------------------------------------

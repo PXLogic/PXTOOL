@@ -75,7 +75,7 @@ ChannelLabel::ChannelLabel(IChannelCheck *check, QWidget *parent, int chanIndex)
     _box = new QCheckBox(this);
     _box->hide();
 
-    setFixedSize(34, 34);
+    setFixedSize(24, 24);
     setCursor(Qt::PointingHandCursor);
 
     connect(_box, &QCheckBox::stateChanged, this, [this](){ update(); });
@@ -97,7 +97,7 @@ void ChannelLabel::paintEvent(QPaintEvent *)
     p.setPen(checked ? Qt::white : QColor(160, 160, 160));
     QFont f = font();
     f.setBold(true);
-    f.setPointSize(9);
+    f.setPointSize(12);
     p.setFont(f);
     p.drawText(rect(), Qt::AlignCenter, QString::number(_index));
 }
