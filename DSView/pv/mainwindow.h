@@ -352,6 +352,8 @@ private:
     void rebuild_uid_index();
     void update_tab_bar_style();
     void switch_to_session(int index);
+    void switch_to_device(ds_device_handle handle);
+    void switch_to_session_for_handle(int global_index, ds_device_handle handle);
 
     // DeviceGroup helpers (Task 2)
     DeviceGroup       *current_group();

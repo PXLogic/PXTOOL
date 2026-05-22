@@ -793,6 +793,94 @@ namespace pv
         switch_to_session(_session_items.size() - 1);
     }
 
+    void MainWindow::switch_to_device(ds_device_handle handle)
+    {
+        if (handle == NULL_HANDLE) return;
+
+        DeviceGroup *cur = current_group();
+        if (cur && cur->handle == handle) {
+            // Already on this device. If active session matches too, no-op.
+            int cur_idx = active_session_global_index_of_group(cur);
+            if (cur_idx >= 0 && _session == _session_items[cur_idx].session)
+                return;
+        }
+
+        // 1. Stop current capture, save current session config
+        if (_session && _session->is_working())
+            _session->stop_capture();
+        if (_session)
+            _session->session_save();
+
+        // 2. Find or create target group
+        DeviceGroup *grp = find_group_by_handle(handle);
+        if (!grp) grp = create_group(handle);
+
+        bool first_session_for_group = grp->session_uids.isEmpty();
+        if (first_session_for_group) {
+            int uid = create_session_in_group(grp);
+            grp->active_session_uid = uid;
+        }
+
+        int target = active_session_global_index_of_group(grp);
+        if (target < 0) return;
+
+        _active_group_index = index_of_group(grp);
+
+        if (first_session_for_group) {
+            switch_to_session_for_handle(target, handle);
+        } else {
+            switch_to_session(target);
+        }
+
+        rebuild_tab_buttons();
+        // _sampling_bar->sync_selected_device(handle);  // wired in Task 4
+    }
+
+    void MainWindow::switch_to_session_for_handle(int index, ds_device_handle handle)
+    {
+        if (index < 0 || index >= _session_items.size()) return;
+        if (handle == NULL_HANDLE) return;
+
+        // Same prelude as switch_to_session: save outgoing channel cache,
+        // deactivate outgoing callback / capture / msg listener.
+        _is_switching_session = true;
+
+        int prev_active = -1;
+        DeviceGroup *prev_g = current_group();
+        if (prev_g) prev_active = active_session_global_index_of_group(prev_g);
+        if (prev_active >= 0 && prev_active < _session_items.size()) {
+            _session_items[prev_active].session->save_channel_enabled_states();
+            SessionItem &oldItem = _session_items[prev_active];
+            if (oldItem.cb) oldItem.cb->setActive(false);
+            if (oldItem.session->is_working()) oldItem.session->stop_capture();
+            oldItem.session->remove_msg_listener(this);
+            oldItem.session->set_decoder_pannel(nullptr);
+        }
+
+        SessionItem &newItem = _session_items[index];
+        _session      = newItem.session;
+        _view         = newItem.view;
+        _device_agent = _session->get_device();
+
+        newItem.session->set_as_current();
+        newItem.session->add_msg_listener(this);
+        if (newItem.cb) newItem.cb->setActive(true);
+
+        _sampling_bar->setSession(_session);
+        _sampling_bar->set_view(_view);
+        _session_stack->setCurrentWidget(_view);
+        _sidebar_widget->setSession(_session);
+        _session->set_decoder_pannel(_sidebar_widget->protocol_widget());
+
+        _is_switching_session = false;
+
+        // Heavy device init for a freshly-created empty session — claim the
+        // requested handle, clear (already empty) view data, build signals.
+        _session->set_device(handle);
+
+        update_toolbar_view_status();
+    }
+
     void MainWindow::switch_to_session(int index)
     {
         if (index < 0 || index >= _session_items.size())
