@@ -1048,21 +1048,24 @@ namespace pv
 
     void MainWindow::on_load_file(QString file_name)
     {
-        try
-        {
-            if (_device_agent->is_hardware()){
-                save_config();
-            }
+        if (_device_agent->is_hardware())
+            save_config();
 
-            _session->set_file(file_name);
-        }
-        catch (QString e)
-        {   
+        std::string file_str = file_name.toUtf8().toStdString();
+        if (ds_device_from_file(file_str.c_str()) != SR_OK) {
             QString strMsg(tr("Failed to load "));
             strMsg += file_name;
             MsgBox::Show(strMsg);
-            _session->set_default_device();
+            return;
         }
+
+        ds_device_handle file_handle = find_latest_device_handle();
+        if (file_handle == NULL_HANDLE) {
+            MsgBox::Show(tr("File loaded but no device handle was returned."));
+            return;
+        }
+
+        switch_to_device(file_handle);
     }
 
     void MainWindow::session_error()
