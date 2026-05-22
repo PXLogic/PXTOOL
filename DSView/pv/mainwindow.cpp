@@ -2946,6 +2946,9 @@ namespace pv
             {
                 if (_is_switching_session) break;
 
+                if (_session && _session->is_working())
+                    _session->stop_capture();
+
                 if (_msg != NULL) { _msg->close(); _msg = NULL; }
 
                 _session->device_event_object()->device_updated();
