@@ -208,24 +208,37 @@ void GlitchFilterDock::updateChannelGridRows(int total_ch)
 
 void GlitchFilterDock::updateApplyEnabled()
 {
-    bool any = false;
-    for (const auto &row : _ch_rows) {
-        if (row.enable_cb->isChecked() || row.invert_cb->isChecked()) { any = true; break; }
-    }
     bool busy = (_session && _session->is_working());
 
     // Only enable Apply when a capture/file has actually produced samples.
-    // Without this guard, hitting Apply before Start (or before opening a
-    // file) yields a confusing "No data" message. We only peek at the
-    // snapshot when no concurrent writer is active (busy guard above);
-    // get_view_logic_snapshot() asserts !is_working() in debug builds.
     bool has_data = false;
     if (_session && !busy) {
         pv::data::LogicSnapshot *snap = _session->get_view_logic_snapshot();
         has_data = snap && snap->have_data();
     }
-    _apply_btn->setEnabled(any && _session != nullptr && !busy
-                           && _worker == nullptr && has_data);
+
+    if (!_session || busy || _worker != nullptr || !has_data) {
+        _apply_btn->setEnabled(false);
+        return;
+    }
+
+    // Build the config the UI currently represents.
+    data::GlitchFilterConfig ui_cfg{};
+    for (int i = 0; i < (int)_ch_rows.size() && i < GLITCH_FILTER_MAX_CH; i++) {
+        ui_cfg.enabled[i]   = _ch_rows[i].enable_cb->isChecked();
+        ui_cfg.invert[i]    = _ch_rows[i].invert_cb->isChecked();
+        ui_cfg.threshold[i] = static_cast<uint32_t>(_ch_rows[i].threshold_sb->value());
+        ui_cfg.mode[i]      = static_cast<data::FilterMode>(_ch_rows[i].mode_cb->currentIndex());
+    }
+
+    // Enable Apply if:
+    //   (a) the user has selected at least one channel/invert, OR
+    //   (b) a filter is already applied and the current UI config differs from
+    //       the applied config (e.g. user unchecked everything to clear it).
+    bool any = ui_cfg.any_enabled();
+    bool applied_and_changed = _session->is_glitch_filter_applied()
+                               && (ui_cfg != _session->glitch_filter_config());
+    _apply_btn->setEnabled(any || applied_and_changed);
 }
 
 void GlitchFilterDock::setStatus(StatusState s)
@@ -281,8 +294,18 @@ void GlitchFilterDock::onApply()
         _pending_cfg.threshold[i] = static_cast<uint32_t>(_ch_rows[i].threshold_sb->value());
         _pending_cfg.mode[i]      = static_cast<data::FilterMode>(_ch_rows[i].mode_cb->currentIndex());
     }
+    // If the user cleared all channels/inverts but there is an active filter,
+    // treat Apply as "undo only" — restore the original data and mark clear.
     if (!_pending_cfg.any_enabled()) {
-        setStatus(StatusState::NoChannels);
+        if (_session->is_glitch_filter_applied()) {
+            _session->apply_glitch_filter_undo();
+            _session->clear_glitch_filter();
+            setStatus(StatusState::NotApplied);
+            updateApplyEnabled();
+            _clear_btn->setEnabled(false);
+        } else {
+            setStatus(StatusState::NoChannels);
+        }
         return;
     }
 

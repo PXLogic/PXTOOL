@@ -42,6 +42,17 @@ struct GlitchFilterConfig {
             if (invert[i] || (enabled[i] && threshold[i] > 0)) return true;
         return false;
     }
+
+    bool operator==(const GlitchFilterConfig &o) const {
+        for (int i = 0; i < GLITCH_FILTER_MAX_CH; i++) {
+            if (enabled[i]   != o.enabled[i])   return false;
+            if (invert[i]    != o.invert[i])     return false;
+            if (threshold[i] != o.threshold[i])  return false;
+            if (mode[i]      != o.mode[i])       return false;
+        }
+        return true;
+    }
+    bool operator!=(const GlitchFilterConfig &o) const { return !(*this == o); }
 };
 
 // One contiguous flipped region; undo means writing back !new_value.
