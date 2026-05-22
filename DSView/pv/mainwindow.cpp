@@ -809,7 +809,7 @@ namespace pv
         if (_session && _session->is_working())
             _session->stop_capture();
         if (_session)
-            _session->session_save();
+            _session->session_save();  // device-level switch snapshots full config (matches legacy on_device_selected behavior); tab-level switch does not
 
         // 2. Find or create target group
         DeviceGroup *grp = find_group_by_handle(handle);
@@ -824,21 +824,30 @@ namespace pv
         int target = active_session_global_index_of_group(grp);
         if (target < 0) return;
 
-        _active_group_index = index_of_group(grp);
-
+        // NOTE: Do NOT update _active_group_index before the switch_to_*
+        // call. switch_to_session_for_handle's prelude reads current_group()
+        // to find the OUTGOING session to deactivate; mutating
+        // _active_group_index first would make it see the NEW group as
+        // outgoing and skip deactivating the real previous session.
         if (first_session_for_group) {
             switch_to_session_for_handle(target, handle);
         } else {
             switch_to_session(target);
         }
 
-        rebuild_tab_buttons();
+        _active_group_index = index_of_group(grp);
+
+        if (first_session_for_group) {
+            rebuild_tab_buttons();  // switch_to_session_for_handle doesn't call it
+        }
+        // For the else branch, switch_to_session already called rebuild_tab_buttons.
+
         // _sampling_bar->sync_selected_device(handle);  // wired in Task 4
     }
 
-    void MainWindow::switch_to_session_for_handle(int index, ds_device_handle handle)
+    void MainWindow::switch_to_session_for_handle(int global_index, ds_device_handle handle)
     {
-        if (index < 0 || index >= _session_items.size()) return;
+        if (global_index < 0 || global_index >= _session_items.size()) return;
         if (handle == NULL_HANDLE) return;
 
         // Same prelude as switch_to_session: save outgoing channel cache,
@@ -857,7 +866,8 @@ namespace pv
             oldItem.session->set_decoder_pannel(nullptr);
         }
 
-        SessionItem &newItem = _session_items[index];
+        _active_tab_index = global_index;
+        SessionItem &newItem = _session_items[global_index];
         _session      = newItem.session;
         _view         = newItem.view;
         _device_agent = _session->get_device();
@@ -876,7 +886,9 @@ namespace pv
 
         // Heavy device init for a freshly-created empty session — claim the
         // requested handle, clear (already empty) view data, build signals.
-        _session->set_device(handle);
+        if (!_session->set_device(handle))
+            dsv_warn("switch_to_session_for_handle: set_device(handle=%llu) failed",
+                     (unsigned long long)handle);
 
         update_toolbar_view_status();
     }
