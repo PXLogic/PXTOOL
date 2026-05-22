@@ -667,12 +667,20 @@ namespace pv
 
     void MainWindow::rebuild_tab_buttons()
     {
-        // Remove all existing widgets from the layout
         while (_tab_bar_layout->count() > 0) {
             QLayoutItem *item = _tab_bar_layout->takeAt(0);
-            if (item->widget())
-                item->widget()->deleteLater();
+            if (item->widget()) item->widget()->deleteLater();
             delete item;
+        }
+
+        DeviceGroup *grp = current_group();
+        if (!grp) {
+            QPushButton *addBtn = new QPushButton("+", _session_tab_bar);
+            addBtn->setFixedSize(24, 24);
+            addBtn->setEnabled(false);
+            _tab_bar_layout->addStretch(1);
+            _tab_bar_layout->addWidget(addBtn);
+            return;
         }
 
         bool isDark = AppConfig::Instance().IsDarkStyle();
@@ -680,39 +688,34 @@ namespace pv
         QString selBg     = isDark ? "#2D2D2D" : "#FFFFFF";
         QString textColor = isDark ? "#CCCCCC" : "#333333";
         QString selText   = isDark ? "#FFFFFF" : "#000000";
-
         QString closeBtnStyle = isDark
-            ? "QPushButton{background:transparent;color:#888;border:none;"
-              "font-size:11px;padding:0px;max-width:14px;min-width:14px;}"
+            ? "QPushButton{background:transparent;color:#888;border:none;font-size:11px;padding:0px;max-width:14px;min-width:14px;}"
               "QPushButton:hover{color:#FF6060;}"
-            : "QPushButton{background:transparent;color:#999;border:none;"
-              "font-size:11px;padding:0px;max-width:14px;min-width:14px;}"
+            : "QPushButton{background:transparent;color:#999;border:none;font-size:11px;padding:0px;max-width:14px;min-width:14px;}"
               "QPushButton:hover{color:#FF0000;}";
 
-        DeviceGroup *cg = current_group();
-        int active_uid = cg ? cg->active_session_uid : -1;
-        for (int i = 0; i < _session_items.size(); ++i) {
-            const SessionItem &si = _session_items.at(i);
-            bool isActive = (si.uid == active_uid);
-            bool isDevice = (i == 0);
+        bool canCloseAny = (grp->session_uids.size() > 1) || grp->offline;
+
+        for (int i = 0; i < grp->session_uids.size(); ++i) {
+            int uid = grp->session_uids[i];
+            auto it = _uid_to_index.constFind(uid);
+            if (it == _uid_to_index.constEnd()) continue;
+            const SessionItem &item = _session_items[it.value()];
+            bool isActive = (uid == grp->active_session_uid);
 
             QWidget *tabWidget = new QWidget(_session_tab_bar);
             tabWidget->setFixedHeight(24);
             QHBoxLayout *tl = new QHBoxLayout(tabWidget);
-            tl->setContentsMargins(8, 0, isDevice ? 8 : 4, 0);
+            tl->setContentsMargins(8, 0, canCloseAny ? 4 : 8, 0);
             tl->setSpacing(5);
 
-            // Dot indicator: green for device, blue for additional sessions
             QWidget *dot = new QWidget(tabWidget);
             dot->setFixedSize(6, 6);
             dot->setStyleSheet(QString("background:%1;border-radius:3px;")
-                .arg(isDevice
-                    ? (isDark ? "#4CAF50" : "#1E7B34")   // green = device
-                    : (isDark ? "#5B9BD5" : "#2563EB"))); // blue = extra session
+                .arg(isDark ? "#5B9BD5" : "#2563EB"));
             tl->addWidget(dot);
 
-            // Tab name button
-            QPushButton *nameBtn = new QPushButton(si.name, tabWidget);
+            QPushButton *nameBtn = new QPushButton(item.name, tabWidget);
             nameBtn->setFlat(true);
             nameBtn->setCursor(Qt::PointingHandCursor);
             nameBtn->setStyleSheet(QString(
@@ -721,41 +724,40 @@ namespace pv
                 "QPushButton:hover{color:%2;}")
                 .arg(isActive ? selText : textColor)
                 .arg(selText));
-            int capturedIndex = i;
-            connect(nameBtn, &QPushButton::clicked, [this, capturedIndex](){
-                on_session_tab_switch(capturedIndex);
+            int capturedUid = uid;
+            connect(nameBtn, &QPushButton::clicked, this, [this, capturedUid]() {
+                auto it = _uid_to_index.constFind(capturedUid);
+                if (it != _uid_to_index.constEnd())
+                    switch_to_session(it.value());
             });
             tl->addWidget(nameBtn);
 
-            // Close button for non-device tabs
-            if (!isDevice) {
-                QPushButton *closeBtn = new QPushButton("×", tabWidget);
+            if (canCloseAny) {
+                QPushButton *closeBtn = new QPushButton("\xC3\x97", tabWidget); // ×
                 closeBtn->setFlat(true);
                 closeBtn->setCursor(Qt::PointingHandCursor);
                 closeBtn->setStyleSheet(closeBtnStyle);
-                connect(closeBtn, &QPushButton::clicked, [this, capturedIndex](){
-                    on_session_tab_close(capturedIndex);
+                connect(closeBtn, &QPushButton::clicked, this, [this, capturedUid]() {
+                    on_session_tab_close_by_uid(capturedUid);
                 });
                 tl->addWidget(closeBtn);
             }
 
-            tabWidget->setStyleSheet(QString(
-                "QWidget{background:%1;border-radius:4px;}")
+            tabWidget->setStyleSheet(QString("QWidget{background:%1;border-radius:4px;}")
                 .arg(isActive ? selBg : bgColor));
 
             _tab_bar_layout->addWidget(tabWidget);
         }
 
-        // Spacer then "+" button
         _tab_bar_layout->addStretch(1);
 
         QPushButton *addBtn = new QPushButton("+", _session_tab_bar);
         addBtn->setFixedSize(24, 24);
         addBtn->setCursor(Qt::PointingHandCursor);
-        addBtn->setToolTip(tr("Open file in new comparison tab"));
+        addBtn->setEnabled(!grp->offline);
+        addBtn->setToolTip(grp->offline ? tr("Device is offline.") : tr("New session"));
         addBtn->setStyleSheet(QString(
-            "QPushButton{background:%1;color:%2;border-radius:4px;"
-            "font-size:16px;font-weight:bold;border:none;}"
+            "QPushButton{background:%1;color:%2;border-radius:4px;font-size:16px;font-weight:bold;border:none;}"
             "QPushButton:hover{background:%3;}")
             .arg(isDark ? "#2A2A2A" : "#E0E0E0")
             .arg(isDark ? "#AAAAAA" : "#444444")
@@ -763,7 +765,6 @@ namespace pv
         connect(addBtn, &QPushButton::clicked, this, &MainWindow::on_session_tab_add);
         _tab_bar_layout->addWidget(addBtn);
 
-        // Background style for the whole bar
         _session_tab_bar->setStyleSheet(QString(
             "QWidget#session_tab_bar{background:%1;border-top:1px solid %2;}")
             .arg(isDark ? "#1A1A1A" : "#D8D8D8")
