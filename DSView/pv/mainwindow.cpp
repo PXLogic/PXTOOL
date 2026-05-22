@@ -842,7 +842,7 @@ namespace pv
         }
         // For the else branch, switch_to_session already called rebuild_tab_buttons.
 
-        // _sampling_bar->sync_selected_device(handle);  // wired in Task 4
+        _sampling_bar->sync_selected_device(handle);
     }
 
     void MainWindow::switch_to_session_for_handle(int global_index, ds_device_handle handle)

@@ -83,6 +83,7 @@ namespace pv
             double hori_knob(int dir);           
             double get_hori_res();          
             void update_device_list();          
+            void sync_selected_device(ds_device_handle handle);
             void reload(); 
             void update_view_status();
             void config_device();
@@ -116,6 +117,7 @@ namespace pv
 
         signals:
             void sig_store_session_data();
+            void sig_switch_device(ds_device_handle handle);
 
         private:
             void reStyle();

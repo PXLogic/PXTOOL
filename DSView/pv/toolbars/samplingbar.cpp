@@ -1300,6 +1300,19 @@ namespace pv
             update_mode_icon();
         }
 
+        void SamplingBar::sync_selected_device(ds_device_handle handle)
+        {
+            _updating_device_list = true;
+            for (int i = 0; i < _device_selector.count(); ++i) {
+                if ((ds_device_handle)_device_selector.itemData(i).toULongLong() == handle) {
+                    _device_selector.setCurrentIndex(i);
+                    _last_device_index = i;
+                    break;
+                }
+            }
+            _updating_device_list = false;
+        }
+
         void SamplingBar::update_device_list()
         {
             struct ds_device_base_info *array = NULL;
