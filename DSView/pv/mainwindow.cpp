@@ -213,11 +213,13 @@ namespace pv
         _session->set_callback(firstCb);
 
         SessionItem firstItem;
+        firstItem.uid     = _next_session_uid++;
         firstItem.session = _session;
         firstItem.view    = _view;
         firstItem.name    = tr("Device");
         firstItem.cb      = firstCb;
         _session_items.append(firstItem);
+        _uid_to_index[firstItem.uid] = _session_items.size() - 1;
 
         TabEntry deviceTab;
         deviceTab.name = tr("Device");
@@ -458,6 +460,13 @@ namespace pv
     // Session tab bar helpers
     // -----------------------------------------------------------------------
 
+    void MainWindow::rebuild_uid_index()
+    {
+        _uid_to_index.clear();
+        for (int i = 0; i < _session_items.size(); ++i)
+            _uid_to_index[_session_items[i].uid] = i;
+    }
+
     void MainWindow::rebuild_tab_buttons()
     {
         // Remove all existing widgets from the layout
@@ -584,11 +593,13 @@ namespace pv
         _session_stack->addWidget(newView);
 
         SessionItem item;
+        item.uid     = _next_session_uid++;
         item.session = newSession;
         item.view    = newView;
         item.name    = newName;
         item.cb      = newCb;
         _session_items.append(item);
+        _uid_to_index[item.uid] = _session_items.size() - 1;
 
         TabEntry entry;
         entry.name = newName;
@@ -765,6 +776,7 @@ namespace pv
 
         _session_items.removeAt(index);
         _tabs.removeAt(index);
+        rebuild_uid_index();   // global indices shifted
 
         rebuild_tab_buttons();
     }

@@ -35,6 +35,7 @@
 #include <QTimer>
 #include "dstimer.h"
 #include <QHBoxLayout>
+#include <QHash>
 #include <QList>
 #include <QStackedWidget>
 #include <QShortcut>
@@ -230,6 +231,7 @@ private:
 private:
     // One entry per session tab
     struct SessionItem {
+        int                uid = -1;                   // stable id, survives index shuffles
         SigSession        *session;
         pv::view::View    *view;
         QString            name;
@@ -320,12 +322,15 @@ private:
     // Multi-session tabs
     QList<TabEntry>     _tabs;
     QList<SessionItem>  _session_items;
+    QHash<int, int>     _uid_to_index;          // uid -> global index into _session_items
+    int                 _next_session_uid = 0;
     int                 _active_tab_index;
     QStackedWidget     *_session_stack;
     QWidget            *_session_tab_bar;
     QHBoxLayout        *_tab_bar_layout;
 
     void rebuild_tab_buttons();
+    void rebuild_uid_index();
     void update_tab_bar_style();
     void switch_to_session(int index);
 
