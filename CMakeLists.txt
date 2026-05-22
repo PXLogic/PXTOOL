@@ -753,15 +753,36 @@ if(APPLE)
         MACOSX_BUNDLE_INFO_PLIST ${CMAKE_SOURCE_DIR}/mac_appbundle_template.plist.in
         MACOSX_BUNDLE_ICON_FILE DSView.icns
     )
-    # `make` does not install into the bundle; without this, Contents/Resources
-    # has no DSView.icns and the Dock shows a blank generic icon.
+    # `make` does not run `install`; without these POST_BUILD copies the
+    # bundle would have no icon and -- more importantly -- no Python decoder
+    # scripts (Resources/share/libsigrokdecode4DSL/decoders), making the
+    # Decode Protocol picker show an empty list.
+    set(_BUNDLE_RES_DIR "$<TARGET_FILE_DIR:${PROJECT_NAME}>/../Resources")
     add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E make_directory
-            "$<TARGET_FILE_DIR:${PROJECT_NAME}>/../Resources"
+        # icon
+        COMMAND ${CMAKE_COMMAND} -E make_directory "${_BUNDLE_RES_DIR}"
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
             "${CMAKE_CURRENT_SOURCE_DIR}/DSView.icns"
-            "$<TARGET_FILE_DIR:${PROJECT_NAME}>/../Resources/DSView.icns"
-        COMMENT "Copy DSView.icns into app bundle (Dock icon)"
+            "${_BUNDLE_RES_DIR}/DSView.icns"
+        # Python decoders (the protocol picker reads this dir at startup)
+        COMMAND ${CMAKE_COMMAND} -E make_directory
+            "${_BUNDLE_RES_DIR}/share/libsigrokdecode4DSL"
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+            "${CMAKE_CURRENT_SOURCE_DIR}/libsigrokdecode4DSL/decoders"
+            "${_BUNDLE_RES_DIR}/share/libsigrokdecode4DSL/decoders"
+        # DSView resources (res/, demo/, lang/) used at runtime
+        COMMAND ${CMAKE_COMMAND} -E make_directory
+            "${_BUNDLE_RES_DIR}/share/DSView"
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+            "${CMAKE_CURRENT_SOURCE_DIR}/DSView/res"
+            "${_BUNDLE_RES_DIR}/share/DSView/res"
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+            "${CMAKE_CURRENT_SOURCE_DIR}/DSView/demo"
+            "${_BUNDLE_RES_DIR}/share/DSView/demo"
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+            "${CMAKE_CURRENT_SOURCE_DIR}/lang"
+            "${_BUNDLE_RES_DIR}/share/DSView/lang"
+        COMMENT "Stage resources (icon, Python decoders, res/, demo/, lang/) into app bundle"
     )
 endif()
 
