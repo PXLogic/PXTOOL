@@ -409,13 +409,30 @@ namespace pv
 
     void MainWindow::on_load_device_first()
     {
-        if (tmp_file != ""){
+        if (tmp_file != "") {
             on_load_file(tmp_file);
             tmp_file = "";
+            return;
         }
-        else{
-            _session->set_default_device();
+
+        register_groups_from_device_list();
+
+        ds_device_handle def = pick_default_device_handle();
+        if (def == NULL_HANDLE) return;
+
+        DeviceGroup *grp = find_group_by_handle(def);
+        if (!grp) grp = create_group(def);
+
+        if (grp->session_uids.isEmpty() && _bootstrap_uid >= 0) {
+            auto it = _uid_to_index.constFind(_bootstrap_uid);
+            if (it != _uid_to_index.constEnd()) {
+                grp->session_uids.append(_bootstrap_uid);
+                grp->active_session_uid = _bootstrap_uid;
+                _bootstrap_uid = -1;
+            }
         }
+
+        switch_to_device(def);
     }
 
     void MainWindow::retranslateUi()
