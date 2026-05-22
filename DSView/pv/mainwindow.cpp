@@ -225,6 +225,7 @@ namespace pv
         _session_items.append(firstItem);
         _uid_to_index[firstItem.uid] = _session_items.size() - 1;
         _bootstrap_uid = firstItem.uid;
+        _bootstrap_uid_protected = firstItem.uid;  // for lifetime of the process
 
         // Session tab bar (bottom strip, like atk-logic stateBar)
         _session_tab_bar = new QWidget(_central_widget);
@@ -642,10 +643,21 @@ namespace pv
             if (gi == _active_group_index) continue;  // user still on this group
             if (now - g.offline_since_ms < GC_THRESHOLD_MS) continue;
 
-            // Free all sessions in this group
+            // Free all sessions in this group except the protected bootstrap.
+            bool protected_in_group = g.session_uids.contains(_bootstrap_uid_protected);
+
+            QList<int> uids_to_delete;
             for (int uid : g.session_uids) {
+                if (uid == _bootstrap_uid_protected) continue;
+                uids_to_delete.append(uid);
+            }
+
+            for (int uid : uids_to_delete) {
                 auto it = _uid_to_index.constFind(uid);
-                if (it == _uid_to_index.constEnd()) continue;
+                if (it == _uid_to_index.constEnd()) {
+                    g.session_uids.removeOne(uid);
+                    continue;
+                }
                 int gix = it.value();
                 SessionItem &item = _session_items[gix];
                 if (item.cb) item.cb->setActive(false);
@@ -660,6 +672,14 @@ namespace pv
                 delete item.session;
                 _session_items.removeAt(gix);
                 rebuild_uid_index();
+                g.session_uids.removeOne(uid);
+            }
+
+            if (protected_in_group) {
+                dsv_warn("gc_offline_groups: bootstrap session uid=%d in offline group handle=%llu; keeping group alive",
+                         _bootstrap_uid_protected, (unsigned long long)g.handle);
+                // Group still hosts the bootstrap session; do not remove the group.
+                continue;
             }
             _device_groups.removeAt(gi);
             if (_active_group_index > gi) _active_group_index--;
@@ -703,11 +723,12 @@ namespace pv
             if (it == _uid_to_index.constEnd()) continue;
             const SessionItem &item = _session_items[it.value()];
             bool isActive = (uid == grp->active_session_uid);
+            bool canCloseThis = canCloseAny && (uid != _bootstrap_uid_protected);
 
             QWidget *tabWidget = new QWidget(_session_tab_bar);
             tabWidget->setFixedHeight(24);
             QHBoxLayout *tl = new QHBoxLayout(tabWidget);
-            tl->setContentsMargins(8, 0, canCloseAny ? 4 : 8, 0);
+            tl->setContentsMargins(8, 0, canCloseThis ? 4 : 8, 0);
             tl->setSpacing(5);
 
             QWidget *dot = new QWidget(tabWidget);
@@ -733,7 +754,7 @@ namespace pv
             });
             tl->addWidget(nameBtn);
 
-            if (canCloseAny) {
+            if (canCloseThis) {
                 QPushButton *closeBtn = new QPushButton("\xC3\x97", tabWidget); // ×
                 closeBtn->setFlat(true);
                 closeBtn->setCursor(Qt::PointingHandCursor);
@@ -976,6 +997,11 @@ namespace pv
     {
         DeviceGroup *grp = group_owning_session(uid);
         if (!grp) return;
+
+        if (uid == _bootstrap_uid_protected) {
+            dsv_info("on_session_tab_close_by_uid: refusing to close bootstrap session uid=%d", uid);
+            return;
+        }
 
         if (!grp->offline && grp->session_uids.size() <= 1) return;
 

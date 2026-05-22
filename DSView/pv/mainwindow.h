@@ -330,6 +330,7 @@ private:
     QHash<int, int>     _uid_to_index;          // uid -> global index into _session_items
     int                 _next_session_uid = 0;
     int                 _bootstrap_uid = -1;
+    int                 _bootstrap_uid_protected = -1;  // never cleared; the AppControl-owned SigSession
     QStackedWidget     *_session_stack;
     QWidget            *_session_tab_bar;
     QHBoxLayout        *_tab_bar_layout;
