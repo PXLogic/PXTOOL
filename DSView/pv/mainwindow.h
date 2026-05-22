@@ -111,7 +111,6 @@ public slots:
 private slots:
     void on_session_tab_add();
     void on_session_tab_switch(int index);
-    void on_session_tab_close(int index);
     void on_session_tab_close_by_uid(int uid);
 	void on_load_file(QString file_name);
     void on_open_doc();

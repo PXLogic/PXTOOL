@@ -778,35 +778,15 @@ namespace pv
 
     void MainWindow::on_session_tab_add()
     {
-        // Create a new independent session tab in the same window.
-        // Each session has its own SigSession, View, and SamplingBar,
-        // allowing independent device connection and waveform capture.
+        DeviceGroup *grp = current_group();
+        if (!grp || grp->offline) return;
 
-        // Build a new session name
-        QString newName = tr("Session %1").arg(_session_items.size() + 1);
-
-        // Create new session + per-session callback proxy (inactive until switched to)
-        SigSession *newSession = new SigSession();
-        SessionCallback *newCb = new SessionCallback(this);
-        newSession->set_callback(newCb);
-
-        pv::view::View *newView = new pv::view::View(newSession, _sampling_bar, this);
-        _session_stack->addWidget(newView);
-
-        SessionItem item;
-        item.uid     = _next_session_uid++;
-        item.session = newSession;
-        item.view    = newView;
-        item.name    = newName;
-        item.cb      = newCb;
-        _session_items.append(item);
-        _uid_to_index[item.uid] = _session_items.size() - 1;
-
-        // Switch to the new tab — this also attaches the new sampling bar.
-        // NOTE: switch_to_session early-returns if the new session has no group
-        // yet; full group adoption happens in Task 8's rewrite of this handler.
-        int new_index = _session_items.size() - 1;
-        switch_to_session(new_index);
+        int uid = create_session_in_group(grp);
+        grp->active_session_uid = uid;
+        int idx = _uid_to_index.value(uid, -1);
+        if (idx >= 0)
+            switch_to_session_for_handle(idx, grp->handle);
+        rebuild_tab_buttons();
     }
 
     void MainWindow::switch_to_device(ds_device_handle handle)
@@ -991,47 +971,52 @@ namespace pv
         switch_to_session(index);
     }
 
-    void MainWindow::on_session_tab_close(int index)
+    void MainWindow::on_session_tab_close_by_uid(int uid)
     {
-        if (index <= 0 || index >= _session_items.size())
-            return; // cannot close the device tab (index 0)
+        DeviceGroup *grp = group_owning_session(uid);
+        if (!grp) return;
 
-        // Stop and clean up the closing session
-        SessionItem &item = _session_items[index];
+        if (!grp->offline && grp->session_uids.size() <= 1) return;
 
-        // Deactivate callback proxy first so no more events reach MainWindow
-        if (item.cb)
-            item.cb->setActive(false);
-        if (item.session->is_working())
-            item.session->stop_capture();
-        item.session->remove_msg_listener(this);
+        auto it = _uid_to_index.constFind(uid);
+        if (it == _uid_to_index.constEnd()) return;
+        int idx = it.value();
+        SessionItem &item = _session_items[idx];
 
-        // Minimal compile-clean placeholder for active-tab fallback; Task 8
-        // will rewrite this handler to be group-aware. If we closed the active
-        // session, just switch to a sibling index (may early-return if no
-        // group owns that session yet — acceptable transient state).
-        int cur_active = active_session_global_index_of_group(current_group());
-        if (cur_active == index) {
-            int next = std::max(0, index - 1);
-            switch_to_session(next);
+        if (item.session->have_hardware_data() && item.session->is_first_store_confirm()) {
+            if (MsgBox::Confirm(tr("Save captured data?"))) {
+                _pending_close_uid = uid;
+                on_save();
+                return;
+            }
         }
 
-        // Remove view from stack, then free session resources.
-        // SessionCallback is owned by SessionItem; delete it with the session.
+        bool closing_active = (uid == grp->active_session_uid);
+
+        if (item.cb) item.cb->setActive(false);
+        if (item.session->is_working()) item.session->stop_capture();
+        item.session->remove_msg_listener(this);
+        item.session->set_decoder_pannel(nullptr);
+
+        grp->session_uids.removeOne(uid);
+
+        if (closing_active && !grp->session_uids.isEmpty()) {
+            int fallback_uid = grp->session_uids.first();
+            grp->active_session_uid = fallback_uid;
+            int fallback_global = _uid_to_index.value(fallback_uid, -1);
+            if (fallback_global >= 0) switch_to_session(fallback_global);
+        } else if (grp->session_uids.isEmpty()) {
+            grp->active_session_uid = -1;
+        }
+
         _session_stack->removeWidget(item.view);
         delete item.view;
         delete item.cb;
         delete item.session;
-
-        _session_items.removeAt(index);
-        rebuild_uid_index();   // global indices shifted
+        _session_items.removeAt(idx);
+        rebuild_uid_index();
 
         rebuild_tab_buttons();
-    }
-
-    void MainWindow::on_session_tab_close_by_uid(int uid)
-    {
-        (void)uid;  // implemented in Task 8
     }
 
     // -----------------------------------------------------------------------
@@ -3019,19 +3004,10 @@ namespace pv
             {
                 _session->clear_store_confirm_flag();
 
-                if (_is_auto_switch_device)
-                {
-                    _is_auto_switch_device = false;
-                    _session->set_default_device();
-                }
-                else
-                {
-                    ds_device_handle devh = _sampling_bar->get_next_device_handle();
-                    if (devh != NULL_HANDLE)
-                    {
-                        dsv_info("Auto switch to the selected device.");
-                        _session->set_device(devh);
-                    }
+                if (_pending_close_uid >= 0) {
+                    int uid = _pending_close_uid;
+                    _pending_close_uid = -1;
+                    on_session_tab_close_by_uid(uid);
                 }
                 break;
             }
