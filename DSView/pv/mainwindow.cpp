@@ -2744,7 +2744,10 @@ namespace pv
         {
             case DSV_MSG_DEVICE_LIST_UPDATED:
             {
+                mark_offline_for_missing_handles();
+                register_groups_from_device_list();
                 _sampling_bar->update_device_list();
+                rebuild_tab_buttons();
                 break;
             }
             case DSV_MSG_START_COLLECT_WORK_PREV:
@@ -2935,97 +2938,29 @@ namespace pv
             }
             case DSV_MSG_NEW_USB_DEVICE:
             {
-                if (_msg != NULL){
-                    _msg->close();
-                    _msg = NULL;
-                }
-
+                register_groups_from_device_list();
                 _sampling_bar->update_device_list();
-
-                //If the current device is working, do not remind to switch new device.
-                if (_session->get_device()->is_hardware() && _session->is_working()){
-                    return;
-                }
-
-                // If a saving task is running, not need to remind to switch device, 
-                // when the task end, the new device will be selected.
-                if (_session->get_device()->is_demo() == false && !_is_save_confirm_msg)
-                {
-                    QString msgText = tr("To switch the new device?");
-                    
-                    if (MsgBox::Confirm(msgText, "", &_msg, NULL) == false){ 
-                        _msg = NULL;
-                        return;
-                    }
-                    _msg = NULL;
-                }
-
-                // The store confirm is not processed.
-                if (_is_save_confirm_msg){
-                    dsv_info("New device attached:Waitting for the confirm box be closed.");
-                    _is_auto_switch_device = true; 
-                    return;
-                }
-
-                if (_session->is_saving()){
-                    dsv_info("New device attached:Waitting for store the data. and will switch to new device.");
-                    _is_auto_switch_device = true;
-                    return;
-                }
-
-                int mode = _device_agent->get_work_mode();
-
-                if (mode != DSO && confirm_to_store_data())
-                {
-                    _is_auto_switch_device = true;
-
-                    if (_session->is_working())
-                        _session->stop_capture();
-
-                    on_save();
-                }
-                else
-                {   
-                    if (_session->is_working())
-                        _session->stop_capture();
-                    
-                    _session->set_default_device();
-                }
-
                 break;
             }
             case DSV_MSG_CURRENT_DEVICE_DETACHED:
             {
-                // Suppress device-detach handling during intentional session
-                // switches: remove_msg_listener / add_msg_listener during
-                // switch_to_session can deliver queued messages; we must not
-                // call set_default_device() in that context.
-                if (_is_switching_session)
-                    break;
+                if (_is_switching_session) break;
 
-                if (_msg != NULL){
-                    _msg->close();
-                    _msg = NULL;
-                }
+                if (_msg != NULL) { _msg->close(); _msg = NULL; }
 
-                // Save current config, and switch to the last device.
                 _session->device_event_object()->device_updated();
                 save_config();
                 _view->hide_calibration();
 
-                if (_session->is_saving()){
-                    dsv_info("Device detached:Waitting for store the data. and will switch to new device.");
-                    _is_auto_switch_device = true;
-                    return;
+                DeviceGroup *grp = current_group();
+                if (grp) {
+                    grp->offline = true;
+                    grp->offline_since_ms = QDateTime::currentMSecsSinceEpoch();
                 }
 
-                if (confirm_to_store_data()){
-                    _is_auto_switch_device = true;
-                    on_save();
-                }
-                else{
-                    _session->set_default_device();
-                }
+                _sampling_bar->update_device_list();
+                rebuild_tab_buttons();
+                update_toolbar_view_status();
                 break;
             }
             case DSV_MSG_SAVE_COMPLETE:
