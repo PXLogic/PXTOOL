@@ -44,6 +44,8 @@
 #include <QTextStream>
 #include <QJsonValue>
 #include <QJsonArray>
+#include <QSet>
+#include <QDateTime>
 #include <functional>
 
 //include with qt5
@@ -139,6 +141,9 @@ namespace pv
         _pattern_mode = "random";
 
         _active_tab_index = 0;
+        _offline_gc_timer.setInterval(30 * 1000); // 30s
+        connect(&_offline_gc_timer, &QTimer::timeout, this, &MainWindow::gc_offline_groups);
+        _offline_gc_timer.start();
         _session_stack = nullptr;
         _session_tab_bar = nullptr;
         _tab_bar_layout = nullptr;
@@ -465,6 +470,185 @@ namespace pv
         _uid_to_index.clear();
         for (int i = 0; i < _session_items.size(); ++i)
             _uid_to_index[_session_items[i].uid] = i;
+    }
+
+    // -----------------------------------------------------------------------
+    // DeviceGroup helpers (Task 2 scaffolding — no callers yet)
+    // -----------------------------------------------------------------------
+
+    MainWindow::DeviceGroup *MainWindow::current_group()
+    {
+        if (_active_group_index < 0 || _active_group_index >= _device_groups.size())
+            return nullptr;
+        return &_device_groups[_active_group_index];
+    }
+
+    MainWindow::DeviceGroup *MainWindow::find_group_by_handle(ds_device_handle handle)
+    {
+        for (int i = 0; i < _device_groups.size(); ++i)
+            if (_device_groups[i].handle == handle)
+                return &_device_groups[i];
+        return nullptr;
+    }
+
+    MainWindow::DeviceGroup *MainWindow::group_owning_session(int uid)
+    {
+        for (int i = 0; i < _device_groups.size(); ++i)
+            if (_device_groups[i].session_uids.contains(uid))
+                return &_device_groups[i];
+        return nullptr;
+    }
+
+    int MainWindow::index_of_group(DeviceGroup *g) const
+    {
+        if (!g) return -1;
+        for (int i = 0; i < _device_groups.size(); ++i)
+            if (&_device_groups[i] == g)
+                return i;
+        return -1;
+    }
+
+    int MainWindow::active_session_global_index_of_group(DeviceGroup *g)
+    {
+        if (!g || g->active_session_uid < 0) return -1;
+        auto it = _uid_to_index.constFind(g->active_session_uid);
+        return (it == _uid_to_index.constEnd()) ? -1 : it.value();
+    }
+
+    MainWindow::DeviceGroup *MainWindow::create_group(ds_device_handle handle)
+    {
+        DeviceGroup g;
+        g.handle = handle;
+
+        struct ds_device_base_info *array = NULL;
+        int count = 0;
+        if (ds_get_device_list(&array, &count) == SR_OK && array != NULL) {
+            for (int i = 0; i < count; ++i) {
+                if (array[i].handle == handle) {
+                    g.display_name = QString::fromUtf8(array[i].name);
+                    break;
+                }
+            }
+            free(array);
+        }
+        if (g.display_name.isEmpty())
+            g.display_name = tr("Device");
+        // dev_type is unknown from ds_device_base_info; resolved later via DeviceAgent
+        _device_groups.append(g);
+        return &_device_groups.last();
+    }
+
+    int MainWindow::create_session_in_group(DeviceGroup *grp)
+    {
+        int uid = _next_session_uid++;
+        QString name = tr("Session %1").arg(grp->session_uids.size() + 1);
+
+        SigSession *s = new SigSession();
+        SessionCallback *cb = new SessionCallback(this);
+        s->set_callback(cb);
+        pv::view::View *v = new pv::view::View(s, _sampling_bar, this);
+        _session_stack->addWidget(v);
+
+        SessionItem item;
+        item.uid = uid;
+        item.session = s;
+        item.view = v;
+        item.name = name;
+        item.cb = cb;
+        _session_items.append(item);
+        _uid_to_index[uid] = _session_items.size() - 1;
+
+        grp->session_uids.append(uid);
+        return uid;
+    }
+
+    void MainWindow::register_groups_from_device_list()
+    {
+        struct ds_device_base_info *array = NULL;
+        int count = 0;
+        if (ds_get_device_list(&array, &count) != SR_OK || array == NULL)
+            return;
+
+        for (int i = 0; i < count; ++i) {
+            if (!find_group_by_handle(array[i].handle))
+                (void)create_group(array[i].handle);
+        }
+        free(array);
+    }
+
+    void MainWindow::mark_offline_for_missing_handles()
+    {
+        struct ds_device_base_info *array = NULL;
+        int count = 0;
+        if (ds_get_device_list(&array, &count) != SR_OK)
+            return;
+
+        QSet<ds_device_handle> present;
+        if (array) {
+            for (int i = 0; i < count; ++i)
+                present.insert(array[i].handle);
+            free(array);
+        }
+
+        qint64 now = QDateTime::currentMSecsSinceEpoch();
+        for (auto &g : _device_groups) {
+            if (!present.contains(g.handle) && !g.offline) {
+                g.offline = true;
+                g.offline_since_ms = now;
+            }
+        }
+    }
+
+    ds_device_handle MainWindow::find_latest_device_handle()
+    {
+        struct ds_device_base_info *array = NULL;
+        int count = 0;
+        ds_device_handle handle = NULL_HANDLE;
+        if (ds_get_device_list(&array, &count) == SR_OK && array != NULL && count > 0) {
+            handle = array[count - 1].handle;
+            free(array);
+        }
+        return handle;
+    }
+
+    ds_device_handle MainWindow::pick_default_device_handle()
+    {
+        return find_latest_device_handle();
+    }
+
+    void MainWindow::gc_offline_groups()
+    {
+        qint64 now = QDateTime::currentMSecsSinceEpoch();
+        const qint64 GC_THRESHOLD_MS = 5LL * 60LL * 1000LL;  // 5 min
+
+        for (int gi = _device_groups.size() - 1; gi >= 0; --gi) {
+            DeviceGroup &g = _device_groups[gi];
+            if (!g.offline) continue;
+            if (gi == _active_group_index) continue;  // user still on this group
+            if (now - g.offline_since_ms < GC_THRESHOLD_MS) continue;
+
+            // Free all sessions in this group
+            for (int uid : g.session_uids) {
+                auto it = _uid_to_index.constFind(uid);
+                if (it == _uid_to_index.constEnd()) continue;
+                int gix = it.value();
+                SessionItem &item = _session_items[gix];
+                if (item.cb) item.cb->setActive(false);
+                if (item.session && item.session->is_working())
+                    item.session->stop_capture();
+                if (item.session) item.session->remove_msg_listener(this);
+                if (item.view) {
+                    _session_stack->removeWidget(item.view);
+                    delete item.view;
+                }
+                delete item.cb;
+                delete item.session;
+                _session_items.removeAt(gix);
+                rebuild_uid_index();
+            }
+            _device_groups.removeAt(gi);
+            if (_active_group_index > gi) _active_group_index--;
+        }
     }
 
     void MainWindow::rebuild_tab_buttons()

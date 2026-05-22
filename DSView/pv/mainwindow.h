@@ -243,6 +243,18 @@ private:
         QString name;
     };
 
+    // Per-device group: holds an ordered list of session UIDs that share
+    // the same physical/logical device handle.
+    struct DeviceGroup {
+        ds_device_handle  handle = NULL_HANDLE;
+        QString           display_name;
+        int               dev_type = 0;             // sr_device_type
+        QList<int>        session_uids;             // ordered (tab render order)
+        int               active_session_uid = -1;  // last-activated session in this group
+        bool              offline = false;
+        qint64            offline_since_ms = 0;
+    };
+
 private: 
 	pv::view::View          *_view;
     dialogs::DSMessageBox   *_msg;
@@ -329,10 +341,31 @@ private:
     QWidget            *_session_tab_bar;
     QHBoxLayout        *_tab_bar_layout;
 
+    // Device-grouped multi-session bookkeeping (Task 2: scaffolding only,
+    // no callers yet).
+    QList<DeviceGroup>  _device_groups;
+    int                 _active_group_index = -1;
+    QTimer              _offline_gc_timer;
+    int                 _pending_close_uid = -1;
+
     void rebuild_tab_buttons();
     void rebuild_uid_index();
     void update_tab_bar_style();
     void switch_to_session(int index);
+
+    // DeviceGroup helpers (Task 2)
+    DeviceGroup       *current_group();
+    DeviceGroup       *find_group_by_handle(ds_device_handle handle);
+    DeviceGroup       *group_owning_session(int uid);
+    int                index_of_group(DeviceGroup *g) const;
+    int                active_session_global_index_of_group(DeviceGroup *g);
+    DeviceGroup       *create_group(ds_device_handle handle);
+    int                create_session_in_group(DeviceGroup *grp);
+    void               register_groups_from_device_list();
+    void               mark_offline_for_missing_handles();
+    ds_device_handle   find_latest_device_handle();
+    ds_device_handle   pick_default_device_handle();
+    void               gc_offline_groups();
 
     QList<QShortcut*> _shortcuts;
 };
