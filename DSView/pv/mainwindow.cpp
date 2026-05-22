@@ -134,7 +134,6 @@ namespace pv
         _device_agent = _session->get_device();
         _session->add_msg_listener(this);
 
-        _is_auto_switch_device = false;
         _is_switching_session = false;
         _is_save_confirm_msg = false;
 
@@ -2562,17 +2561,6 @@ namespace pv
         {   
             // Only popup one time.
             ret =  MsgBox::Confirm(tr("Save captured data?"));
-
-            if (!ret && _is_auto_switch_device)
-            {
-                dsv_info("The data save confirm end, auto switch to the new device.");
-                _is_auto_switch_device = false;
-
-                if (_session->is_working())
-                    _session->stop_capture();
-
-                _session->set_default_device();
-            }
         }
 
         _is_save_confirm_msg = false;
@@ -2800,28 +2788,10 @@ namespace pv
                 // (first-time device init / device selection change), never
                 // from a tab switch.
 
-                // Determine whether this message is for the primary device session
-                // (tab 0) or an additional session tab.
-                bool isDeviceTab = (_session_items.isEmpty() ||
-                                    _session == _session_items[0].session);
-
                 reset_all_view();
                 load_device_config();
                 update_title_bar_text();
                 _sampling_bar->update_device_list();
-
-                // Update device tab name only when the device session changes
-                if (isDeviceTab && !_session_items.isEmpty()) {
-                    QString devName;
-                    if (_device_agent->is_demo())
-                        devName = tr("Session 1");
-                    else
-                        devName = _device_agent->driver_name();
-                    if (devName.isEmpty()) devName = tr("Device");
-                    _session_items[0].name = devName;
-                    if (_session_tab_bar)
-                        rebuild_tab_buttons();
-                }
 
                 _logo_bar->dsl_connected(_session->get_device()->is_hardware());
                 update_toolbar_view_status();
@@ -2831,8 +2801,8 @@ namespace pv
                 if (_device_agent->is_hardware())
                 {
                     _session->on_load_config_end();
-                }                
-                
+                }
+
                 if (_device_agent->get_work_mode() == LOGIC && _device_agent->is_file() == false)
                     _view->auto_set_max_scale();
 
@@ -2848,8 +2818,8 @@ namespace pv
                         load_config_from_json(doc, bDoneDecoder);
                     }
 
-                    if (isDeviceTab && !bDoneDecoder && _device_agent->get_work_mode() == LOGIC)
-                    {                    
+                    if (!bDoneDecoder && _device_agent->get_work_mode() == LOGIC)
+                    {
                         QJsonArray deArray = get_decoder_json_from_data_file(_device_agent->path(), bLoadSuccess);
 
                         if (bLoadSuccess){
@@ -2858,15 +2828,13 @@ namespace pv
                         }
                     }
 
-                    _view->update_all_trace_postion();                
+                    _view->update_all_trace_postion();
                     QTimer::singleShot(100, this, [this](){
                         _session->start_capture(true);
                     });
                 }
-                else if (_device_agent->is_demo() && isDeviceTab)
+                else if (_device_agent->is_demo())
                 {
-                    // Demo decoder config is only loaded for the main device session;
-                    // additional session tabs start with a clean protocol dock.
                     if(_device_agent->get_work_mode() == LOGIC)
                     {
                         _pattern_mode = _device_agent->get_demo_operation_mode();
@@ -2878,7 +2846,7 @@ namespace pv
                         }
                     }
                 }
-        
+
                 calc_min_height();
 
                 if (_device_agent->is_hardware() && _device_agent->is_new_device()){
@@ -2902,8 +2870,6 @@ namespace pv
             }
             case DSV_MSG_DEVICE_MODE_CHANGED:
             {
-                bool isDeviceTab = (_session_items.isEmpty() ||
-                                    _session == _session_items[0].session);
                 _view->mode_changed(); 
                 reset_all_view();
                 load_device_config();
@@ -2919,7 +2885,7 @@ namespace pv
                 if (_device_agent->get_work_mode() == LOGIC)
                     _view->auto_set_max_scale();
 
-                if(_device_agent->is_demo() && isDeviceTab)
+                if(_device_agent->is_demo())
                 {
                     _pattern_mode = _device_agent->get_demo_operation_mode();
                     _sidebar_widget->protocol_widget()->del_all_protocol();

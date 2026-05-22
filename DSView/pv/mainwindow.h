@@ -312,7 +312,6 @@ private:
     EventObject     _event; 
     SigSession      *_session;
     DeviceAgent     *_device_agent;
-    bool            _is_auto_switch_device;
     bool            _is_switching_session;
     high_resolution_clock::time_point _last_key_press_time;
     bool            _is_save_confirm_msg;

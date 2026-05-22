@@ -80,7 +80,6 @@ namespace pv
 
             _last_device_handle = NULL_HANDLE;
             _last_device_index = -1;
-            _next_switch_device = NULL_HANDLE;
             _view = NULL;
 
             _session = session;
@@ -1484,13 +1483,6 @@ namespace pv
                     _sample_count.setEnabled(false);
                 }
             }
-        }
-
-        ds_device_handle SamplingBar::get_next_device_handle()
-        {
-            ds_device_handle h = _next_switch_device;
-            _next_switch_device = NULL_HANDLE;
-            return h;
         }
 
         void SamplingBar::update_mode_icon()
