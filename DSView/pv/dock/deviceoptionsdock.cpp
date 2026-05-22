@@ -26,6 +26,8 @@
 #include <QTabWidget>
 #include <QGridLayout>
 #include <QHBoxLayout>
+#include <QComboBox>
+#include <QSpinBox>
 #include <QGuiApplication>
 #include <QResizeEvent>
 #include <QScreen>
@@ -296,35 +298,43 @@ void DeviceOptionsDock::build_content()
     // Stretch
     _container_lay->addStretch(1);
 
-    // Bottom divider
-    auto *bot_sep = new QWidget(_inner);
-    bot_sep->setObjectName("device_options_divider");
-    bot_sep->setFixedHeight(1);
-
-    // Apply button
-    auto *apply_btn = new QPushButton(tr("Apply"), _inner);
-    apply_btn->setObjectName("device_ok_btn");
-    apply_btn->setMinimumWidth(60);
-    auto *footer_lay = new QHBoxLayout();
-    footer_lay->setContentsMargins(12, 10, 12, 10);
-    footer_lay->addStretch();
-    footer_lay->addWidget(apply_btn);
-
     _inner_lay->addWidget(_container_panel, 1);
-    _inner_lay->addWidget(bot_sep);
-    _inner_lay->addLayout(footer_lay);
 
     _device_agent->get_config_int16(SR_CONF_OPERATION_MODE, _opt_mode);
     if (_device_agent->is_demo())
         _demo_operation_mode = _device_agent->get_demo_operation_mode();
 
+    // Connect Mode group property widgets so any change auto-applies.
+    for (auto p : _device_options_binding->properties()) {
+        QWidget *wid = p->get_widget(nullptr, false);
+        if (!wid) continue;
+        if (auto *combo = qobject_cast<QComboBox*>(wid))
+            connect(combo, QOverload<int>::of(&QComboBox::currentIndexChanged),
+                    this, &DeviceOptionsDock::schedule_apply, Qt::UniqueConnection);
+        else if (auto *spin = qobject_cast<QSpinBox*>(wid))
+            connect(spin, QOverload<int>::of(&QSpinBox::valueChanged),
+                    this, &DeviceOptionsDock::schedule_apply, Qt::UniqueConnection);
+    }
+
     connect(&_mode_check_timer, SIGNAL(timeout()), this, SLOT(mode_check_timeout()), Qt::UniqueConnection);
-    connect(apply_btn, SIGNAL(clicked()), this, SLOT(on_apply()));
 }
 
 // ---------------------------------------------------------------------------
 // Apply / commit
 // ---------------------------------------------------------------------------
+
+void DeviceOptionsDock::schedule_apply()
+{
+    if (_isBuilding || !_content_built)
+        return;
+    // Never auto-apply while a capture / decoder run is in progress; doing so
+    // would call init_signals() and clear live waveform data mid-capture.
+    if (_session->is_working())
+        return;
+    // Defer to the next event-loop iteration so rapid batched changes
+    // (e.g. "Enable All" setting many checkboxes) coalesce into one apply.
+    QTimer::singleShot(0, this, SLOT(on_apply()));
+}
 
 void DeviceOptionsDock::on_apply()
 {
@@ -424,9 +434,7 @@ QLayout *DeviceOptionsDock::get_property_form(QWidget *parent)
         lb->setFont(font);
         layout->addWidget(lb, i, 0);
 
-        QWidget *wid = (label == QString("Operation Mode"))
-            ? p->get_widget(parent, true)
-            : p->get_widget(parent);
+        QWidget *wid = p->get_widget(parent, true);
         wid->setFont(font);
         layout->addWidget(wid, i, 1);
         layout->setRowMinimumHeight(i, 22);
@@ -763,6 +771,7 @@ void DeviceOptionsDock::ChannelChecked(int index, QObject *object)
     (void)index;
     QCheckBox *sc = dynamic_cast<QCheckBox*>(object);
     channel_checkbox_clicked(sc);
+    schedule_apply();
 }
 
 void DeviceOptionsDock::set_all_probes(bool set)
@@ -796,15 +805,18 @@ void DeviceOptionsDock::enable_all_probes()
     if (_device_agent->get_config_bool(SR_CONF_STREAM, stream_mode)) {
         if (stream_mode) {
             enable_max_probes();
+            schedule_apply();
             return;
         }
     }
     set_all_probes(true);
+    schedule_apply();
 }
 
 void DeviceOptionsDock::disable_all_probes()
 {
     set_all_probes(false);
+    schedule_apply();
 }
 
 void DeviceOptionsDock::channel_checkbox_clicked(QCheckBox *sc)
@@ -872,6 +884,7 @@ void DeviceOptionsDock::channel_check()
     assert(mode_index >= 0);
     _device_agent->set_config_int16(SR_CONF_CHANNEL_MODE, mode_index);
     build_dynamic_panel();
+    schedule_apply();
 }
 
 void DeviceOptionsDock::analog_channel_check()

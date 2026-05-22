@@ -75,7 +75,7 @@ About::About(QWidget *parent) :
         QString arch = "other";
     #endif
 
-    QString version = tr("<font size=24>DSView %1 (%2)</font><br />")
+    QString version = tr("<font size=24>PXTOOL %1 (%2)</font><br />")
                       .arg(QApplication::applicationVersion())
                       .arg(arch);
 

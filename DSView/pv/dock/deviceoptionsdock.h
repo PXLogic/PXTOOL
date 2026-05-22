@@ -96,6 +96,7 @@ private:
 
 private slots:
     void on_apply();
+    void schedule_apply();
     void mode_check_timeout();
     void channel_check();
     void analog_channel_check();
