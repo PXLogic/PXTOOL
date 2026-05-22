@@ -112,6 +112,7 @@ private slots:
     void on_session_tab_add();
     void on_session_tab_switch(int index);
     void on_session_tab_close(int index);
+    void on_session_tab_close_by_uid(int uid);
 	void on_load_file(QString file_name);
     void on_open_doc();
     void on_protocol(bool visible);
@@ -235,12 +236,7 @@ private:
         SigSession        *session;
         pv::view::View    *view;
         QString            name;
-        ds_device_handle   saved_handle = NULL_HANDLE; // valid after first device init
         SessionCallback   *cb = nullptr;               // per-session ISessionCallback proxy
-    };
-    // Tab entry in the bottom bar (mirrors SessionItem index)
-    struct TabEntry {
-        QString name;
     };
 
     // Per-device group: holds an ordered list of session UIDs that share
@@ -332,11 +328,10 @@ private:
     bool        _key_vaild;
 
     // Multi-session tabs
-    QList<TabEntry>     _tabs;
     QList<SessionItem>  _session_items;
     QHash<int, int>     _uid_to_index;          // uid -> global index into _session_items
     int                 _next_session_uid = 0;
-    int                 _active_tab_index;
+    int                 _bootstrap_uid = -1;
     QStackedWidget     *_session_stack;
     QWidget            *_session_tab_bar;
     QHBoxLayout        *_tab_bar_layout;

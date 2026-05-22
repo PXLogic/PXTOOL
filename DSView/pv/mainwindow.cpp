@@ -140,7 +140,7 @@ namespace pv
 
         _pattern_mode = "random";
 
-        _active_tab_index = 0;
+        _active_group_index = -1;
         _offline_gc_timer.setInterval(30 * 1000); // 30s
         connect(&_offline_gc_timer, &QTimer::timeout, this, &MainWindow::gc_offline_groups);
         _offline_gc_timer.start();
@@ -221,14 +221,11 @@ namespace pv
         firstItem.uid     = _next_session_uid++;
         firstItem.session = _session;
         firstItem.view    = _view;
-        firstItem.name    = tr("Device");
+        firstItem.name    = tr("Session 1");
         firstItem.cb      = firstCb;
         _session_items.append(firstItem);
         _uid_to_index[firstItem.uid] = _session_items.size() - 1;
-
-        TabEntry deviceTab;
-        deviceTab.name = tr("Device");
-        _tabs.append(deviceTab);
+        _bootstrap_uid = firstItem.uid;
 
         // Session tab bar (bottom strip, like atk-logic stateBar)
         _session_tab_bar = new QWidget(_central_widget);
@@ -675,9 +672,11 @@ namespace pv
               "font-size:11px;padding:0px;max-width:14px;min-width:14px;}"
               "QPushButton:hover{color:#FF0000;}";
 
-        for (int i = 0; i < _tabs.size(); ++i) {
-            const TabEntry &tab = _tabs.at(i);
-            bool isActive = (i == _active_tab_index);
+        DeviceGroup *cg = current_group();
+        int active_uid = cg ? cg->active_session_uid : -1;
+        for (int i = 0; i < _session_items.size(); ++i) {
+            const SessionItem &si = _session_items.at(i);
+            bool isActive = (si.uid == active_uid);
             bool isDevice = (i == 0);
 
             QWidget *tabWidget = new QWidget(_session_tab_bar);
@@ -696,7 +695,7 @@ namespace pv
             tl->addWidget(dot);
 
             // Tab name button
-            QPushButton *nameBtn = new QPushButton(tab.name, tabWidget);
+            QPushButton *nameBtn = new QPushButton(si.name, tabWidget);
             nameBtn->setFlat(true);
             nameBtn->setCursor(Qt::PointingHandCursor);
             nameBtn->setStyleSheet(QString(
@@ -785,12 +784,11 @@ namespace pv
         _session_items.append(item);
         _uid_to_index[item.uid] = _session_items.size() - 1;
 
-        TabEntry entry;
-        entry.name = newName;
-        _tabs.append(entry);
-
-        // Switch to the new tab — this also attaches the new sampling bar
-        switch_to_session(_session_items.size() - 1);
+        // Switch to the new tab — this also attaches the new sampling bar.
+        // NOTE: switch_to_session early-returns if the new session has no group
+        // yet; full group adoption happens in Task 8's rewrite of this handler.
+        int new_index = _session_items.size() - 1;
+        switch_to_session(new_index);
     }
 
     void MainWindow::switch_to_device(ds_device_handle handle)
@@ -866,7 +864,11 @@ namespace pv
             oldItem.session->set_decoder_pannel(nullptr);
         }
 
-        _active_tab_index = global_index;
+        DeviceGroup *new_g = find_group_by_handle(handle);
+        if (new_g) {
+            _active_group_index = index_of_group(new_g);
+            new_g->active_session_uid = _session_items[global_index].uid;
+        }
         SessionItem &newItem = _session_items[global_index];
         _session      = newItem.session;
         _view         = newItem.view;
@@ -895,51 +897,42 @@ namespace pv
 
     void MainWindow::switch_to_session(int index)
     {
-        if (index < 0 || index >= _session_items.size())
-            return;
-        if (index == _active_tab_index)
-            return;
+        if (index < 0 || index >= _session_items.size()) return;
 
-        dsv_info("switch_to_session: %d -> %d | from-session@%p has_data=%d | to-session@%p has_data=%d",
-            _active_tab_index, index,
-            (void*)_session_items[_active_tab_index].session,
-            (int)_session_items[_active_tab_index].session->have_view_data(),
-            (void*)_session_items[index].session,
-            (int)_session_items[index].session->have_view_data());
+        DeviceGroup *new_group = group_owning_session(_session_items[index].uid);
+        if (!new_group) return;
+
+        int prev_global = -1;
+        DeviceGroup *prev_group = current_group();
+        if (prev_group) prev_global = active_session_global_index_of_group(prev_group);
+
+        if (prev_global == index && prev_group == new_group) return;
+
+        dsv_info("switch_to_session: %d -> %d (group %d -> %d)",
+            prev_global, index, index_of_group(prev_group), index_of_group(new_group));
 
         _is_switching_session = true;
 
-        // Save the outgoing session's channel enabled states while the device is
-        // still active for it.  rebind_device() will restore these when we return.
-        _session_items[_active_tab_index].session->save_channel_enabled_states();
+        if (prev_global >= 0 && prev_global < _session_items.size()) {
+            _session_items[prev_global].session->save_channel_enabled_states();
+            SessionItem &oldItem = _session_items[prev_global];
+            if (oldItem.cb) oldItem.cb->setActive(false);
+            if (oldItem.session->is_working()) oldItem.session->stop_capture();
+            oldItem.session->remove_msg_listener(this);
+            oldItem.session->set_decoder_pannel(nullptr);
+        }
 
-        // Deactivate outgoing session:
-        // - disable its callback proxy so its async events don't reach MainWindow
-        // - stop capture if running
-        // - remove IMessageListener so broadcast_msg() is no longer received
-        SessionItem &oldItem = _session_items[_active_tab_index];
-        if (oldItem.cb)
-            oldItem.cb->setActive(false);
-        if (oldItem.session->is_working())
-            oldItem.session->stop_capture();
-        oldItem.session->remove_msg_listener(this);
-        oldItem.session->set_decoder_pannel(nullptr);
-
-        // Activate incoming session
-        _active_tab_index = index;
+        _active_group_index = index_of_group(new_group);
+        new_group->active_session_uid = _session_items[index].uid;
         SessionItem &newItem = _session_items[index];
 
         _session      = newItem.session;
         _view         = newItem.view;
         _device_agent = _session->get_device();
 
-        // Route libsigrok C-library callbacks to the new session
         newItem.session->set_as_current();
         newItem.session->add_msg_listener(this);
-
-        // Activate the new session's callback proxy so events reach MainWindow
-        if (newItem.cb)
-            newItem.cb->setActive(true);
+        if (newItem.cb) newItem.cb->setActive(true);
 
         _sampling_bar->setSession(_session);
         _sampling_bar->set_view(_view);
@@ -951,63 +944,28 @@ namespace pv
 
         rebuild_tab_buttons();
 
-        if (newItem.saved_handle != NULL_HANDLE) {
-            // Always rebind: ds_active_device() may have freed and recreated
-            // sr_channel structs since this session was last active (e.g. when
-            // another session opened the same virtual-demo device).
-            // rebind_device() calls refresh_signal_probes() to patch dangling
-            // _probe pointers before any rendering attempt.
-            _session->rebind_device(newItem.saved_handle);
+        _session->rebind_device(new_group->handle);
 
-            if (_session->have_view_data()) {
-                _view->set_all_update(true);
-                _view->signals_changed(NULL);
-                _view->data_updated();
-                _view->on_state_changed(true);  // mirrors DSV_MSG_COLLECT_END
+        if (_session->have_view_data()) {
+            _view->set_all_update(true);
+            _view->signals_changed(NULL);
+            _view->data_updated();
+            _view->on_state_changed(true);
 
-                // Run the same refresh once again in the next event loop tick.
-                // On tab switch, the incoming view geometry can still be settling;
-                // delaying one tick avoids stale width/offset/cache state.
-                SigSession *sessToRefresh = _session;
-                QTimer::singleShot(0, this, [this, sessToRefresh]() {
-                    if (_session == sessToRefresh && _session->have_view_data()) {
-                        _view->set_all_update(true);
-                        _view->signals_changed(NULL);
-                        _view->data_updated();
-                        _view->on_state_changed(true);
-                        _view->update_view_port();
-                        dsv_info("switch_to_session delayed refresh: session@%p width=%d has_data=%d",
-                                 (void*)_session, _view->get_view_width(),
-                                 (int)_session->have_view_data());
-                    }
-                });
-            }
-        } else if (index != 0) {
-            // First visit to a new extra session: close any open sidebar panel
-            // so the new session starts with a clean state (icons at the right
-            // edge) and then re-opens at the default panel width during init.
-            _sidebar_widget->closePanel();
-
-            // Run full device init.
-            // Capture sessToInit so that if the user switches away before the
-            // timer fires, set_default_device() is still called on the CORRECT
-            // session rather than whatever _session points to at fire time.
-            SigSession *sessToInit = newItem.session;
-            QTimer::singleShot(0, this, [this, sessToInit]() {
-                if (_session == sessToInit) {
-                    // Still on this session — init normally.
-                    _session->set_default_device();
+            SigSession *sessToRefresh = _session;
+            QTimer::singleShot(0, this, [this, sessToRefresh]() {
+                if (_session == sessToRefresh && _session->have_view_data()) {
+                    _view->set_all_update(true);
+                    _view->signals_changed(NULL);
+                    _view->data_updated();
+                    _view->on_state_changed(true);
+                    _view->update_view_port();
                 }
-                // If user switched away the session still has saved_handle ==
-                // NULL_HANDLE, so the next switch_to_session() call will
-                // re-enter this branch and retry initialisation.
             });
         }
 
+        _sampling_bar->sync_selected_device(new_group->handle);
         update_toolbar_view_status();
-        dsv_info("switch_to_session done: active=%d session@%p has_data=%d device_status=%d",
-            _active_tab_index, (void*)_session,
-            (int)_session->have_view_data(), (int)_session->get_device_status());
     }
 
     void MainWindow::on_session_tab_switch(int index)
@@ -1030,25 +988,14 @@ namespace pv
             item.session->stop_capture();
         item.session->remove_msg_listener(this);
 
-        // If closing the active tab, fall back to the device tab
-        if (_active_tab_index == index) {
-            _active_tab_index = 0;
-            SessionItem &devItem = _session_items[0];
-            _session      = devItem.session;
-            _view         = devItem.view;
-            _device_agent = _session->get_device();
-            devItem.session->set_as_current();
-            devItem.session->add_msg_listener(this);
-            if (devItem.cb)
-                devItem.cb->setActive(true);
-            _sampling_bar->setSession(_session);
-            _sampling_bar->set_view(_view);
-            _session_stack->setCurrentWidget(_view);
-            _sidebar_widget->setSession(_session);
-            _session->set_decoder_pannel(_sidebar_widget->protocol_widget());
-            update_toolbar_view_status();
-        } else if (_active_tab_index > index) {
-            _active_tab_index--;
+        // Minimal compile-clean placeholder for active-tab fallback; Task 8
+        // will rewrite this handler to be group-aware. If we closed the active
+        // session, just switch to a sibling index (may early-return if no
+        // group owns that session yet — acceptable transient state).
+        int cur_active = active_session_global_index_of_group(current_group());
+        if (cur_active == index) {
+            int next = std::max(0, index - 1);
+            switch_to_session(next);
         }
 
         // Remove view from stack, then free session resources.
@@ -1059,10 +1006,14 @@ namespace pv
         delete item.session;
 
         _session_items.removeAt(index);
-        _tabs.removeAt(index);
         rebuild_uid_index();   // global indices shifted
 
         rebuild_tab_buttons();
+    }
+
+    void MainWindow::on_session_tab_close_by_uid(int uid)
+    {
+        (void)uid;  // implemented in Task 8
     }
 
     // -----------------------------------------------------------------------
@@ -2087,14 +2038,24 @@ namespace pv
 
     void MainWindow::sc_page_up()
     {
-        if (_active_tab_index > 0)
-            switch_to_session(_active_tab_index - 1);
+        DeviceGroup *g = current_group();
+        if (!g) return;
+        int i = g->session_uids.indexOf(g->active_session_uid);
+        if (i > 0) {
+            int target_uid = g->session_uids[i - 1];
+            switch_to_session(_uid_to_index.value(target_uid, -1));
+        }
     }
 
     void MainWindow::sc_page_down()
     {
-        if (_active_tab_index < _session_items.size() - 1)
-            switch_to_session(_active_tab_index + 1);
+        DeviceGroup *g = current_group();
+        if (!g) return;
+        int i = g->session_uids.indexOf(g->active_session_uid);
+        if (i >= 0 && i + 1 < g->session_uids.size()) {
+            int target_uid = g->session_uids[i + 1];
+            switch_to_session(_uid_to_index.value(target_uid, -1));
+        }
     }
 
     void MainWindow::sc_jump_zero()
@@ -2154,7 +2115,9 @@ namespace pv
 
     void MainWindow::sc_close_session()
     {
-        on_session_tab_close(_active_tab_index);
+        DeviceGroup *g = current_group();
+        if (!g) return;
+        on_session_tab_close_by_uid(g->active_session_uid);
     }
 
     void MainWindow::sc_delete_cursor()
@@ -2814,22 +2777,17 @@ namespace pv
                 _sampling_bar->update_device_list();
 
                 // Update device tab name only when the device session changes
-                if (isDeviceTab && !_tabs.isEmpty()) {
+                if (isDeviceTab && !_session_items.isEmpty()) {
                     QString devName;
                     if (_device_agent->is_demo())
                         devName = tr("Session 1");
                     else
                         devName = _device_agent->driver_name();
                     if (devName.isEmpty()) devName = tr("Device");
-                    _tabs[0].name = devName;
+                    _session_items[0].name = devName;
                     if (_session_tab_bar)
                         rebuild_tab_buttons();
                 }
-                
-                // Persist the device handle so we can rebind on tab switch-back
-                if (_active_tab_index < _session_items.size())
-                    _session_items[_active_tab_index].saved_handle =
-                        _device_agent->handle();
 
                 _logo_bar->dsl_connected(_session->get_device()->is_hardware());
                 update_toolbar_view_status();
