@@ -377,6 +377,8 @@ namespace pv
 
         // SamplingBar
         connect(_sampling_bar, SIGNAL(sig_store_session_data()), this, SLOT(on_save()));
+        connect(_sampling_bar, &pv::toolbars::SamplingBar::sig_switch_device,
+                this, &MainWindow::switch_to_device);
 
         //
         connect(_sidebar_widget->dso_trigger_widget(), SIGNAL(set_trig_pos(int)), _view, SLOT(set_trig_pos(int)));

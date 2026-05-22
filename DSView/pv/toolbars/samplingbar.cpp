@@ -1148,37 +1148,19 @@ namespace pv
 
         void SamplingBar::on_device_selected()
         {
-            if (_updating_device_list)
-            {
-                return;
-            }
-            if (_device_selector.currentIndex() == -1)
-            {
+            if (_updating_device_list) return;
+            if (_device_selector.currentIndex() == -1) {
                 dsv_err("Have no selected device.");
                 return;
             }
-            _session->stop_capture();
-            _session->session_save();
 
-            ds_device_handle devHandle = (ds_device_handle)_device_selector.currentData().toULongLong();
-            if (_session->have_hardware_data() && _session->is_first_store_confirm()){
-                if (MsgBox::Confirm(tr("Save captured data?")))
-                {
-                    _updating_device_list = true;
-                    _device_selector.setCurrentIndex(_last_device_index);
-                    _updating_device_list = false;
-                    _next_switch_device = devHandle; // Save end, auto switch to this device.
-                    sig_store_session_data();
-                    return;
-                }
-            }
+            ds_device_handle devHandle = (ds_device_handle)
+                _device_selector.currentData().toULongLong();
 
-            if (_session->set_device(devHandle)){
-                _last_device_index = _device_selector.currentIndex();   
-            }
-            else{
-                update_device_list(); // Reload the list.
-            }
+            // MainWindow takes care of stop_capture, save, group/session resolution,
+            // and rebinding UI bars. Old "Save captured data?" prompt is removed —
+            // switching device no longer destroys any session's data.
+            emit sig_switch_device(devHandle);
         }
 
         void SamplingBar::enable_toggle(bool enable)
