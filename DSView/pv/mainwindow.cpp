@@ -986,6 +986,13 @@ namespace pv
         if (item.session->have_hardware_data() && item.session->is_first_store_confirm()) {
             if (MsgBox::Confirm(tr("Save captured data?"))) {
                 _pending_close_uid = uid;
+                if (_session != item.session) {
+                    // Switch first so on_save() saves the right session.
+                    // _pending_close_uid persists across the switch, and
+                    // DSV_MSG_SAVE_COMPLETE will re-enter close-by-uid
+                    // after the saved session's confirm flag is cleared.
+                    switch_to_session(idx);
+                }
                 on_save();
                 return;
             }
@@ -1002,11 +1009,27 @@ namespace pv
 
         if (closing_active && !grp->session_uids.isEmpty()) {
             int fallback_uid = grp->session_uids.first();
-            grp->active_session_uid = fallback_uid;
             int fallback_global = _uid_to_index.value(fallback_uid, -1);
             if (fallback_global >= 0) switch_to_session(fallback_global);
         } else if (grp->session_uids.isEmpty()) {
             grp->active_session_uid = -1;
+            // Offline group just lost its last session. Find another group
+            // with a live session and switch to it; otherwise _session/_view
+            // would dangle when we delete below.
+            int target_global = -1;
+            for (int gi = 0; gi < _device_groups.size(); ++gi) {
+                if (&_device_groups[gi] == grp) continue;
+                if (_device_groups[gi].session_uids.isEmpty()) continue;
+                int target_uid = _device_groups[gi].active_session_uid;
+                if (target_uid < 0) continue;
+                target_global = _uid_to_index.value(target_uid, -1);
+                if (target_global >= 0) break;
+            }
+            if (target_global >= 0) {
+                switch_to_session(target_global);
+            } else {
+                dsv_warn("on_session_tab_close_by_uid: no fallback group available; _session may dangle");
+            }
         }
 
         _session_stack->removeWidget(item.view);
