@@ -40,6 +40,10 @@
 #include <QGridLayout>
 #include <QVBoxLayout>
 #include <QHBoxLayout>
+#include <QListWidget>
+#include <QTableWidget>
+#include <QHeaderView>
+#include <QGroupBox>
 
 #include <map>
 #include <vector>
@@ -65,7 +69,7 @@ namespace widgets {
 
 namespace dock {
 
-class SearchDock : public QScrollArea, public IUiWindow
+class SearchDock : public QWidget, public IUiWindow
 {
     Q_OBJECT
 
@@ -77,11 +81,19 @@ private:
     void retranslateUi();
     void reStyle();
 
+    void build_controls(QScrollArea *scroll);
     void build_nav_bar(QWidget *host);
     void build_toggle_row(QWidget *host);
     void build_editor_container(QWidget *host);
+    void build_results_panel();
+    void update_results_size();
     void rebuild_channel_rows();
     void refresh_pattern_summary();
+
+    void run_full_search();
+    void clear_results();
+    void navigate_to_result(int idx);
+    static QString format_time(int64_t sample, uint64_t samplerate);
 
     //IUiWindow
     void UpdateLanguage() override;
@@ -91,6 +103,7 @@ private:
 public slots:
     void on_previous();
     void on_next();
+    void on_search_all();
     void on_toggle_editor(bool force_expand = false);
     void on_channel_edit_finished();
     void on_device_updated();
@@ -106,6 +119,7 @@ private:
     QPushButton _nxt_button;
     widgets::FakeLineEdit* _search_value = nullptr;
     QPushButton *_search_button = nullptr;
+    QPushButton *_search_all_btn = nullptr;
 
     // Toggle + editor section
     QToolButton *_toggle_btn = nullptr;
@@ -121,6 +135,18 @@ private:
     // Shared validator instance for all channel line edits; reused across rebuilds
     // to avoid leaking validators on each device_updated.
     QRegularExpressionValidator *_value_validator = nullptr;
+
+    // Inner scroll area that wraps only the controls (nav + toggle + editor).
+    QScrollArea *_controls_scroll = nullptr;
+    QVBoxLayout *_outer_layout = nullptr;
+
+    // Results panel — lives OUTSIDE the controls scroll area so its
+    // own scrollbar is not intercepted by the outer scroll.
+    QWidget      *_results_panel = nullptr;
+    QLabel       *_result_count_lbl = nullptr;
+    QTableWidget *_result_table = nullptr;
+    QVector<int64_t> _result_positions;
+    int              _result_current = -1;
 };
 
 } // namespace dock

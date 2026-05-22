@@ -248,6 +248,11 @@ public:
 
     void set_search_pos(uint64_t search_pos, bool hit);
 
+    // Navigate to a search result with auto-zoom: ensures the horizontal scale
+    // is set so the surrounding samples are visible (~5 samples / pixel).
+    // Always sets the hit colour and recenters on `search_pos`.
+    void zoom_to_search_pos(uint64_t search_pos);
+
     inline uint64_t get_search_pos(){
         return _search_pos;
     }

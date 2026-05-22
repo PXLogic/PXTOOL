@@ -261,6 +261,20 @@ void Viewport::doPaint()
             t->paint_fore(p, 0, _view.get_view_width(), fore, back);
     }
 
+    // Draw search cursor on top of everything (including decoder annotations).
+    if (_type == TIME_VIEW && _view.search_cursor_shown()) {
+        const QRect xrect = _view.get_view_rect();
+        const int64_t searchX = _view.index2pixel(_view.get_search_cursor()->index());
+        if (searchX >= xrect.left() && searchX <= xrect.right()) {
+            const bool hovered = xrect.contains(_view.hover_point().x(), _view.hover_point().y()) &&
+                                 qAbs(searchX - _view.hover_point().x()) <= HitCursorMargin;
+            const QColor sc = _view.get_search_cursor()->get_color();
+            p.setPen(hovered ? QPen(sc.lighter(), 2, Qt::DashLine)
+                             : QPen(sc, 2, Qt::DashLine));
+            p.drawLine(QPoint(searchX, xrect.top()), QPoint(searchX, xrect.bottom()));
+        }
+    }
+
     if (_view.get_signalHeight() != _curSignalHeight)
             _curSignalHeight = _view.get_signalHeight();
 
@@ -426,14 +440,6 @@ void Viewport::paintSignals(QPainter &p, QColor fore, QColor back)
     if (_type == TIME_VIEW) {
         if (_view.trig_cursor_shown()) {
             _view.get_trig_cursor()->paint(p, xrect, 0, false);
-        }
-        if (_view.search_cursor_shown()) {
-            const int64_t searchX = _view.index2pixel(_view.get_search_cursor()->index());
-            if (xrect.contains(_view.hover_point().x(), _view.hover_point().y()) &&
-                    qAbs(searchX - _view.hover_point().x()) <= HitCursorMargin)
-                _view.get_search_cursor()->paint(p, xrect, 1, -1);
-            else
-                _view.get_search_cursor()->paint(p, xrect, 0, -1);
         }
 
         // plot zoom rect

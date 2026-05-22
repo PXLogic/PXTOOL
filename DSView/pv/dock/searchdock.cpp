@@ -54,24 +54,35 @@ using namespace pv::view;
 using namespace pv::widgets;
 
 SearchDock::SearchDock(QWidget *parent, View &view, SigSession *session) :
-    QScrollArea(parent),
+    QWidget(parent),
     _session(session),
     _view(view)
 {
-    setObjectName("search_dock_scroll");
-    setWidgetResizable(true);
-    setFrameShape(QFrame::NoFrame);
-    setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    setObjectName("search_dock_widget");
 
-    // Shared validator reused across rebuilds to avoid leaking validator
-    // instances on every device_updated() callback.
+    // Shared validator reused across rebuilds.
     QRegularExpression value_rx("[10XRFCxrfc]+");
     _value_validator = new QRegularExpressionValidator(value_rx, this);
 
-    auto *host = new QWidget(this);
+    // Outer layout: controls scroll on top, results list expands below.
+    _outer_layout = new QVBoxLayout(this);
+    auto *outer = _outer_layout;
+    outer->setContentsMargins(0, 0, 0, 0);
+    outer->setSpacing(0);
+
+    // --- Controls scroll area (nav bar + toggle + editor grid) ---
+    _controls_scroll = new QScrollArea(this);
+    _controls_scroll->setObjectName("search_dock_scroll");
+    _controls_scroll->setWidgetResizable(true);
+    _controls_scroll->setFrameShape(QFrame::NoFrame);
+    _controls_scroll->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    _controls_scroll->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+    _controls_scroll->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Minimum);
+
+    auto *host = new QWidget(_controls_scroll);
     host->setObjectName("search_dock_host");
     auto *root = new QVBoxLayout(host);
-    root->setContentsMargins(16, 12, 16, 16);
+    root->setContentsMargins(16, 12, 16, 8);
     root->setSpacing(8);
 
     build_nav_bar(host);
@@ -79,18 +90,24 @@ SearchDock::SearchDock(QWidget *parent, View &view, SigSession *session) :
     build_editor_container(host);
     root->addStretch(1);
 
-    setWidget(host);
+    _controls_scroll->setWidget(host);
+    outer->addWidget(_controls_scroll, 0);
+
+    // --- Results panel (outside scroll area so its scrollbar works) ---
+    build_results_panel();
+    outer->addWidget(_results_panel, 1);
 
     connect(&_pre_button, SIGNAL(clicked()), this, SLOT(on_previous()));
     connect(&_nxt_button, SIGNAL(clicked()), this, SLOT(on_next()));
     connect(_session->device_event_object(), SIGNAL(device_updated()),
             this, SLOT(on_device_updated()));
+    connect(_search_all_btn, SIGNAL(clicked()), this, SLOT(on_search_all()));
 
     ADD_UI(this);
 
-    // Build channel rows once at start; will be rebuilt on device_updated().
     rebuild_channel_rows();
     refresh_pattern_summary();
+    update_results_size();
 }
 
 SearchDock::~SearchDock()
@@ -134,6 +151,10 @@ void SearchDock::build_nav_bar(QWidget *host)
     _nxt_button.setFixedSize(24, 24);
     _nxt_button.setIconSize(QSize(16, 16));
 
+    _search_all_btn = new QPushButton(tr("Search All"), host);
+    _search_all_btn->setObjectName("search_all_btn");
+    _search_all_btn->setFixedHeight(24);
+
     auto *nav_bar = new QWidget(host);
     nav_bar->setObjectName("search_nav_bar");
     auto *nb = new QHBoxLayout(nav_bar);
@@ -142,6 +163,7 @@ void SearchDock::build_nav_bar(QWidget *host)
     nb->addWidget(&_pre_button);
     nb->addWidget(pattern_container, 1);
     nb->addWidget(&_nxt_button);
+    nb->addWidget(_search_all_btn);
 
     root->addWidget(nav_bar);
 
@@ -225,6 +247,181 @@ void SearchDock::build_editor_container(QWidget *host)
     h->addWidget(_legend_lbl, 0, Qt::AlignTop);
 
     root->addWidget(_editor_container);
+}
+
+void SearchDock::build_results_panel()
+{
+    _results_panel = new QWidget(this);
+    _results_panel->setObjectName("search_results_panel");
+    _results_panel->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
+
+    auto *vl = new QVBoxLayout(_results_panel);
+    vl->setContentsMargins(16, 4, 16, 8);
+    vl->setSpacing(4);
+
+    // Header row: label + count
+    auto *header = new QWidget(_results_panel);
+    auto *hl = new QHBoxLayout(header);
+    hl->setContentsMargins(0, 0, 0, 0);
+    hl->setSpacing(8);
+
+    auto *title_lbl = new QLabel(tr("Results"), header);
+    title_lbl->setObjectName("search_results_title");
+
+    _result_count_lbl = new QLabel(tr("–"), header);
+    _result_count_lbl->setObjectName("search_result_count");
+
+    hl->addWidget(title_lbl);
+    hl->addWidget(_result_count_lbl);
+    hl->addStretch(1);
+
+    _result_table = new QTableWidget(0, 3, _results_panel);
+    _result_table->setObjectName("search_result_table");
+    _result_table->setSelectionBehavior(QAbstractItemView::SelectRows);
+    _result_table->setSelectionMode(QAbstractItemView::SingleSelection);
+    _result_table->setEditTriggers(QAbstractItemView::NoEditTriggers);
+    _result_table->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    _result_table->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
+    _result_table->setShowGrid(false);
+    _result_table->setAlternatingRowColors(true);
+    _result_table->verticalHeader()->setVisible(false);
+    _result_table->verticalHeader()->setDefaultSectionSize(22);
+
+    _result_table->setHorizontalHeaderLabels({tr("#"), tr("Time"), tr("Sample")});
+    auto *hdr = _result_table->horizontalHeader();
+    hdr->setSectionResizeMode(0, QHeaderView::Stretch);
+    hdr->setSectionResizeMode(1, QHeaderView::Stretch);
+    hdr->setSectionResizeMode(2, QHeaderView::Stretch);
+    hdr->setHighlightSections(false);
+
+    vl->addWidget(header);
+    vl->addWidget(_result_table, 1);
+
+    connect(_result_table, &QTableWidget::cellClicked, this, [this](int row, int /*col*/) {
+        if (row >= 0 && row < _result_positions.size())
+            navigate_to_result(row);
+    });
+}
+
+void SearchDock::update_results_size()
+{
+    if (_editor_expanded) {
+        // Editor expanded: controls_scroll and results list split the space.
+        // stretch=1 / stretch=1 so both grow proportionally.
+        _controls_scroll->setMaximumHeight(QWIDGETSIZE_MAX);
+        _controls_scroll->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
+        _result_table->setMaximumHeight(220);
+        _result_table->setMinimumHeight(60);
+        _outer_layout->setStretch(0, 1);
+        _outer_layout->setStretch(1, 0);
+    } else {
+        // Editor collapsed: controls area is compact (nav + toggle only).
+        // results table fills all remaining space.
+        _controls_scroll->setMaximumHeight(72);
+        _controls_scroll->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
+        _result_table->setMaximumHeight(QWIDGETSIZE_MAX);
+        _result_table->setMinimumHeight(60);
+        _outer_layout->setStretch(0, 0);
+        _outer_layout->setStretch(1, 1);
+    }
+    _controls_scroll->updateGeometry();
+    _results_panel->updateGeometry();
+}
+
+void SearchDock::run_full_search()
+{
+    const auto snapshot = _session->get_snapshot(SR_CHANNEL_LOGIC);
+    if (!snapshot) return;
+    const auto logic_snapshot = dynamic_cast<data::LogicSnapshot *>(snapshot);
+    if (!logic_snapshot || logic_snapshot->empty()) {
+        MsgBox::Show(tr("No Sample data!"));
+        return;
+    }
+
+    const int64_t end = logic_snapshot->get_sample_count() - 1;
+    std::vector<int64_t> raw_results;
+
+    QFuture<void> future = QtConcurrent::run([&]{
+        logic_snapshot->pattern_search_all(0, end, _pattern, raw_results, 10000);
+    });
+
+    Qt::WindowFlags flags = Qt::CustomizeWindowHint;
+    QProgressDialog dlg(tr("Searching…"), tr("Cancel"), 0, 0, this, flags);
+    dlg.setWindowModality(Qt::WindowModal);
+    dlg.setWindowFlags(Qt::Dialog | Qt::FramelessWindowHint | Qt::WindowSystemMenuHint);
+    dlg.setCancelButton(nullptr);
+    QFutureWatcher<void> watcher;
+    connect(&watcher, SIGNAL(finished()), &dlg, SLOT(cancel()));
+    watcher.setFuture(future);
+    dlg.exec();
+
+    // Populate results table
+    _result_table->setUpdatesEnabled(false);
+    _result_table->setRowCount(0);
+    _result_positions.clear();
+    _result_current = -1;
+
+    const uint64_t sr = _session->cur_snap_samplerate();
+    _result_table->setRowCount((int)raw_results.size());
+    for (int i = 0; i < (int)raw_results.size(); ++i) {
+        int64_t pos = raw_results[i];
+        _result_positions.push_back(pos);
+        QString ts = format_time(pos, sr);
+
+        auto *idx_item  = new QTableWidgetItem(QString::number(i + 1));
+        auto *time_item = new QTableWidgetItem(ts);
+        auto *smp_item  = new QTableWidgetItem(QString::number(pos));
+
+        idx_item->setTextAlignment(Qt::AlignRight | Qt::AlignVCenter);
+        time_item->setTextAlignment(Qt::AlignRight | Qt::AlignVCenter);
+        smp_item->setTextAlignment(Qt::AlignRight | Qt::AlignVCenter);
+
+        _result_table->setItem(i, 0, idx_item);
+        _result_table->setItem(i, 1, time_item);
+        _result_table->setItem(i, 2, smp_item);
+    }
+    _result_table->setUpdatesEnabled(true);
+
+    if (_result_positions.isEmpty()) {
+        _result_count_lbl->setText(tr("0 results"));
+        MsgBox::Show(tr("Pattern not found!"));
+    } else {
+        _result_count_lbl->setText(tr("%1 results").arg(_result_positions.size()));
+        _result_table->updateGeometry();
+        _result_table->update();
+        navigate_to_result(0);
+    }
+}
+
+void SearchDock::clear_results()
+{
+    _result_table->setRowCount(0);
+    _result_positions.clear();
+    _result_current = -1;
+    _result_count_lbl->setText(tr("–"));
+}
+
+void SearchDock::navigate_to_result(int idx)
+{
+    if (idx < 0 || idx >= _result_positions.size()) return;
+    _result_current = idx;
+    _result_table->selectRow(idx);
+    _result_table->scrollTo(_result_table->model()->index(idx, 0),
+                            QAbstractItemView::EnsureVisible);
+    _view.zoom_to_search_pos((uint64_t)_result_positions[idx]);
+}
+
+/* static */ QString SearchDock::format_time(int64_t sample, uint64_t samplerate)
+{
+    if (samplerate == 0) return QString::number(sample);
+    double time_s = (double)sample / (double)samplerate;
+    if (time_s < 1e-6)
+        return QString("%1 ns").arg(time_s * 1e9, 0, 'f', 1);
+    if (time_s < 1e-3)
+        return QString("%1 µs").arg(time_s * 1e6, 0, 'f', 2);
+    if (time_s < 1.0)
+        return QString("%1 ms").arg(time_s * 1e3, 0, 'f', 3);
+    return QString("%1 s").arg(time_s, 0, 'f', 6);
 }
 
 void SearchDock::rebuild_channel_rows()
@@ -331,6 +528,7 @@ void SearchDock::on_toggle_editor(bool force_expand)
         ? ":/icons/sidebar/chevron-down.svg"
         : ":/icons/sidebar/chevron-right.svg"));
     _editor_container->setVisible(_editor_expanded);
+    update_results_size();
 }
 
 void SearchDock::on_channel_edit_finished()
@@ -346,6 +544,7 @@ void SearchDock::on_channel_edit_finished()
         _view.set_search_pos(_view.get_search_pos(), false);
         _pattern = new_pattern;
         refresh_pattern_summary();
+        clear_results();
     }
 }
 
@@ -353,6 +552,7 @@ void SearchDock::on_device_updated()
 {
     rebuild_channel_rows();
     refresh_pattern_summary();
+    clear_results();
 }
 
 void SearchDock::retranslateUi()
@@ -365,6 +565,8 @@ void SearchDock::retranslateUi()
         _legend_lbl->setText(
             tr("X: Don't care\n0: Low level\n1: High level\n"
                "R: Rising edge\nF: Falling edge\nC: Rising/Falling edge"));
+    if (_search_all_btn)
+        _search_all_btn->setText(tr("Search All"));
 }
 
 void SearchDock::reStyle()
@@ -384,6 +586,18 @@ void SearchDock::reStyle()
 
 void SearchDock::on_previous()
 {
+    // If the results list is populated, navigate it.
+    if (!_result_positions.isEmpty()) {
+        int idx = (_result_current > 0) ? _result_current - 1 : 0;
+        if (idx == _result_current) {
+            MsgBox::Show(tr("Already at the first result."));
+            return;
+        }
+        navigate_to_result(idx);
+        return;
+    }
+
+    // Fall back to single-step backward search.
     bool ret;
     int64_t last_pos;
     bool last_hit;
@@ -392,8 +606,7 @@ void SearchDock::on_previous()
     const auto logic_snapshot = dynamic_cast<data::LogicSnapshot*>(snapshot);
 
     if (logic_snapshot == NULL || logic_snapshot->empty()) {
-        QString strMsg(tr("No Sample data!"));
-        MsgBox::Show(strMsg);        
+        MsgBox::Show(tr("No Sample data!"));
         return;
     }
 
@@ -401,41 +614,46 @@ void SearchDock::on_previous()
     last_pos = _view.get_search_pos();
     last_hit = _view.get_search_hit();
     if (last_pos == 0) {
-        QString strMsg(tr("Search cursor at the start position!"));
-        MsgBox::Show(strMsg);
+        MsgBox::Show(tr("Search cursor at the start position!"));
         return;
     }
-    else {
-        QFuture<void> future;
-        future = QtConcurrent::run([&]{
-            last_pos -= last_hit;
-            ret = logic_snapshot->pattern_search(0, end, last_pos, _pattern, false);
-        });
-        Qt::WindowFlags flags = Qt::CustomizeWindowHint;
-        QProgressDialog dlg(tr("Search Previous..."),
-                            tr("Cancel"),0,0,this,flags);
-        dlg.setWindowModality(Qt::WindowModal);
-        dlg.setWindowFlags(Qt::Dialog | Qt::FramelessWindowHint | Qt::WindowSystemMenuHint |
-                           Qt::WindowMinimizeButtonHint | Qt::WindowMaximizeButtonHint);
-        dlg.setCancelButton(NULL);
 
-        QFutureWatcher<void> watcher;
-        connect(&watcher,SIGNAL(finished()),&dlg,SLOT(cancel()));
-        watcher.setFuture(future);
-        dlg.exec();
+    QFuture<void> future = QtConcurrent::run([&]{
+        last_pos -= last_hit;
+        ret = logic_snapshot->pattern_search(0, end, last_pos, _pattern, false);
+    });
+    Qt::WindowFlags flags = Qt::CustomizeWindowHint;
+    QProgressDialog dlg(tr("Search Previous..."), tr("Cancel"), 0, 0, this, flags);
+    dlg.setWindowModality(Qt::WindowModal);
+    dlg.setWindowFlags(Qt::Dialog | Qt::FramelessWindowHint | Qt::WindowSystemMenuHint |
+                       Qt::WindowMinimizeButtonHint | Qt::WindowMaximizeButtonHint);
+    dlg.setCancelButton(nullptr);
+    QFutureWatcher<void> watcher;
+    connect(&watcher, SIGNAL(finished()), &dlg, SLOT(cancel()));
+    watcher.setFuture(future);
+    dlg.exec();
 
-        if (!ret) {
-            QString strMsg(tr("Pattern not found!"));
-            MsgBox::Show(strMsg);
-            return;
-        } else {
-            _view.set_search_pos(last_pos, true);
-        }
+    if (!ret) {
+        MsgBox::Show(tr("Pattern not found!"));
+    } else {
+        _view.set_search_pos(last_pos, true);
     }
 }
 
 void SearchDock::on_next()
 {
+    // If the results list is populated, navigate it.
+    if (!_result_positions.isEmpty()) {
+        int idx = (_result_current >= 0) ? _result_current + 1 : 0;
+        if (idx >= _result_positions.size()) {
+            MsgBox::Show(tr("Already at the last result."));
+            return;
+        }
+        navigate_to_result(idx);
+        return;
+    }
+
+    // Fall back to single-step forward search.
     bool ret;
     int64_t last_pos;
     const auto snapshot = _session->get_snapshot(SR_CHANNEL_LOGIC);
@@ -443,43 +661,41 @@ void SearchDock::on_next()
     const auto logic_snapshot = dynamic_cast<data::LogicSnapshot*>(snapshot);
 
     if (logic_snapshot == NULL || logic_snapshot->empty()) {
-        QString strMsg(tr("No Sample data!"));
-        MsgBox::Show(strMsg);
+        MsgBox::Show(tr("No Sample data!"));
         return;
     }
 
     const int64_t end = logic_snapshot->get_sample_count() - 1;
     last_pos = _view.get_search_pos() + _view.get_search_hit();
     if (last_pos >= end) {
-        QString strMsg(tr("Search cursor at the end position!"));
-        MsgBox::Show(strMsg);
+        MsgBox::Show(tr("Search cursor at the end position!"));
         return;
-    } else {
-        QFuture<void> future;
-        future = QtConcurrent::run([&]{
-            ret = logic_snapshot->pattern_search(0, end, last_pos, _pattern, true);
-        });
-        Qt::WindowFlags flags = Qt::CustomizeWindowHint;
-        QProgressDialog dlg(tr("Search Next..."),
-                            tr("Cancel"),0,0,this,flags);
-        dlg.setWindowModality(Qt::WindowModal);
-        dlg.setWindowFlags(Qt::Dialog | Qt::FramelessWindowHint | Qt::WindowSystemMenuHint |
-                           Qt::WindowMinimizeButtonHint | Qt::WindowMaximizeButtonHint);
-        dlg.setCancelButton(NULL);
-
-        QFutureWatcher<void> watcher;
-        connect(&watcher,SIGNAL(finished()),&dlg,SLOT(cancel()));
-        watcher.setFuture(future);
-        dlg.exec();
-
-        if (!ret) {
-            QString strMsg(tr("Pattern not found!"));
-            MsgBox::Show(strMsg);
-            return;
-        } else {
-            _view.set_search_pos(last_pos, true);
-        }
     }
+
+    QFuture<void> future = QtConcurrent::run([&]{
+        ret = logic_snapshot->pattern_search(0, end, last_pos, _pattern, true);
+    });
+    Qt::WindowFlags flags = Qt::CustomizeWindowHint;
+    QProgressDialog dlg(tr("Search Next..."), tr("Cancel"), 0, 0, this, flags);
+    dlg.setWindowModality(Qt::WindowModal);
+    dlg.setWindowFlags(Qt::Dialog | Qt::FramelessWindowHint | Qt::WindowSystemMenuHint |
+                       Qt::WindowMinimizeButtonHint | Qt::WindowMaximizeButtonHint);
+    dlg.setCancelButton(nullptr);
+    QFutureWatcher<void> watcher;
+    connect(&watcher, SIGNAL(finished()), &dlg, SLOT(cancel()));
+    watcher.setFuture(future);
+    dlg.exec();
+
+    if (!ret) {
+        MsgBox::Show(tr("Pattern not found!"));
+    } else {
+        _view.set_search_pos(last_pos, true);
+    }
+}
+
+void SearchDock::on_search_all()
+{
+    run_full_search();
 }
 
 void SearchDock::UpdateLanguage()
@@ -507,6 +723,8 @@ void SearchDock::UpdateFont()
     for (auto *e : _channel_edits) {
         if (e) e->setFont(monoFont);
     }
+    if (_result_table) _result_table->setFont(monoFont);
+    if (_result_count_lbl) _result_count_lbl->setFont(font);
 }
 
 } // namespace dock

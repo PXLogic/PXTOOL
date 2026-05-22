@@ -658,8 +658,6 @@ void DecodeTrace::paint_type_options(QPainter &p, int right, const QPoint pt, QC
     const QRectF group_index_rect = get_rect(CHNLREG, y, right);
     QString index_string;
     int last_index;
-    p.setPen(QPen(fore, 1, Qt::DashLine));
-    p.drawLine(group_index_rect.bottomLeft(), group_index_rect.bottomRight());
     std::list<int>::iterator i = _index_list.begin();
     last_index = (*i);
     index_string = QString::number(last_index);

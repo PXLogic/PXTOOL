@@ -1303,6 +1303,31 @@ bool LogicSnapshot::pattern_search(int64_t start, int64_t end, int64_t& index,
     return flag;
 }
 
+void LogicSnapshot::pattern_search_all(int64_t start, int64_t end,
+                                       std::map<uint16_t, QString> &pattern,
+                                       std::vector<int64_t> &out,
+                                       int max_results)
+{
+    std::lock_guard<std::mutex> lock(_mutex);
+
+    int64_t adj_start = start + _loop_offset;
+    int64_t adj_end   = end   + _loop_offset;
+    _ring_sample_count += _loop_offset;
+
+    int64_t cursor = adj_start;
+    while (cursor <= adj_end) {
+        bool found = pattern_search_self(adj_start, adj_end, cursor, pattern, true);
+        if (!found)
+            break;
+        out.push_back(cursor - _loop_offset);
+        if (max_results > 0 && (int)out.size() >= max_results)
+            break;
+        cursor++; // advance past current hit so next search finds the next one
+    }
+
+    _ring_sample_count -= _loop_offset;
+}
+
 bool LogicSnapshot::pattern_search_self(int64_t start, int64_t end, int64_t &index,
                     std::map<uint16_t, QString> &pattern, bool isNext)
 {

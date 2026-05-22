@@ -586,10 +586,48 @@ void View::set_search_pos(uint64_t search_pos, bool hit)
     assert(width);
 
     if (hit) {
+        _show_search_cursor = true;
         set_scale_offset(_scale,  (time / _scale) - (width / 2));
         _ruler->update();
         viewport_update();
     }
+}
+
+void View::zoom_to_search_pos(uint64_t search_pos)
+{
+    const uint64_t sr = _session->cur_snap_samplerate();
+    int width = get_view_width();
+    if (sr == 0 || width <= 0) {
+        set_search_pos(search_pos, true);
+        return;
+    }
+
+    // Target: ~5 samples per pixel so individual transitions are visible while
+    // still showing useful context (≈ width*5 samples in the viewport).
+    const double target_scale = 5.0 / (double)sr;
+
+    // Pick the more-zoomed-in of {current, target} — but only if the user is
+    // currently zoomed way out. This means jumping from "ms scale" to "us
+    // scale" automatically, while preserving an already-zoomed-in view.
+    double new_scale = _scale;
+    if (_scale > target_scale * 10.0) {
+        new_scale = target_scale;
+    }
+    new_scale = max(min(new_scale, _maxscale), _minscale);
+
+    const double time = (double)search_pos / (double)sr;
+    const int64_t new_off = (int64_t)((time / new_scale) - (width / 2));
+
+    set_scale_offset(new_scale, new_off);
+
+    _search_pos = search_pos;
+    _search_hit = true;
+    _search_cursor->set_index(search_pos);
+    _search_cursor->set_colour(View::Blue);
+    _show_search_cursor = true;
+
+    _ruler->update();
+    viewport_update();
 }
 
 void View::normalize_layout()

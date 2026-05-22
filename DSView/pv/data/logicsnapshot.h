@@ -137,6 +137,14 @@ public:
     bool pattern_search(int64_t start, int64_t end, int64_t& index,
                         std::map<uint16_t, QString> &pattern, bool isNext);
 
+    // Collect every matching sample position in [start, end] for the given pattern.
+    // Results are appended (in order) to `out`; the caller is responsible for
+    // capping the number of results via `max_results` (0 = unlimited).
+    void pattern_search_all(int64_t start, int64_t end,
+                            std::map<uint16_t, QString> &pattern,
+                            std::vector<int64_t> &out,
+                            int max_results = 10000);
+
     inline void set_loop(bool bLoop){
         _is_loop = bLoop;
     }

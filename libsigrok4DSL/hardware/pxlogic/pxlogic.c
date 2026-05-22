@@ -330,7 +330,7 @@ static struct PX_context *DSLogic_dev_new(const struct PX_profile *prof)
     devc->pwm1_duty = 50;
     devc->is_loop = 0;
 
-    devc->stream_buff_size = 16;
+    devc->stream_buff_size = 32;
 
 
 
