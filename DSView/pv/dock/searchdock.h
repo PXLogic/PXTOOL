@@ -143,6 +143,7 @@ private:
     // Results panel — lives OUTSIDE the controls scroll area so its
     // own scrollbar is not intercepted by the outer scroll.
     QWidget      *_results_panel = nullptr;
+    QLabel       *_results_title_lbl = nullptr;
     QLabel       *_result_count_lbl = nullptr;
     QTableWidget *_result_table = nullptr;
     QVector<int64_t> _result_positions;

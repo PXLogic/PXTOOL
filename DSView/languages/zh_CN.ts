@@ -77,32 +77,32 @@
         <translation>Hz</translation>
     </message>
     <message>
-        <location filename="../pv/sigsession.cpp" line="260"/>
+        <location filename="../pv/sigsession.cpp" line="281"/>
         <source>Please reconnect the device!</source>
         <translation>固件版本错误，请重新连接设备!</translation>
     </message>
     <message>
-        <location filename="../pv/sigsession.cpp" line="267"/>
+        <location filename="../pv/sigsession.cpp" line="288"/>
         <source>Firmware not exist!</source>
         <translation>错误: 固件文件不存在!</translation>
     </message>
     <message>
-        <location filename="../pv/sigsession.cpp" line="274"/>
+        <location filename="../pv/sigsession.cpp" line="295"/>
         <source>USB io error!</source>
         <translation>Error: USB读写错误!</translation>
     </message>
     <message>
-        <location filename="../pv/sigsession.cpp" line="281"/>
+        <location filename="../pv/sigsession.cpp" line="302"/>
         <source>Device is busy!</source>
         <translation>设备被其它程序占用，切换失败!</translation>
     </message>
     <message>
-        <location filename="../pv/sigsession.cpp" line="645"/>
+        <location filename="../pv/sigsession.cpp" line="663"/>
         <source>No channels enabled!</source>
         <translation>未启用通道!</translation>
     </message>
     <message>
-        <location filename="../pv/sigsession.cpp" line="2358"/>
+        <location filename="../pv/sigsession.cpp" line="2396"/>
         <source>Speed too low!</source>
         <translation>错误: 当前连接的USB端口速率过低(&lt;480Mbps)!</translation>
     </message>
@@ -110,6 +110,14 @@
         <location filename="../pv/ui/msgbox.cpp" line="103"/>
         <source>Confirm</source>
         <translation>确认</translation>
+    </message>
+</context>
+<context>
+    <name>SearchComboBox</name>
+    <message>
+        <location filename="../pv/dock/searchcombobox.cpp" line="116"/>
+        <source>Clear</source>
+        <translation type="unfinished">清除</translation>
     </message>
 </context>
 <context>
@@ -138,264 +146,264 @@
 <context>
     <name>pv::MainWindow</name>
     <message>
-        <location filename="../pv/mainwindow.cpp" line="217"/>
-        <location filename="../pv/mainwindow.cpp" line="222"/>
-        <location filename="../pv/mainwindow.cpp" line="2479"/>
+        <location filename="../pv/mainwindow.cpp" line="218"/>
+        <location filename="../pv/mainwindow.cpp" line="223"/>
+        <location filename="../pv/mainwindow.cpp" line="2527"/>
         <source>Device</source>
         <translation>设备</translation>
     </message>
     <message>
-        <location filename="../pv/mainwindow.cpp" line="259"/>
-        <location filename="../pv/mainwindow.cpp" line="419"/>
+        <location filename="../pv/mainwindow.cpp" line="260"/>
+        <location filename="../pv/mainwindow.cpp" line="420"/>
         <source>File</source>
         <translation>文件</translation>
     </message>
     <message>
-        <location filename="../pv/mainwindow.cpp" line="260"/>
-        <location filename="../pv/mainwindow.cpp" line="424"/>
+        <location filename="../pv/mainwindow.cpp" line="261"/>
+        <location filename="../pv/mainwindow.cpp" line="425"/>
         <source>Config...</source>
         <translation>配置...</translation>
     </message>
     <message>
-        <location filename="../pv/mainwindow.cpp" line="261"/>
-        <location filename="../pv/mainwindow.cpp" line="425"/>
+        <location filename="../pv/mainwindow.cpp" line="262"/>
+        <location filename="../pv/mainwindow.cpp" line="426"/>
         <source>Load...</source>
         <translation>加载...</translation>
     </message>
     <message>
-        <location filename="../pv/mainwindow.cpp" line="262"/>
-        <location filename="../pv/mainwindow.cpp" line="426"/>
+        <location filename="../pv/mainwindow.cpp" line="263"/>
+        <location filename="../pv/mainwindow.cpp" line="427"/>
         <source>Store...</source>
         <translation>存储...</translation>
     </message>
     <message>
-        <location filename="../pv/mainwindow.cpp" line="263"/>
-        <location filename="../pv/mainwindow.cpp" line="427"/>
+        <location filename="../pv/mainwindow.cpp" line="264"/>
+        <location filename="../pv/mainwindow.cpp" line="428"/>
         <source>Default...</source>
         <translation>默认...</translation>
     </message>
     <message>
-        <location filename="../pv/mainwindow.cpp" line="264"/>
-        <location filename="../pv/mainwindow.cpp" line="428"/>
+        <location filename="../pv/mainwindow.cpp" line="265"/>
+        <location filename="../pv/mainwindow.cpp" line="429"/>
         <source>Open...</source>
         <translation>打开...</translation>
     </message>
     <message>
-        <location filename="../pv/mainwindow.cpp" line="265"/>
-        <location filename="../pv/mainwindow.cpp" line="429"/>
+        <location filename="../pv/mainwindow.cpp" line="266"/>
+        <location filename="../pv/mainwindow.cpp" line="430"/>
         <source>Save...</source>
         <translation>保存...</translation>
     </message>
     <message>
-        <location filename="../pv/mainwindow.cpp" line="266"/>
-        <location filename="../pv/mainwindow.cpp" line="430"/>
+        <location filename="../pv/mainwindow.cpp" line="267"/>
+        <location filename="../pv/mainwindow.cpp" line="431"/>
         <source>Export...</source>
         <translation>导出...</translation>
     </message>
     <message>
-        <location filename="../pv/mainwindow.cpp" line="267"/>
-        <location filename="../pv/mainwindow.cpp" line="431"/>
+        <location filename="../pv/mainwindow.cpp" line="268"/>
+        <location filename="../pv/mainwindow.cpp" line="432"/>
         <source>Capture...</source>
         <translation>采集...</translation>
     </message>
     <message>
-        <location filename="../pv/mainwindow.cpp" line="269"/>
-        <location filename="../pv/mainwindow.cpp" line="432"/>
+        <location filename="../pv/mainwindow.cpp" line="270"/>
+        <location filename="../pv/mainwindow.cpp" line="433"/>
         <source>Exit</source>
         <translation>退出</translation>
     </message>
     <message>
-        <location filename="../pv/mainwindow.cpp" line="280"/>
-        <location filename="../pv/mainwindow.cpp" line="420"/>
+        <location filename="../pv/mainwindow.cpp" line="281"/>
+        <location filename="../pv/mainwindow.cpp" line="421"/>
         <source>Window</source>
         <translation>窗口</translation>
     </message>
     <message>
-        <location filename="../pv/mainwindow.cpp" line="281"/>
-        <location filename="../pv/mainwindow.cpp" line="435"/>
+        <location filename="../pv/mainwindow.cpp" line="282"/>
+        <location filename="../pv/mainwindow.cpp" line="436"/>
         <source>Themes</source>
         <translation>主题(&amp;T)</translation>
     </message>
     <message>
-        <location filename="../pv/mainwindow.cpp" line="282"/>
-        <location filename="../pv/mainwindow.cpp" line="436"/>
+        <location filename="../pv/mainwindow.cpp" line="283"/>
+        <location filename="../pv/mainwindow.cpp" line="437"/>
         <source>Dark</source>
         <translation>暗黑(&amp;D)</translation>
     </message>
     <message>
-        <location filename="../pv/mainwindow.cpp" line="283"/>
-        <location filename="../pv/mainwindow.cpp" line="437"/>
+        <location filename="../pv/mainwindow.cpp" line="284"/>
+        <location filename="../pv/mainwindow.cpp" line="438"/>
         <source>Light</source>
         <translation>清新(&amp;L)</translation>
     </message>
     <message>
-        <location filename="../pv/mainwindow.cpp" line="286"/>
-        <location filename="../pv/mainwindow.cpp" line="438"/>
+        <location filename="../pv/mainwindow.cpp" line="287"/>
+        <location filename="../pv/mainwindow.cpp" line="439"/>
         <source>Display Options...</source>
         <translation>显示选项...</translation>
     </message>
     <message>
-        <location filename="../pv/mainwindow.cpp" line="288"/>
-        <location filename="../pv/mainwindow.cpp" line="439"/>
+        <location filename="../pv/mainwindow.cpp" line="289"/>
+        <location filename="../pv/mainwindow.cpp" line="440"/>
         <source>Keyboard Shortcuts...</source>
         <translation>键盘快捷键...</translation>
     </message>
     <message>
-        <location filename="../pv/mainwindow.cpp" line="292"/>
-        <location filename="../pv/mainwindow.cpp" line="421"/>
+        <location filename="../pv/mainwindow.cpp" line="293"/>
+        <location filename="../pv/mainwindow.cpp" line="422"/>
         <source>Help</source>
         <translation>帮助(&amp;H)</translation>
     </message>
     <message>
-        <location filename="../pv/mainwindow.cpp" line="293"/>
-        <location filename="../pv/mainwindow.cpp" line="442"/>
+        <location filename="../pv/mainwindow.cpp" line="294"/>
+        <location filename="../pv/mainwindow.cpp" line="443"/>
         <source>About</source>
         <translation>关于</translation>
     </message>
     <message>
-        <location filename="../pv/mainwindow.cpp" line="294"/>
-        <location filename="../pv/mainwindow.cpp" line="443"/>
+        <location filename="../pv/mainwindow.cpp" line="295"/>
+        <location filename="../pv/mainwindow.cpp" line="444"/>
         <source>Manual</source>
         <translation>使用手册</translation>
     </message>
     <message>
-        <location filename="../pv/mainwindow.cpp" line="295"/>
-        <location filename="../pv/mainwindow.cpp" line="444"/>
+        <location filename="../pv/mainwindow.cpp" line="296"/>
+        <location filename="../pv/mainwindow.cpp" line="445"/>
         <source>Bug Report</source>
         <translation>问题反馈</translation>
     </message>
     <message>
-        <location filename="../pv/mainwindow.cpp" line="296"/>
-        <location filename="../pv/mainwindow.cpp" line="445"/>
+        <location filename="../pv/mainwindow.cpp" line="297"/>
+        <location filename="../pv/mainwindow.cpp" line="446"/>
         <source>Check for Updates</source>
         <translation>检查更新</translation>
     </message>
     <message>
-        <location filename="../pv/mainwindow.cpp" line="297"/>
-        <location filename="../pv/mainwindow.cpp" line="446"/>
+        <location filename="../pv/mainwindow.cpp" line="298"/>
+        <location filename="../pv/mainwindow.cpp" line="447"/>
         <source>Log Options</source>
         <translation>日志选项</translation>
     </message>
     <message>
-        <location filename="../pv/mainwindow.cpp" line="299"/>
-        <location filename="../pv/mainwindow.cpp" line="447"/>
+        <location filename="../pv/mainwindow.cpp" line="300"/>
+        <location filename="../pv/mainwindow.cpp" line="448"/>
         <source>Language</source>
         <translation>语言</translation>
     </message>
     <message>
-        <location filename="../pv/mainwindow.cpp" line="300"/>
-        <location filename="../pv/mainwindow.cpp" line="448"/>
+        <location filename="../pv/mainwindow.cpp" line="301"/>
+        <location filename="../pv/mainwindow.cpp" line="449"/>
         <source>English</source>
         <translation>&amp;English</translation>
     </message>
     <message>
-        <location filename="../pv/mainwindow.cpp" line="301"/>
+        <location filename="../pv/mainwindow.cpp" line="302"/>
         <source>中文</source>
         <translation>中文(&amp;C)</translation>
     </message>
     <message>
-        <location filename="../pv/mainwindow.cpp" line="397"/>
+        <location filename="../pv/mainwindow.cpp" line="398"/>
         <source>Open file error!</source>
         <translation>打开文件错误!</translation>
     </message>
     <message>
-        <location filename="../pv/mainwindow.cpp" line="545"/>
+        <location filename="../pv/mainwindow.cpp" line="546"/>
         <source>Open file in new comparison tab</source>
         <translation>在新对比标签页中打开文件</translation>
     </message>
     <message>
-        <location filename="../pv/mainwindow.cpp" line="575"/>
+        <location filename="../pv/mainwindow.cpp" line="576"/>
         <source>Session %1</source>
         <translation>会话 %1</translation>
     </message>
     <message>
-        <location filename="../pv/mainwindow.cpp" line="777"/>
+        <location filename="../pv/mainwindow.cpp" line="786"/>
         <source>Failed to load </source>
         <translation>加载失败</translation>
     </message>
     <message>
-        <location filename="../pv/mainwindow.cpp" line="805"/>
+        <location filename="../pv/mainwindow.cpp" line="814"/>
         <source>Hardware Operation Failed</source>
         <translation>硬件操作失败</translation>
     </message>
     <message>
-        <location filename="../pv/mainwindow.cpp" line="806"/>
+        <location filename="../pv/mainwindow.cpp" line="815"/>
         <source>Please replug device to refresh hardware configuration!</source>
         <translation>请重新插入设备以刷新硬件配置!</translation>
     </message>
     <message>
-        <location filename="../pv/mainwindow.cpp" line="811"/>
+        <location filename="../pv/mainwindow.cpp" line="820"/>
         <source>Malloc Error</source>
         <translation>动态内存分配错误</translation>
     </message>
     <message>
-        <location filename="../pv/mainwindow.cpp" line="812"/>
+        <location filename="../pv/mainwindow.cpp" line="821"/>
         <source>Memory is not enough for this sample!
 Please reduce the sample depth!</source>
         <translation>内存不足以支持当前采样！
 请减小采样深度！</translation>
     </message>
     <message>
-        <location filename="../pv/mainwindow.cpp" line="815"/>
+        <location filename="../pv/mainwindow.cpp" line="824"/>
         <source>Packet Error</source>
         <translation>数据包错误</translation>
     </message>
     <message>
-        <location filename="../pv/mainwindow.cpp" line="816"/>
+        <location filename="../pv/mainwindow.cpp" line="825"/>
         <source>the content of received packet are not expected!</source>
         <translation>接收到的数据包格式不正确!</translation>
     </message>
     <message>
-        <location filename="../pv/mainwindow.cpp" line="822"/>
+        <location filename="../pv/mainwindow.cpp" line="831"/>
         <source>Data Overflow</source>
         <translation>数据溢出</translation>
     </message>
     <message>
-        <location filename="../pv/mainwindow.cpp" line="823"/>
+        <location filename="../pv/mainwindow.cpp" line="832"/>
         <source>USB bandwidth can not support current sample rate! 
 Please reduce the sample rate!</source>
         <translation>USB带宽不支持当前采样率！
 请降低采样率！</translation>
     </message>
     <message>
-        <location filename="../pv/mainwindow.cpp" line="826"/>
+        <location filename="../pv/mainwindow.cpp" line="835"/>
         <source>Undefined Error</source>
         <translation>未定义错误</translation>
     </message>
     <message>
-        <location filename="../pv/mainwindow.cpp" line="827"/>
+        <location filename="../pv/mainwindow.cpp" line="836"/>
         <source>Not expected error!</source>
         <translation>意外错误!</translation>
     </message>
     <message>
-        <location filename="../pv/mainwindow.cpp" line="980"/>
+        <location filename="../pv/mainwindow.cpp" line="989"/>
         <source>Save As</source>
         <translation>另存为</translation>
     </message>
     <message>
-        <location filename="../pv/mainwindow.cpp" line="1267"/>
+        <location filename="../pv/mainwindow.cpp" line="1293"/>
         <source>Profile is not compatible with current device or mode!</source>
         <translation>配置文件与当前设备或模式不兼容!</translation>
     </message>
     <message>
-        <location filename="../pv/mainwindow.cpp" line="1645"/>
+        <location filename="../pv/mainwindow.cpp" line="1671"/>
         <source>restore window status error!</source>
         <translation>还原窗口状态错误!</translation>
     </message>
     <message>
-        <location filename="../pv/mainwindow.cpp" line="2183"/>
+        <location filename="../pv/mainwindow.cpp" line="2231"/>
         <source>Plug the device into a USB 2.0 port will seriously affect its performance.
 Please replug it into a USB 3.0 port.</source>
         <translation>设备插入USB 2.0端口会严重影响性能。
 请将其重新插入USB 3.0端口。</translation>
     </message>
     <message>
-        <location filename="../pv/mainwindow.cpp" line="2226"/>
+        <location filename="../pv/mainwindow.cpp" line="2274"/>
         <source>Save captured data?</source>
         <translation>保存采集到的数据?</translation>
     </message>
     <message>
-        <location filename="../pv/mainwindow.cpp" line="2256"/>
+        <location filename="../pv/mainwindow.cpp" line="2304"/>
         <source>Current loading file has an old format. 
 This will lead to a slow loading speed. 
 Please resave it after loaded.</source>
@@ -404,12 +412,12 @@ Please resave it after loaded.</source>
 加载完成后请重新保存。</translation>
     </message>
     <message>
-        <location filename="../pv/mainwindow.cpp" line="2476"/>
+        <location filename="../pv/mainwindow.cpp" line="2524"/>
         <source>Session 1</source>
         <translation>会话 1</translation>
     </message>
     <message>
-        <location filename="../pv/mainwindow.cpp" line="2621"/>
+        <location filename="../pv/mainwindow.cpp" line="2669"/>
         <source>To switch the new device?</source>
         <translation>是否切换到新设备?</translation>
     </message>
@@ -497,12 +505,12 @@ file export for multiple data types.</source>
         <translation>xbuffer内存分配失败。</translation>
     </message>
     <message>
-        <location filename="../pv/storesession.cpp" line="1616"/>
+        <location filename="../pv/storesession.cpp" line="1623"/>
         <source>Save File</source>
         <translation>保存文件</translation>
     </message>
     <message>
-        <location filename="../pv/storesession.cpp" line="1691"/>
+        <location filename="../pv/storesession.cpp" line="1698"/>
         <source>Export Data</source>
         <translation>导出数据: </translation>
     </message>
@@ -510,18 +518,18 @@ file export for multiple data types.</source>
 <context>
     <name>pv::data::DecoderStack</name>
     <message>
-        <location filename="../pv/data/decoderstack.cpp" line="465"/>
-        <location filename="../pv/data/decoderstack.cpp" line="490"/>
+        <location filename="../pv/data/decoderstack.cpp" line="467"/>
+        <location filename="../pv/data/decoderstack.cpp" line="492"/>
         <source>One or more required channels have not been specified</source>
         <translation>没有设置需要解码哪些通道的数据!</translation>
     </message>
     <message>
-        <location filename="../pv/data/decoderstack.cpp" line="633"/>
+        <location filename="../pv/data/decoderstack.cpp" line="635"/>
         <source>At least one of selected channels are not enabled.</source>
         <translation>至少有一个需要解码的通道未使能.</translation>
     </message>
     <message>
-        <location filename="../pv/data/decoderstack.cpp" line="749"/>
+        <location filename="../pv/data/decoderstack.cpp" line="751"/>
         <source>Failed to create decoder instance</source>
         <translation>未能创建解码实例</translation>
     </message>
@@ -529,6 +537,7 @@ file export for multiple data types.</source>
 <context>
     <name>pv::dialogs::About</name>
     <message>
+        <location filename="../pv/dialogs/about.cpp" line="148"/>
         <source>OK</source>
         <translation>确定</translation>
     </message>
@@ -561,6 +570,14 @@ file export for multiple data types.</source>
         <location filename="../pv/dialogs/about.cpp" line="103"/>
         <source>&lt;font size=16&gt;Changelogs&lt;/font&gt;&lt;br /&gt;</source>
         <translation>&lt;font size=16&gt;更新日志&lt;/font&gt;&lt;br /&gt;</translation>
+    </message>
+</context>
+<context>
+    <name>pv::dialogs::ApplicationParamDlg</name>
+    <message>
+        <location filename="../pv/dialogs/applicationpardlg.cpp" line="201"/>
+        <source>OK</source>
+        <translation>确定</translation>
     </message>
 </context>
 <context>
@@ -635,7 +652,7 @@ file export for multiple data types.</source>
 <context>
     <name>pv::dialogs::DSMessageBox</name>
     <message>
-        <location filename="../pv/dialogs/dsmessagebox.cpp" line="84"/>
+        <location filename="../pv/dialogs/dsmessagebox.cpp" line="88"/>
         <source>Message</source>
         <translation>消息</translation>
     </message>
@@ -643,51 +660,52 @@ file export for multiple data types.</source>
 <context>
     <name>pv::dialogs::DecoderOptionsDlg</name>
     <message>
+        <location filename="../pv/dialogs/decoderoptionsdlg.cpp" line="225"/>
         <source>OK</source>
         <translation>确定</translation>
     </message>
     <message>
-        <location filename="../pv/dialogs/decoderoptionsdlg.cpp" line="95"/>
+        <location filename="../pv/dialogs/decoderoptionsdlg.cpp" line="106"/>
         <source>Decoder Options</source>
         <translation>解码器选项</translation>
     </message>
     <message>
-        <location filename="../pv/dialogs/decoderoptionsdlg.cpp" line="132"/>
+        <location filename="../pv/dialogs/decoderoptionsdlg.cpp" line="143"/>
         <source>Decode Range</source>
         <translation>解码范围</translation>
     </message>
     <message>
-        <location filename="../pv/dialogs/decoderoptionsdlg.cpp" line="157"/>
+        <location filename="../pv/dialogs/decoderoptionsdlg.cpp" line="168"/>
         <source>Cursor</source>
         <translation>光标 </translation>
     </message>
     <message>
-        <location filename="../pv/dialogs/decoderoptionsdlg.cpp" line="173"/>
+        <location filename="../pv/dialogs/decoderoptionsdlg.cpp" line="184"/>
         <source>The cursor for decode start time</source>
         <translation>解码起始位置</translation>
     </message>
     <message>
-        <location filename="../pv/dialogs/decoderoptionsdlg.cpp" line="175"/>
+        <location filename="../pv/dialogs/decoderoptionsdlg.cpp" line="186"/>
         <source>The cursor for decode end time</source>
         <translation>解码结束位置</translation>
     </message>
     <message>
-        <location filename="../pv/dialogs/decoderoptionsdlg.cpp" line="184"/>
+        <location filename="../pv/dialogs/decoderoptionsdlg.cpp" line="195"/>
         <source>Translate param names</source>
         <translation>翻译参数名称</translation>
     </message>
     <message>
-        <location filename="../pv/dialogs/decoderoptionsdlg.cpp" line="213"/>
+        <location filename="../pv/dialogs/decoderoptionsdlg.cpp" line="224"/>
         <source>Cancel</source>
         <translation>取消</translation>
     </message>
     <message>
-        <location filename="../pv/dialogs/decoderoptionsdlg.cpp" line="538"/>
+        <location filename="../pv/dialogs/decoderoptionsdlg.cpp" line="610"/>
         <source>error</source>
         <translation>错误</translation>
     </message>
     <message>
-        <location filename="../pv/dialogs/decoderoptionsdlg.cpp" line="539"/>
+        <location filename="../pv/dialogs/decoderoptionsdlg.cpp" line="611"/>
         <source>Invalid cursor index for sample range!</source>
         <translation>用于指定采样范围的光标无效!</translation>
     </message>
@@ -695,6 +713,7 @@ file export for multiple data types.</source>
 <context>
     <name>pv::dialogs::DeviceOptions</name>
     <message>
+        <location filename="../pv/dialogs/deviceoptions.cpp" line="204"/>
         <source>OK</source>
         <translation>确定</translation>
     </message>
@@ -1094,11 +1113,12 @@ It can take a while!</source>
 <context>
     <name>pv::dialogs::Search</name>
     <message>
+        <location filename="../pv/dialogs/search.cpp" line="126"/>
         <source>OK</source>
         <translation>确定</translation>
     </message>
     <message>
-        <location filename="../pv/dialogs/search.cpp" line="114"/>
+        <location filename="../pv/dialogs/search.cpp" line="110"/>
         <source>X: Don&apos;t care
 0: Low level
 1: High level
@@ -1113,12 +1133,12 @@ F: 下降沿
 C: 上升/下降沿</translation>
     </message>
     <message>
-        <location filename="../pv/dialogs/search.cpp" line="128"/>
+        <location filename="../pv/dialogs/search.cpp" line="124"/>
         <source>Cancel</source>
         <translation>取消</translation>
     </message>
     <message>
-        <location filename="../pv/dialogs/search.cpp" line="148"/>
+        <location filename="../pv/dialogs/search.cpp" line="144"/>
         <source>Search Options</source>
         <translation>搜索选项</translation>
     </message>
@@ -1385,63 +1405,63 @@ C: 上升/下降沿</translation>
 <context>
     <name>pv::dock::DeviceOptionsDock</name>
     <message>
-        <location filename="../pv/dock/deviceoptionsdock.cpp" line="182"/>
+        <location filename="../pv/dock/deviceoptionsdock.cpp" line="279"/>
         <source>Mode</source>
         <translation>选项</translation>
     </message>
     <message>
-        <location filename="../pv/dock/deviceoptionsdock.cpp" line="208"/>
+        <location filename="../pv/dock/deviceoptionsdock.cpp" line="305"/>
         <source>Apply</source>
         <translation>应用</translation>
     </message>
     <message>
-        <location filename="../pv/dock/deviceoptionsdock.cpp" line="272"/>
+        <location filename="../pv/dock/deviceoptionsdock.cpp" line="394"/>
         <source>All channel disabled! Please enable at least one channel.</source>
         <translation>所有通道已禁用，请至少启用一个通道!</translation>
     </message>
     <message>
-        <location filename="../pv/dock/deviceoptionsdock.cpp" line="414"/>
+        <location filename="../pv/dock/deviceoptionsdock.cpp" line="525"/>
         <source>Enable All</source>
         <translation>全部启用</translation>
     </message>
     <message>
-        <location filename="../pv/dock/deviceoptionsdock.cpp" line="416"/>
+        <location filename="../pv/dock/deviceoptionsdock.cpp" line="527"/>
         <source>Disable All</source>
         <translation>全部禁用</translation>
     </message>
     <message>
-        <location filename="../pv/dock/deviceoptionsdock.cpp" line="494"/>
+        <location filename="../pv/dock/deviceoptionsdock.cpp" line="612"/>
         <source>Enable: </source>
         <translation>启用: </translation>
     </message>
     <message>
-        <location filename="../pv/dock/deviceoptionsdock.cpp" line="553"/>
-        <location filename="../pv/dock/deviceoptionsdock.cpp" line="587"/>
+        <location filename="../pv/dock/deviceoptionsdock.cpp" line="671"/>
+        <location filename="../pv/dock/deviceoptionsdock.cpp" line="705"/>
         <source>Channel</source>
         <translation>通道</translation>
     </message>
     <message>
-        <location filename="../pv/dock/deviceoptionsdock.cpp" line="565"/>
+        <location filename="../pv/dock/deviceoptionsdock.cpp" line="683"/>
         <source>Auto Calibration</source>
         <translation>自动校准</translation>
     </message>
     <message>
-        <location filename="../pv/dock/deviceoptionsdock.cpp" line="571"/>
+        <location filename="../pv/dock/deviceoptionsdock.cpp" line="689"/>
         <source>Manual Calibration</source>
         <translation>手动校准</translation>
     </message>
     <message>
-        <location filename="../pv/dock/deviceoptionsdock.cpp" line="580"/>
+        <location filename="../pv/dock/deviceoptionsdock.cpp" line="698"/>
         <source>Calibration</source>
         <translation>校准</translation>
     </message>
     <message>
-        <location filename="../pv/dock/deviceoptionsdock.cpp" line="712"/>
+        <location filename="../pv/dock/deviceoptionsdock.cpp" line="830"/>
         <source>max count of channels!</source>
         <translation>当前模式仅支持最大 {0} 通道数!</translation>
     </message>
     <message>
-        <location filename="../pv/dock/deviceoptionsdock.cpp" line="788"/>
+        <location filename="../pv/dock/deviceoptionsdock.cpp" line="906"/>
         <source>Auto Calibration program will be started. Don&apos;t connect any probes. 
 It can take a while!</source>
         <translation>自动校准程序即将启动，请勿连接任何探针。
@@ -1452,16 +1472,19 @@ It can take a while!</source>
     <name>pv::dock::DsoTriggerDock</name>
     <message>
         <location filename="../pv/dock/dsotriggerdock.cpp" line="67"/>
+        <location filename="../pv/dock/dsotriggerdock.cpp" line="198"/>
         <source>S</source>
         <translation>S</translation>
     </message>
     <message>
         <location filename="../pv/dock/dsotriggerdock.cpp" line="68"/>
+        <location filename="../pv/dock/dsotriggerdock.cpp" line="199"/>
         <source>mS</source>
         <translation>mS</translation>
     </message>
     <message>
         <location filename="../pv/dock/dsotriggerdock.cpp" line="69"/>
+        <location filename="../pv/dock/dsotriggerdock.cpp" line="200"/>
         <source>uS</source>
         <translation>uS</translation>
     </message>
@@ -1526,81 +1549,219 @@ It can take a while!</source>
         <translation>通道 0 | 1</translation>
     </message>
     <message>
-        <location filename="../pv/dock/dsotriggerdock.cpp" line="223"/>
+        <location filename="../pv/dock/dsotriggerdock.cpp" line="229"/>
         <source>Change horiz trigger position failed!</source>
         <translation>更改水平触发位置失败!</translation>
     </message>
     <message>
-        <location filename="../pv/dock/dsotriggerdock.cpp" line="253"/>
+        <location filename="../pv/dock/dsotriggerdock.cpp" line="259"/>
         <source>Change trigger hold off time failed!</source>
         <translation>更改触发释抑时间失败!</translation>
     </message>
     <message>
-        <location filename="../pv/dock/dsotriggerdock.cpp" line="263"/>
+        <location filename="../pv/dock/dsotriggerdock.cpp" line="269"/>
         <source>Change trigger value sensitivity failed!</source>
         <translation>更改触发灵敏度失败!</translation>
     </message>
     <message>
-        <location filename="../pv/dock/dsotriggerdock.cpp" line="276"/>
+        <location filename="../pv/dock/dsotriggerdock.cpp" line="282"/>
         <source>Disabled channels cannot be used for triggering!</source>
         <translation>禁用通道不能用于触发!</translation>
     </message>
     <message>
-        <location filename="../pv/dock/dsotriggerdock.cpp" line="287"/>
+        <location filename="../pv/dock/dsotriggerdock.cpp" line="293"/>
         <source>Change trigger source failed!</source>
         <translation>更改触发源失败!</translation>
     </message>
     <message>
-        <location filename="../pv/dock/dsotriggerdock.cpp" line="335"/>
+        <location filename="../pv/dock/dsotriggerdock.cpp" line="341"/>
         <source>Change trigger channel failed!</source>
         <translation>更改触发通道失败!</translation>
     </message>
     <message>
-        <location filename="../pv/dock/dsotriggerdock.cpp" line="349"/>
+        <location filename="../pv/dock/dsotriggerdock.cpp" line="355"/>
         <source>Change trigger type failed!</source>
         <translation>更改触发类型失败!</translation>
+    </message>
+</context>
+<context>
+    <name>pv::dock::GlitchFilterDock</name>
+    <message>
+        <location filename="../pv/dock/glitchfilterdock.cpp" line="108"/>
+        <location filename="../pv/dock/glitchfilterdock.cpp" line="182"/>
+        <source> smp</source>
+        <translation> 样点</translation>
+    </message>
+    <message>
+        <location filename="../pv/dock/glitchfilterdock.cpp" line="113"/>
+        <location filename="../pv/dock/glitchfilterdock.cpp" line="184"/>
+        <source>Both</source>
+        <translation>全部</translation>
+    </message>
+    <message>
+        <location filename="../pv/dock/glitchfilterdock.cpp" line="114"/>
+        <location filename="../pv/dock/glitchfilterdock.cpp" line="185"/>
+        <source>High only</source>
+        <translation>仅高电平</translation>
+    </message>
+    <message>
+        <location filename="../pv/dock/glitchfilterdock.cpp" line="115"/>
+        <location filename="../pv/dock/glitchfilterdock.cpp" line="186"/>
+        <source>Low only</source>
+        <translation>仅低电平</translation>
+    </message>
+    <message>
+        <location filename="../pv/dock/glitchfilterdock.cpp" line="163"/>
+        <source>How it works</source>
+        <translation>使用说明</translation>
+    </message>
+    <message>
+        <location filename="../pv/dock/glitchfilterdock.cpp" line="164"/>
+        <source>Per channel: check Invert to flip the entire waveform polarity (e.g. when sampled logic is opposite to the bus). Check Enable to remove glitches (pulses no longer than Threshold, in sample periods); use Mode to limit removal to high-only or low-only short pulses. You may use Invert alone or together with glitch removal. Apply writes changes to the capture; Clear restores the original data.</source>
+        <translation>按通道设置：勾选「反转」可翻转整条波形极性（例如采样逻辑与总线相反时）。勾选「启用」可去除毛刺（宽度不超过「阈值」个采样周期的短脉冲）；「模式」可限定仅去除高电平或低电平短脉冲。可单独使用反转，或与去毛刺一起使用。「应用」将修改写入采集数据；「清除」恢复原始数据。</translation>
+    </message>
+    <message>
+        <location filename="../pv/dock/glitchfilterdock.cpp" line="171"/>
+        <source>Channel Settings</source>
+        <translation>通道设置</translation>
+    </message>
+    <message>
+        <location filename="../pv/dock/glitchfilterdock.cpp" line="172"/>
+        <source>Ch</source>
+        <translation>通道</translation>
+    </message>
+    <message>
+        <location filename="../pv/dock/glitchfilterdock.cpp" line="173"/>
+        <source>Polarity</source>
+        <translation>极性</translation>
+    </message>
+    <message>
+        <location filename="../pv/dock/glitchfilterdock.cpp" line="174"/>
+        <source>Glitch filter</source>
+        <translation>毛刺滤波</translation>
+    </message>
+    <message>
+        <location filename="../pv/dock/glitchfilterdock.cpp" line="175"/>
+        <source>Invert</source>
+        <translation>反转</translation>
+    </message>
+    <message>
+        <location filename="../pv/dock/glitchfilterdock.cpp" line="176"/>
+        <source>Enable</source>
+        <translation>启用</translation>
+    </message>
+    <message>
+        <location filename="../pv/dock/glitchfilterdock.cpp" line="177"/>
+        <source>Threshold</source>
+        <translation>阈值</translation>
+    </message>
+    <message>
+        <location filename="../pv/dock/glitchfilterdock.cpp" line="178"/>
+        <source>Mode</source>
+        <translation>模式</translation>
+    </message>
+    <message>
+        <location filename="../pv/dock/glitchfilterdock.cpp" line="190"/>
+        <source>Apply</source>
+        <translation>应用</translation>
+    </message>
+    <message>
+        <location filename="../pv/dock/glitchfilterdock.cpp" line="191"/>
+        <source>Clear</source>
+        <translation>清除</translation>
+    </message>
+    <message>
+        <location filename="../pv/dock/glitchfilterdock.cpp" line="235"/>
+        <source>Not applied</source>
+        <translation>未应用</translation>
+    </message>
+    <message>
+        <location filename="../pv/dock/glitchfilterdock.cpp" line="241"/>
+        <source>Applied (%1 region(s) flipped)</source>
+        <translation>已应用（反转 %1 个区域）</translation>
+    </message>
+    <message>
+        <location filename="../pv/dock/glitchfilterdock.cpp" line="242"/>
+        <source>Applied</source>
+        <translation>已应用</translation>
+    </message>
+    <message>
+        <location filename="../pv/dock/glitchfilterdock.cpp" line="245"/>
+        <source>Applying...</source>
+        <translation>正在应用…</translation>
+    </message>
+    <message>
+        <location filename="../pv/dock/glitchfilterdock.cpp" line="246"/>
+        <source>No data</source>
+        <translation>无数据</translation>
+    </message>
+    <message>
+        <location filename="../pv/dock/glitchfilterdock.cpp" line="247"/>
+        <source>No channels selected</source>
+        <translation>未选择通道</translation>
+    </message>
+    <message>
+        <location filename="../pv/dock/glitchfilterdock.cpp" line="248"/>
+        <source>Capture is running</source>
+        <translation>正在采集</translation>
+    </message>
+    <message>
+        <location filename="../pv/dock/glitchfilterdock.cpp" line="249"/>
+        <source>Filter unavailable for loop captures</source>
+        <translation>循环采集模式下不可用滤波</translation>
+    </message>
+    <message>
+        <location filename="../pv/dock/glitchfilterdock.cpp" line="250"/>
+        <source>No glitches found</source>
+        <translation>未发现毛刺</translation>
+    </message>
+    <message>
+        <location filename="../pv/dock/glitchfilterdock.cpp" line="251"/>
+        <source>Discarded</source>
+        <translation>已丢弃</translation>
     </message>
 </context>
 <context>
     <name>pv::dock::LogDock</name>
     <message>
         <location filename="../pv/dock/logdock.cpp" line="47"/>
+        <location filename="../pv/dock/logdock.cpp" line="181"/>
         <source>Level:</source>
         <translation>级别：</translation>
     </message>
     <message>
-        <location filename="../pv/dock/logdock.cpp" line="52"/>
-        <location filename="../pv/dock/logdock.cpp" line="182"/>
+        <location filename="../pv/dock/logdock.cpp" line="53"/>
+        <location filename="../pv/dock/logdock.cpp" line="185"/>
         <source>Error</source>
         <translation>错误</translation>
     </message>
     <message>
-        <location filename="../pv/dock/logdock.cpp" line="53"/>
-        <location filename="../pv/dock/logdock.cpp" line="183"/>
+        <location filename="../pv/dock/logdock.cpp" line="54"/>
+        <location filename="../pv/dock/logdock.cpp" line="186"/>
         <source>Warning</source>
         <translation>警告</translation>
     </message>
     <message>
-        <location filename="../pv/dock/logdock.cpp" line="54"/>
-        <location filename="../pv/dock/logdock.cpp" line="184"/>
+        <location filename="../pv/dock/logdock.cpp" line="55"/>
+        <location filename="../pv/dock/logdock.cpp" line="187"/>
         <source>Info</source>
         <translation>信息</translation>
     </message>
     <message>
-        <location filename="../pv/dock/logdock.cpp" line="55"/>
-        <location filename="../pv/dock/logdock.cpp" line="185"/>
+        <location filename="../pv/dock/logdock.cpp" line="56"/>
+        <location filename="../pv/dock/logdock.cpp" line="188"/>
         <source>Debug</source>
         <translation>调试</translation>
     </message>
     <message>
-        <location filename="../pv/dock/logdock.cpp" line="56"/>
-        <location filename="../pv/dock/logdock.cpp" line="186"/>
+        <location filename="../pv/dock/logdock.cpp" line="57"/>
+        <location filename="../pv/dock/logdock.cpp" line="189"/>
         <source>Verbose</source>
         <translation>详细</translation>
     </message>
     <message>
-        <location filename="../pv/dock/logdock.cpp" line="59"/>
-        <location filename="../pv/dock/logdock.cpp" line="179"/>
+        <location filename="../pv/dock/logdock.cpp" line="60"/>
+        <location filename="../pv/dock/logdock.cpp" line="182"/>
         <source>Clear</source>
         <translation>清除</translation>
     </message>
@@ -1657,73 +1818,74 @@ It can take a while!</source>
 <context>
     <name>pv::dock::ProtocolDock</name>
     <message>
-        <location filename="../pv/dock/protocoldock.cpp" line="107"/>
+        <location filename="../pv/dock/protocoldock.cpp" line="137"/>
         <source>Any decoder have repeated id or name:</source>
         <translation>存在重复id或name的解码器:</translation>
     </message>
     <message>
-        <location filename="../pv/dock/protocoldock.cpp" line="109"/>
-        <location filename="../pv/dock/protocoldock.cpp" line="398"/>
+        <location filename="../pv/dock/protocoldock.cpp" line="139"/>
+        <location filename="../pv/dock/protocoldock.cpp" line="559"/>
         <source>error</source>
         <translation>错误</translation>
     </message>
     <message>
-        <location filename="../pv/dock/protocoldock.cpp" line="291"/>
+        <location filename="../pv/dock/protocoldock.cpp" line="327"/>
         <source>search</source>
         <translation>查找</translation>
     </message>
     <message>
-        <location filename="../pv/dock/protocoldock.cpp" line="292"/>
+        <location filename="../pv/dock/protocoldock.cpp" line="328"/>
         <source>Matching Items:</source>
         <translation>匹配项:</translation>
     </message>
     <message>
-        <location filename="../pv/dock/protocoldock.cpp" line="293"/>
+        <location filename="../pv/dock/protocoldock.cpp" line="329"/>
         <source>Protocol List Viewer</source>
         <translation>解码结果</translation>
     </message>
     <message>
-        <location filename="../pv/dock/protocoldock.cpp" line="350"/>
+        <location filename="../pv/dock/protocoldock.cpp" line="502"/>
         <source>Decoder list is empty!</source>
         <translation>解码器列表为空!</translation>
     </message>
     <message>
-        <location filename="../pv/dock/protocoldock.cpp" line="354"/>
+        <location filename="../pv/dock/protocoldock.cpp" line="506"/>
         <source>Please select a decoder!</source>
         <translation>请选择一个解码器!</translation>
     </message>
     <message>
-        <location filename="../pv/dock/protocoldock.cpp" line="399"/>
+        <location filename="../pv/dock/protocoldock.cpp" line="560"/>
         <source>find the base decoder error!</source>
         <translation>没有找到对应的底层解码器!</translation>
     </message>
     <message>
-        <location filename="../pv/dock/protocoldock.cpp" line="474"/>
+        <location filename="../pv/dock/protocoldock.cpp" line="655"/>
         <source>Have no decoder to remove!</source>
         <translation>没有可移除的解码器!</translation>
     </message>
     <message>
-        <location filename="../pv/dock/protocoldock.cpp" line="478"/>
+        <location filename="../pv/dock/protocoldock.cpp" line="659"/>
         <source>Are you sure to remove all decoder?</source>
         <translation>是否确定要移除所有解码器?</translation>
     </message>
     <message>
-        <location filename="../pv/dock/protocoldock.cpp" line="513"/>
+        <location filename="../pv/dock/protocoldock.cpp" line="426"/>
+        <location filename="../pv/dock/protocoldock.cpp" line="734"/>
         <source>Out of Memory</source>
         <translation>内存不足</translation>
     </message>
     <message>
-        <location filename="../pv/dock/protocoldock.cpp" line="892"/>
+        <location filename="../pv/dock/protocoldock.cpp" line="1117"/>
         <source>Searching...</source>
         <translation>查找中</translation>
     </message>
     <message>
-        <location filename="../pv/dock/protocoldock.cpp" line="893"/>
+        <location filename="../pv/dock/protocoldock.cpp" line="1118"/>
         <source>Cancel</source>
         <translation>取消</translation>
     </message>
     <message>
-        <location filename="../pv/dock/protocoldock.cpp" line="924"/>
+        <location filename="../pv/dock/protocoldock.cpp" line="1149"/>
         <source>Are you sure to remove this decoder?</source>
         <translation>是否确定要移除这个解码器?</translation>
     </message>
@@ -1731,52 +1893,133 @@ It can take a while!</source>
 <context>
     <name>pv::dock::SearchDock</name>
     <message>
-        <location filename="../pv/dock/searchdock.cpp" line="90"/>
         <source>Click the search pattern
 to configure search options</source>
-        <translation>点击搜索模式
+        <translation type="vanished">点击搜索模式
 配置搜索选项</translation>
     </message>
     <message>
-        <location filename="../pv/dock/searchdock.cpp" line="126"/>
+        <location filename="../pv/dock/searchdock.cpp" line="561"/>
         <source>search</source>
         <translation>查找</translation>
     </message>
     <message>
-        <location filename="../pv/dock/searchdock.cpp" line="155"/>
-        <location filename="../pv/dock/searchdock.cpp" line="206"/>
+        <location filename="../pv/dock/searchdock.cpp" line="337"/>
+        <location filename="../pv/dock/searchdock.cpp" line="609"/>
+        <location filename="../pv/dock/searchdock.cpp" line="664"/>
         <source>No Sample data!</source>
         <translation>无采样数据!</translation>
     </message>
     <message>
-        <location filename="../pv/dock/searchdock.cpp" line="164"/>
+        <location filename="../pv/dock/searchdock.cpp" line="617"/>
         <source>Search cursor at the start position!</source>
         <translation>搜索光标处于起始位置!</translation>
     </message>
     <message>
-        <location filename="../pv/dock/searchdock.cpp" line="175"/>
+        <location filename="../pv/dock/searchdock.cpp" line="626"/>
         <source>Search Previous...</source>
         <translation>搜索上一个</translation>
     </message>
     <message>
-        <location filename="../pv/dock/searchdock.cpp" line="176"/>
-        <location filename="../pv/dock/searchdock.cpp" line="224"/>
+        <location filename="../pv/dock/searchdock.cpp" line="349"/>
+        <location filename="../pv/dock/searchdock.cpp" line="626"/>
+        <location filename="../pv/dock/searchdock.cpp" line="679"/>
         <source>Cancel</source>
         <translation>取消</translation>
     </message>
     <message>
-        <location filename="../pv/dock/searchdock.cpp" line="188"/>
-        <location filename="../pv/dock/searchdock.cpp" line="236"/>
+        <location filename="../pv/dock/searchdock.cpp" line="154"/>
+        <location filename="../pv/dock/searchdock.cpp" line="569"/>
+        <source>Search All</source>
+        <translation>全部搜索</translation>
+    </message>
+    <message>
+        <location filename="../pv/dock/searchdock.cpp" line="191"/>
+        <location filename="../pv/dock/searchdock.cpp" line="563"/>
+        <source>Edit per-channel</source>
+        <translation>按通道编辑</translation>
+    </message>
+    <message>
+        <location filename="../pv/dock/searchdock.cpp" line="238"/>
+        <location filename="../pv/dock/searchdock.cpp" line="566"/>
+        <source>X: Don&apos;t care
+0: Low level
+1: High level
+R: Rising edge
+F: Falling edge
+C: Rising/Falling edge</source>
+        <translation>X: 不关心
+0: 低电平
+1: 高电平
+R: 上升沿
+F: 下降沿
+C: 上升/下降沿</translation>
+    </message>
+    <message>
+        <location filename="../pv/dock/searchdock.cpp" line="268"/>
+        <source>Results</source>
+        <translation>结果</translation>
+    </message>
+    <message>
+        <location filename="../pv/dock/searchdock.cpp" line="271"/>
+        <location filename="../pv/dock/searchdock.cpp" line="401"/>
+        <source>–</source>
+        <translation>–</translation>
+    </message>
+    <message>
+        <location filename="../pv/dock/searchdock.cpp" line="290"/>
+        <source>#</source>
+        <translation>#</translation>
+    </message>
+    <message>
+        <location filename="../pv/dock/searchdock.cpp" line="290"/>
+        <source>Time</source>
+        <translation>时间</translation>
+    </message>
+    <message>
+        <location filename="../pv/dock/searchdock.cpp" line="290"/>
+        <source>Sample</source>
+        <translation>采样点</translation>
+    </message>
+    <message>
+        <location filename="../pv/dock/searchdock.cpp" line="349"/>
+        <source>Searching…</source>
+        <translation>正在搜索…</translation>
+    </message>
+    <message>
+        <location filename="../pv/dock/searchdock.cpp" line="386"/>
+        <source>0 results</source>
+        <translation>0 条结果</translation>
+    </message>
+    <message>
+        <location filename="../pv/dock/searchdock.cpp" line="387"/>
+        <location filename="../pv/dock/searchdock.cpp" line="637"/>
+        <location filename="../pv/dock/searchdock.cpp" line="690"/>
         <source>Pattern not found!</source>
         <translation>找不到匹配项!</translation>
     </message>
     <message>
-        <location filename="../pv/dock/searchdock.cpp" line="214"/>
+        <location filename="../pv/dock/searchdock.cpp" line="389"/>
+        <source>%1 results</source>
+        <translation>%1 条结果</translation>
+    </message>
+    <message>
+        <location filename="../pv/dock/searchdock.cpp" line="593"/>
+        <source>Already at the first result.</source>
+        <translation>已是第一条结果。</translation>
+    </message>
+    <message>
+        <location filename="../pv/dock/searchdock.cpp" line="649"/>
+        <source>Already at the last result.</source>
+        <translation>已是最后一条结果。</translation>
+    </message>
+    <message>
+        <location filename="../pv/dock/searchdock.cpp" line="671"/>
         <source>Search cursor at the end position!</source>
         <translation>搜索光标处于结束位置!</translation>
     </message>
     <message>
-        <location filename="../pv/dock/searchdock.cpp" line="223"/>
+        <location filename="../pv/dock/searchdock.cpp" line="679"/>
         <source>Search Next...</source>
         <translation>搜索下一个</translation>
     </message>
@@ -1784,61 +2027,78 @@ to configure search options</source>
 <context>
     <name>pv::dock::SideBar</name>
     <message>
-        <location filename="../pv/dock/sidebar.cpp" line="65"/>
+        <location filename="../pv/dock/sidebar.cpp" line="72"/>
+        <location filename="../pv/dock/sidebar.cpp" line="456"/>
         <source>Trigger Setting</source>
         <translation>触发设置</translation>
     </message>
     <message>
-        <location filename="../pv/dock/sidebar.cpp" line="86"/>
+        <location filename="../pv/dock/sidebar.cpp" line="94"/>
+        <location filename="../pv/dock/sidebar.cpp" line="457"/>
         <source>Decode Protocol</source>
         <translation>协议解码</translation>
     </message>
     <message>
-        <location filename="../pv/dock/sidebar.cpp" line="103"/>
+        <location filename="../pv/dock/sidebar.cpp" line="112"/>
+        <location filename="../pv/dock/sidebar.cpp" line="458"/>
         <source>Measurement</source>
         <translation>测量</translation>
     </message>
     <message>
-        <location filename="../pv/dock/sidebar.cpp" line="120"/>
-        <location filename="../pv/dock/sidebar.cpp" line="184"/>
-        <location filename="../pv/dock/sidebar.cpp" line="306"/>
+        <location filename="../pv/dock/sidebar.cpp" line="130"/>
+        <location filename="../pv/dock/sidebar.cpp" line="216"/>
+        <location filename="../pv/dock/sidebar.cpp" line="449"/>
+        <location filename="../pv/dock/sidebar.cpp" line="459"/>
         <source>Search</source>
         <translation>搜索</translation>
     </message>
     <message>
-        <location filename="../pv/dock/sidebar.cpp" line="137"/>
+        <location filename="../pv/dock/sidebar.cpp" line="148"/>
+        <location filename="../pv/dock/sidebar.cpp" line="460"/>
         <source>Device Options</source>
         <translation>设备选项</translation>
     </message>
     <message>
-        <location filename="../pv/dock/sidebar.cpp" line="183"/>
-        <location filename="../pv/dock/sidebar.cpp" line="305"/>
+        <location filename="../pv/dock/sidebar.cpp" line="177"/>
+        <location filename="../pv/dock/sidebar.cpp" line="461"/>
+        <source>Glitch Filter</source>
+        <translation>毛刺滤波</translation>
+    </message>
+    <message>
+        <location filename="../pv/dock/sidebar.cpp" line="215"/>
+        <location filename="../pv/dock/sidebar.cpp" line="448"/>
         <source>Trigger</source>
         <translation>触发</translation>
     </message>
     <message>
-        <location filename="../pv/dock/sidebar.cpp" line="183"/>
-        <location filename="../pv/dock/sidebar.cpp" line="305"/>
+        <location filename="../pv/dock/sidebar.cpp" line="215"/>
+        <location filename="../pv/dock/sidebar.cpp" line="448"/>
         <source>Decode</source>
         <translation>解码</translation>
     </message>
     <message>
-        <location filename="../pv/dock/sidebar.cpp" line="184"/>
-        <location filename="../pv/dock/sidebar.cpp" line="306"/>
+        <location filename="../pv/dock/sidebar.cpp" line="216"/>
+        <location filename="../pv/dock/sidebar.cpp" line="449"/>
         <source>Measure</source>
         <translation>测量</translation>
     </message>
     <message>
-        <location filename="../pv/dock/sidebar.cpp" line="185"/>
-        <location filename="../pv/dock/sidebar.cpp" line="307"/>
+        <location filename="../pv/dock/sidebar.cpp" line="217"/>
+        <location filename="../pv/dock/sidebar.cpp" line="450"/>
         <source>Options</source>
         <translation>选项</translation>
     </message>
     <message>
-        <location filename="../pv/dock/sidebar.cpp" line="185"/>
-        <location filename="../pv/dock/sidebar.cpp" line="307"/>
+        <location filename="../pv/dock/sidebar.cpp" line="217"/>
+        <location filename="../pv/dock/sidebar.cpp" line="450"/>
         <source>Log</source>
         <translation>日志</translation>
+    </message>
+    <message>
+        <location filename="../pv/dock/sidebar.cpp" line="218"/>
+        <location filename="../pv/dock/sidebar.cpp" line="451"/>
+        <source>Filter</source>
+        <translation>滤波</translation>
     </message>
 </context>
 <context>
@@ -1891,7 +2151,7 @@ to configure search options</source>
     <message>
         <location filename="../pv/dock/triggerdock.cpp" line="168"/>
         <location filename="../pv/dock/triggerdock.cpp" line="173"/>
-        <location filename="../pv/dock/triggerdock.cpp" line="965"/>
+        <location filename="../pv/dock/triggerdock.cpp" line="972"/>
         <source>Serial Trigger</source>
         <translation>串行触发</translation>
     </message>
@@ -1907,7 +2167,7 @@ to configure search options</source>
     </message>
     <message>
         <location filename="../pv/dock/triggerdock.cpp" line="172"/>
-        <location filename="../pv/dock/triggerdock.cpp" line="964"/>
+        <location filename="../pv/dock/triggerdock.cpp" line="971"/>
         <source>Stage Trigger</source>
         <translation>多级触发</translation>
     </message>
@@ -1953,49 +2213,51 @@ C: 上升/下降沿</translation>
         <translation>等级</translation>
     </message>
     <message>
-        <location filename="../pv/dock/triggerdock.cpp" line="216"/>
+        <location filename="../pv/dock/triggerdock.cpp" line="223"/>
         <source>Stream Mode Don&apos;t Support Advanced Trigger!</source>
         <translation>流模式不支持高级触发功能!</translation>
     </message>
     <message>
-        <location filename="../pv/dock/triggerdock.cpp" line="225"/>
+        <location filename="../pv/dock/triggerdock.cpp" line="232"/>
         <source>Advanced Trigger need DSLogic Hardware Support!</source>
         <translation>高级触发需要DSLogic硬件支持!</translation>
     </message>
     <message>
-        <location filename="../pv/dock/triggerdock.cpp" line="596"/>
+        <location filename="../pv/dock/triggerdock.cpp" line="199"/>
+        <location filename="../pv/dock/triggerdock.cpp" line="603"/>
         <source>Or</source>
         <translation>或</translation>
     </message>
     <message>
-        <location filename="../pv/dock/triggerdock.cpp" line="597"/>
+        <location filename="../pv/dock/triggerdock.cpp" line="200"/>
+        <location filename="../pv/dock/triggerdock.cpp" line="604"/>
         <source>And</source>
         <translation>与</translation>
     </message>
     <message>
-        <location filename="../pv/dock/triggerdock.cpp" line="1013"/>
+        <location filename="../pv/dock/triggerdock.cpp" line="1020"/>
         <source>Trigger</source>
         <translation>触发</translation>
     </message>
     <message>
-        <location filename="../pv/dock/triggerdock.cpp" line="1014"/>
+        <location filename="../pv/dock/triggerdock.cpp" line="1021"/>
         <source>Trigger setted on multiple channels!
 Capture will Only triggered when all setted channels fullfill at one sample</source>
         <translation>触发设置在多个通道！
 仅当所有设置通道在同一采样点同时满足条件时才会触发采集</translation>
     </message>
     <message>
-        <location filename="../pv/dock/triggerdock.cpp" line="1017"/>
+        <location filename="../pv/dock/triggerdock.cpp" line="1024"/>
         <source>Not Show Again</source>
         <translation>不再显示</translation>
     </message>
     <message>
-        <location filename="../pv/dock/triggerdock.cpp" line="1018"/>
+        <location filename="../pv/dock/triggerdock.cpp" line="1025"/>
         <source>Clear Trig</source>
         <translation>清除触发</translation>
     </message>
     <message>
-        <location filename="../pv/dock/triggerdock.cpp" line="1019"/>
+        <location filename="../pv/dock/triggerdock.cpp" line="1026"/>
         <source>Continue</source>
         <translation>继续</translation>
     </message>
@@ -2076,6 +2338,7 @@ Capture will Only triggered when all setted channels fullfill at one sample</sou
 <context>
     <name>pv::toolbars::LogoBar</name>
     <message>
+        <location filename="../pv/toolbars/logobar.cpp" line="308"/>
         <source>OK</source>
         <translation>确定</translation>
     </message>
@@ -2155,18 +2418,23 @@ Capture will Only triggered when all setted channels fullfill at one sample</sou
         <translation>清除</translation>
     </message>
     <message>
-        <location filename="../pv/toolbars/logobar.cpp" line="312"/>
+        <location filename="../pv/toolbars/logobar.cpp" line="306"/>
         <source>Cancel</source>
         <translation>取消</translation>
     </message>
     <message>
-        <location filename="../pv/toolbars/logobar.cpp" line="360"/>
-        <location filename="../pv/toolbars/logobar.cpp" line="383"/>
+        <location filename="../pv/toolbars/logobar.cpp" line="353"/>
+        <source>Failed to open log file.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../pv/toolbars/logobar.cpp" line="358"/>
+        <location filename="../pv/toolbars/logobar.cpp" line="381"/>
         <source>Not exist!</source>
         <translation>文件不存在!</translation>
     </message>
     <message>
-        <location filename="../pv/toolbars/logobar.cpp" line="369"/>
+        <location filename="../pv/toolbars/logobar.cpp" line="367"/>
         <source>Confirm!</source>
         <translation>确定清除日志文件?</translation>
     </message>
@@ -2364,27 +2632,27 @@ It can take a while!</source>
 <context>
     <name>pv::view::DecodeTrace</name>
     <message>
-        <location filename="../pv/view/decodetrace.cpp" line="342"/>
+        <location filename="../pv/view/decodetrace.cpp" line="356"/>
         <source>Unshown</source>
         <translation>未显示</translation>
     </message>
     <message>
-        <location filename="../pv/view/decodetrace.cpp" line="448"/>
+        <location filename="../pv/view/decodetrace.cpp" line="462"/>
         <source>Zoom in for details</source>
         <translation>放大查看详细信息</translation>
     </message>
     <message>
-        <location filename="../pv/view/decodetrace.cpp" line="559"/>
+        <location filename="../pv/view/decodetrace.cpp" line="573"/>
         <source>Error:</source>
         <translation>错误: </translation>
     </message>
     <message>
-        <location filename="../pv/view/decodetrace.cpp" line="561"/>
+        <location filename="../pv/view/decodetrace.cpp" line="575"/>
         <source>Error: ...</source>
         <translation>错误: ...</translation>
     </message>
     <message>
-        <location filename="../pv/view/decodetrace.cpp" line="739"/>
+        <location filename="../pv/view/decodetrace.cpp" line="757"/>
         <source>One or more required channels have not been specified</source>
         <translation>没有设置需要解码哪些通道的数据!</translation>
     </message>
@@ -2459,59 +2727,56 @@ It can take a while!</source>
         <translation>设置通道颜色</translation>
     </message>
     <message>
-        <location filename="../pv/view/header.cpp" line="565"/>
+        <location filename="../pv/view/header.cpp" line="573"/>
         <source>Reset Row Height</source>
         <translation>重置行高</translation>
     </message>
     <message>
-        <location filename="../pv/view/header.cpp" line="566"/>
+        <location filename="../pv/view/header.cpp" line="574"/>
         <source>Reset All Row Heights</source>
         <translation>重置所有行高</translation>
     </message>
     <message>
-        <location filename="../pv/view/header.cpp" line="569"/>
+        <location filename="../pv/view/header.cpp" line="577"/>
         <source>Set Channel Height</source>
         <translation>设置通道高度</translation>
     </message>
     <message>
-        <location filename="../pv/view/header.cpp" line="570"/>
+        <location filename="../pv/view/header.cpp" line="578"/>
         <source>Auto (fit to view)</source>
         <translation>自动（适应窗口）</translation>
     </message>
     <message>
-        <location filename="../pv/view/header.cpp" line="572"/>
+        <location filename="../pv/view/header.cpp" line="580"/>
         <source>1X  (30px)</source>
         <translation>1X  (30像素)</translation>
     </message>
     <message>
-        <location filename="../pv/view/header.cpp" line="573"/>
+        <location filename="../pv/view/header.cpp" line="581"/>
         <source>2X  (60px)</source>
         <translation>2X  (60像素)</translation>
     </message>
     <message>
-        <location filename="../pv/view/header.cpp" line="574"/>
+        <location filename="../pv/view/header.cpp" line="582"/>
         <source>4X (120px)</source>
         <translation>4X (120像素)</translation>
     </message>
     <message>
-        <location filename="../pv/view/header.cpp" line="575"/>
+        <location filename="../pv/view/header.cpp" line="583"/>
         <source>8X (240px)</source>
         <translation>8X (240像素)</translation>
     </message>
     <message>
-        <location filename="../pv/view/header.cpp" line="593"/>
         <source>Decode Engine</source>
-        <translation>解码引擎</translation>
+        <translation type="vanished">解码引擎</translation>
     </message>
     <message>
-        <location filename="../pv/view/header.cpp" line="596"/>
         <source>C Decoder</source>
-        <translation>C语言解码器</translation>
+        <translation type="vanished">C语言解码器</translation>
     </message>
     <message>
-        <location filename="../pv/view/header.cpp" line="597"/>
         <source>Python Decoder</source>
-        <translation>Python解码器</translation>
+        <translation type="vanished">Python解码器</translation>
     </message>
 </context>
 <context>
@@ -2568,33 +2833,33 @@ It can take a while!</source>
 <context>
     <name>pv::view::ViewStatus</name>
     <message>
-        <location filename="../pv/view/viewstatus.cpp" line="138"/>
+        <location filename="../pv/view/viewstatus.cpp" line="144"/>
         <source>Measure</source>
         <translation>测量(&amp;M)</translation>
     </message>
     <message>
-        <location filename="../pv/view/viewstatus.cpp" line="191"/>
+        <location filename="../pv/view/viewstatus.cpp" line="197"/>
         <source>Trigger Time: </source>
         <translation>触发时间: </translation>
     </message>
     <message>
-        <location filename="../pv/view/viewstatus.cpp" line="197"/>
+        <location filename="../pv/view/viewstatus.cpp" line="203"/>
         <source>Samples Captured!</source>
         <translation>点已采集!</translation>
     </message>
     <message>
-        <location filename="../pv/view/viewstatus.cpp" line="203"/>
+        <location filename="../pv/view/viewstatus.cpp" line="209"/>
         <source>Triggered! </source>
         <translation>已触发! </translation>
     </message>
     <message>
-        <location filename="../pv/view/viewstatus.cpp" line="204"/>
-        <location filename="../pv/view/viewstatus.cpp" line="207"/>
+        <location filename="../pv/view/viewstatus.cpp" line="210"/>
+        <location filename="../pv/view/viewstatus.cpp" line="213"/>
         <source>% Captured</source>
         <translation>% 已采集</translation>
     </message>
     <message>
-        <location filename="../pv/view/viewstatus.cpp" line="206"/>
+        <location filename="../pv/view/viewstatus.cpp" line="212"/>
         <source>Waiting for Trigger! </source>
         <translation>等待触发! </translation>
     </message>
@@ -2603,104 +2868,97 @@ It can take a while!</source>
     <name>pv::view::Viewport</name>
     <message>
         <location filename="../pv/view/viewport.cpp" line="108"/>
-        <location filename="../pv/view/viewport.cpp" line="2244"/>
+        <location filename="../pv/view/viewport.cpp" line="2194"/>
         <source>Add Y-cursor</source>
         <translation>添加Y轴光标</translation>
     </message>
     <message>
         <location filename="../pv/view/viewport.cpp" line="109"/>
-        <location filename="../pv/view/viewport.cpp" line="2245"/>
+        <location filename="../pv/view/viewport.cpp" line="2195"/>
         <source>Add X-cursor</source>
         <translation>添加X光标</translation>
     </message>
     <message>
-        <location filename="../pv/view/viewport.cpp" line="465"/>
+        <location filename="../pv/view/viewport.cpp" line="471"/>
         <source>Auto(Roll)</source>
         <translation>自动(Roll)</translation>
     </message>
     <message>
-        <location filename="../pv/view/viewport.cpp" line="469"/>
-        <location filename="../pv/view/viewport.cpp" line="478"/>
+        <location filename="../pv/view/viewport.cpp" line="475"/>
+        <location filename="../pv/view/viewport.cpp" line="484"/>
         <source>Capturing</source>
         <translation>捕获中</translation>
     </message>
     <message>
-        <location filename="../pv/view/viewport.cpp" line="474"/>
+        <location filename="../pv/view/viewport.cpp" line="480"/>
         <source>Auto</source>
         <translation>自动</translation>
     </message>
     <message>
-        <location filename="../pv/view/viewport.cpp" line="483"/>
+        <location filename="../pv/view/viewport.cpp" line="489"/>
         <source>Waiting Trig</source>
         <translation>等待触发</translation>
     </message>
     <message>
-        <location filename="../pv/view/viewport.cpp" line="487"/>
+        <location filename="../pv/view/viewport.cpp" line="493"/>
         <source>Trig&apos;d</source>
         <translation>Trig&apos;d</translation>
     </message>
     <message>
-        <location filename="../pv/view/viewport.cpp" line="515"/>
+        <location filename="../pv/view/viewport.cpp" line="521"/>
         <source>Out off range</source>
         <translation>数据超出量程</translation>
     </message>
     <message>
-        <location filename="../pv/view/viewport.cpp" line="649"/>
+        <location filename="../pv/view/viewport.cpp" line="598"/>
         <source>Triggered! </source>
         <translation>已触发! </translation>
     </message>
     <message>
-        <location filename="../pv/view/viewport.cpp" line="650"/>
-        <location filename="../pv/view/viewport.cpp" line="656"/>
+        <location filename="../pv/view/viewport.cpp" line="599"/>
+        <location filename="../pv/view/viewport.cpp" line="605"/>
         <source>% Captured</source>
         <translation>% 已采集</translation>
     </message>
     <message>
-        <location filename="../pv/view/viewport.cpp" line="655"/>
+        <location filename="../pv/view/viewport.cpp" line="604"/>
         <source>Waiting for Trigger! </source>
         <translation>等待触发! </translation>
     </message>
     <message>
-        <location filename="../pv/view/viewport.cpp" line="1724"/>
+        <location filename="../pv/view/viewport.cpp" line="1674"/>
         <source>Rising: </source>
         <translation>上升沿: </translation>
     </message>
     <message>
-        <location filename="../pv/view/viewport.cpp" line="1725"/>
+        <location filename="../pv/view/viewport.cpp" line="1675"/>
         <source>Falling: </source>
         <translation>下降沿: </translation>
     </message>
     <message>
-        <location filename="../pv/view/viewport.cpp" line="1726"/>
+        <location filename="../pv/view/viewport.cpp" line="1676"/>
         <source>Edges: </source>
         <translation>总边沿: </translation>
     </message>
     <message>
-        <location filename="../pv/view/viewport.cpp" line="1839"/>
+        <location filename="../pv/view/viewport.cpp" line="1789"/>
         <source>Width: </source>
         <translation>宽度: </translation>
     </message>
     <message>
-        <location filename="../pv/view/viewport.cpp" line="1841"/>
+        <location filename="../pv/view/viewport.cpp" line="1791"/>
         <source>Period: </source>
         <translation>周期: </translation>
     </message>
     <message>
-        <location filename="../pv/view/viewport.cpp" line="1843"/>
+        <location filename="../pv/view/viewport.cpp" line="1793"/>
         <source>Frequency: </source>
         <translation>频率: </translation>
     </message>
     <message>
-        <location filename="../pv/view/viewport.cpp" line="1845"/>
+        <location filename="../pv/view/viewport.cpp" line="1795"/>
         <source>Duty Cycle: </source>
         <translation>占空比: </translation>
-    </message>
-</context>
-<context>
-    <name>pv::dialogs::ApplicationParamDlg</name>
-    <message>
-        <source>OK</source>
-        <translation>确定</translation>
     </message>
 </context>
 </TS>

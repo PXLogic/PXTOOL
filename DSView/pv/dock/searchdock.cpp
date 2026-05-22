@@ -265,13 +265,13 @@ void SearchDock::build_results_panel()
     hl->setContentsMargins(0, 0, 0, 0);
     hl->setSpacing(8);
 
-    auto *title_lbl = new QLabel(tr("Results"), header);
-    title_lbl->setObjectName("search_results_title");
+    _results_title_lbl = new QLabel(tr("Results"), header);
+    _results_title_lbl->setObjectName("search_results_title");
 
     _result_count_lbl = new QLabel(tr("–"), header);
     _result_count_lbl->setObjectName("search_result_count");
 
-    hl->addWidget(title_lbl);
+    hl->addWidget(_results_title_lbl);
     hl->addWidget(_result_count_lbl);
     hl->addStretch(1);
 
@@ -567,6 +567,12 @@ void SearchDock::retranslateUi()
                "R: Rising edge\nF: Falling edge\nC: Rising/Falling edge"));
     if (_search_all_btn)
         _search_all_btn->setText(tr("Search All"));
+    if (_results_title_lbl)
+        _results_title_lbl->setText(tr("Results"));
+    if (_result_table) {
+        _result_table->setHorizontalHeaderLabels(
+            {tr("#"), tr("Time"), tr("Sample")});
+    }
 }
 
 void SearchDock::reStyle()
