@@ -804,7 +804,12 @@ namespace pv
         if (!grp || grp->offline) return;
 
         int uid = create_session_in_group(grp);
-        grp->active_session_uid = uid;
+        // Do NOT pre-set grp->active_session_uid here. switch_to_session_for_handle's
+        // prelude reads current_group()->active_session_uid to identify the OUTGOING
+        // session whose channel-state cache should be saved; mutating it first would
+        // point the prelude at the freshly-created (device-less) session and trip the
+        // _dev_handle assert inside DeviceAgent::get_channels().
+        // switch_to_session_for_handle sets new_g->active_session_uid itself below.
         int idx = _uid_to_index.value(uid, -1);
         if (idx >= 0)
             switch_to_session_for_handle(idx, grp->handle);
@@ -842,12 +847,29 @@ namespace pv
         int target = active_session_global_index_of_group(grp);
         if (target < 0) return;
 
+        // Determine if we need the heavy init path (set_device) vs the
+        // lightweight rebind_device path. The heavy path is required when
+        // the target SigSession has never had a device bound to it — in
+        // particular the AppControl bootstrap session, which is adopted
+        // into a group on first launch but has no _device_agent instance,
+        // no init_signals(), and cur_snap_samplerate() == 0. Calling only
+        // rebind_device() in that state leaves cur_snap_samplerate() at 0,
+        // which propagates inf/NaN through Ruler::draw_logic_tick_mark and
+        // trips its SIPrefixes bounds assert on first paint.
+        bool target_needs_init = true;
+        {
+            auto *dev_agent = _session_items[target].session->get_device();
+            if (dev_agent && dev_agent->have_instance())
+                target_needs_init = false;
+        }
+        bool use_heavy_init = first_session_for_group || target_needs_init;
+
         // NOTE: Do NOT update _active_group_index before the switch_to_*
         // call. switch_to_session_for_handle's prelude reads current_group()
         // to find the OUTGOING session to deactivate; mutating
         // _active_group_index first would make it see the NEW group as
         // outgoing and skip deactivating the real previous session.
-        if (first_session_for_group) {
+        if (use_heavy_init) {
             switch_to_session_for_handle(target, handle);
         } else {
             switch_to_session(target);
@@ -855,7 +877,7 @@ namespace pv
 
         _active_group_index = index_of_group(grp);
 
-        if (first_session_for_group) {
+        if (use_heavy_init) {
             rebuild_tab_buttons();  // switch_to_session_for_handle doesn't call it
         }
         // For the else branch, switch_to_session already called rebuild_tab_buttons.
@@ -875,7 +897,16 @@ namespace pv
         int prev_active = -1;
         DeviceGroup *prev_g = current_group();
         if (prev_g) prev_active = active_session_global_index_of_group(prev_g);
-        if (prev_active >= 0 && prev_active < _session_items.size()) {
+        // Skip prelude when the outgoing session IS the target — this happens
+        // legitimately in two cases:
+        //   * a caller (e.g. on_session_tab_add) creates a new session and switches
+        //     to it without changing _active_group_index;
+        //   * the user clicks the device that is already active.
+        // Running the prelude would either save state on a fresh device-less session
+        // (asserting in DeviceAgent::get_channels) or needlessly deactivate the
+        // session we are about to keep active.
+        if (prev_active >= 0 && prev_active < _session_items.size() &&
+            prev_active != global_index) {
             _session_items[prev_active].session->save_channel_enabled_states();
             SessionItem &oldItem = _session_items[prev_active];
             if (oldItem.cb) oldItem.cb->setActive(false);
