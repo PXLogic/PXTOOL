@@ -1,22 +1,22 @@
 #!/usr/bin/env bash
-# Build a distributable macOS .app bundle + .dmg for DSView.
+# Build a distributable macOS .app bundle + .dmg for PXTOOL.
 #
 # Usage:
 #   bash scripts/package-macos.sh [--skip-build] [--no-dmg]
 #
 # Output:
-#   dist/DSView.app   — standalone app bundle
-#   dist/DSView.dmg   — DMG installer (unless --no-dmg)
+#   dist/PXTOOL.app   — standalone app bundle
+#   dist/PXTOOL.dmg   — DMG installer (unless --no-dmg)
 
 set -euo pipefail
 
 # ── Config ────────────────────────────────────────────────────────────────────
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-BUILD_APP="${ROOT}/build.dir/DSView.app"
+BUILD_APP="${ROOT}/build.dir/PXTOOL.app"
 PKG_ROOT="${ROOT}/package-root/DSView.app"
 DIST_DIR="${ROOT}/dist"
-DIST_APP="${DIST_DIR}/DSView.app"
-DMG_OUT="${DIST_DIR}/DSView.dmg"
+DIST_APP="${DIST_DIR}/PXTOOL.app"
+DMG_OUT="${DIST_DIR}/PXTOOL.dmg"
 
 SKIP_BUILD=0
 NO_DMG=0
@@ -29,7 +29,7 @@ done
 
 # ── Step 1: Build ─────────────────────────────────────────────────────────────
 if [ $SKIP_BUILD -eq 0 ]; then
-  echo "[1/6] Building DSView..."
+  echo "[1/6] Building PXTOOL..."
   cd "$ROOT"
   make -j"$(sysctl -n hw.ncpu 2>/dev/null || echo 8)"
 else
@@ -62,7 +62,7 @@ FRAMEWORKS_DIR="$DIST_APP/Contents/Frameworks"
 
 # Ensure @executable_path/../Frameworks is in rpath for non-Qt libs
 install_name_tool -add_rpath "@executable_path/../Frameworks" \
-  "$DIST_APP/Contents/MacOS/DSView" 2>/dev/null || true
+  "$DIST_APP/Contents/MacOS/PXTOOL" 2>/dev/null || true
 
 # Confirm the key libs were bundled by macdeployqt
 for lib in libglib-2.0.0.dylib libusb-1.0.0.dylib libfftw3.3.dylib; do
@@ -87,7 +87,7 @@ done
 echo "[5/6] Bundling Python.framework and verifying dependencies..."
 
 # Locate Python framework from Homebrew
-PY_HOMEBREW_LIB=$(otool -L "$DIST_APP/Contents/MacOS/DSView" 2>/dev/null \
+PY_HOMEBREW_LIB=$(otool -L "$DIST_APP/Contents/MacOS/PXTOOL" 2>/dev/null \
   | grep -E "/opt/homebrew.*Python.framework.*/Python" | awk '{print $1}' || true)
 
 if [ -n "$PY_HOMEBREW_LIB" ]; then
@@ -115,7 +115,7 @@ if [ -n "$PY_HOMEBREW_LIB" ]; then
   install_name_tool -change \
     "$PY_HOMEBREW_LIB" \
     "@rpath/Python.framework/Versions/${PY_VERSION}/Python" \
-    "$DIST_APP/Contents/MacOS/DSView"
+    "$DIST_APP/Contents/MacOS/PXTOOL"
 
   echo "  Re-signing app bundle..."
   codesign --force --deep --sign - "$DIST_APP" 2>&1 | grep -v "^$" || true
@@ -124,7 +124,7 @@ else
 fi
 
 # Final check for any remaining homebrew paths
-BROKEN=$(otool -L "$DIST_APP/Contents/MacOS/DSView" 2>/dev/null \
+BROKEN=$(otool -L "$DIST_APP/Contents/MacOS/PXTOOL" 2>/dev/null \
   | grep -E "/opt/homebrew|/usr/local" | grep -v "^/usr/local/lib/libSystem" \
   | awk '{print $1}' || true)
 
@@ -140,16 +140,16 @@ if [ $NO_DMG -eq 0 ]; then
   echo "[6/6] Creating DMG..."
   # Get version from Info.plist
   VERSION=$(defaults read "$DIST_APP/Contents/Info.plist" CFBundleShortVersionString 2>/dev/null || echo "1.0")
-  DMG_OUT="${DIST_DIR}/DSView-${VERSION}.dmg"
+  DMG_OUT="${DIST_DIR}/PXTOOL-${VERSION}.dmg"
 
   create-dmg \
-    --volname "DSView ${VERSION}" \
+    --volname "PXTOOL ${VERSION}" \
     --volicon "$DIST_APP/Contents/Resources/DSView.icns" \
     --window-pos 200 120 \
     --window-size 600 400 \
     --icon-size 100 \
-    --icon "DSView.app" 150 180 \
-    --hide-extension "DSView.app" \
+    --icon "PXTOOL.app" 150 180 \
+    --hide-extension "PXTOOL.app" \
     --app-drop-link 450 180 \
     "$DMG_OUT" \
     "$DIST_DIR" \
