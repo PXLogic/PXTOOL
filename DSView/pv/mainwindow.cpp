@@ -111,6 +111,7 @@
 #include "dsvdef.h"
 #include <thread>
 #include "ui/uimanager.h"
+#include "ui/langresource.h"
 
 namespace pv
 {
@@ -2405,6 +2406,7 @@ namespace pv
                 qApp->installTranslator(&_qtTrans);
         }
 
+        LangResource::Instance()->Load(language);
         retranslateUi();
         UiManager::Instance()->Update(UI_UPDATE_ACTION_LANG);
         _session->update_lang_text();
