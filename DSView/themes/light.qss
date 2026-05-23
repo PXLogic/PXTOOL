@@ -2420,12 +2420,6 @@ QWidget#sidebar QPushButton#decode_next_btn {
     min-height: 24px;
     max-height: 24px;
 }
-QWidget#sidebar QToolButton#decode_search_btn {
-    background-color: transparent;
-    border: none;
-    padding: 5px;
-}
-
 QWidget#sidebar QPushButton#decode_add_btn:hover {
     border-color: #7c3aed;
     background-color: rgba(124, 58, 237, 0.08);
@@ -2449,9 +2443,6 @@ QWidget#sidebar QPushButton#decode_settings_btn:hover,
 QWidget#sidebar QPushButton#decode_save_btn:hover {
     border-color: #999999;
     background-color: #eeeeee;
-}
-QWidget#sidebar QToolButton#decode_search_btn:hover {
-    background-color: rgba(124, 58, 237, 0.08);
 }
 
 /* ── Decode Panel search container (light) ──────────────────────── */
@@ -2493,6 +2484,14 @@ QWidget#sidebar QLineEdit#decode_keyword_edit {
 }
 QWidget#sidebar QLineEdit#decode_keyword_edit:focus {
     border-color: #7c3aed;
+}
+
+QWidget#sidebar QCheckBox#decode_engine_both_cb,
+QWidget#sidebar QCheckBox#decode_engine_c_cb,
+QWidget#sidebar QCheckBox#decode_engine_py_cb {
+    color: #555555;
+    font-size: 11px;
+    spacing: 4px;
 }
 
 /* ── Decode Panel match row (light) ─────────────────────────────── */

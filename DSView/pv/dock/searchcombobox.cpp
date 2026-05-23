@@ -86,7 +86,7 @@ void SearchComboBox::ShowDlg(QWidget *editline)
 
     if (editline != NULL){
        w = editline->width();
-    } 
+    }
 
     this->setFixedSize(w, h);
 
@@ -239,14 +239,16 @@ void SearchComboBox::AddDataItem(QString id, QString name, void *data_handle)
 
      for(auto o : _items)
      {
-         if (value == "" 
+         const bool text_match = value.isEmpty()
             || o->_name.indexOf(value, 0, Qt::CaseInsensitive) >= 0
-            || o->_id.indexOf(value, 0, Qt::CaseInsensitive) >= 0){
-                if (o->_control->isHidden()){
-                    o->_control->show();
-                }
-         }
-         else if (o->_control->isHidden() == false){
+            || o->_id.indexOf(value, 0, Qt::CaseInsensitive) >= 0;
+         const bool engine_match = !_engine_filter || _engine_filter(o->_data_handle);
+         const bool visible = text_match && engine_match;
+
+         if (visible) {
+             if (o->_control->isHidden())
+                 o->_control->show();
+         } else if (!o->_control->isHidden()) {
              o->_control->hide();
          }
      }
@@ -254,3 +256,14 @@ void SearchComboBox::AddDataItem(QString id, QString name, void *data_handle)
     if (_scroll != NULL && _scroll->verticalScrollBar() != NULL)
         _scroll->verticalScrollBar()->setValue(0);
  }
+
+void SearchComboBox::SetEngineFilter(std::function<bool(void*)> fn)
+{
+    _engine_filter = std::move(fn);
+}
+
+void SearchComboBox::RefreshFilter()
+{
+    if (_search_edit != NULL)
+        on_keyword_changed(_search_edit->text());
+}

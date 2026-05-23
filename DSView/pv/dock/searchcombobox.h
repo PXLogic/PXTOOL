@@ -31,6 +31,7 @@
 #include <vector>
 #include <QEvent>
 #include <QScrollArea>
+#include <functional>
 
 class QLineEdit;
 
@@ -82,11 +83,17 @@ public:
         _item_click = click;        
     }
 
+    void SetEngineFilter(std::function<bool(void*)> fn);
+
+    void RefreshFilter();
+
 protected: 
     void changeEvent(QEvent *event);
 
-private slots:
+public slots:
     void on_keyword_changed(const QString &value);
+
+private slots:
     void on_search_text_changed(const QString &value);
     void on_clear_clicked();
 
@@ -102,6 +109,7 @@ private:
     QScrollArea *_scroll;
     QLineEdit *_search_edit;
     QPushButton *_clear_btn;
+    std::function<bool(void*)> _engine_filter;
 };
 
 #endif // SEARCHCOMBOBOX_H

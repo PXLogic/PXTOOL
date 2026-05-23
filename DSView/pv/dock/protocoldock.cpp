@@ -72,6 +72,7 @@ ProtocolDock::ProtocolDock(QWidget *parent, view::View &view, SigSession *sessio
     _cur_search_index = -1;
     _search_edited = false; 
     _pro_add_button = NULL;
+    _engine_filter_sync = false;
 
     //-----------------------------get protocol list
     GSList *l = const_cast<GSList*>(srd_decoder_list());
@@ -159,16 +160,23 @@ ProtocolDock::ProtocolDock(QWidget *parent, view::View &view, SigSession *sessio
     _pro_keyword_edit->setObjectName("decode_keyword_edit");
     _pro_keyword_edit->setFixedHeight(decode_toolbar_btn_h);
 
-    _pro_search_button = new XToolButton(top_panel);
-    _pro_search_button->setObjectName("decode_search_btn");
-    _pro_search_button->setFixedSize(decode_toolbar_btn_h, decode_toolbar_btn_h);
+    _engine_both_cb = new QCheckBox(tr("Both"), top_panel);
+    _engine_both_cb->setObjectName("decode_engine_both_cb");
+    _engine_c_cb = new QCheckBox(tr("C"), top_panel);
+    _engine_c_cb->setObjectName("decode_engine_c_cb");
+    _engine_py_cb = new QCheckBox(tr("Py"), top_panel);
+    _engine_py_cb->setObjectName("decode_engine_py_cb");
+    _engine_both_cb->setChecked(true);
+
     QHBoxLayout *pro_search_lay = new QHBoxLayout();
     pro_search_lay->setSpacing(6);
     pro_search_lay->setAlignment(Qt::AlignVCenter);
     pro_search_lay->addWidget(_pro_add_button, 0, Qt::AlignVCenter);
     pro_search_lay->addWidget(_del_all_button, 0, Qt::AlignVCenter);
     pro_search_lay->addWidget(_pro_keyword_edit, 1, Qt::AlignVCenter);
-    pro_search_lay->addWidget(_pro_search_button, 0, Qt::AlignVCenter);
+    pro_search_lay->addWidget(_engine_both_cb, 0, Qt::AlignVCenter);
+    pro_search_lay->addWidget(_engine_c_cb, 0, Qt::AlignVCenter);
+    pro_search_lay->addWidget(_engine_py_cb, 0, Qt::AlignVCenter);
   
     // Scroll area that holds decoder item rows — allows scrolling when >4 items
     _items_container = new QWidget();
@@ -298,10 +306,11 @@ ProtocolDock::ProtocolDock(QWidget *parent, view::View &view, SigSession *sessio
     connect(_table_view->horizontalHeader(), SIGNAL(sectionResized(int,int,int)), 
                     this, SLOT(column_resize(int, int, int)));
 
-    connect(_pro_search_button, SIGNAL(clicked()), this, SLOT(show_protocol_select()));
-
     connect(_ann_search_edit, SIGNAL(editingFinished()), this, SLOT(search_changed()));
 
+    connect(_engine_both_cb, SIGNAL(stateChanged(int)), this, SLOT(onEngineFilterChanged()));
+    connect(_engine_c_cb, SIGNAL(stateChanged(int)), this, SLOT(onEngineFilterChanged()));
+    connect(_engine_py_cb, SIGNAL(stateChanged(int)), this, SLOT(onEngineFilterChanged()));
 
     ADD_UI(this);
 }
@@ -327,6 +336,9 @@ void ProtocolDock::retranslateUi()
     _ann_search_edit->setPlaceholderText(tr("search"));
     _matchs_title_label->setText(tr("Matching Items:"));
     _bot_title_label->setText(tr("Protocol List Viewer"));
+    _engine_both_cb->setText(tr("Both"));
+    _engine_c_cb->setText(tr("C"));
+    _engine_py_cb->setText(tr("Py"));
     _pro_keyword_edit->ResetText();
 }
 
@@ -352,8 +364,6 @@ void ProtocolDock::reStyle()
     _nxt_button->setIconSize(iconSz);
     _ann_search_button->setIcon(QIcon(":/icons/sidebar/search.svg"));
     _ann_search_button->setIconSize(iconSz);
-    _pro_search_button->setIcon(QIcon(":/icons/sidebar/search.svg"));
-    _pro_search_button->setIconSize(QSize(14, 14));
 
     for (auto item : _protocol_lay_items){
         item->ResetStyle();
@@ -1308,9 +1318,69 @@ bool ProtocolDock::protocol_sort_callback(const DecoderInfoItem *o1, const Decod
       ui::set_form_font(panel, font);
 
       panel->SetItemClickHandle(this);
+      panel->SetEngineFilter([this](void *handle) {
+          return passEngineFilter(static_cast<DecoderInfoItem*>(handle));
+      });
 
-      panel->ShowDlg(_pro_keyword_edit);
+      _active_picker = panel;
+      connect(panel, &QObject::destroyed, this, [this]() {
+          _active_picker = nullptr;
+      });
+
+      QWidget *anchor = _pro_keyword_edit;
+      panel->ShowDlg(anchor);
+      panel->RefreshFilter();
   }
+
+ bool ProtocolDock::passEngineFilter(const DecoderInfoItem *info) const
+ {
+     if (info == NULL || _engine_both_cb == NULL)
+         return true;
+
+     const bool both = _engine_both_cb->isChecked();
+     const bool c    = _engine_c_cb->isChecked();
+     const bool py   = _engine_py_cb->isChecked();
+
+     if (both || (!c && !py))
+         return true;
+
+     switch (info->_engine_hint) {
+     case 1:
+         return c;
+     case 2:
+         return py;
+     default:
+         return py;
+     }
+ }
+
+ void ProtocolDock::onEngineFilterChanged()
+ {
+     if (_engine_filter_sync || _engine_both_cb == NULL)
+         return;
+
+     QCheckBox *sender_cb = qobject_cast<QCheckBox*>(sender());
+     _engine_filter_sync = true;
+
+     if (sender_cb == _engine_both_cb && _engine_both_cb->isChecked()) {
+         _engine_c_cb->setChecked(false);
+         _engine_py_cb->setChecked(false);
+     } else if (sender_cb != _engine_both_cb) {
+         if (_engine_c_cb->isChecked() || _engine_py_cb->isChecked())
+             _engine_both_cb->setChecked(false);
+     }
+
+     if (!_engine_both_cb->isChecked()
+         && !_engine_c_cb->isChecked()
+         && !_engine_py_cb->isChecked()) {
+         _engine_both_cb->setChecked(true);
+     }
+
+     _engine_filter_sync = false;
+
+     if (_active_picker)
+         _active_picker->RefreshFilter();
+ }
 
  void ProtocolDock::OnItemClick(void *sender, void *data_handle)
  {
@@ -1340,7 +1410,11 @@ bool ProtocolDock::protocol_sort_callback(const DecoderInfoItem *o1, const Decod
     bool bEnable = _session->is_working() == false;
     _pro_keyword_edit->setEnabled(bEnable);
     _pro_add_button->setEnabled(bEnable);
-    _pro_search_button->setEnabled(bEnable);
+    if (_engine_both_cb != NULL) {
+        _engine_both_cb->setEnabled(bEnable);
+        _engine_c_cb->setEnabled(bEnable);
+        _engine_py_cb->setEnabled(bEnable);
+    }
  }
 
  void ProtocolDock::update_deocder_item_name(void *trace_handel, const char *name)

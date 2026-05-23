@@ -35,6 +35,8 @@
 #include <QSplitter>
 #include <QTableView>
 #include <QSortFilterProxyModel>
+#include <QCheckBox>
+#include <QPointer>
 #include <vector>
 #include <mutex>
 #include <list>
@@ -43,7 +45,6 @@
 #include "keywordlineedit.h"
 #include "searchcombobox.h"
 #include "../interface/icallbacks.h"
-#include "../ui/xtoolbutton.h"
 #include "../ui/uimanager.h"
 
 struct DecoderInfoItem{
@@ -156,6 +157,7 @@ private:
     void UpdateFont() override;
 
     void adjustPannelSize();
+    bool passEngineFilter(const DecoderInfoItem *info) const;
 
 signals:
     void protocol_updated();
@@ -177,7 +179,8 @@ private slots:
     void search_done();
     void search_changed();
     void search_update();
-    void show_protocol_select(); 
+    void show_protocol_select();
+    void onEngineFilterChanged();
 
 private:
     SigSession *_session;
@@ -209,13 +212,17 @@ private:
     QPushButton *_ann_search_button;
     std::vector<DecoderInfoItem*> _decoderInfoList;
     KeywordLineEdit *_pro_keyword_edit;
+    QCheckBox *_engine_both_cb;
+    QCheckBox *_engine_c_cb;
+    QCheckBox *_engine_py_cb;
+    QPointer<SearchComboBox> _active_picker;
+    bool _engine_filter_sync;
     QString     _selected_protocol_id;
     /* The list entry the user just clicked in the protocol picker. We need
      * to keep the pointer (not just the id) because the C/Py split inserts
      * two entries with the same srd id but different _engine_hint, so the
      * id alone is no longer enough to disambiguate. */
     DecoderInfoItem *_selected_info = nullptr;
-    XToolButton *_pro_search_button; 
 
     mutable std::mutex _search_mutex;
     bool _search_edited; 
