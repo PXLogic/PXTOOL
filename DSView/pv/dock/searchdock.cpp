@@ -308,7 +308,6 @@ void SearchDock::update_results_size()
 {
     if (_editor_expanded) {
         // Editor expanded: controls_scroll and results list split the space.
-        // stretch=1 / stretch=1 so both grow proportionally.
         _controls_scroll->setMaximumHeight(QWIDGETSIZE_MAX);
         _controls_scroll->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
         _result_table->setMaximumHeight(220);
@@ -316,10 +315,11 @@ void SearchDock::update_results_size()
         _outer_layout->setStretch(0, 1);
         _outer_layout->setStretch(1, 0);
     } else {
-        // Editor collapsed: controls area is compact (nav + search_all_btn + toggle only).
-        // results table fills all remaining space.
-        _controls_scroll->setMaximumHeight(104);
-        _controls_scroll->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
+        // Editor collapsed: let the scroll area shrink to fit its contents
+        // (nav bar + Search All button + toggle row). No hardcoded pixel cap
+        // because the exact height varies with font/DPI/theme padding.
+        _controls_scroll->setMaximumHeight(QWIDGETSIZE_MAX);
+        _controls_scroll->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Minimum);
         _result_table->setMaximumHeight(QWIDGETSIZE_MAX);
         _result_table->setMinimumHeight(60);
         _outer_layout->setStretch(0, 0);
