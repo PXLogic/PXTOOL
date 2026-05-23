@@ -558,8 +558,13 @@ namespace pv
         // Check that a device instance has been selected.
         if (_device_agent.have_instance() == false)
         {
-            dsv_err("Error!No device selected");
-            assert(false);
+            dsv_err("Error! No device selected.");
+            return false;
+        }
+        if (_device_agent.get_sample_rate() == 0)
+        {
+            dsv_err("Error! Sample rate is zero.");
+            return false;
         }
         if (_device_status == ST_RUNNING || _device_agent.is_collecting())
         {

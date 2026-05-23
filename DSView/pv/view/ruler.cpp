@@ -430,10 +430,15 @@ void Ruler::draw_logic_tick_mark(QPainter &p)
         return;
     }
 
+    const uint64_t snap_samplerate = _view.session().cur_snap_samplerate();
+    if (snap_samplerate == 0) {
+        return;
+    }
+
     const double SpacingIncrement = 32.0;
     const double MinValueSpacing = 16.0;
     const int ValueMargin = 5;
-    const double abs_min_period = 10.0 / _view.session().cur_snap_samplerate();
+    const double abs_min_period = 10.0 / snap_samplerate;
 
     double min_width = SpacingIncrement;
     double typical_width;

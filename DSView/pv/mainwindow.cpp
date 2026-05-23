@@ -638,6 +638,26 @@ namespace pv
         return handle;
     }
 
+    ds_device_handle MainWindow::find_latest_hardware_device_handle()
+    {
+        struct ds_device_base_info *array = NULL;
+        int count = 0;
+        ds_device_handle handle = NULL_HANDLE;
+
+        if (ds_get_device_list(&array, &count) != SR_OK || array == NULL)
+            return NULL_HANDLE;
+
+        for (int i = count - 1; i >= 0; --i) {
+            if (QString::fromUtf8(array[i].name) != QLatin1String("Demo Device")) {
+                handle = array[i].handle;
+                break;
+            }
+        }
+
+        free(array);
+        return handle;
+    }
+
     ds_device_handle MainWindow::pick_default_device_handle()
     {
         return find_latest_device_handle();
@@ -2608,7 +2628,13 @@ namespace pv
 
     void MainWindow::on_trigger_message(int msg)
     {
-        _session->broadcast_msg(msg);
+        if (msg == DSV_MSG_NEW_USB_DEVICE) {
+            OnMessage(msg);
+            return;
+        }
+
+        if (_session)
+            _session->broadcast_msg(msg);
     }
 
     void MainWindow::reset_all_view()
@@ -2983,6 +3009,14 @@ namespace pv
             {
                 register_groups_from_device_list();
                 _sampling_bar->update_device_list();
+
+                if (_device_agent && _device_agent->is_demo()) {
+                    ds_device_handle hw = find_latest_hardware_device_handle();
+                    if (hw != NULL_HANDLE && hw != _device_agent->handle()) {
+                        dsv_info("New hardware attached while on demo device; auto-switching.");
+                        switch_to_device(hw);
+                    }
+                }
                 break;
             }
             case DSV_MSG_CURRENT_DEVICE_DETACHED:

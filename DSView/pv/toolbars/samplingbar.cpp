@@ -725,9 +725,25 @@ namespace pv
                                                 _sample_count.currentIndex())
                                    .value<double>();
             _sample_count.clear();
+            if (_sample_rate.count() == 0 || _sample_rate.currentIndex() < 0) {
+                dsv_warn("update_sample_count_selector: sample rate list is empty.");
+                _updating_sample_count = false;
+                connect(&_sample_count, SIGNAL(currentIndexChanged(int)),
+                        this, SLOT(on_samplecount_sel(int)));
+                return;
+            }
+
             const uint64_t samplerate = _sample_rate.itemData(
                                                         _sample_rate.currentIndex())
                                             .value<uint64_t>();
+            if (samplerate == 0) {
+                dsv_warn("update_sample_count_selector: sample rate is zero.");
+                _updating_sample_count = false;
+                connect(&_sample_count, SIGNAL(currentIndexChanged(int)),
+                        this, SLOT(on_samplecount_sel(int)));
+                return;
+            }
+
             const double hw_duration = hw_depth / (samplerate * (1.0 / SR_SEC(1)));
 
             if (mode == DSO)
@@ -739,7 +755,19 @@ namespace pv
             else
                 duration = hw_duration;
 
-            assert(duration > 0);
+            if (duration <= 0) {
+                dsv_warn("update_sample_count_selector: invalid duration %g "
+                         "(hw_depth=%llu, samplerate=%llu, stream=%d).",
+                         duration,
+                         (unsigned long long)hw_depth,
+                         (unsigned long long)samplerate,
+                         (int)stream_mode);
+                _updating_sample_count = false;
+                connect(&_sample_count, SIGNAL(currentIndexChanged(int)),
+                        this, SLOT(on_samplecount_sel(int)));
+                return;
+            }
+
             bool not_last = true;
 
             do
@@ -977,12 +1005,23 @@ namespace pv
             }
             else
             {
+                if (_sample_rate.count() == 0 || _sample_rate.currentIndex() < 0
+                    || _sample_count.count() == 0 || _sample_count.currentIndex() < 0) {
+                    dsv_warn("commit_settings: sample rate or buffer list not ready.");
+                    return;
+                }
+
                 const double sample_duration = _sample_count.itemData(
                                                                 _sample_count.currentIndex())
                                                    .value<double>();
                 const uint64_t sample_rate = _sample_rate.itemData(
                                                              _sample_rate.currentIndex())
                                                  .value<uint64_t>();
+
+                if (sample_rate == 0) {
+                    dsv_warn("commit_settings: sample rate is zero.");
+                    return;
+                }
 
                 if (_device_agent->have_instance())
                 {
@@ -1326,7 +1365,13 @@ namespace pv
             }
             free(array);
 
+            if (select_index < 0 && dev_count > 0)
+                select_index = 0;
+
             _device_selector.setCurrentIndex(select_index);
+
+            if (select_index >= 0)
+                cur_dev_handle = (ds_device_handle)_device_selector.itemData(select_index).toULongLong();
 
             if (cur_dev_handle != _last_device_handle){                
                 update_sample_rate_list();
