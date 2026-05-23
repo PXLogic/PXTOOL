@@ -158,20 +158,16 @@ static const struct PX_channels channel_modes[] = {
      SR_KHZ(2), SR_MHZ(10), "Use 16 Channels (Max10MHz)"},
      
     {STREAM_LOGIC5x32,  LOGIC,  SR_CHANNEL_LOGIC,  1,32, 1, SR_MHZ(5), SR_MHZ(5),
-     SR_KHZ(2), SR_MHZ(5), "Use 32 Channels (Max5MHz)"},
-
-    {BUFFER_LOGIC1000x32, LOGIC, SR_CHANNEL_LOGIC, 0,32, 1, SR_GHZ(1), SR_GHZ(1),
-     SR_KHZ(2), SR_GHZ(1), "Use 32 Channels (Max 1000MHz)"},
+     SR_KHZ(2), SR_MHZ(5), "Use 32 Channels (Max5MHz)"}
 
 };
 
 
 
 static struct sr_list_item channel_mode_cn_map[] = {
-    {BUFFER_LOGIC250x32,  "使用32个通道(最大采样率 250MHz)"},
-    {BUFFER_LOGIC500x16,  "使用16个通道(最大采样率 500MHz)"},
-    {BUFFER_LOGIC1000x8,  "使用8个通道(最大采样率 1000MHz)"},
-    {BUFFER_LOGIC1000x32, "使用32个通道(最大采样率 1000MHz)"},
+    {BUFFER_LOGIC250x32, "使用32个通道(最大采样率 250MHz)"},
+    {BUFFER_LOGIC500x16, "使用16个通道(最大采样率 500MHz)"},
+    {BUFFER_LOGIC1000x8, "使用8个通道(最大采样率 1000MHz)"},
 
     {STREAM_LOGIC50x32, "使用32个通道(最大采样率 50MHz)"},
     {STREAM_LOGIC125x16, "使用16个通道(最大采样率 125MHz)"},
@@ -248,16 +244,6 @@ static void adjust_samplerate(struct PX_context *devc)
 
     if (devc->cur_samplerate < samplerates[devc->samplerates_min_index])
         devc->cur_samplerate = samplerates[devc->samplerates_min_index];
-
-    sr_info("[DBG] adjust_samplerate: ch_mode=%d (%s), max_samplerate=%llu Hz, "
-            "min_index=%d (%llu Hz), max_index=%d (%llu Hz)",
-            (int)devc->ch_mode,
-            channel_modes[devc->ch_mode].descr,
-            (unsigned long long)channel_modes[devc->ch_mode].max_samplerate,
-            (int)devc->samplerates_min_index,
-            (unsigned long long)samplerates[devc->samplerates_min_index],
-            (int)devc->samplerates_max_index,
-            (unsigned long long)samplerates[devc->samplerates_max_index]);
 }
 
 static void probe_init(struct sr_dev_inst *sdi)
@@ -314,8 +300,7 @@ static struct PX_context *DSLogic_dev_new(const struct PX_profile *prof)
            assert(0);
     }
 
-    sr_info("[DBG] DSLogic_dev_new: profile=%s, default_channelmode=%d",
-            prof->model, (int)prof->dev_caps.default_channelmode);
+ sr_info("devc->profile = prof");
     devc->channel = NULL;
     devc->profile = prof;
     devc->ch_mode = devc->profile->dev_caps.default_channelmode;
@@ -1563,14 +1548,6 @@ static int config_list(int key, GVariant **data, const struct sr_dev_inst *sdi,
                 sessions, ARRAY_SIZE(sessions)*sizeof(int32_t), TRUE, NULL, NULL);
         break;
     case SR_CONF_SAMPLERATE:
-        sr_info("[DBG] config_list SR_CONF_SAMPLERATE: ch_mode=%d, "
-                "min_index=%d (%llu Hz), max_index=%d (%llu Hz), count=%d",
-                (int)devc->ch_mode,
-                (int)devc->samplerates_min_index,
-                (unsigned long long)samplerates[devc->samplerates_min_index],
-                (int)devc->samplerates_max_index,
-                (unsigned long long)samplerates[devc->samplerates_max_index],
-                (int)(devc->samplerates_max_index - devc->samplerates_min_index + 1));
 		g_variant_builder_init(&gvb, G_VARIANT_TYPE("a{sv}"));
         gvar = g_variant_new_from_data(G_VARIANT_TYPE("at"),
                                        samplerates + devc->samplerates_min_index,
