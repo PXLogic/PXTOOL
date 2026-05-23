@@ -943,6 +943,7 @@ namespace pv
         _sampling_bar->set_view(_view);
         _session_stack->setCurrentWidget(_view);
         _sidebar_widget->setSession(_session);
+        _sidebar_widget->setView(_view);
         _session->set_decoder_pannel(_sidebar_widget->protocol_widget());
 
         _is_switching_session = false;
@@ -999,6 +1000,7 @@ namespace pv
         _sampling_bar->set_view(_view);
         _session_stack->setCurrentWidget(_view);
         _sidebar_widget->setSession(_session);
+        _sidebar_widget->setView(_view);
         _session->set_decoder_pannel(_sidebar_widget->protocol_widget());
 
         _is_switching_session = false;

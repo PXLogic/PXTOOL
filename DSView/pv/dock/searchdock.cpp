@@ -56,7 +56,7 @@ using namespace pv::widgets;
 SearchDock::SearchDock(QWidget *parent, View &view, SigSession *session) :
     QWidget(parent),
     _session(session),
-    _view(view)
+    _view(&view)
 {
     setObjectName("search_dock_widget");
 
@@ -355,21 +355,31 @@ void SearchDock::run_full_search()
     watcher.setFuture(future);
     dlg.exec();
 
-    // Populate results table
-    _result_table->setUpdatesEnabled(false);
-    _result_table->setRowCount(0);
     _result_positions.clear();
     _result_current = -1;
+    for (int64_t pos : raw_results)
+        _result_positions.push_back(pos);
+
+    populate_result_table();
+
+    if (_result_positions.isEmpty())
+        MsgBox::Show(tr("Pattern not found!"));
+    else
+        navigate_to_result(0);
+}
+
+void SearchDock::populate_result_table()
+{
+    _result_table->setUpdatesEnabled(false);
+    _result_table->setRowCount(0);
 
     const uint64_t sr = _session->cur_snap_samplerate();
-    _result_table->setRowCount((int)raw_results.size());
-    for (int i = 0; i < (int)raw_results.size(); ++i) {
-        int64_t pos = raw_results[i];
-        _result_positions.push_back(pos);
-        QString ts = format_time(pos, sr);
+    _result_table->setRowCount(_result_positions.size());
+    for (int i = 0; i < _result_positions.size(); ++i) {
+        int64_t pos = _result_positions[i];
 
         auto *idx_item  = new QTableWidgetItem(QString::number(i + 1));
-        auto *time_item = new QTableWidgetItem(ts);
+        auto *time_item = new QTableWidgetItem(format_time(pos, sr));
         auto *smp_item  = new QTableWidgetItem(QString::number(pos));
 
         idx_item->setTextAlignment(Qt::AlignRight | Qt::AlignVCenter);
@@ -383,13 +393,16 @@ void SearchDock::run_full_search()
     _result_table->setUpdatesEnabled(true);
 
     if (_result_positions.isEmpty()) {
-        _result_count_lbl->setText(tr("0 results"));
-        MsgBox::Show(tr("Pattern not found!"));
+        _result_count_lbl->setText(tr("–"));
     } else {
         _result_count_lbl->setText(tr("%1 results").arg(_result_positions.size()));
         _result_table->updateGeometry();
         _result_table->update();
-        navigate_to_result(0);
+        if (_result_current >= 0 && _result_current < _result_positions.size()) {
+            _result_table->selectRow(_result_current);
+            _result_table->scrollTo(_result_table->model()->index(_result_current, 0),
+                                    QAbstractItemView::EnsureVisible);
+        }
     }
 }
 
@@ -408,7 +421,7 @@ void SearchDock::navigate_to_result(int idx)
     _result_table->selectRow(idx);
     _result_table->scrollTo(_result_table->model()->index(idx, 0),
                             QAbstractItemView::EnsureVisible);
-    _view.zoom_to_search_pos((uint64_t)_result_positions[idx]);
+    _view->zoom_to_search_pos((uint64_t)_result_positions[idx]);
 }
 
 /* static */ QString SearchDock::format_time(int64_t sample, uint64_t samplerate)
@@ -541,15 +554,76 @@ void SearchDock::on_channel_edit_finished()
         new_pattern[_channel_indices[i]] = _channel_edits[i]->text();
     }
     if (new_pattern != _pattern) {
-        _view.set_search_pos(_view.get_search_pos(), false);
+        _view->set_search_pos(_view->get_search_pos(), false);
         _pattern = new_pattern;
         refresh_pattern_summary();
         clear_results();
     }
 }
 
+void SearchDock::save_state(SigSession *s)
+{
+    if (!s) return;
+    SearchState &st     = _session_states[s];
+    st.pattern          = _pattern;
+    st.result_positions = _result_positions;
+    st.result_current   = _result_current;
+    st.editor_expanded  = _editor_expanded;
+}
+
+void SearchDock::restore_state(SigSession *s)
+{
+    if (!s) return;
+    if (!_session_states.contains(s)) {
+        rebuild_channel_rows();
+        refresh_pattern_summary();
+        clear_results();
+        return;
+    }
+    const SearchState &st = _session_states[s];
+    _pattern              = st.pattern;
+    _result_positions     = st.result_positions;
+    _result_current       = st.result_current;
+
+    // Rebuild channel rows using the restored _pattern values.
+    rebuild_channel_rows();
+    refresh_pattern_summary();
+
+    // Restore toggle state without re-triggering the toggled() signal.
+    {
+        QSignalBlocker blocker(_toggle_btn);
+        _toggle_btn->setChecked(st.editor_expanded);
+    }
+    on_toggle_editor(false);
+
+    // Repopulate the results table (no search needed).
+    populate_result_table();
+}
+
+void SearchDock::setSession(SigSession *session)
+{
+    if (!session || _session == session)
+        return;
+    save_state(_session);
+    disconnect(_session->device_event_object(), SIGNAL(device_updated()),
+               this, SLOT(on_device_updated()));
+    _session = session;
+    connect(_session->device_event_object(), SIGNAL(device_updated()),
+            this, SLOT(on_device_updated()));
+    restore_state(_session);
+}
+
+void SearchDock::setView(view::View *view)
+{
+    if (view && _view != view)
+        _view = view;
+}
+
 void SearchDock::on_device_updated()
 {
+    // Device/channel layout changed — stale saved state for this session is no
+    // longer valid (channel count or indices may differ).
+    _session_states.remove(_session);
     rebuild_channel_rows();
     refresh_pattern_summary();
     clear_results();
@@ -617,8 +691,8 @@ void SearchDock::on_previous()
     }
 
     const int64_t end = logic_snapshot->get_sample_count() - 1;
-    last_pos = _view.get_search_pos();
-    last_hit = _view.get_search_hit();
+    last_pos = _view->get_search_pos();
+    last_hit = _view->get_search_hit();
     if (last_pos == 0) {
         MsgBox::Show(tr("Search cursor at the start position!"));
         return;
@@ -642,7 +716,7 @@ void SearchDock::on_previous()
     if (!ret) {
         MsgBox::Show(tr("Pattern not found!"));
     } else {
-        _view.set_search_pos(last_pos, true);
+        _view->set_search_pos(last_pos, true);
     }
 }
 
@@ -672,7 +746,7 @@ void SearchDock::on_next()
     }
 
     const int64_t end = logic_snapshot->get_sample_count() - 1;
-    last_pos = _view.get_search_pos() + _view.get_search_hit();
+    last_pos = _view->get_search_pos() + _view->get_search_hit();
     if (last_pos >= end) {
         MsgBox::Show(tr("Search cursor at the end position!"));
         return;
@@ -695,7 +769,7 @@ void SearchDock::on_next()
     if (!ret) {
         MsgBox::Show(tr("Pattern not found!"));
     } else {
-        _view.set_search_pos(last_pos, true);
+        _view->set_search_pos(last_pos, true);
     }
 }
 

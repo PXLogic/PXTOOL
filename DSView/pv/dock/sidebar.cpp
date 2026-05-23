@@ -435,6 +435,12 @@ void SideBar::setSession(SigSession *session)
     _protocol_widget->setSession(session);
     if (_glitch_filter_widget)
         _glitch_filter_widget->setSession(session);
+    _search_widget->setSession(session);
+}
+
+void SideBar::setView(view::View *view)
+{
+    _search_widget->setView(view);
 }
 
 void SideBar::refresh_device_options()

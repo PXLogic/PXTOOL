@@ -48,6 +48,8 @@
 #include <map>
 #include <vector>
 
+#include <QMap>
+
 #include "../widgets/fakelineedit.h"
 #include "../widgets/searchedgeflagedit.h"
 #include "../ui/dscombobox.h"
@@ -69,6 +71,13 @@ namespace widgets {
 
 namespace dock {
 
+struct SearchState {
+    std::map<uint16_t, QString> pattern;
+    QVector<int64_t>            result_positions;
+    int                         result_current  = -1;
+    bool                        editor_expanded = false;
+};
+
 class SearchDock : public QWidget, public IUiWindow
 {
     Q_OBJECT
@@ -76,6 +85,9 @@ class SearchDock : public QWidget, public IUiWindow
 public:
     SearchDock(QWidget *parent, pv::view::View &view, SigSession *session);
     ~SearchDock();
+
+    void setSession(SigSession *session);
+    void setView(view::View *view);
 
 private:     
     void retranslateUi();
@@ -93,6 +105,9 @@ private:
     void run_full_search();
     void clear_results();
     void navigate_to_result(int idx);
+    void populate_result_table();
+    void save_state(SigSession *s);
+    void restore_state(SigSession *s);
     static QString format_time(int64_t sample, uint64_t samplerate);
 
     //IUiWindow
@@ -110,8 +125,11 @@ public slots:
 
 private:
     SigSession *_session;
-    view::View &_view;
+    view::View *_view;
     std::map<uint16_t, QString> _pattern;
+
+    // Per-session saved search state; keyed by SigSession pointer.
+    QMap<SigSession*, SearchState> _session_states;
 
     // NavBar widgets (top, outside the scroll area logically — sits in the same host
     // but stays at the top because EditorContainer can be collapsed/expanded).

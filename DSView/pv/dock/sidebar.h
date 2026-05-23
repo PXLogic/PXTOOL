@@ -87,6 +87,7 @@ public:
     void showTab(Tab tab, bool visible);
     void setDsoMode(bool isDso);
     void setSession(SigSession *session);
+    void setView(view::View *view);
     void refresh_device_options();
     void retranslateUi();
     void closePanel();
