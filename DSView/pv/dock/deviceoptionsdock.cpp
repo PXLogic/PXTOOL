@@ -577,6 +577,11 @@ void DeviceOptionsDock::logic_probes(QVBoxLayout &layout)
         _probes_checkBox_list.push_back(ch_item->getCheckBox());
         ch_item->getCheckBox()->setCheckState(probe->enabled ? Qt::Checked : Qt::Unchecked);
     }
+
+    const int CH_MODE_GRID_GAP = 12;
+    layout.addSpacing(CH_MODE_GRID_GAP);
+    contentHeight += CH_MODE_GRID_GAP;
+
     layout.addWidget(channel_pannel);
 
     QWidget *space = new QWidget();
