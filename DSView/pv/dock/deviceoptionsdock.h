@@ -73,6 +73,7 @@ signals:
      * An empty set means no channels were disabled (e.g. user clicked
      * "Enable All"); listeners should not remove anything in that case. */
     void sig_channels_applied(const QSet<int> &disabled_channel_indices);
+    void sig_channel_mode_changed();
 
 private:
     void build_content();

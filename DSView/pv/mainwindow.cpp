@@ -79,6 +79,7 @@
 #include "dock/searchdock.h"
 #include "dock/protocoldock.h"
 #include "dock/sidebar.h"
+#include "dock/deviceoptionsdock.h"
 #include "dock/glitchfilterdock.h"
 
 #include "view/view.h"
@@ -374,6 +375,11 @@ namespace pv
         connect(_logo_bar, SIGNAL(sig_open_doc()), this, SLOT(on_open_doc()));
 
         connect(_sidebar_widget->protocol_widget(), SIGNAL(protocol_updated()), this, SLOT(on_signals_changed()));
+
+        connect(_sidebar_widget->device_options_widget(),
+                &dock::DeviceOptionsDock::sig_channel_mode_changed,
+                _sampling_bar,
+                &pv::toolbars::SamplingBar::update_sample_rate_list);
 
         // SamplingBar
         connect(_sampling_bar, SIGNAL(sig_store_session_data()), this, SLOT(on_save()));
@@ -1016,6 +1022,7 @@ namespace pv
         }
 
         _sampling_bar->sync_selected_device(new_group->handle);
+        _sampling_bar->update_sample_rate_list();
         update_toolbar_view_status();
     }
 

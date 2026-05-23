@@ -361,12 +361,20 @@ void DeviceOptionsDock::on_apply()
     QSet<int> disabled_channels;
     int mode = _device_agent->get_work_mode();
     if (mode == LOGIC || mode == ANALOG) {
+        // p->commit() above may have changed the channel count via config_set
+        // (e.g. SR_CONF_OPERATION_MODE triggers sci_adjust_probes in the driver).
+        // Guard against the mismatch: if the driver now has more channels than the
+        // checkbox list was built for, leave those extra channels at their current
+        // enabled state. build_dynamic_panel() will resync on the next timer tick.
+        const int checkbox_count = (int)_probes_checkBox_list.size();
         int index = 0;
         for (const GSList *l = _device_agent->get_channels(); l; l = l->next) {
             sr_channel *const probe = (sr_channel*)l->data;
             assert(probe);
             const bool was_enabled = probe->enabled;
-            const bool will_enable = _probes_checkBox_list.at(index)->isChecked();
+            const bool will_enable = (index < checkbox_count)
+                                     ? _probes_checkBox_list.at(index)->isChecked()
+                                     : probe->enabled;
             probe->enabled = will_enable;
             if (was_enabled && !will_enable)
                 disabled_channels.insert(probe->index);
@@ -396,6 +404,9 @@ void DeviceOptionsDock::on_apply()
         // Without this the old waveform rendering persists even though the
         // internal data buffers were already cleared by init_signals().
         _session->notify_signals_changed();
+        // Refresh the sample rate dropdown — channel mode changes alter the
+        // valid rate range and the SamplingBar must re-query config_list.
+        emit sig_channel_mode_changed();
         // Notify listeners (ProtocolDock) so they can drop just the decoders
         // that now reference a disabled channel. An empty set means the user
         // only enabled new channels — decoders must be preserved in that case.
