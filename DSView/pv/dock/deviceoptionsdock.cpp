@@ -34,15 +34,16 @@
 #include <assert.h>
 
 // ---------------------------------------------------------------------------
-// Lightweight flex-wrap container for ChannelLabel items.
-// Items are placed left-to-right with fixed spacing; when a row is full they
-// wrap onto the next row. The widget resizes its own height automatically.
+// Adaptive equal-column grid for ChannelLabel items.
+// Picks the widest column count that divides the channel count evenly and
+// fits at min gap; distributes extra panel width into horizontal gap up to
+// max gap, then centers the grid when gap is capped.
 // ---------------------------------------------------------------------------
-class ChannelFlowWidget : public QWidget
+class ChannelAdaptiveGridWidget : public QWidget
 {
 public:
-    explicit ChannelFlowWidget(int spacing, QWidget *parent = nullptr)
-        : QWidget(parent), _spacing(spacing)
+    explicit ChannelAdaptiveGridWidget(int minGap, int maxGap, QWidget *parent = nullptr)
+        : QWidget(parent), _minGap(minGap), _maxGap(maxGap)
     {
         setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
     }
@@ -57,7 +58,7 @@ public:
 
     QSize minimumSizeHint() const override
     {
-        int h = doLayout(QRect(0, 0, qMax(width(), 1), 0), false);
+        const int h = doLayout(QRect(0, 0, qMax(width(), 1), 0), false);
         return QSize(0, h);
     }
 
@@ -65,44 +66,90 @@ protected:
     void resizeEvent(QResizeEvent *e) override
     {
         QWidget::resizeEvent(e);
-        int h = doLayout(contentsRect(), true);
+        const int h = doLayout(contentsRect(), true);
         setFixedHeight(qMax(h, 1));
     }
 
 private:
-    // Performs (or simulates) the flow layout. Returns the total height needed.
-    // If apply=true, moves the child widgets to their computed positions.
-    int doLayout(const QRect &r, bool apply) const
+    struct GridMetrics {
+        int cols = 1;
+        int hGap = 0;
+        int vGap = 0;
+        int contentWidth = 0;
+        int xOffset = 0;
+    };
+
+    static GridMetrics computeGrid(int n, int width, int itemW, int minGap, int maxGap)
     {
-        if (_items.empty()) return 0;
+        GridMetrics m;
+        m.vGap = minGap;
 
-        int x = r.x();
-        int y = r.y();
-        int rowH = 0;
+        if (n <= 0 || width <= 0)
+            return m;
 
-        for (QWidget *w : _items) {
-            QSize s = w->sizeHint();
-            if (s.isEmpty()) s = w->size();
+        for (int c = n; c >= 1; --c) {
+            if (n % c != 0)
+                continue;
 
-            // Wrap if we exceed the right boundary (but always place at least
-            // one item per row to avoid infinite loops with very narrow panels).
-            if (x != r.x() && x + s.width() > r.x() + r.width()) {
-                x = r.x();
-                y += rowH + _spacing;
-                rowH = 0;
+            const int minWidth = (c == 1)
+                ? itemW
+                : c * itemW + (c - 1) * minGap;
+            if (minWidth > width)
+                continue;
+
+            m.cols = c;
+            if (c == 1) {
+                m.hGap = 0;
+                m.contentWidth = itemW;
+            } else {
+                const int extra = width - minWidth;
+                m.hGap = qMin(minGap + extra / (c - 1), maxGap);
+                m.contentWidth = c * itemW + (c - 1) * m.hGap;
             }
-
-            if (apply)
-                w->move(x, y);
-
-            x    += s.width() + _spacing;
-            rowH  = qMax(rowH, s.height());
+            m.xOffset = qMax(0, (width - m.contentWidth) / 2);
+            return m;
         }
 
-        return y + rowH - r.y();
+        m.cols = 1;
+        m.hGap = 0;
+        m.contentWidth = itemW;
+        m.xOffset = qMax(0, (width - itemW) / 2);
+        return m;
     }
 
-    int                   _spacing;
+    int doLayout(const QRect &r, bool apply) const
+    {
+        if (_items.empty())
+            return 0;
+
+        const int n = static_cast<int>(_items.size());
+        QSize itemSize = _items.front()->sizeHint();
+        if (itemSize.isEmpty())
+            itemSize = _items.front()->size();
+
+        const int itemW = itemSize.width();
+        const int itemH = itemSize.height();
+        const GridMetrics gm = computeGrid(n, r.width(), itemW, _minGap, _maxGap);
+        const int rows = n / gm.cols;
+
+        for (int i = 0; i < n; ++i) {
+            const int row = i / gm.cols;
+            const int col = i % gm.cols;
+            const int x = r.x() + gm.xOffset + col * (itemW + gm.hGap);
+            const int y = r.y() + row * (itemH + gm.vGap);
+
+            if (apply)
+                _items[i]->move(x, y);
+        }
+
+        if (rows <= 0)
+            return 0;
+
+        return rows * itemH + (rows - 1) * gm.vGap;
+    }
+
+    int                   _minGap;
+    int                   _maxGap;
     std::vector<QWidget*> _items;
 };
 
@@ -509,11 +556,13 @@ void DeviceOptionsDock::logic_probes(QVBoxLayout &layout)
 
     _device_agent->get_config_int16(SR_CONF_VLD_CH_NUM, vld_ch_num);
 
-    // Use a flex-wrap flow panel so items reflow when the dock is resized.
-    const int CH_SPACING = 4;
-    ChannelFlowWidget *channel_pannel = new ChannelFlowWidget(CH_SPACING);
+    // Equal-column adaptive grid: column count is always a divisor of the
+    // channel count; horizontal gap grows with panel width up to CH_MAX_GAP.
+    const int CH_MIN_GAP = 4;
+    const int CH_MAX_GAP = 20;
+    ChannelAdaptiveGridWidget *channel_pannel =
+        new ChannelAdaptiveGridWidget(CH_MIN_GAP, CH_MAX_GAP);
 
-    int channel_line_height = 0;
     row2++;
 
     for (const GSList *l = _device_agent->get_channels(); l; l = l->next) {
@@ -527,7 +576,6 @@ void DeviceOptionsDock::logic_probes(QVBoxLayout &layout)
         channel_pannel->addItem(ch_item);
         _probes_checkBox_list.push_back(ch_item->getCheckBox());
         ch_item->getCheckBox()->setCheckState(probe->enabled ? Qt::Checked : Qt::Unchecked);
-        channel_line_height = ch_item->height();
     }
     layout.addWidget(channel_pannel);
 
@@ -571,10 +619,8 @@ void DeviceOptionsDock::logic_probes(QVBoxLayout &layout)
 #endif
 
     contentHeight += enable_all->sizeHint().height();
-    // The flow widget determines its own height dynamically; just provide a
-    // reasonable minimum so the panel is never too short.
-    const int estimated_rows = qMax(2, row2);
-    contentHeight += (channel_line_height + CH_SPACING) * estimated_rows + 50;
+    contentHeight += channel_pannel->minimumSizeHint().height();
+    contentHeight += 50;
     _groupHeight2  = contentHeight + (row1 + row2) * 2 + 38;
 
 #ifdef Q_OS_DARWIN
