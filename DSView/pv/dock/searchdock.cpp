@@ -151,10 +151,6 @@ void SearchDock::build_nav_bar(QWidget *host)
     _nxt_button.setFixedSize(24, 24);
     _nxt_button.setIconSize(QSize(16, 16));
 
-    _search_all_btn = new QPushButton(tr("Search All"), host);
-    _search_all_btn->setObjectName("search_all_btn");
-    _search_all_btn->setFixedHeight(24);
-
     auto *nav_bar = new QWidget(host);
     nav_bar->setObjectName("search_nav_bar");
     auto *nb = new QHBoxLayout(nav_bar);
@@ -163,9 +159,14 @@ void SearchDock::build_nav_bar(QWidget *host)
     nb->addWidget(&_pre_button);
     nb->addWidget(pattern_container, 1);
     nb->addWidget(&_nxt_button);
-    nb->addWidget(_search_all_btn);
+
+    _search_all_btn = new QPushButton(tr("Search All"), host);
+    _search_all_btn->setObjectName("search_all_btn");
+    _search_all_btn->setFixedHeight(28);
+    _search_all_btn->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
 
     root->addWidget(nav_bar);
+    root->addWidget(_search_all_btn);
 
     // Clicking the summary expands the editor (preserves the old "click pattern
     // to configure" muscle memory).
@@ -315,9 +316,9 @@ void SearchDock::update_results_size()
         _outer_layout->setStretch(0, 1);
         _outer_layout->setStretch(1, 0);
     } else {
-        // Editor collapsed: controls area is compact (nav + toggle only).
+        // Editor collapsed: controls area is compact (nav + search_all_btn + toggle only).
         // results table fills all remaining space.
-        _controls_scroll->setMaximumHeight(72);
+        _controls_scroll->setMaximumHeight(104);
         _controls_scroll->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
         _result_table->setMaximumHeight(QWIDGETSIZE_MAX);
         _result_table->setMinimumHeight(60);

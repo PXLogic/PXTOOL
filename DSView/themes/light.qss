@@ -2738,6 +2738,23 @@ QWidget#search_pattern_container QLineEdit#search_pattern_edit {
     padding: 0px;
 }
 
+/* ── Search All button (light) ──────────────────────────────────── */
+QPushButton#search_all_btn {
+    background-color: #7c3aed;
+    border: none;
+    border-radius: 4px;
+    color: #ffffff;
+    font-size: 12px;
+    padding: 4px 12px;
+    min-height: 28px;
+}
+QPushButton#search_all_btn:hover {
+    background-color: #6d28d9;
+}
+QPushButton#search_all_btn:pressed {
+    background-color: #5b21b6;
+}
+
 /* ── Search Panel hint label (light) ────────────────────────────── */
 QLabel#search_hint_label {
     color: #aaaaaa;
