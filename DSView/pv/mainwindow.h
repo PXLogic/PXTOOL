@@ -292,6 +292,7 @@ private:
     QMenu   *_menu_language  = nullptr;
     QAction *_action_lang_en = nullptr;
     QAction *_action_lang_cn = nullptr;
+    QAction *_action_lang_tw = nullptr;
 
 	QWidget                 *_central_widget;
 	QVBoxLayout             *_vertical_layout;

@@ -72,6 +72,7 @@ signals:
 private slots:
     void on_actionEn_triggered();
     void on_actionCn_triggered();
+    void on_actionTw_triggered();
     void on_actionAbout_triggered();
     void on_actionManual_triggered();
     void on_actionIssue_triggered();
@@ -92,6 +93,7 @@ private:
     QMenu *_language;
     QAction *_action_en;
     QAction *_action_cn;
+    QAction *_action_tw;
 
     QAction *_about;
     QAction *_manual;

@@ -1,0 +1,794 @@
+[
+    {
+        "id": "IDS_DLG_LOG_OPTIONS",
+        "text": "日誌選項"
+    },
+    {
+        "id": "IDS_DLG_LOG_LEVEL",
+        "text": "日誌級別"
+    },
+    {
+        "id": "IDS_DLG_SAVE_FILE",
+        "text": "保存到文件"
+    },
+    {
+        "id": "IDS_DLG_OPEN_FILE",
+        "text": "打開文件"
+    },
+    {
+        "id": "IDS_DLG_OPEN_SEESION",
+        "text": "打開配置"
+    },
+    {
+        "id": "IDS_DLG_SAVE_SEESION",
+        "text": "保存配置"
+    },
+    {
+        "id": "IDS_DLG_DOCUMENT",
+        "text": "文檔"
+    },
+    {
+        "id": "IDS_DLG_TRIGGER_DOCK_TITLE",
+        "text": "觸發設置"
+    },
+    {
+        "id": "IDS_DLG_PROTOCOL_DOCK_TITLE",
+        "text": "解碼器"
+    },
+    {
+        "id": "IDS_DLG_MEASURE_DOCK_TITLE",
+        "text": "測量"
+    },
+    {
+        "id": "IDS_DLG_SEARCH_DOCK_TITLE",
+        "text": "查找"
+    },
+    {
+        "id": "IDS_DLG_SAVE_AS",
+        "text": "另存爲"
+    },
+    {
+        "id": "IDS_DLG_CHECK_USB_SPEED_ERROR",
+        "text": "當前設備插入USB 2.0端口會嚴重影響其性能.\n請重新插入USB 3.0端口."
+    },
+    {
+        "id": "IDS_DLG_CHECK_SESSION_FILE_VERSION_ERROR",
+        "text": "此文件爲舊格式 . \n加載速度較慢. \n可在加載後重新保存."
+    },
+    {
+        "id": "IDS_DLG_ABOUT",
+        "text": "關於"
+    },
+    {
+        "id": "IDS_DLG_DISPLAY_OPTIONS",
+        "text": "顯示選項"
+    },
+    {
+        "id": "IDS_DLG_QUICK_SCROLL",
+        "text": "基於鼠標拖拽的波形滾動"
+    },
+    {
+        "id": "IDS_DLG_SAVE",
+        "text": "保存"
+    },
+    {
+        "id": "IDS_DLG_RESET",
+        "text": "重置"
+    },
+    {
+        "id": "IDS_DLG_EXIT",
+        "text": "退出"
+    },
+    {
+        "id": "IDS_DLG_MANUAL_CALIBRATION",
+        "text": "手動校準"
+    },
+    {
+        "id": "IDS_DLG_CHANNEL",
+        "text": "通道"
+    },
+    {
+        "id": "IDS_DLG_SAVE_CALIBRATION_RESULTS",
+        "text": "正在保存校準結果...請稍候"
+    },
+    {
+        "id": "IDS_DLG_CANCEL",
+        "text": "取消"
+    },
+    {
+        "id": "IDS_DLG_RELOAD_CALIBRATION_RESULTS",
+        "text": "重新加載上次校準結果...請稍候"
+    },
+    {
+        "id": "IDS_DLG_DECODER_OPTIONS",
+        "text": "解碼器選項"
+    },
+    {
+        "id": "IDS_DLG_CURSOR",
+        "text": "光標 "
+    },
+    {
+        "id": "IDS_DLG_CURSOR_FOR_DECODE_START",
+        "text": "解碼起始位置"
+    },
+    {
+        "id": "IDS_DLG_CURSOR_FOR_DECODE_END",
+        "text": "解碼結束位置"
+    },
+    {
+        "id": "IDS_DLG_DEVICE_OPTIONS",
+        "text": "設備選項"
+    },
+    {
+        "id": "IDS_DLG_MODE",
+        "text": "選項"
+    },
+    {
+        "id": "IDS_DLG_ENABLE_ALL",
+        "text": "全部啓用"
+    },
+    {
+        "id": "IDS_DLG_DISABLE_ALL",
+        "text": "全部禁用"
+    },
+    {
+        "id": "IDS_DLG_ENABLE",
+        "text": "啓用: "
+    },
+    {
+        "id": "IDS_DLG_AUTO_CALIBRATION",
+        "text": "自動校準"
+    },
+    {
+        "id": "IDS_DLG_CALIBRATION",
+        "text": "校準"
+    },
+    {
+        "id": "IDS_DLG_MEASUREMENTS",
+        "text": "測量"
+    },
+    {
+        "id": "IDS_DLG_FFT_ENABLE",
+        "text": "FFT使能: "
+    },
+    {
+        "id": "IDS_DLG_FFT_LENGTH",
+        "text": "FFT長度: "
+    },
+    {
+        "id": "IDS_DLG_SAMPLE_INTERVAL",
+        "text": "抽樣間隔: "
+    },
+    {
+        "id": "IDS_DLG_FFT_SOURCE",
+        "text": "FFT通道: "
+    },
+    {
+        "id": "IDS_DLG_FFT_WINDOW",
+        "text": "FFT加窗: "
+    },
+    {
+        "id": "IDS_DLG_DC_IGNORED",
+        "text": "忽視直流: "
+    },
+    {
+        "id": "IDS_DLG_Y-AXIS_MODE",
+        "text": "Y軸模式: "
+    },
+    {
+        "id": "IDS_DLG_DBV_RANGE",
+        "text": "DBV範圍: "
+    },
+    {
+        "id": "IDS_DLG_FFT_OPTIONS",
+        "text": "FFT選項"
+    },
+    {
+        "id": "IDS_DLG_INTERVAL_S",
+        "text": "間隔(s): "
+    },
+    {
+        "id": "IDS_DLG_REPETITIVE_INTERVAL",
+        "text": "重複間隔"
+    },
+    {
+        "id": "IDS_DLG_X_AXIS",
+        "text": "X軸"
+    },
+    {
+        "id": "IDS_DLG_Y_AXIS",
+        "text": "Y軸"
+    },
+    {
+        "id": "IDS_DLG_LISSAJOUS_OPTIONS",
+        "text": "李薩如圖選項"
+    },
+    {
+        "id": "IDS_DLG_ADD",
+        "text": "加"
+    },
+    {
+        "id": "IDS_DLG_SUBSTRACT",
+        "text": "減"
+    },
+    {
+        "id": "IDS_DLG_MULTIPLY",
+        "text": "乘"
+    },
+    {
+        "id": "IDS_DLG_DIVIDE",
+        "text": "除"
+    },
+    {
+        "id": "IDS_DLG_MATH_TYPE",
+        "text": "運算類型"
+    },
+    {
+        "id": "IDS_DLG_1ST_SOURCE",
+        "text": "第一操作數"
+    },
+    {
+        "id": "IDS_DLG_2ST_SOURCE",
+        "text": "第二操作數"
+    },
+    {
+        "id": "IDS_DLG_MATH_OPTIONS",
+        "text": "數學運算選項"
+    },
+    {
+        "id": "IDS_DLG_EXPORT_FORMAT",
+        "text": "導出格式: "
+    },
+    {
+        "id": "IDS_DLG_PROTOCOL_EXPORT",
+        "text": "協議導出"
+    },
+    {
+        "id": "IDS_DLG_EXPORT_DATA",
+        "text": "導出數據: "
+    },
+    {
+        "id": "IDS_DLG_EXPORT_PROTOCOL_LIST_RESULT",
+        "text": "導出解碼結果...請稍候"
+    },
+    {
+        "id": "IDS_DLG_FIT_TO_WINDOW",
+        "text": "適應窗口大小"
+    },
+    {
+        "id": "IDS_DLG_FIXED",
+        "text": "固定"
+    },
+    {
+        "id": "IDS_DLG_MAP_ZOOM",
+        "text": "跳轉縮放 : "
+    },
+    {
+        "id": "IDS_DLG_DECODED_PROTOCOLS",
+        "text": "解碼協議: "
+    },
+    {
+        "id": "IDS_DLG_PROTOCOL_LIST_VIEWER",
+        "text": "解碼結果"
+    },
+    {
+        "id": "IDS_DLG_REGION",
+        "text": "區域"
+    },
+    {
+        "id": "IDS_DLG_SEARCH_LABEL",
+        "text": "X: 不關心\n0: 低電平\n1: 高電平\nR: 上升沿\nF: 下降沿\nC: 上升/下降沿"
+    },
+    {
+        "id": "IDS_DLG_SEARCH_OPTIONS",
+        "text": "搜索選項"
+    },
+    {
+        "id": "IDS_DLG_SAVING",
+        "text": "保存中..."
+    },
+    {
+        "id": "IDS_DLG_ORIGINAL_DATA",
+        "text": "原始數據"
+    },
+    {
+        "id": "IDS_DLG_COMPRESSED_DATA",
+        "text": "壓縮數據"
+    },
+    {
+        "id": "IDS_DLG_EXPORT",
+        "text": "導出"
+    },
+    {
+        "id": "IDS_DLG_EXPORTING",
+        "text": "導出中..."
+    },
+    {
+        "id": "IDS_DLG_DONT_CONNECT_PROBES",
+        "text": "不要連接任何探頭!"
+    },
+    {
+        "id": "IDS_DLG_LOAD_CURRENT_SETTING",
+        "text": "加載當前設置...請稍候"
+    },
+    {
+        "id": "IDS_DLG_WAITING",
+        "text": "請等待"
+    },
+    {
+        "id": "IDS_DLG_FINISHED",
+        "text": "完成!"
+    },
+    {
+        "id": "IDS_DLG_US",
+        "text": "uS"
+    },
+    {
+        "id": "IDS_DLG_MS",
+        "text": "mS"
+    },
+    {
+        "id": "IDS_DLG_S",
+        "text": "S"
+    },
+    {
+        "id": "IDS_DLG_TRIGGER_POSITION",
+        "text": "觸發位置: "
+    },
+    {
+        "id": "IDS_DLG_HOLD_OFF_TIME",
+        "text": "觸發釋抑時間: "
+    },
+    {
+        "id": "IDS_DLG_NOISE_SENSITIVITY",
+        "text": "觸發靈敏度: "
+    },
+    {
+        "id": "IDS_DLG_TRIGGER_SOURCES",
+        "text": "觸發源: "
+    },
+    {
+        "id": "IDS_DLG_TRIGGER_TYPES",
+        "text": "觸發類型: "
+    },
+    {
+        "id": "IDS_DLG_RISING_EDGE",
+        "text": "上升沿"
+    },
+    {
+        "id": "IDS_DLG_FALLING_EDGE",
+        "text": "下降沿"
+    },
+    {
+        "id": "IDS_DLG_AUTO",
+        "text": "自動"
+    },
+    {
+        "id": "IDS_DLG_CHANNEL_0",
+        "text": "通道 0"
+    },
+    {
+        "id": "IDS_DLG_CHANNEL_1",
+        "text": "通道 1"
+    },
+    {
+        "id": "IDS_DLG_CHANNEL_0_AND_1",
+        "text": "通道 0 && 1"
+    },
+    {
+        "id": "IDS_DLG_CHANNEL_0_OR_1",
+        "text": "通道 0 | 1"
+    },
+    {
+        "id": "IDS_DLG_KEY_DECODER_SEARCH",
+        "text": "解碼器搜索"
+    },
+    {
+        "id": "IDS_DLG_TIME_SAMPLES",
+        "text": "時間/採樣點個數"
+    },
+    {
+        "id": "IDS_DLG_MOUSE_MEASUREMENT",
+        "text": "鼠標測量"
+    },
+    {
+        "id": "IDS_DLG_ENABLE_FLOATING_MEASUREMENT",
+        "text": "啓用浮動測量"
+    },
+    {
+        "id": "IDS_DLG_CURSOR_DISTANCE",
+        "text": "光標距離"
+    },
+    {
+        "id": "IDS_DLG_EDGES",
+        "text": "邊沿"
+    },
+    {
+        "id": "IDS_DLG_CURSORS",
+        "text": "光標"
+    },
+    {
+        "id": "IDS_DLG_RIS_OR_FAL_EDGE",
+        "text": "上升沿/下降沿/邊沿"
+    },
+    {
+        "id": "IDS_DLG_W",
+        "text": "寬度: "
+    },
+    {
+        "id": "IDS_DLG_P",
+        "text": "週期: "
+    },
+    {
+        "id": "IDS_DLG_F",
+        "text": "頻率: "
+    },
+    {
+        "id": "IDS_DLG_D",
+        "text": "佔空比: "
+    },
+    {
+        "id": "IDS_DLG_SEARCH",
+        "text": "查找"
+    },
+    {
+        "id": "IDS_DLG_MATCHING_ITEMS",
+        "text": "匹配項:"
+    },
+    {
+        "id": "IDS_DLG_OUT_OF_MEMORY",
+        "text": "內存不足"
+    },
+    {
+        "id": "IDS_DLG_SEARCHING",
+        "text": "查找中"
+    },
+    {
+        "id": "IDS_DLG_SEARCH_PREVIOUS",
+        "text": "搜索上一個"
+    },
+    {
+        "id": "IDS_DLG_SEARCH_NEXT",
+        "text": "搜索下一個"
+    },
+    {
+        "id": "IDS_DLG_SIMPLE_TRIGGER",
+        "text": "簡單觸發模式"
+    },
+    {
+        "id": "IDS_DLG_ADVANCED_TRIGGER",
+        "text": "高級觸發模式"
+    },
+    {
+        "id": "IDS_DLG_TRIGGER_POSITION",
+        "text": "觸發位置: "
+    },
+    {
+        "id": "IDS_DLG_TOTAL_TRIGGER_STAGES",
+        "text": "總觸發等級: "
+    },
+    {
+        "id": "IDS_DLG_START_FLAG",
+        "text": "開始標誌: "
+    },
+    {
+        "id": "IDS_DLG_STOP_FLAG",
+        "text": "停止標誌: "
+    },
+    {
+        "id": "IDS_DLG_CLOCK_FLAG",
+        "text": "時鐘標誌: "
+    },
+    {
+        "id": "IDS_DLG_DATA_CHANNEL",
+        "text": "數據通道: "
+    },
+    {
+        "id": "IDS_DLG_DATA_VALUE",
+        "text": "數據值: "
+    },
+    {
+        "id": "IDS_DLG_SERIAL_TRIGGER",
+        "text": "串行觸發"
+    },
+    {
+        "id": "IDS_DLG_STAGE_TRIGGER",
+        "text": "多級觸發"
+    },
+    {
+        "id": "IDS_DLG_SERIAL_NOTE_LABEL",
+        "text": "X: 不關心\n0: 低電平\n1: 高電平\nR: 上升沿\nF: 下降沿\nC: 上升/下降沿"
+    },
+    {
+        "id": "IDS_DLG_DATA_BITS",
+        "text": "數據位"
+    },
+    {
+        "id": "IDS_DLG_INV",
+        "text": "取反"
+    },
+    {
+        "id": "IDS_DLG_COUNTER",
+        "text": "計數"
+    },
+    {
+        "id": "IDS_DLG_CONTIGUOUS",
+        "text": "連續"
+    },
+    {
+        "id": "IDS_DLG_STAGE",
+        "text": "等級"
+    },
+    {
+        "id": "IDS_DLG_OR",
+        "text": "Or"
+    },
+    {
+        "id": "IDS_DLG_AND",
+        "text": "And"
+    },
+    {
+        "id": "IDS_DLG_HZ",
+        "text": "Hz"
+    },
+    {
+        "id": "IDS_DLG_UNSHOWN",
+        "text": "未顯示"
+    },
+    {
+        "id": "ZOOM_IN_FOR_DETAILS",
+        "text": "放大查看詳細信息"
+    },
+    {
+        "id": "IDS_DLG_DECODETRACE_ERROR1",
+        "text": "錯誤: "
+    },
+    {
+        "id": "IDS_DLG_DECODETRACE_ERROR2",
+        "text": "錯誤: ..."
+    },
+    {
+        "id": "IDS_DLG_ADD_GROUP",
+        "text": "添加組"
+    },
+    {
+        "id": "IDS_DLG_DEL_GROUP",
+        "text": "刪除組"
+    },
+    {
+        "id": "IDS_DLG_SET_CHANNEL_COLOUR",
+        "text": "設置通道顏色"
+    },
+    {
+        "id": "IDS_DLG_LISSAJOUS_FIGURE",
+        "text": "李薩如圖"
+    },
+    {
+        "id": "IDS_DLG_DATA_SOURCE_ERROR",
+        "text": "數據源錯誤."
+    },
+    {
+        "id": "IDS_DLG_ADD_X_CURSOR",
+        "text": "添加X光標"
+    },
+    {
+        "id": "IDS_DLG_ADD_Y_CURSOR",
+        "text": "添加Y軸光標"
+    },
+    {
+        "id": "IDS_DLG_AUTO_ROLL",
+        "text": "自動(Roll)"
+    },
+    {
+        "id": "IDS_DLG_WAITING_TRIG",
+        "text": "等待觸發"
+    },
+    {
+        "id": "IDS_DLG_TRIG_D",
+        "text": "Trig'd"
+    },
+    {
+        "id": "IDS_DLG_TRIGGERED",
+        "text": "已觸發! "
+    },
+    {
+        "id": "IDS_DLG_CAPTURED",
+        "text": "% 已採集"
+    },
+    {
+        "id": "IDS_DLG_WAITING_FOR_TRIGGER",
+        "text": "等待觸發! "
+    },
+    {
+        "id": "IDS_DLG_RISING",
+        "text": "上升沿: "
+    },
+    {
+        "id": "IDS_DLG_FALLING",
+        "text": "下降沿: "
+    },
+    {
+        "id": "IDS_DLG_Edges_1",
+        "text": "總邊沿: "
+    },
+    {
+        "id": "IDS_DLG_WIDTH",
+        "text": "寬度: "
+    },
+    {
+        "id": "IDS_DLG_PERIOD",
+        "text": "週期: "
+    },
+    {
+        "id": "IDS_DLG_FREQUENCY",
+        "text": "頻率: "
+    },
+    {
+        "id": "IDS_DLG_DUTY_CYCLE",
+        "text": "佔空比: "
+    },
+    {
+        "id": "IDS_DLG_MEASURE",
+        "text": "測量"
+    },
+    {
+        "id": "IDS_DLG_TRIGGER_TIME",
+        "text": "觸發時間: "
+    },
+    {
+        "id": "IDS_DLG_SAMPLES_CAPTURED",
+        "text": "點已採集!"
+    },
+    {
+        "id": "IDS_DLG_FILE_THRESHOLD",
+        "text": "閾值: "
+    },
+    {
+        "id": "IDS_DLG_VIEW_CAPTURE",
+        "text": "捕獲中"
+    },
+    {
+        "id": "IDS_DLG_CHAN_NUM_ERR2",
+        "text": "需要兩個通道的數據."
+    },
+    {
+        "id": "IDS_DLG_PATH_NAME",
+        "text": "路徑"
+    },
+    {
+        "id": "IDS_DLG_DECODER_IF_TRANS",
+        "text": "翻譯參數名稱"
+    },
+    {
+        "id": "IDS_DLG_LOG_PATH",
+        "text": "文件位置"
+    },
+    {
+        "id": "IDS_DLG_OPEN",
+        "text": "打開"
+    },
+    {
+        "id": "IDS_DLG_CLEARE",
+        "text": "清除"
+    },
+    {
+        "id": "IDS_DLG_APPEND_MODE",
+        "text": "追加模式"
+    },
+    {
+        "id": "IDS_DLG_TRIG_DISPLAY_MIDDLE",
+        "text": "觸發位置自動居中顯示"
+    },
+    {
+        "id": "IDS_DLG_DISPLAY_PROFILE_IN_BAR",
+        "text": "標題欄顯示配置文件名"
+    },
+    {
+        "id": "IDS_DLG_SERIAL_HEX",
+        "text": "十六進制 :"
+    },
+    {
+        "id": "IDS_DLG_SERIAL_INPUT_AS_HEX",
+        "text": "以十六進制格式輸入"
+    },
+    {
+        "id": "IDS_DLG_USE_ABORT_DATA_REPEAT",
+        "text": "重複模式下停止後更新最新數據"
+    },
+    {
+        "id": "IDS_DLG_FONT_SIZE",
+        "text": "字體大小"
+    },
+    {
+        "id": "IDS_DLG_GROUP_LOGIC",
+        "text": "邏輯分析儀"
+    },
+    {
+        "id": "IDS_DLG_GROUP_DSO",
+        "text": "示波器"
+    },
+    {
+        "id": "IDS_DLG_GROUP_UI",
+        "text": "界面"
+    },
+    {
+        "id": "IDS_DLG_ABORT",
+        "text": "放棄"
+    },
+    {
+        "id": "IDS_DLG_AUTO_SCROLL_LATEAST_DATA",
+        "text": "自動滾動到最新數據"
+    },
+    {
+        "id": "IDS_DLG_DATA_OUT_OFF_RANGE",
+        "text": "數據超出量程"
+    },
+    {
+        "id": "IDS_DLG_START_CURSOR",
+        "text": "開始"
+    },
+    {
+        "id": "IDS_DLG_END_CURSOR",
+        "text": "結束"
+    },
+    {
+        "id": "IDS_DSO_CTR_EN",
+        "text": "啓用"
+    },
+    {
+        "id": "IDS_DSO_CTR_DIS",
+        "text": "禁用"
+    },
+    {
+        "id": "IDS_DSO_CTR_GND",
+        "text": "接地"
+    },
+    {
+        "id": "IDS_DSO_CTR_DC",
+        "text": "直流"
+    },
+    {
+        "id": "IDS_DSO_CTR_AC",
+        "text": "交流"
+    },
+    {
+        "id": "IDS_DSO_CTR_AUTO",
+        "text": "自動"
+    },
+    {
+        "id": "IDS_CALIB_VGAIN",
+        "text": "增益"
+    },
+    {
+        "id": "IDS_CALIB_VOFF",
+        "text": "偏置"
+    },
+    {
+        "id": "IDS_CALIB_VCOMB",
+        "text": "交織"
+    },
+    {
+        "id": "IDS_FFT_WINDOW_RECTANGLE",
+        "text": "矩形"
+    },
+    {
+        "id": "IDS_FFT_WINDOW_HANN",
+        "text": "漢寧"
+    },
+    {
+        "id": "IDS_FFT_WINDOW_HAMMING",
+        "text": "漢明"
+    },
+    {
+        "id": "IDS_FFT_WINDOW_BLACKMAN",
+        "text": "布萊克曼"
+    },
+    {
+        "id": "IDS_FFT_WINDOW_FLATTOP",
+        "text": "平頂"
+    },
+    {
+        "id": "IDS_FFT_MODE_LINEARRSM",
+        "text": "線性 RMS"
+    }
+]

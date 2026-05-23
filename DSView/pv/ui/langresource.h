@@ -61,6 +61,7 @@ struct lang_page_item
 static const struct lang_key_item lang_id_keys[] = 
 {
     {25, "cn"},
+    {26, "tw"},
     {31, "en"}
 };
 

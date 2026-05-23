@@ -216,14 +216,25 @@ static void _loadFrame(FrameOptions &o, QSettings &st)
     o.windowState = st.value("windowState", QByteArray()).toByteArray();
     st.endGroup();
 
-    if (o.language == -1 || (o.language != LAN_CN && o.language != LAN_EN)){
+    if (o.language == -1 || (o.language != LAN_CN && o.language != LAN_TW && o.language != LAN_EN)){
         //get local language
         QLocale locale;
 
-        if (QLocale::languageToString(locale.language()) == "Chinese")
-            o.language = LAN_CN;            
-        else
-            o.language = LAN_EN; 
+        if (locale.language() == QLocale::Chinese){
+            // Use script/country to distinguish Simplified and Traditional Chinese.
+            if (locale.script() == QLocale::TraditionalChineseScript ||
+                locale.country() == QLocale::Taiwan ||
+                locale.country() == QLocale::HongKong ||
+                locale.country() == QLocale::Macau){
+                o.language = LAN_TW;
+            }
+            else{
+                o.language = LAN_CN;
+            }
+        }
+        else{
+            o.language = LAN_EN;
+        }
     }
 }
 

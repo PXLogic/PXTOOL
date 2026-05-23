@@ -622,7 +622,10 @@ elseif(Qt6Core_FOUND)
 	find_package(Qt6 COMPONENTS LinguistTools QUIET)
 endif()
 
-set(DSVIEW_TS_FILES DSView/languages/zh_CN.ts)
+set(DSVIEW_TS_FILES
+    DSView/languages/zh_CN.ts
+    DSView/languages/zh_TW.ts
+)
 if(Qt5LinguistTools_FOUND)
 	qt5_add_translation(DSVIEW_QM_FILES ${DSVIEW_TS_FILES})
 elseif(Qt6LinguistTools_FOUND)

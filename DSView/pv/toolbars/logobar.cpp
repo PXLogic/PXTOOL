@@ -71,14 +71,19 @@ LogoBar::LogoBar(SigSession *session, QWidget *parent) :
    
     _action_cn = new QAction(this);
     _action_cn->setObjectName(QString::fromUtf8("actionCn"));
+
+    _action_tw = new QAction(this);
+    _action_tw->setObjectName(QString::fromUtf8("actionTw"));
     
     _language = new QMenu(this);
     _language->setObjectName(QString::fromUtf8("menuLanguage"));
     _language->addAction(_action_cn);
+    _language->addAction(_action_tw);
     _language->addAction(_action_en);
 
     _action_en->setIcon(QIcon(":/icons/English.svg"));
     _action_cn->setIcon(QIcon(":/icons/Chinese.svg"));
+    _action_tw->setIcon(QIcon(":/icons/Chinese.svg"));
 
     _about = new QAction(this);
     _about->setObjectName(QString::fromUtf8("actionAbout"));
@@ -117,6 +122,7 @@ LogoBar::LogoBar(SigSession *session, QWidget *parent) :
 
     connect(_action_en, SIGNAL(triggered()), this, SLOT(on_actionEn_triggered()));
     connect(_action_cn, SIGNAL(triggered()), this, SLOT(on_actionCn_triggered()));
+    connect(_action_tw, SIGNAL(triggered()), this, SLOT(on_actionTw_triggered()));
     connect(_about, SIGNAL(triggered()), this, SLOT(on_actionAbout_triggered()));
     connect(_manual, SIGNAL(triggered()), this, SIGNAL(sig_open_doc()));
     connect(_issue, SIGNAL(triggered()), this, SLOT(on_actionIssue_triggered()));
@@ -137,7 +143,8 @@ void LogoBar::retranslateUi()
     _logo_button.setText(tr("Help"));
      _language->setTitle(tr("&Language"));
     _action_en->setText(tr("English"));
-    _action_cn->setText(tr("中文"));   
+    _action_cn->setText(tr("简体中文"));
+    _action_tw->setText(tr("繁體中文"));
     _about->setText(tr("&About..."));
     _manual->setText(tr("&Manual..."));
     _issue->setText(tr("&Bug Report"));
@@ -145,7 +152,7 @@ void LogoBar::retranslateUi()
     _log->setText(tr("L&og Options"));
 
     AppConfig &app = AppConfig::Instance(); 
-    if (app.frameOptions.language == LAN_CN)
+    if (app.frameOptions.language == LAN_CN || app.frameOptions.language == LAN_TW)
         _language->setIcon(QIcon(":/icons/Chinese.svg"));
     else
         _language->setIcon(QIcon(":/icons/English.svg"));
@@ -194,6 +201,14 @@ void LogoBar::on_actionCn_triggered()
     _mainForm->switchLanguage(LAN_CN);  
 }
 
+void LogoBar::on_actionTw_triggered()
+{
+    _language->setIcon(QIcon::fromTheme("file",
+        QIcon(":/icons/Chinese.svg")));
+    assert(_mainForm);
+    _mainForm->switchLanguage(LAN_TW);
+}
+
 void LogoBar::on_actionAbout_triggered()
 {
     dialogs::About dlg(this);
@@ -213,7 +228,7 @@ void LogoBar::on_actionIssue_triggered()
 
  void LogoBar::on_action_update()
  {
-     if (AppConfig::Instance().frameOptions.language == LAN_CN){
+     if (AppConfig::Instance().frameOptions.language != LAN_EN){
          QDesktopServices::openUrl(QUrl(QLatin1String("https://dreamsourcelab.cn/download/")));
      }
      else{

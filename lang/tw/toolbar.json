@@ -1,0 +1,186 @@
+[
+    {
+        "id": "IDS_DEVICE_MODE_LOGIC",
+        "text": "邏輯分析儀(&L)"
+    },
+    {
+        "id": "IDS_DEVICE_MODE_ANALOG",
+        "text": "數據記錄儀(&A)"
+    },
+    {
+        "id": "IDS_DEVICE_MODE_DSO",
+        "text": "示波器(&C)"
+    },
+    {
+        "id": "IDS_TOOLBAR_DEVICE_TYPE_DEMO",
+        "text": "演示"
+    },
+    {
+        "id": "IDS_TOOLBAR_DEVICE_TYPE_FILE",
+        "text": "文件"
+    },
+    {
+        "id": "IDS_TOOLBAR_DEVICE_OPTION",
+        "text": "選項(&O)"
+    },
+    {
+        "id": "IDS_TOOLBAR_CAPTURE_MODE",
+        "text": "模式(&E)"
+    },
+    {
+        "id": "IDS_TOOLBAR_CAPTURE_MODE_SINGLE",
+        "text": "單次(&S)"
+    },
+    {
+        "id": "IDS_TOOLBAR_CAPTURE_MODE_REPEAT",
+        "text": "重複(&R)"
+    },
+    {
+        "id": "IDS_TOOLBAR_CAPTURE_MODE_LOOP",
+        "text": "滾動(&L)"
+    },
+    {
+        "id": "IDS_TOOLBAR_RUN_START",
+        "text": "開始(&S)"
+    },
+    {
+        "id": "IDS_TOOLBAR_RUN_STOP",
+        "text": "停止(&S)"
+    },
+    {
+        "id": "IDS_TOOLBAR_ONE_SINGLE",
+        "text": "單次(&I)"
+    },
+    {
+        "id": "IDS_TOOLBAR_ONE_INSTANT",
+        "text": "立即(&I)"
+    },
+    {
+        "id": "IDS_TOOLBAR_ONE_STOP",
+        "text": "停止(&S)"
+    },
+    {
+        "id": "IDS_TOOLBAR_TRIGGER",
+        "text": "觸發(&T)"
+    },
+    {
+        "id": "IDS_TOOLBAR_DECODE",
+        "text": "解碼(&D)"
+    },
+    {
+        "id": "IDS_TOOLBAR_MEASURE",
+        "text": "測量(&M)"
+    },
+    {
+        "id": "IDS_TOOLBAR_SEARCH",
+        "text": "搜索(&R)"
+    },
+    {
+        "id": "IDS_TOOLBAR_FUNCTION",
+        "text": "函數(&N)"
+    },
+    {
+        "id": "IDS_TOOLBAR_FUNCTION_FFT",
+        "text": "&FFT"
+    },
+    {
+        "id": "IDS_TOOLBAR_FUNCTION_MATH",
+        "text": "數學運算(&M)"
+    },
+    {
+        "id": "IDS_TOOLBAR_DISPLAY",
+        "text": "顯示(&P)"
+    },
+    {
+        "id": "IDS_TOOLBAR_DISPLAY_THEMES",
+        "text": "主題(&T)"
+    },
+    {
+        "id": "IDS_TOOLBAR_DISPLAY_LISSAJOUS",
+        "text": "李薩如圖(&A)"
+    },
+    {
+        "id": "IDS_TOOLBAR_DISPLAY_THEMES_DARK",
+        "text": "暗黑(&D)"
+    },
+    {
+        "id": "IDS_TOOLBAR_DISPLAY_THEMES_LIGHT",
+        "text": "清新(&L)"
+    },
+    {
+        "id": "IDS_TOOLBAR_DISPLAY_OPTIONS",
+        "text": "選項(&O)"
+    },
+    {
+        "id": "IDS_TOOLBAR_FILE",
+        "text": "文件(&F)"
+    },
+    {
+        "id": "IDS_TOOLBAR_FILE_CONFIG",
+        "text": "配置(&G)"
+    },
+    {
+        "id": "IDS_TOOLBAR_FILE_CONFIG_LOAD",
+        "text": "加載配置(&L)"
+    },
+    {
+        "id": "IDS_TOOLBAR_FILE_CONFIG_STORE",
+        "text": "保存配置(&S)"
+    },
+    {
+        "id": "IDS_TOOLBAR_FILE_CONFIG_DEFAULT",
+        "text": "加載默認配置(&D)"
+    },
+    {
+        "id": "IDS_TOOLBAR_FILE_OPEN",
+        "text": "打開(&O)"
+    },
+    {
+        "id": "IDS_TOOLBAR_FILE_SAVE",
+        "text": "保存(&S)"
+    },
+    {
+        "id": "IDS_TOOLBAR_FILE_EXPORT",
+        "text": "導出(&E)"
+    },
+    {
+        "id": "IDS_TOOLBAR_FILE_CAPTURE",
+        "text": "截屏(&C)"
+    },
+    {
+        "id": "IDS_TOOLBAR_HELP",
+        "text": "幫助(&H)"
+    },
+    {
+        "id": "IDS_TOOLBAR_HELP_LANG",
+        "text": "語言(&L)"
+    },
+    {
+        "id": "IDS_TOOLBAR_HELP_LANG_EN",
+        "text": "&English"
+    },
+    {
+        "id": "IDS_TOOLBAR_HELP_LANG_CN",
+        "text": "中文(&C)"
+    },
+    {
+        "id": "IDS_TOOLBAR_HELP_ABOUT",
+        "text": "關於(&A)"
+    },
+    {
+        "id": "IDS_TOOLBAR_HELP_MANUAL",
+        "text": "手冊(&M)"
+    },
+    {
+        "id": "IDS_TOOLBAR_HELP_BUG",
+        "text": "報告問題(&B)"
+    },
+    {
+        "id": "IDS_TOOLBAR_HELP_UPDATE",
+        "text": "更新(&U)"
+    },
+    {
+        "id": "IDS_TOOLBAR_HELP_LOG",
+        "text": "日誌選項(&L)"
+    }
+]

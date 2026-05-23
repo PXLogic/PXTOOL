@@ -304,7 +304,8 @@ namespace pv
         _menu_help->addSeparator();
         _menu_language = _menu_help->addMenu(tr("Language"));
         _action_lang_en = _menu_language->addAction(tr("English"));
-        _action_lang_cn = _menu_language->addAction(tr("中文"));
+        _action_lang_cn = _menu_language->addAction(tr("简体中文"));
+        _action_lang_tw = _menu_language->addAction(tr("繁體中文"));
         connect(_action_about,    SIGNAL(triggered()), _logo_bar, SLOT(on_actionAbout_triggered()));
         connect(_action_doc,      &QAction::triggered, this, &MainWindow::on_open_doc);
         connect(_action_issue,    SIGNAL(triggered()), _logo_bar, SLOT(on_actionIssue_triggered()));
@@ -312,6 +313,7 @@ namespace pv
         connect(_action_log_item, SIGNAL(triggered()), _logo_bar, SLOT(on_action_setting_log()));
         connect(_action_lang_en,  SIGNAL(triggered()), _logo_bar, SLOT(on_actionEn_triggered()));
         connect(_action_lang_cn,  SIGNAL(triggered()), _logo_bar, SLOT(on_actionCn_triggered()));
+        connect(_action_lang_tw,  SIGNAL(triggered()), _logo_bar, SLOT(on_actionTw_triggered()));
 
         // Move File/Window/Help into the title bar and hide the in-window menu bar
         _title_bar->addMenusToTitleBar(_menu_file, _menu_view, _menu_help);
@@ -476,6 +478,8 @@ namespace pv
         if (_action_log_item) _action_log_item->setText(tr("Log Options"));
         if (_menu_language)   _menu_language->setTitle(tr("Language"));
         if (_action_lang_en)  _action_lang_en->setText(tr("English"));
+        if (_action_lang_cn)  _action_lang_cn->setText(tr("简体中文"));
+        if (_action_lang_tw)  _action_lang_tw->setText(tr("繁體中文"));
 
         // Child widget retranslation
         if (_title_bar)      _title_bar->retranslateUi();
@@ -2387,10 +2391,15 @@ namespace pv
         qApp->removeTranslator(&_appTrans);
         qApp->removeTranslator(&_qtTrans);
 
-        if (language == LAN_CN) {
-            if (_appTrans.load(":/zh_CN"))
+        if (language == LAN_CN || language == LAN_TW) {
+            const QString appTs = (language == LAN_TW) ? ":/zh_TW" : ":/zh_CN";
+            if (_appTrans.load(appTs))
                 qApp->installTranslator(&_appTrans);
-            if (_qtTrans.load(":/qt_" + QString::number(language)))
+
+            // Keep legacy qt_25 resource for built-in Qt strings. If a dedicated
+            // Traditional Chinese Qt qm is added later, this can be switched.
+            const QString qtTs = ":/qt_25";
+            if (_qtTrans.load(qtTs))
                 qApp->installTranslator(&_qtTrans);
         }
 
