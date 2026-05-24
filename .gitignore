@@ -4,8 +4,8 @@
 # Packaged distribution output
 /dist/
 
-# AI-generated plan files
-/docs/superpowers/
+# Local documentation (not tracked)
+/docs/
 
 # Local Qt user cache
 /.qt/
@@ -38,3 +38,5 @@ pv/cdecoders/example_*/build/
 
 pv/cdecoders/example_spi/*.dylib
 pv/cdecoders/example_spi/*.so
+
+
