@@ -287,7 +287,12 @@ namespace pv
         {
             if (_lbl_device)   _lbl_device->setText(tr("Device"));
             if (_lbl_smplrate) _lbl_smplrate->setText(tr("Sample Rate"));
-            if (_lbl_buffer)   _lbl_buffer->setText(tr("Buffer"));
+            if (_lbl_buffer) {
+                bool stream_mode = false;
+                if (_device_agent && _device_agent->have_instance())
+                    _device_agent->get_config_bool(SR_CONF_STREAM, stream_mode);
+                update_buffer_label(stream_mode);
+            }
             if (_lbl_mode)     _lbl_mode->setText(tr("Mode"));
 
             bool bDev = _device_agent->have_instance();
@@ -693,7 +698,7 @@ namespace pv
 
             if (mode == LOGIC)
             {
-#if defined(__x86_64__) || defined(_M_X64)
+#if defined(__x86_64__) || defined(_M_X64) || defined(__aarch64__) || defined(_M_ARM64)
                 sw_depth = LogicMaxSWDepth64;
 #elif defined(__i386) || defined(_M_IX86)
                 int ch_num = _session->get_ch_num(SR_CHANNEL_LOGIC);
@@ -724,6 +729,8 @@ namespace pv
                 pre_duration = _sample_count.itemData(
                                                 _sample_count.currentIndex())
                                    .value<double>();
+
+            _sample_count.hidePopup();
             _sample_count.clear();
             if (_sample_rate.count() == 0 || _sample_rate.currentIndex() < 0) {
                 dsv_warn("update_sample_count_selector: sample rate list is empty.");
@@ -749,11 +756,19 @@ namespace pv
             if (mode == DSO)
                 duration = max_timebase;
             else if (stream_mode)
-                duration = sw_depth / (samplerate * (1.0 / SR_SEC(1)));
+                duration = hw_duration;
             else if (rle_support)
                 duration = rle_depth / (samplerate * (1.0 / SR_SEC(1)));
             else
                 duration = hw_duration;
+
+            dsv_info("update_sample_count_selector: stream=%d hw_depth=%llu samplerate=%llu "
+                     "hw_duration=%g duration_max=%g sw_depth=%llu",
+                     (int)stream_mode,
+                     (unsigned long long)hw_depth,
+                     (unsigned long long)samplerate,
+                     hw_duration, duration,
+                     (unsigned long long)sw_depth);
 
             if (duration <= 0) {
                 dsv_warn("update_sample_count_selector: invalid duration %g "
@@ -838,7 +853,27 @@ namespace pv
             update_sample_count_selector_value();
             on_samplecount_sel(_sample_count.currentIndex());
 
+            _sample_count.refreshPopupLayout();
+
+            if (_sample_count.count() > 0) {
+                dsv_info("update_sample_count_selector: list_count=%d max=%s min=%s sel_idx=%d sel=%s",
+                         _sample_count.count(),
+                         _sample_count.itemText(0).toUtf8().constData(),
+                         _sample_count.itemText(_sample_count.count() - 1).toUtf8().constData(),
+                         _sample_count.currentIndex(),
+                         _sample_count.currentText().toUtf8().constData());
+            }
+
+            update_buffer_label(stream_mode);
+
             connect(&_sample_count, SIGNAL(currentIndexChanged(int)), this, SLOT(on_samplecount_sel(int)));
+        }
+
+        void SamplingBar::update_buffer_label(bool /*stream_mode*/)
+        {
+            if (!_lbl_buffer)
+                return;
+            _lbl_buffer->setText(tr("Buffer"));
         }
 
         void SamplingBar::update_sample_count_selector_value()
@@ -1040,6 +1075,11 @@ namespace pv
                             _device_agent->set_config_uint64(
                                                       SR_CONF_LIMIT_SAMPLES,
                                                       sample_count);
+
+                        dsv_info("commit_settings: duration=%g sample_rate=%llu limit_samples=%llu",
+                                 sample_duration,
+                                 (unsigned long long)sample_rate,
+                                 (unsigned long long)sample_count);
 
                         bool rle_mode = _sample_count.currentText().contains(RLEString);
                         _device_agent->set_config_bool(

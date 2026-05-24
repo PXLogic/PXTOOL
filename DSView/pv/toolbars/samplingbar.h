@@ -112,6 +112,11 @@ namespace pv
                 update_sample_rate_selector();
             }
 
+            inline void update_sample_count_list()
+            {
+                update_sample_count_selector();
+            }
+
             void commit_settings();
 
         signals:
@@ -127,7 +132,8 @@ namespace pv
            
             void update_sample_rate_selector_value();
             void update_sample_count_selector();
-            void update_sample_count_selector_value();         
+            void update_sample_count_selector_value();
+            void update_buffer_label(bool stream_mode);
             void setting_adj();
             void enable_toggle(bool enable);
             void update_mode_icon();

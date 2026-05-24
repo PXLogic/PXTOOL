@@ -362,6 +362,7 @@ private:
     void               mark_offline_for_missing_handles();
     ds_device_handle   find_latest_device_handle();
     ds_device_handle   find_latest_hardware_device_handle();
+    ds_device_handle   find_demo_device_handle();
     ds_device_handle   pick_default_device_handle();
     void               gc_offline_groups();
 

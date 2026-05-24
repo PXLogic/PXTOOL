@@ -20,6 +20,7 @@
  */
 
 #include "dscombobox.h"
+#include <QAbstractItemView>
 #include <QFontMetrics>
 #include <QString>
 #include <QGuiApplication>
@@ -104,5 +105,13 @@ void DsComboBox::hidePopup()
 {
     QComboBox::hidePopup();
     _bPopup = false;
+}
+
+void DsComboBox::refreshPopupLayout()
+{
+    measureSize();
+    if (QAbstractItemView *view = this->view())
+        view->update();
+    update();
 }
  

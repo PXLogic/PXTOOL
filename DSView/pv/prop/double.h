@@ -51,8 +51,12 @@ public:
 
 	void commit();
 
+private:
+	void ensure_auto_commit();
+
 private slots:
     void on_value_changed(double);
+    void on_editing_finished();
 
 private:
 	const int _decimals;
@@ -61,6 +65,8 @@ private:
 	const boost::optional<double> _step;
 
 	QDoubleSpinBox *_spin_box;
+	bool _auto_commit_connected;
+	double _last_auto_commit_value;
 };
 
 } // prop

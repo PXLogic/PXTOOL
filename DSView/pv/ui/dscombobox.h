@@ -40,7 +40,10 @@ public:
 
     inline bool  IsPopup(){
         return _bPopup;
-    } 
+    }
+
+    /** Recompute popup min-width after model items change. */
+    void refreshPopupLayout();
 
 private:
     void measureSize();

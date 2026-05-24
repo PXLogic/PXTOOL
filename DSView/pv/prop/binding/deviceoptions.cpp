@@ -33,6 +33,7 @@
 #include "../../log.h"
 #include "../../appcontrol.h"
 #include "../../sigsession.h"
+#include "../../dock/deviceoptionsdock.h"
 #include "../../deviceagent.h"
 #include "../../ui/langresource.h"
  
@@ -169,7 +170,15 @@ void DeviceOptions::config_setter(int key, GVariant* value)
 {
 	SigSession *session = AppControl::Instance()->GetSession();
 	DeviceAgent *_device_agent = session->get_device();
+    double stream_buff_gb = 0;
+    const bool log_stream_buff = (key == SR_CONF_STREAM_BUFF && value != NULL);
+    if (log_stream_buff)
+        stream_buff_gb = g_variant_get_double(value);
     _device_agent->set_config(key, value);
+    if (log_stream_buff) {
+        dsv_info("DeviceOptions::set_config STREAM_BUFF=%g GB", stream_buff_gb);
+        pv::dock::DeviceOptionsDock::schedule_sample_count_refresh();
+    }
 }
 
 void DeviceOptions::bind_bool(const QString &name, const QString label, int key)

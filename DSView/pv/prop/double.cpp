@@ -44,8 +44,22 @@ Double::Double(QString name, QString label,
 	_suffix(suffix),
 	_range(range),
 	_step(step),
-	_spin_box(NULL)
+	_spin_box(NULL),
+	_auto_commit_connected(false),
+	_last_auto_commit_value(0.0)
 {
+}
+
+void Double::ensure_auto_commit()
+{
+	if (!_spin_box || _auto_commit_connected)
+		return;
+
+	connect(_spin_box, SIGNAL(valueChanged(double)),
+		this, SLOT(on_value_changed(double)));
+	connect(_spin_box, SIGNAL(editingFinished()),
+		this, SLOT(on_editing_finished()));
+	_auto_commit_connected = true;
 }
 
 Double::~Double()
@@ -54,28 +68,25 @@ Double::~Double()
 
 QWidget* Double::get_widget(QWidget *parent, bool auto_commit)
 {
-	if (_spin_box)
-		return _spin_box;
+	if (!_spin_box) {
+		_spin_box = new QDoubleSpinBox(parent);
+		_spin_box->setDecimals(_decimals);
+		_spin_box->setSuffix(_suffix);
+		if (_range)
+			_spin_box->setRange(_range->first, _range->second);
+		if (_step)
+			_spin_box->setSingleStep(*_step);
 
-	_spin_box = new QDoubleSpinBox(parent);
-	_spin_box->setDecimals(_decimals);
-	_spin_box->setSuffix(_suffix);
-	if (_range)
-		_spin_box->setRange(_range->first, _range->second);
-	if (_step)
-		_spin_box->setSingleStep(*_step);
+		GVariant *const value = _getter ? _getter() : NULL;
 
-	GVariant *const value = _getter ? _getter() : NULL;
-
-	if (value) {
-		_spin_box->setValue(g_variant_get_double(value));
-		g_variant_unref(value);
+		if (value) {
+			_spin_box->setValue(g_variant_get_double(value));
+			g_variant_unref(value);
+		}
 	}
 
-    if (auto_commit) {
-        connect(_spin_box, SIGNAL(valueChanged(double)),
-            this, SLOT(on_value_changed(double)));
-    }
+	if (auto_commit)
+		ensure_auto_commit();
 
 	return _spin_box;
 }
@@ -90,8 +101,20 @@ void Double::commit()
 	_setter(g_variant_new_double(_spin_box->value()));
 }
 
-void Double::on_value_changed(double)
+void Double::on_value_changed(double val)
 {
+    _last_auto_commit_value = val;
+    commit();
+}
+
+void Double::on_editing_finished()
+{
+    if (!_spin_box)
+        return;
+    double val = _spin_box->value();
+    if (_auto_commit_connected && val == _last_auto_commit_value)
+        return;
+    _last_auto_commit_value = val;
     commit();
 }
 

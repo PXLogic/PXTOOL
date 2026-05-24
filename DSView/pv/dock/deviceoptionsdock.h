@@ -30,6 +30,7 @@
 #include <QRadioButton>
 #include <QSet>
 #include <QTimer>
+#include <QPointer>
 #include <vector>
 
 #include "../dialogs/deviceoptions.h"   // reuse IChannelCheck, ChannelLabel, ChannelModePair
@@ -62,6 +63,9 @@ public:
     /** Rebuild panel if the device is now ready but content hasn't been built yet. */
     void rebuild();
 
+    /** Defer refresh of SamplingBar buffer list (e.g. after STREAM_BUFF set_config). */
+    static void schedule_sample_count_refresh();
+
     /** Call when the active device changes within the current session. */
     void on_device_changed();
 
@@ -74,6 +78,8 @@ signals:
      * "Enable All"); listeners should not remove anything in that case. */
     void sig_channels_applied(const QSet<int> &disabled_channel_indices);
     void sig_channel_mode_changed();
+    /** Stream buff / other device-option changes that alter SR_CONF_HW_DEPTH. */
+    void sig_sample_count_refresh_needed();
 
 private:
     void build_content();

@@ -384,6 +384,11 @@ namespace pv
                 _sampling_bar,
                 &pv::toolbars::SamplingBar::update_sample_rate_list);
 
+        connect(_sidebar_widget->device_options_widget(),
+                &dock::DeviceOptionsDock::sig_sample_count_refresh_needed,
+                _sampling_bar,
+                &pv::toolbars::SamplingBar::update_sample_count_list);
+
         // SamplingBar
         connect(_sampling_bar, SIGNAL(sig_store_session_data()), this, SLOT(on_save()));
         connect(_sampling_bar, &pv::toolbars::SamplingBar::sig_switch_device,
@@ -655,6 +660,23 @@ namespace pv
         }
 
         free(array);
+        return handle;
+    }
+
+    ds_device_handle MainWindow::find_demo_device_handle()
+    {
+        struct ds_device_base_info *array = NULL;
+        int count = 0;
+        ds_device_handle handle = NULL_HANDLE;
+        if (ds_get_device_list(&array, &count) == SR_OK && array != NULL) {
+            for (int i = 0; i < count; ++i) {
+                if (QString::fromUtf8(array[i].name) == QLatin1String("Demo Device")) {
+                    handle = array[i].handle;
+                    break;
+                }
+            }
+            free(array);
+        }
         return handle;
     }
 
@@ -3010,10 +3032,16 @@ namespace pv
                 register_groups_from_device_list();
                 _sampling_bar->update_device_list();
 
-                if (_device_agent && _device_agent->is_demo()) {
+                const bool on_demo = (_device_agent && _device_agent->is_demo());
+                dsv_info("DSV_MSG_NEW_USB_DEVICE: on_demo=%d _device_agent=%p",
+                         (int)on_demo, (void*)_device_agent);
+                if (on_demo) {
                     ds_device_handle hw = find_latest_hardware_device_handle();
+                    dsv_info("DSV_MSG_NEW_USB_DEVICE: hw=%llu cur=%llu",
+                             (unsigned long long)hw,
+                             (unsigned long long)(_device_agent->handle()));
                     if (hw != NULL_HANDLE && hw != _device_agent->handle()) {
-                        dsv_info("New hardware attached while on demo device; auto-switching.");
+                        dsv_info("New hardware attached while on demo; auto-switching.");
                         switch_to_device(hw);
                     }
                 }
@@ -3041,6 +3069,24 @@ namespace pv
                 _sampling_bar->update_device_list();
                 rebuild_tab_buttons();
                 update_toolbar_view_status();
+
+                // Auto-switch to Demo Device after hardware detach.
+                // Always target demo explicitly so that a quick USB re-enumeration
+                // (device briefly disconnects and reconnects under a new handle) still
+                // lands on demo first.  The DSV_MSG_NEW_USB_DEVICE handler will then
+                // see on_demo=true and auto-switch back to the newly enumerated hardware.
+                {
+                    ds_device_handle demo = find_demo_device_handle();
+                    dsv_info("DSV_MSG_CURRENT_DEVICE_DETACHED: demo=%llu",
+                             (unsigned long long)demo);
+                    if (demo != NULL_HANDLE) {
+                        // Defer one event-loop turn so the offline-mark / tab-rebuild
+                        // completes before we initiate the session switch.
+                        QTimer::singleShot(0, this, [this, demo]() {
+                            switch_to_device(demo);
+                        });
+                    }
+                }
                 break;
             }
             case DSV_MSG_SAVE_COMPLETE:

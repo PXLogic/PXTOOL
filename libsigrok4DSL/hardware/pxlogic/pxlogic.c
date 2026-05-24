@@ -1103,9 +1103,13 @@ static int config_get(int id, GVariant **data, const struct sr_dev_inst *sdi,
             *data = g_variant_new_uint64(devc->profile->dev_caps.hw_depth / channel_modes[devc->ch_mode].unit_bits/devc-> ch_num); 
         }
         else if(devc->op_mode == OP_STREAM){
-            //*data = g_variant_new_uint64(devc->profile->dev_caps.hw_depth *4*8/ channel_modes[devc->ch_mode].unit_bits/devc-> ch_num); 
-            *data = g_variant_new_uint64(devc->stream_buff_size*1024*1024*1024*8/ channel_modes[devc->ch_mode].unit_bits/devc-> ch_num); 
-            
+            const uint16_t mode_ch = channel_modes[devc->ch_mode].num;
+            const uint64_t depth = devc->stream_buff_size * 1024ULL * 1024 * 1024 * 8
+                / channel_modes[devc->ch_mode].unit_bits / mode_ch;
+            sr_info("pxlogic HW_DEPTH stream: buff=%.1fGB ch_mode=%d mode_ch=%u en_ch=%u depth=%llu",
+                devc->stream_buff_size, devc->ch_mode, mode_ch, devc->ch_num,
+                (unsigned long long)depth);
+            *data = g_variant_new_uint64(depth);
         }
         else{
             *data = g_variant_new_uint64(devc->profile->dev_caps.hw_depth / channel_modes[devc->ch_mode].unit_bits/devc-> ch_num); 
@@ -1516,6 +1520,7 @@ static int config_set(int id, GVariant *data, struct sr_dev_inst *sdi,
     else if (id == SR_CONF_STREAM_BUFF) {
         ret = SR_OK;
         devc->stream_buff_size = g_variant_get_double(data);
+        sr_info("pxlogic set STREAM_BUFF: %.1f GB", devc->stream_buff_size);
     }
     else {
         ret = SR_ERR_NA;
@@ -2382,7 +2387,11 @@ SR_PRIV int start_transfers(const struct sr_dev_inst *sdi)
     
     rc =usb_wr_reg(usb->devhdl,8192+(9<<2), devc->limit_samples2Byte);
     rc =usb_wr_reg(usb->devhdl,8192+(10<<2), devc->limit_samples2Byte>>32);
-    sr_info(" devc->limit_samples2Byte =  %d",devc->limit_samples2Byte);
+    sr_info("pxlogic dev_start: op_mode=%d stream_buff=%.1fGB limit_samples=%llu "
+            "en_ch=%u limit_samples2Byte=%u",
+            devc->op_mode, devc->stream_buff_size,
+            (unsigned long long)devc->limit_samples, ch_num,
+            (unsigned)devc->limit_samples2Byte);
 
 sr_info(" devc->cur_samplerate =  %d",devc->cur_samplerate);
 

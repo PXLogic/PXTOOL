@@ -28,6 +28,7 @@
 #include <QHBoxLayout>
 #include <QComboBox>
 #include <QSpinBox>
+#include <QDoubleSpinBox>
 #include <QGuiApplication>
 #include <QResizeEvent>
 #include <QScreen>
@@ -166,6 +167,8 @@ using namespace std;
 namespace pv {
 namespace dock {
 
+static QPointer<DeviceOptionsDock> s_active_device_options_dock;
+
 DeviceOptionsDock::DeviceOptionsDock(QWidget *parent, SigSession *session)
     : QScrollArea(parent)
     , _session(session)
@@ -195,11 +198,28 @@ DeviceOptionsDock::DeviceOptionsDock(QWidget *parent, SigSession *session)
     _inner_lay->setSpacing(0);
     setWidget(_inner);
 
+    s_active_device_options_dock = this;
+
     ADD_UI(this);
+}
+
+void DeviceOptionsDock::schedule_sample_count_refresh()
+{
+    DeviceOptionsDock *dock = s_active_device_options_dock.data();
+    if (!dock)
+        return;
+    QTimer::singleShot(0, dock, [dock]() {
+        if (!dock)
+            return;
+        dsv_info("DeviceOptionsDock::schedule_sample_count_refresh");
+        emit dock->sig_sample_count_refresh_needed();
+    });
 }
 
 DeviceOptionsDock::~DeviceOptionsDock()
 {
+    if (s_active_device_options_dock.data() == this)
+        s_active_device_options_dock = nullptr;
     _mode_check_timer.stop();
     delete _device_options_binding;
     _device_options_binding = nullptr;
@@ -353,7 +373,7 @@ void DeviceOptionsDock::build_content()
 
     // Connect Mode group property widgets so any change auto-applies.
     for (auto p : _device_options_binding->properties()) {
-        QWidget *wid = p->get_widget(nullptr, false);
+        QWidget *wid = p->get_widget(nullptr, true);
         if (!wid) continue;
         if (auto *combo = qobject_cast<QComboBox*>(wid))
             connect(combo, QOverload<int>::of(&QComboBox::currentIndexChanged),
@@ -361,6 +381,10 @@ void DeviceOptionsDock::build_content()
         else if (auto *spin = qobject_cast<QSpinBox*>(wid))
             connect(spin, QOverload<int>::of(&QSpinBox::valueChanged),
                     this, &DeviceOptionsDock::schedule_apply, Qt::UniqueConnection);
+        // QDoubleSpinBox (e.g. Stream buff size): auto-commit is handled by
+        // Double::ensure_auto_commit() → commit() → config_setter(), which
+        // already calls schedule_sample_count_refresh() for SR_CONF_STREAM_BUFF.
+        // No extra connection needed here.
     }
 
     connect(&_mode_check_timer, SIGNAL(timeout()), this, SLOT(mode_check_timeout()), Qt::UniqueConnection);
@@ -454,6 +478,7 @@ void DeviceOptionsDock::on_apply()
         // Refresh the sample rate dropdown — channel mode changes alter the
         // valid rate range and the SamplingBar must re-query config_list.
         emit sig_channel_mode_changed();
+        emit sig_sample_count_refresh_needed();
         // Notify listeners (ProtocolDock) so they can drop just the decoders
         // that now reference a disabled channel. An empty set means the user
         // only enabled new channels — decoders must be preserved in that case.
