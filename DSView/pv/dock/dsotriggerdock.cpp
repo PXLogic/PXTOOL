@@ -495,9 +495,9 @@ void DsoTriggerDock::UpdateTheme()
 void DsoTriggerDock::UpdateFont()
 {
     QFont font = this->font();
-    font.setPointSizeF(AppConfig::Instance().appOptions.fontSize);
+    font.setPixelSize(qRound(AppConfig::Instance().appOptions.fontSize));
     ui::set_form_font(this, font);
-    font.setPointSizeF(font.pointSizeF() + 1);
+    font.setPixelSize(font.pixelSize() + 1);
     this->parentWidget()->setFont(font);
 }
 

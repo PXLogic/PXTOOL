@@ -45,11 +45,23 @@ public:
     /** Recompute popup min-width after model items change. */
     void refreshPopupLayout();
 
+    /** Fixed popup row height in px (QSS min-height is unreliable on Windows). */
+    void setPopupItemHeight(int height);
+
+    /** Resize combo and list view to the widest item (optional max width cap). */
+    void adjustToItemContents(int maxWidgetWidth = 0);
+
+    /** Shrink the dropdown popup to item text width when shown (Windows). */
+    void setPopupFitContents(bool fit);
+
 private:
     void measureSize();
+    int maxItemTextWidth() const;
+    int popupContentWidth() const;
 
 private: 
     bool    _bPopup;
+    bool    _popupFitContents = false;
 };
 
 

@@ -1239,7 +1239,7 @@ static void hotplug_event_listen_callback(struct libusb_context *ctx, struct lib
 			dev = get_new_attached_usb_device();
 		else
 			dev = get_new_detached_usb_device();
-	}	
+	}
 
 	if (dev == NULL){
 		sr_err("hotplug_event_listen_callback(), the device handle is null.");
@@ -1322,10 +1322,6 @@ static void process_attach_event(int isEvent)
 	GSList *l;
 	struct sr_dev_driver *dr;
 	int num = 0;
-
-	if (isEvent){
-		sr_info("Process device attach event.");
-	}
 
 	drivers = sr_driver_list();
 
@@ -1419,7 +1415,7 @@ static void process_detach_event()
 static gpointer usb_hotplug_process_proc(gpointer data)
 {
 	(void)data;
-	
+
 	sr_info("Hotplug thread start!");
 
 	int cur_trans_id = 0;

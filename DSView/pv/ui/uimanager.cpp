@@ -20,6 +20,7 @@
  */
 
 #include "uimanager.h"
+#include "popupdlglist.h"
 #include <assert.h>
 
 UiManager::UiManager()
@@ -84,5 +85,8 @@ void UiManager::Update(UiUpdateAction action)
         else if (action == UI_UPDATE_ACTION_FONT){
             w->UpdateFont();
         }
-    } 
+    }
+
+    if (action == UI_UPDATE_ACTION_FONT)
+        PopupDlgList::UpdateAllFonts();
 }

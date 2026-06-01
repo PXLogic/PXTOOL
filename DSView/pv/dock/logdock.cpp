@@ -73,7 +73,7 @@ LogDock::LogDock(QWidget *parent)
     _text->setWordWrapMode(QTextOption::NoWrap);
     QFont f = _text->font();
     f.setFamily("Monospace");
-    f.setPointSize(10);
+    f.setPixelSize(10);
     _text->setFont(f);
 
     // Main layout

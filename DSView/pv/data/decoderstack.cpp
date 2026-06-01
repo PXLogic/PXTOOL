@@ -1069,6 +1069,84 @@ static void normalize_label(const char *src, char *dst, size_t dst_cap)
     dst[w] = 0;
 }
 
+static bool env_flag_enabled(const char *name)
+{
+    const char *v = std::getenv(name);
+    return v && v[0] && !(v[0] == '0' && v[1] == '\0');
+}
+
+static QString signal_label_for_index(pv::SigSession *session, int sig_idx)
+{
+    if (!session || sig_idx < 0)
+        return QStringLiteral("-");
+    for (auto s : session->get_signals()) {
+        if (s->get_index() == sig_idx)
+            return s->get_name();
+    }
+    return QStringLiteral("?");
+}
+
+/* SPI[C] vs SPI[Py]: log how each decoder channel maps to LA probes. An
+ * unbound MISO on the C trace explains all-zero MISO bytes while Py shows
+ * real data. Set DSV_SPI_DBG=1 for per-byte mosi/miso lines from both decoders. */
+static void log_spi_decoder_channel_bindings(pv::SigSession *session,
+                                             const srd_decoder *root_srd,
+                                             decode::Decoder *front_dec,
+                                             CDecoderDef *c_def,
+                                             const std::vector<int> &sig_indices,
+                                             int num_channels)
+{
+    if (!root_srd || !c_def || std::strcmp(root_srd->id, "spi") != 0)
+        return;
+
+    for (int ch = 0; ch < num_channels; ch++) {
+        const char *cid = c_def->channel_ids[ch];
+        const int idx = sig_indices[ch];
+        if (idx >= 0) {
+            dsv_info("SPI[C] %s -> LA ch %d (%s)",
+                     cid ? cid : "?",
+                     idx,
+                     signal_label_for_index(session, idx).toUtf8().constData());
+        } else {
+            dsv_warn("SPI[C] %s -> UNBOUND (logic samples zero-filled for this slot)",
+                     cid ? cid : "?");
+        }
+    }
+
+    if (front_dec) {
+        const GSList *lists[2] = { root_srd->channels, root_srd->opt_channels };
+        const char *list_names[2] = { "req", "opt" };
+        for (int li = 0; li < 2; li++) {
+            for (const GSList *l = lists[li]; l; l = l->next) {
+                const srd_channel *pdch = static_cast<const srd_channel*>(l->data);
+                if (!pdch) continue;
+                const int idx = front_dec->binded_probe_index(pdch);
+                dsv_info("SPI[Py] %s:%s (%s) -> LA ch %d (%s)",
+                         list_names[li],
+                         pdch->id ? pdch->id : "?",
+                         pdch->name ? pdch->name : "?",
+                         idx,
+                         signal_label_for_index(session, idx).toUtf8().constData());
+            }
+        }
+    }
+
+    for (int ch = 0; ch < num_channels; ch++) {
+        char norm[64];
+        normalize_label(c_def->channel_ids[ch], norm, sizeof(norm));
+        if (std::strcmp(norm, "miso") == 0 && sig_indices[ch] < 0) {
+            dsv_warn("SPI[C] MISO is not assigned to a logic channel — MISO decode "
+                     "will be all 00. Bind the same LA pin as on the SPI[Py] trace "
+                     "(decoder options). Use DSV_SPI_DBG=1 to compare per-byte output.");
+        }
+    }
+
+    if (env_flag_enabled("DSV_SPI_DBG")) {
+        dsv_info("DSV_SPI_DBG=1: SPI[C] logs on stderr as SPI[C] DATA/TRANSFER; "
+                 "SPI[Py] logs as SPI[Py] DATA/TRANSFER (libsigrokdecode stderr).");
+    }
+}
+
 /* Map a single C decoder channel id (from CDecoderDef::channel_ids[]) to the
  * signal index bound to the matching srd_channel in front_dec. We match by
  * name in a case-insensitive way against srd_channel::id then srd_channel::name
@@ -1334,6 +1412,8 @@ void DecoderStack::execute_c_decode_stack_streaming(CDecoderDef *c_def)
         }
         dsv_info("C decoder '%s' channel map: %s", root_srd->id, bound_str.c_str());
     }
+    log_spi_decoder_channel_bindings(_session, root_srd, front_dec, c_def,
+                                     sig_indices, num_channels);
 
     _progress    = 0;
     _is_decoding = true;
@@ -1585,6 +1665,8 @@ void DecoderStack::execute_c_decode_stack_batch(CDecoderDef *c_def)
         sig_indices[ch_idx] = lookup_c_channel_binding(
             root_srd, front_dec, c_def->channel_ids[ch_idx]);
     }
+    log_spi_decoder_channel_bindings(_session, root_srd, front_dec, c_def,
+                                     sig_indices, num_channels);
 
     uint64_t num_samples = decode_end - decode_start + 1;
     std::vector<std::vector<uint8_t>> sample_bufs;

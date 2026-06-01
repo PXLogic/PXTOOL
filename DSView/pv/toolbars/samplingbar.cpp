@@ -94,6 +94,9 @@ namespace pv
             _sample_rate.setSizeAdjustPolicy(DsComboBox::AdjustToContents);
             _sample_count.setSizeAdjustPolicy(DsComboBox::AdjustToContents);
             _device_selector.setMaximumWidth(ComboBoxMaxWidth);
+            _sample_count.setMaximumWidth(ComboBoxMaxWidth);
+
+            apply_device_bar_combo_popup();
 
             // Combo boxes use explicit per-widget stylesheets (applied in reStyle)
             // rather than setStyle(Fusion), which bypasses QStyleSheetStyle and
@@ -205,14 +208,9 @@ namespace pv
             // Start / Stop capture
             _run_stop_button.setObjectName("run_stop_button");
             _run_stop_button.setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
+            _run_stop_button.setCenterContent(true);
             _run_stop_button.setStyle(QStyleFactory::create("Fusion"));
-            _run_stop_button.setStyleSheet(
-                "QToolButton { background-color: rgba(147,51,234,0.2);"
-                "  border: 1px solid #9333ea; border-radius: 4px;"
-                "  color: #c084fc; font-size: 12px; font-weight: 500;"
-                "  padding: 0px 16px; }"
-                "QToolButton:hover { background-color: rgba(147,51,234,0.3);"
-                "  border-color: #a855f7; color: #e9d5ff; }");
+            apply_run_stop_button_style(false);
             lay->addWidget(&_run_stop_button);
 
             lay->addSpacing(8);
@@ -220,12 +218,13 @@ namespace pv
             // Instant
             _instant_button.setObjectName("instant_capture_button");
             _instant_button.setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
+            _instant_button.setCenterContent(true);
             _instant_button.setStyle(QStyleFactory::create("Fusion"));
             _instant_button.setStyleSheet(
                 "QToolButton { background-color: rgba(22,163,74,0.1);"
                 "  border: 1px solid rgba(22,163,74,0.5); border-radius: 4px;"
-                "  color: #4ade80; font-size: 12px; font-weight: 500;"
-                "  padding: 0px 16px; }"
+                "  color: #4ade80; font-size: 10px; font-weight: 500;"
+                "  padding: 0px; }"
                 "QToolButton:hover { background-color: rgba(22,163,74,0.2);"
                 "  border-color: #16a34a; color: #86efac; }"
                 "QToolButton:disabled { background-color: rgba(80,80,80,0.1);"
@@ -353,6 +352,72 @@ namespace pv
                     _instant_button.setText(str_instant);
             }
 
+            sync_capture_button_widths();
+        }
+
+        void SamplingBar::apply_run_stop_button_style(bool capturing)
+        {
+            if (capturing) {
+                _run_stop_button.setStyleSheet(
+                    "QToolButton { background-color: rgba(220,38,38,0.2);"
+                    "  border: 1px solid #dc2626; border-radius: 4px;"
+                    "  color: #f87171; font-size: 10px; font-weight: 500;"
+                    "  padding: 0px; }"
+                    "QToolButton:hover { background-color: rgba(220,38,38,0.3);"
+                    "  border-color: #ef4444; color: #fca5a5; }");
+            } else {
+                _run_stop_button.setStyleSheet(
+                    "QToolButton { background-color: rgba(147,51,234,0.2);"
+                    "  border: 1px solid #9333ea; border-radius: 4px;"
+                    "  color: #c084fc; font-size: 10px; font-weight: 500;"
+                    "  padding: 0px; }"
+                    "QToolButton:hover { background-color: rgba(147,51,234,0.3);"
+                    "  border-color: #a855f7; color: #e9d5ff; }");
+            }
+        }
+
+        void SamplingBar::sync_capture_button_widths()
+        {
+            const int w = _instant_button.sizeHint().width();
+            if (w <= 0)
+                return;
+
+            _instant_button.setFixedWidth(w);
+            _run_stop_button.setFixedWidth(w);
+        }
+
+        void SamplingBar::apply_device_bar_combo_popup()
+        {
+            const int popupItemHeight = 20;
+            _device_selector.setPopupItemHeight(popupItemHeight);
+            _sample_rate.setPopupItemHeight(popupItemHeight);
+            _sample_count.setPopupItemHeight(popupItemHeight);
+            _mode_button.setPopupItemHeight(popupItemHeight);
+        }
+
+        void SamplingBar::sync_buffer_combo_width()
+        {
+            const int hintW = _sample_rate.sizeHint().width();
+            if (hintW <= 0)
+                return;
+
+            // Match Sample Rate combo and popup sizing.
+            const int comboW = hintW + 15;
+            const int popupW = hintW + 30;
+
+            _sample_count.setMinimumWidth(comboW);
+
+            if (QAbstractItemView *bufView = _sample_count.view()) {
+                bufView->setMinimumWidth(popupW);
+                bufView->setMaximumWidth(QWIDGETSIZE_MAX);
+            }
+
+            QString base = _sample_count.styleSheet();
+            const int idx = base.indexOf("QAbstractItemView{min-width:");
+            if (idx != -1)
+                base = base.left(idx);
+            _sample_count.setStyleSheet(base
+                + QString("QAbstractItemView{min-width:%1px;}").arg(popupW));
         }
 
         void SamplingBar::reStyle()
@@ -367,20 +432,42 @@ namespace pv
             QString comboDisabledBg = isDark ? "#111111" : "#f3f4f6";
             QString comboDisabledFg = isDark ? "#555555" : "#9ca3af";
             QString comboDisabledBorder = isDark ? "#2a2a2a" : "#d1d5db";
+            QString comboPopupBg     = isDark ? "#1e1e1e" : "#ffffff";
+            QString comboPopupBorder = isDark ? "#444444" : "#d4d4d4";
+            QString comboPopupFg     = isDark ? "#d1d5db" : "#374151";
+            // Follow the user-configured font size (Display Options).
+            // Item row height: at least 4 px padding above/below the text.
+            int fsPx  = qRound(AppConfig::Instance().appOptions.fontSize);
+            int itemH = qMax(20, fsPx + 8);
+
             QString comboStyle =
                 QString("QComboBox { background-color: %1; border: 1px solid %2;"
-                        " border-radius: 4px; padding: 3px 8px; min-height: 22px;"
-                        " color: %3; font-size: 12px; }"
+                        " border-radius: 4px; padding: 2px 8px; min-height: 20px;"
+                        " color: %3; font-size: %11px; }"
                         "QComboBox:hover { border-color: %4; }"
                         "QComboBox:disabled { background-color: %5; border-color: %6;"
                         " color: %7; }"
-                        "QComboBox::drop-down { border: none; width: 16px; }")
+                        "QComboBox::drop-down { border: none; width: 16px; }"
+                        "QAbstractItemView { background-color: %8; border: 1px solid %9;"
+                        " selection-background-color: #1185D1; color: %10;"
+                        " outline: none; padding: 6px 0; font-size: %11px; }"
+                        "QAbstractItemView::item { min-height: %12px; padding: 4px 12px;"
+                        " border: 1px solid transparent; }"
+                        "QAbstractItemView::item:selected { background-color: #1185D1;"
+                        " color: #ffffff; }"
+                        "QAbstractItemView::item:hover { background-color: #1185D1;"
+                        " color: #ffffff; }")
                 .arg(comboBg, comboBorder, comboFg, comboHoverBorder,
-                     comboDisabledBg, comboDisabledBorder, comboDisabledFg);
+                     comboDisabledBg, comboDisabledBorder, comboDisabledFg,
+                     comboPopupBg, comboPopupBorder, comboPopupFg,
+                     QString::number(fsPx), QString::number(itemH));
             _device_selector.setStyleSheet(comboStyle);
             _sample_rate.setStyleSheet(comboStyle);
             _sample_count.setStyleSheet(comboStyle);
             _mode_button.setStyleSheet(comboStyle);
+
+            apply_device_bar_combo_popup();
+            sync_buffer_combo_width();
 
             bool bDev = _device_agent->have_instance();
 
@@ -413,26 +500,8 @@ namespace pv
                 _run_stop_button.setIcon(QIcon(iconPath + "/" + icon2));
                 _instant_button.setIcon(QIcon(iconPath + "/single.svg"));
 
-                // Update run/stop button style directly — property selectors are
-                // unreliable with per-widget Fusion style on macOS.
-                if (is_working) {
-                    _run_stop_button.setStyleSheet(
-                        "QToolButton { background-color: rgba(220,38,38,0.2);"
-                        "  border: 1px solid #dc2626; border-radius: 4px;"
-                        "  color: #f87171; font-size: 12px; font-weight: 500;"
-                        "  padding: 0px 16px; }"
-                        "QToolButton:hover { background-color: rgba(220,38,38,0.3);"
-                        "  border-color: #ef4444; color: #fca5a5; }");
-                } else {
-                    _run_stop_button.setStyleSheet(
-                        "QToolButton { background-color: rgba(147,51,234,0.2);"
-                        "  border: 1px solid #9333ea; border-radius: 4px;"
-                        "  color: #c084fc; font-size: 12px; font-weight: 500;"
-                        "  padding: 0px 16px; }"
-                        "QToolButton:hover { background-color: rgba(147,51,234,0.3);"
-                        "  border-color: #a855f7; color: #e9d5ff; }");
-                }
-
+                apply_run_stop_button_style(is_working);
+                sync_capture_button_widths();
 
                 update_mode_icon();
             }
@@ -623,6 +692,7 @@ namespace pv
 
             _sample_rate.setMinimumWidth(_sample_rate.sizeHint().width() + 15);
             _sample_rate.view()->setMinimumWidth(_sample_rate.sizeHint().width() + 30);
+            sync_buffer_combo_width();
 
             _updating_sample_rate = false;
             g_variant_unref(gvar_dict);
@@ -632,6 +702,7 @@ namespace pv
             connect(&_sample_rate, SIGNAL(currentIndexChanged(int)),
                     this, SLOT(on_samplerate_sel(int)));
 
+            apply_device_bar_combo_popup();
             update_sample_count_selector();
         }
 
@@ -854,6 +925,8 @@ namespace pv
             on_samplecount_sel(_sample_count.currentIndex());
 
             _sample_count.refreshPopupLayout();
+            apply_device_bar_combo_popup();
+            sync_buffer_combo_width();
 
             if (_sample_count.count() > 0) {
                 dsv_info("update_sample_count_selector: list_count=%d max=%s min=%s sel_idx=%d sel=%s",
@@ -1317,6 +1390,13 @@ namespace pv
             retranslateUi();
             reStyle();
             update();
+
+            // Update sample rate and count selectors after device is ready
+            if (_device_agent->have_instance()) {
+                update_sample_rate_selector();
+                update_sample_count_selector();
+            }
+
         if (auto *m = qobject_cast<QStandardItemModel*>(_mode_button.model()))
             dsv_info("SamplingBar::reload LoopItemEnabled=%d", (int)m->item(2)->isEnabled());
         }
@@ -1422,6 +1502,8 @@ namespace pv
             int width = _device_selector.sizeHint().width();
             _device_selector.setFixedWidth(min(width + 15, _device_selector.maximumWidth()));
             _device_selector.view()->setMinimumWidth(width + 30);
+            apply_device_bar_combo_popup();
+            sync_buffer_combo_width();
 
             _updating_device_list = false;
         }
@@ -1512,38 +1594,23 @@ namespace pv
             else
                 _run_stop_button.setIcon(!bEnable ? QIcon(iconPath + "/stop.svg") : QIcon(iconPath + "/start.svg"));
 
-            if (!bEnable && !_is_run_as_instant) {
-                _run_stop_button.setStyleSheet(
-                    "QToolButton { background-color: rgba(220,38,38,0.2);"
-                    "  border: 1px solid #dc2626; border-radius: 4px;"
-                    "  color: #f87171; font-size: 12px; font-weight: 500;"
-                    "  padding: 0px 16px; }"
-                    "QToolButton:hover { background-color: rgba(220,38,38,0.3);"
-                    "  border-color: #ef4444; color: #fca5a5; }");
-            } else {
-                _run_stop_button.setStyleSheet(
-                    "QToolButton { background-color: rgba(147,51,234,0.2);"
-                    "  border: 1px solid #9333ea; border-radius: 4px;"
-                    "  color: #c084fc; font-size: 12px; font-weight: 500;"
-                    "  padding: 0px 16px; }"
-                    "QToolButton:hover { background-color: rgba(147,51,234,0.3);"
-                    "  border-color: #a855f7; color: #e9d5ff; }");
-            }
+            if (!_is_run_as_instant)
+                apply_run_stop_button_style(!bEnable);
 
             if (_is_run_as_instant && !bEnable) {
                 _instant_button.setStyleSheet(
                     "QToolButton { background-color: rgba(220,38,38,0.2);"
                     "  border: 1px solid #dc2626; border-radius: 4px;"
-                    "  color: #f87171; font-size: 12px; font-weight: 500;"
-                    "  padding: 0px 16px; }"
+                    "  color: #f87171; font-size: 10px; font-weight: 500;"
+                    "  padding: 0px; }"
                     "QToolButton:hover { background-color: rgba(220,38,38,0.3);"
                     "  border-color: #ef4444; color: #fca5a5; }");
             } else {
                 _instant_button.setStyleSheet(
                     "QToolButton { background-color: rgba(22,163,74,0.1);"
                     "  border: 1px solid rgba(22,163,74,0.5); border-radius: 4px;"
-                    "  color: #4ade80; font-size: 12px; font-weight: 500;"
-                    "  padding: 0px 16px; }"
+                    "  color: #4ade80; font-size: 10px; font-weight: 500;"
+                    "  padding: 0px; }"
                     "QToolButton:hover { background-color: rgba(22,163,74,0.2);"
                     "  border-color: #16a34a; color: #86efac; }"
                     "QToolButton:disabled { background-color: rgba(80,80,80,0.1);"
@@ -1604,13 +1671,25 @@ namespace pv
         void SamplingBar::UpdateFont()
         {  
             QFont font = this->font();
-            font.setPointSizeF(AppConfig::Instance().appOptions.fontSize);
+            font.setPixelSize(qRound(AppConfig::Instance().appOptions.fontSize));
             if (_capture_strip != nullptr)
                 ui::set_toolbar_font(_capture_strip, font);
             else
                 ui::set_toolbar_font(this, font);
 
+            QFont labelFont = font;
+            labelFont.setBold(false);
+            QLabel *sectionLabels[] = {
+                _lbl_device, _lbl_smplrate, _lbl_buffer, _lbl_mode
+            };
+            for (QLabel *lbl : sectionLabels) {
+                if (lbl)
+                    lbl->setFont(labelFont);
+            }
+
             update_view_status();
+            // Re-apply the combo box stylesheet so the dropdown font size matches.
+            reStyle();
         }
 
         void SamplingBar::set_sample_count_index(int index)

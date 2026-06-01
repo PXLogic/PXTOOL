@@ -165,6 +165,10 @@ namespace pv
 
         private:
             void update_triggers_toggle_btn();
+            void apply_device_bar_combo_popup();
+            void sync_buffer_combo_width();
+            void sync_capture_button_widths();
+            void apply_run_stop_button_style(bool capturing);
 
             SigSession          *_session;
 

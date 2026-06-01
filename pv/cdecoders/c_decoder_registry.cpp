@@ -72,6 +72,8 @@ void CDecoderRegistry::load_c_decoders(const std::string &dir_path)
 
 #if defined(__APPLE__)
         const bool is_lib = (strcmp(dot, ".dylib") == 0);
+#elif defined(_WIN32)
+        const bool is_lib = (strcmp(dot, ".dll") == 0);
 #else
         const bool is_lib = (strcmp(dot, ".so") == 0);
 #endif

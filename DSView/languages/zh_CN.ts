@@ -2504,18 +2504,18 @@ Capture will Only triggered when all setted channels fullfill at one sample</sou
     <message>
         <location filename="../pv/toolbars/samplingbar.cpp" line="327"/>
         <source>Start</source>
-        <translation>开始(&amp;S)</translation>
+        <translation>开始</translation>
     </message>
     <message>
         <location filename="../pv/toolbars/samplingbar.cpp" line="328"/>
         <location filename="../pv/toolbars/samplingbar.cpp" line="331"/>
         <source>Stop</source>
-        <translation>停止(&amp;S)</translation>
+        <translation>停止</translation>
     </message>
     <message>
         <location filename="../pv/toolbars/samplingbar.cpp" line="330"/>
         <source>Instant</source>
-        <translation>立即(&amp;I)</translation>
+        <translation>立即</translation>
     </message>
     <message>
         <location filename="../pv/toolbars/samplingbar.cpp" line="1054"/>

@@ -19,8 +19,10 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
  */
 
-#include "appconfig.h" 
+#include "appconfig.h"
 #include <QApplication>
+#include <QGuiApplication>
+#include <QScreen>
 #include <QSettings>
 #include <QLocale>
 #include <QDir> 
@@ -139,9 +141,16 @@ static void _loadApp(AppOptions &o, QSettings &st)
     float maxSize = 0;
     AppConfig::GetFontSizeRange(&minSize, &maxSize);
 
-    if (o.version == 1 || o.fontSize < minSize || o.fontSize > maxSize)
+    // Reset font size when:
+    //  • fresh install (version == 1, no config file yet), OR
+    //  • saved value is outside the now-unified [7, 15] range, OR
+    //  • config predates version 4 — the release that extended the Windows
+    //    font range beyond 9 and added DPI-aware defaults.  Users upgrading
+    //    from version ≤ 3 will have fontSize ≤ 9 (the old Windows cap),
+    //    which is too small for Chinese on 96-DPI / 100%-scaled displays.
+    if (o.version < APP_CONFIG_VERSION || o.fontSize < minSize || o.fontSize > maxSize)
     {
-        o.fontSize = (maxSize + minSize) / 2;
+        o.fontSize = AppConfig::GetDefaultFontSize();
     }
    
     st.endGroup();
@@ -483,21 +492,40 @@ void AppConfig::GetFontSizeRange(float *minSize, float *maxSize)
 {
     assert(minSize);
     assert(maxSize);
+    // Unified range across all platforms: allow the user to pick 7–15 px.
+    // Previously Windows was capped at 9, which made Chinese text too small
+    // on 1080p displays (96 DPI, 100% scaling) where 9 physical pixels are
+    // insufficient for legible CJK characters.
+    *minSize = 7;
+    *maxSize = 15;
+}
 
-#ifdef _WIN32
-        *minSize = 7;
-        *maxSize = 12;
-#endif
+float AppConfig::GetDefaultFontSize()
+{
+    // Target ~12 effective physical pixels so Chinese characters are legible
+    // on any screen, regardless of its DPI / Windows scaling factor.
+    //
+    // With AA_EnableHighDpiScaling:
+    //   setPixelSize(n) uses LOGICAL pixels; physical = n × devicePixelRatio
+    //
+    //  96 DPI / 100% → scale=1.00 → logical 12 → 12 physical  ✓
+    // 120 DPI / 125% → scale=1.25 → logical 10 → 12.5 physical ✓
+    // 144 DPI / 150% → scale=1.50 → logical  8 → 12 physical   ✓
+    // 192 DPI / 200% → scale=2.00 → logical  6 → clamped to 7  (large enough)
 
-#ifdef Q_OS_LINUX
-        *minSize = 8;
-        *maxSize = 14;
-#endif
+    QScreen *screen = QGuiApplication::primaryScreen();
+    float dpi = screen ? screen->logicalDotsPerInch() : 96.0f;
+    float scale = dpi / 96.0f;
+    if (scale < 0.5f) scale = 0.5f;
 
-#ifdef Q_OS_DARWIN
-        *minSize = 9;
-        *maxSize = 15;
-#endif
+    float size = qRound(12.0f / scale);
+
+    float minSize = 0, maxSize = 0;
+    GetFontSizeRange(&minSize, &maxSize);
+    if (size < minSize) size = minSize;
+    if (size > maxSize) size = maxSize;
+
+    return size;
 }
 
 bool AppConfig::IsDarkStyle()

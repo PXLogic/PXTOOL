@@ -100,6 +100,7 @@ MeasureDock::MeasureDock(QWidget *parent, View &view, SigSession *session) :
     _dist_layout = new QGridLayout(_widget);
     _dist_layout->setVerticalSpacing(5);
     _add_dec_label = new QLabel(tr("Time/Samples"), _widget);
+    _add_dec_label->setObjectName("measure_section_label");
     {
         auto *hdr = new QWidget(_widget);
         auto *hdr_lay = new QHBoxLayout(hdr);
@@ -121,7 +122,9 @@ MeasureDock::MeasureDock(QWidget *parent, View &view, SigSession *session) :
     _edge_add_btn->setFixedSize(24, 24);
 
     _channel_label = new QLabel(_widget);
+    _channel_label->setObjectName("measure_section_label");
     _edge_label = new QLabel(_widget);
+    _edge_label->setObjectName("measure_section_label");
     _edge_layout = new QGridLayout(_widget);
     _edge_layout->setVerticalSpacing(5);
     {
@@ -141,6 +144,7 @@ MeasureDock::MeasureDock(QWidget *parent, View &view, SigSession *session) :
 
     /* cursors group */
     _time_label = new QLabel(_widget);
+    _time_label->setObjectName("measure_section_label");
     _cursor_groupBox = new QGroupBox(_widget);
     _cursor_layout = new QGridLayout(_widget);
     _cursor_layout->addWidget(_time_label, 0, 2);
@@ -267,7 +271,7 @@ void MeasureDock::build_dist_pannel()
     }
 
     QFont font = this->font();
-    font.setPointSizeF(AppConfig::Instance().appOptions.fontSize);
+    font.setPixelSize(qRound(AppConfig::Instance().appOptions.fontSize));
 
     QGridLayout  *lay = new QGridLayout();
     _dist_pannel = new QWidget();    
@@ -401,7 +405,7 @@ void MeasureDock::build_edge_pannel()
     }
 
     QFont font = this->font();
-    font.setPointSizeF(AppConfig::Instance().appOptions.fontSize);
+    font.setPixelSize(qRound(AppConfig::Instance().appOptions.fontSize));
     QGridLayout  *lay = new QGridLayout();
     _edge_pannel = new QWidget();   
     _edge_pannel->setLayout(lay);
@@ -573,7 +577,7 @@ void MeasureDock::popup_all_coursors()
                               Qt::WindowMinimizeButtonHint | Qt::WindowMaximizeButtonHint);
 
     QFont font = this->font();
-    font.setPointSizeF(AppConfig::Instance().appOptions.fontSize);
+    font.setPixelSize(qRound(AppConfig::Instance().appOptions.fontSize));
 
     int index = 0;
     QGridLayout *glayout = new QGridLayout(&cursor_dlg);
@@ -875,7 +879,7 @@ void MeasureDock::build_cursor_pannel()
     mode_rows->_opt_row_list.clear();
 
     QFont font = this->font();
-    font.setPointSizeF(AppConfig::Instance().appOptions.fontSize);
+    font.setPixelSize(qRound(AppConfig::Instance().appOptions.fontSize));
 
     const int bt_w = 36;
     int index = 1;
@@ -960,10 +964,12 @@ void MeasureDock::UpdateTheme()
 void MeasureDock::UpdateFont()
 {
     QFont font = this->font();
-    font.setPointSizeF(AppConfig::Instance().appOptions.fontSize);
+    font.setPixelSize(qRound(AppConfig::Instance().appOptions.fontSize));
     ui::set_form_font(this, font);
-    font.setPointSizeF(font.pointSizeF() + 1);
-    this->parentWidget()->setFont(font);
+
+    font.setPixelSize(font.pixelSize() + 1);
+    if (parentWidget())
+        parentWidget()->setFont(font);
 
     adjusLabelSize();
 }
@@ -976,7 +982,7 @@ void MeasureDock::adjust_form_size(QWidget *wid)
 
     QString str = "+12345678999ms/12345678999";
     QFont font = this->font();
-    font.setPointSizeF(AppConfig::Instance().appOptions.fontSize);
+    font.setPixelSize(qRound(AppConfig::Instance().appOptions.fontSize));
     QFontMetrics fm(font); 
     //int max_label_width = fm.horizontalAdvance(str) + 100;
 
@@ -988,9 +994,10 @@ void MeasureDock::adjust_form_size(QWidget *wid)
 
     auto labels = wid->findChildren<QLabel*>();
     for(auto o : labels)
-    { 
-        QRect rc = fm.boundingRect(o->text());
-        QSize size(rc.width() + 15, rc.height()); 
+    {
+        QFontMetrics labelFm(o->font());
+        QRect rc = labelFm.boundingRect(o->text());
+        QSize size(rc.width() + 15, rc.height());
         o->setFixedSize(size);
     }
 

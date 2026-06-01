@@ -25,6 +25,8 @@
 #include <QWindow>
 #include <QTimer>
 
+#include "../dialogs/dsdialog.h"
+#include "../dialogs/dsmessagebox.h"
 #include "../log.h"
 
 namespace{
@@ -35,6 +37,10 @@ namespace{
 void PopupDlgList::AddDlgTolist(QWidget *w)
 {   
     if (w != nullptr){
+        for (auto &item : g_popup_dlg_list) {
+            if (item.widget == w)
+                return;
+        }
         PopuDlgItem item;
         item.screen = currentScreen;
         item.widget = w;
@@ -78,4 +84,17 @@ void PopupDlgList::TryCloseAllByScreenChanged(QScreen *windowScreen)
 void PopupDlgList::SetCurrentScreen(QScreen *screen)
 {
     currentScreen = screen;
+}
+
+void PopupDlgList::UpdateAllFonts()
+{
+    for (auto &item : g_popup_dlg_list) {
+        QWidget *w = item.widget;
+        if (w == nullptr || !w->isVisible())
+            continue;
+        if (auto *dlg = qobject_cast<pv::dialogs::DSDialog*>(w))
+            dlg->update_font();
+        else if (auto *msg = qobject_cast<pv::dialogs::DSMessageBox*>(w))
+            msg->update_font();
+    }
 }

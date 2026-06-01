@@ -28,10 +28,6 @@
 #include <QMouseEvent>
 #include <QVBoxLayout>
 #include <QAbstractButton>
-#include <QLabel>
-#include <QPainter>
-#include <QPixmap>
-#include <QStyle>
 #include "../dsvdef.h"
 #include "../config/appconfig.h"
 #include "../ui/fn.h"
@@ -149,67 +145,21 @@ void DSMessageBox::on_button(QAbstractButton *btn)
         reject();
 }
 
-int DSMessageBox::exec()
+void DSMessageBox::update_font()
 {
     QFont font = this->font();
-    font.setPointSizeF(AppConfig::Instance().appOptions.fontSize);
+    const float fs = AppConfig::Instance().appOptions.fontSize;
+    font.setPixelSize(qRound(fs >= 9.0f ? fs : 9.0f));
     ui::set_form_font(this, font);
 
     if (_titlebar != NULL){
         _titlebar->update_font();
     }
+}
 
-    /* Replace the system-native icon with a theme-aware version.
-     *
-     * Qt's QMessageBox renders its icon inside the first QLabel child that
-     * carries a pixmap.  On macOS the platform-provided Question/Warning icons
-     * are black, which is invisible on dark backgrounds.  We swap the pixmap
-     * for a simple one we draw ourselves: the standard icon re-coloured to
-     * contrast with the current theme background.
-     *
-     * Only QMessageBox::Question and QMessageBox::Warning need special handling
-     * because those are the two icons MsgBox::Confirm / MsgBox::Show use; all
-     * other icons (NoIcon, Critical, Information) are left unchanged. */
-    if (_msg) {
-        QMessageBox::Icon icon_type = _msg->icon();
-        if (icon_type == QMessageBox::Question
-                || icon_type == QMessageBox::Warning
-                || icon_type == QMessageBox::Information) {
-
-            const bool isDark = AppConfig::Instance().IsDarkStyle();
-
-            /* Choose a foreground colour that reads on the dialog background.
-             * Dark theme: light grey; light theme: dark charcoal. */
-            const QColor icon_fg = isDark ? QColor(0xCC, 0xCC, 0xCC)
-                                          : QColor(0x33, 0x33, 0x33);
-
-            /* Get the standard pixmap from the current style so the shape is
-             * always OS-correct (circle with ?, triangle with !, etc.), then
-             * re-colour every non-transparent pixel to icon_fg. */
-            int px_size = 32;
-            QPixmap base_px;
-            if (icon_type == QMessageBox::Question) {
-                base_px = _msg->style()->standardIcon(
-                    QStyle::SP_MessageBoxQuestion, nullptr, _msg).pixmap(px_size, px_size);
-            } else if (icon_type == QMessageBox::Warning) {
-                base_px = _msg->style()->standardIcon(
-                    QStyle::SP_MessageBoxWarning, nullptr, _msg).pixmap(px_size, px_size);
-            } else {
-                base_px = _msg->style()->standardIcon(
-                    QStyle::SP_MessageBoxInformation, nullptr, _msg).pixmap(px_size, px_size);
-            }
-
-            /* Re-colour: convert to image, paint icon_fg over all opaque
-             * pixels using SourceIn compositing so the alpha mask is preserved. */
-            QImage img = base_px.toImage().convertToFormat(QImage::Format_ARGB32);
-            QPainter ip(&img);
-            ip.setCompositionMode(QPainter::CompositionMode_SourceIn);
-            ip.fillRect(img.rect(), icon_fg);
-            ip.end();
-
-            _msg->setIconPixmap(QPixmap::fromImage(img));
-        }
-    }
+int DSMessageBox::exec()
+{
+    update_font();
 
     PopupDlgList::AddDlgTolist(this);
 

@@ -46,6 +46,8 @@
 #include <QFont>
 #include <algorithm>
 #include <QWindow>
+#include <QTimer>
+#include "ui/uimanager.h"
 
  #if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
  #include <QDesktopWidget>
@@ -58,6 +60,7 @@
 #include "log.h"
 #include "dialogs/dsdialog.h"
 #include "ui/popupdlglist.h"
+#include "ui/fn.h"
 
 
 #ifdef _WIN32
@@ -114,10 +117,7 @@ MainFrame::MainFrame()
    setMinimumWidth(MainWindow::Min_Width);
    setMinimumHeight(MainWindow::Min_Height);  
   
-    // Set the window icon
-    QIcon icon;
-    icon.addFile(QString::fromUtf8(":/icons/dock_app_icon.png"), QSize(), QIcon::Normal, QIcon::Off);
-    setWindowIcon(icon);
+    setWindowIcon(ui::application_icon());
     
     _titleBar = new toolbars::TitleBar(true, this, this, false);
     _titleBar->setObjectName("main_window_title_bar");
@@ -393,14 +393,27 @@ void MainFrame::showMinimized()
 
 void MainFrame::changeEvent(QEvent *event)
 {
-    if (event->type() == QEvent::WindowStateChange && _is_resize_ready) {     
+    if (event->type() == QEvent::WindowStateChange && _is_resize_ready) {
         //dsv_info("Window state changed.");
         QWindowStateChangeEvent *stateChangeEvent = static_cast<QWindowStateChangeEvent*>(event);
-        if (stateChangeEvent->oldState() & Qt::WindowMaximized 
+        if (stateChangeEvent->oldState() & Qt::WindowMaximized
                 && !(windowState() & Qt::WindowMaximized)) {
-            
-        }       
+
+        }
     }
+
+#ifndef _WIN32
+    // On macOS / Linux: Qt fires ScreenChangeInternal after updating
+    // devicePixelRatio when the window moves between monitors.
+    // Re-applying fonts forces all widgets to repaint at the new DPI,
+    // fixing blurry text on external displays with different scale factors.
+    if (event->type() == QEvent::ScreenChangeInternal) {
+        QTimer::singleShot(100, this, [this]() {
+            UiManager::Instance()->Update(UI_UPDATE_ACTION_FONT);
+        });
+    }
+#endif
+
     QFrame::changeEvent(event);
 }
 
@@ -761,6 +774,11 @@ void MainFrame::AttachNativeWindow()
     setWindowFlags(Qt::FramelessWindowHint);
     SetWindowLong((HWND)winId(), GWL_STYLE, WS_CHILD | WS_CLIPCHILDREN | WS_CLIPSIBLINGS);    
     SetParent((HWND)winId(), nativeWindow->Handle());
+
+    const QIcon appIcon = ui::application_icon();
+    setWindowIcon(appIcon);
+    QApplication::setWindowIcon(appIcon);
+    nativeWindow->refreshWindowIcons();
 
     setVisible(true);
 

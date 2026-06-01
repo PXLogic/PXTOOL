@@ -29,7 +29,9 @@
 struct FontParam;
 
 class QToolBar;
+class QMenu;
 class QWidget;
+class QIcon;
 
 namespace ui
 {   
@@ -45,11 +47,25 @@ namespace ui
 
     void set_toolbar_font(QToolBar *bar, QFont font);
 
+    void set_menu_font(QMenu *menu, QFont font);
+
+    /** Standard popup menu font (matches title bar File/Window/Help menus). */
+    QFont application_menu_font();
+
+    /** Waveform/header context menus; same 10px cap as channel labels. */
+    QFont compact_menu_font();
+
+    /** Apply compact_menu_font to @p menu and all submenus/actions. */
+    void apply_compact_menu_font(QMenu *menu);
+
     void set_form_font(QWidget *wid, QFont font);
 
     QSize measure_string(QFont font, QString str);
 
     void adjust_label_size(QLabel *ctrl, AdjustSizeAction action);
+
+    /** Window / taskbar icon: win-app-logo.ico beside DSView.exe, else qrc fallback. */
+    QIcon application_icon();
 
 } // namespace ui
 

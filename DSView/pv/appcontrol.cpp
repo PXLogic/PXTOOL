@@ -95,15 +95,31 @@ bool AppControl::Init()
 
     srd_log_set_context(dsv_log_context());
 
-#if defined(_WIN32) && defined(DEBUG_INFO)
-    //able run debug with qtcreator
-    QString pythonHome = "c:/python";
-    QDir pydir;
-    if (pydir.exists(pythonHome)){
-        const wchar_t *pyhome = reinterpret_cast<const wchar_t*>(pythonHome.utf16());
-        srd_set_python_home(pyhome);
+#if defined(_WIN32)
+    // On Windows (release & debug), point Python at the bundled stdlib that
+    // lives in <app_dir>/lib/pythonX.Y/ so that no system Python installation
+    // is required on the end-user's machine.
+    {
+        QString appDir = QCoreApplication::applicationDirPath();
+        QDir pyLibDir(appDir + "/lib");
+        if (pyLibDir.exists()) {
+            // Bundled stdlib found — use it.
+            const wchar_t *pyhome = reinterpret_cast<const wchar_t*>(appDir.utf16());
+            srd_set_python_home(pyhome);
+            dsv_info("Python home -> bundled: %s", appDir.toUtf8().constData());
+        }
+#if defined(DEBUG_INFO)
+        else {
+            // Development fallback when stdlib is not bundled yet.
+            QString devHome = "c:/python";
+            if (QDir(devHome).exists()) {
+                const wchar_t *pyhome = reinterpret_cast<const wchar_t*>(devHome.utf16());
+                srd_set_python_home(pyhome);
+                dsv_info("Python home -> dev fallback: c:/python");
+            }
+        }
+#endif
     }
-  
 #endif
     
     //the python script path of decoder

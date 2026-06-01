@@ -193,7 +193,7 @@ void Viewport::doPaint()
     float fSize = AppConfig::Instance().appOptions.fontSize;
     if (fSize > 10)
         fSize = 10;
-    font.setPointSizeF(fSize);
+    font.setPixelSize(qRound(fSize));
     p.setFont(font);
 
     _view.session().check_update();
@@ -587,7 +587,7 @@ void Viewport::paintProgress(QPainter &p, QColor fore, QColor back)
             float fSize = AppConfig::Instance().appOptions.fontSize;
             if (fSize > 10)
                 fSize = 10;
-            font.setPointSizeF(fSize);
+            font.setPixelSize(qRound(fSize));
             p.setFont(font);
 
             QRect status_rect = QRect(cenPos.x() - radius, cenPos.y() + radius * 0.4, radius * 2, radius * 0.5);
@@ -609,13 +609,16 @@ void Viewport::paintProgress(QPainter &p, QColor fore, QColor back)
         }
 
     }
-    else {         
+    else {
         p.setPen(View::Green);
         QFont font=p.font();
-        font.setPointSize(50);
+        float fSize = AppConfig::Instance().appOptions.fontSize;
+        // Progress percentage should be large, scale it appropriately
+        fSize = qMax(fSize * 5.0f, 40.0f);
+        font.setPixelSize(qRound(fSize));
         font.setBold(true);
         p.setFont(font);
-        
+
         p.drawText(_view.get_view_rect(), Qt::AlignCenter | Qt::AlignVCenter, QString::number(progress100)+"%");
         prgRate(progress100);
     }
@@ -2170,6 +2173,7 @@ void Viewport::show_contextmenu(const QPoint& pos)
     {
         _cur_preX = pos.x();
         _cur_preY = pos.y();
+        ui::apply_compact_menu_font(_cmenu);
         _cmenu->exec(QCursor::pos());
     }
 }
@@ -2201,10 +2205,7 @@ void Viewport::UpdateTheme()
 
 void Viewport::UpdateFont()
 { 
-    QFont font = this->font();
-    font.setPointSizeF(AppConfig::Instance().appOptions.fontSize);
-    _yAction->setFont(font);
-    _xAction->setFont(font);
+    ui::apply_compact_menu_font(_cmenu);
 }
 
 } // namespace view

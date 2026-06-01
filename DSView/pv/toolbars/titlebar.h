@@ -108,6 +108,7 @@ protected:
     QToolButton *_closeButton;
     QLabel      *_title;
     QToolButton *_menuBtns[3] = {nullptr, nullptr, nullptr};
+    QMenu       *_menus[3]    = {nullptr, nullptr, nullptr};
   
     bool        _moving;
     bool        _is_draging;

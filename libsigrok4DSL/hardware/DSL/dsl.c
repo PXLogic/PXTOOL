@@ -1645,6 +1645,13 @@ SR_PRIV int dsl_config_get(int id, GVariant **data, const struct sr_dev_inst *sd
             return SR_ERR;
         *data = g_variant_new_boolean((devc->profile->dev_caps.feature_caps & CAPS_FEATURE_ZERO) != 0);
         break;
+    case SR_CONF_HAVE_ADVANCED_TRIGGER:
+        if (!sdi)
+            return SR_ERR;
+        /* DSLogic logic-analyzer mode supports multi-stage advanced trigger.
+         * DSCope (oscilloscope) mode does not use this trigger path. */
+        *data = g_variant_new_boolean(sdi->mode == LOGIC);
+        break;
     case SR_CONF_ZERO:
         if (!sdi)
             return SR_ERR;

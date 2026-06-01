@@ -161,6 +161,7 @@
         <file>icons/dark/minimize.svg</file>
         <file>icons/logo.svg</file>
         <file>icons/titlebar_wave_icon.png</file>
+        <file alias="icons/app_logo.ico">../win-app-logo.ico</file>
         <file>icons/dock_app_icon.png</file>
         <file>icons/light/loop.svg</file>
         <file>icons/dark/loop.svg</file>

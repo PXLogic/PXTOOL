@@ -1,4 +1,4 @@
-/*
+﻿/*
  *  DSView dark stylesheet.
  * ---------------------------------------------------------------------
  *  The MIT License (MIT)
@@ -260,7 +260,6 @@ QMenuBar#main_menu_bar
 {
     background-color: #1a1a1a;
     color: #f0f0f0;
-    font-size: 13px;
     font-weight: 600;
     border-bottom: 1px solid #333333;
 }
@@ -298,7 +297,6 @@ QWidget#main_window_title_bar QLabel
 {
     color: #f0f0f0;
     background-color: transparent;
-    font-size: 13px;
     font-weight: 600;
 }
 
@@ -306,9 +304,8 @@ QWidget#main_window_title_bar QToolButton#TitleMenuButton
 {
     background: transparent;
     color: #f0f0f0;
-    font-size: 13px;
-    font-weight: 600;
-    padding: 4px 12px;
+    font-weight: normal;
+    padding: 4px;
     border: none;
     border-radius: 3px;
     margin: 0px;
@@ -374,10 +371,9 @@ QMenu
 
 QMenu::item
 {
-    padding: 5px 30px 5px 30px;
+    padding: 2px 24px 2px 24px;
     margin-left: 2px;
     border: 1px solid transparent; /* reserve space for selection border */
-    font-size: 13px;
 }
 
 QMenu::item:selected
@@ -763,8 +759,7 @@ QToolBar#device_bar QLabel#device_bar_label
 {
     color: #ffffff;
     background-color: #1a1a1a;
-    font-size: 10px;
-    font-weight: bold;
+    font-weight: normal;
     text-transform: uppercase;
     letter-spacing: 0.8px;
     padding: 0;
@@ -787,7 +782,6 @@ QToolBar#device_bar QComboBox
     padding: 3px 8px;
     min-height: 22px;
     color: #d1d5db;
-    font-size: 12px;
     selection-background-color: transparent;
 }
 
@@ -814,11 +808,29 @@ QToolBar#device_bar QComboBox QAbstractItemView
 {
     background-color: #1e1e1e;
     border: 1px solid #444444;
-    selection-background-color: rgba(147, 51, 234, 0.2);
+    selection-background-color: #1185D1;
     color: #d1d5db;
-    font-size: 12px;
     outline: none;
-    padding: 2px 0;
+    padding: 6px 0;
+}
+
+QToolBar#device_bar QComboBox QAbstractItemView::item
+{
+    min-height: 20px;
+    padding: 4px 12px;
+    border: 1px solid transparent;
+}
+
+QToolBar#device_bar QComboBox QAbstractItemView::item:selected
+{
+    background-color: #1185D1;
+    color: #ffffff;
+}
+
+QToolBar#device_bar QComboBox QAbstractItemView::item:hover
+{
+    background-color: #1185D1;
+    color: #ffffff;
 }
 
 /* Generic tool buttons (device type icon, settings icon) */
@@ -828,7 +840,6 @@ QToolBar#device_bar QToolButton
     border: 1px solid transparent;
     border-radius: 4px;
     color: #9ca3af;
-    font-size: 12px;
     padding: 3px 4px;
     min-height: 22px;
 }
@@ -846,7 +857,6 @@ QToolBar#device_bar QToolButton#mode_button
     border: 1px solid #444444;
     border-radius: 4px;
     color: #d1d5db;
-    font-size: 12px;
     padding: 3px 24px 3px 8px;
     min-height: 22px;
     min-width: 90px;
@@ -877,8 +887,7 @@ QToolBar#device_bar QToolButton#run_stop_button
     border: 1px solid #9333ea;
     border-radius: 4px;
     color: #c084fc;
-    font-size: 12px;
-    padding: 3px 16px;
+    padding: 3px 12px;
     min-height: 22px;
     font-weight: 500;
 }
@@ -912,7 +921,6 @@ QToolBar#device_bar QToolButton#instant_capture_button
     border: 1px solid #3f3f3f;
     border-radius: 4px;
     color: #9ca3af;
-    font-size: 12px;
     padding: 3px 12px;
     min-height: 22px;
 }
@@ -1486,10 +1494,7 @@ QToolButton#CloseButton {
 }
 
 QToolButton#FileCloseButton {
-    background-color: QLinearGradient( x1: 0, y1: 0, x2: 0, y2: 1,
-                                       stop: 0.0 #1F1F1F, stop: 0.1 #D50F25,
-                                       stop: 0.5 #D50F25,
-                                       stop: 0.9 #D50F25, stop: 1 #1F1F1F);
+    background-color: #D50F25;
     border: 1px transparent;
     border-radius: 0px;
     margin: 0px;
@@ -1606,7 +1611,6 @@ QToolButton#ModeButton
 {
     background: transparent;
     color: #f0f0f0;
-    font-size: 13px;
     font-weight: 600;
     padding: 4px 12px;
     border: none;
@@ -2001,8 +2005,7 @@ QToolButton#sidebar_tab_btn {
     border: none;
     border-left: 2px solid transparent;
     color: #666666;
-    font-size: 10px;
-    font-weight: bold;
+    font-weight: normal;
     text-transform: uppercase;
     padding: 4px 0px 2px 0px;
     margin: 0px;
@@ -2064,7 +2067,6 @@ QWidget#sidebar QGroupBox {
     margin-top: 16px;
     padding: 8px 8px 8px 8px;
     color: #888888;
-    font-size: 12px;
     font-weight: normal;
 }
 
@@ -2074,7 +2076,6 @@ QWidget#sidebar QGroupBox::title {
     left: 6px;
     padding: 0 2px;
     color: #888888;
-    font-size: 12px;
     font-weight: normal;
 }
 
@@ -2086,7 +2087,6 @@ QWidget#sidebar QGroupBox:disabled {
 /* Labels */
 QWidget#sidebar QLabel {
     color: #aaaaaa;
-    font-size: 11px;
     background: transparent;
     border: none;
     min-height: 0px;
@@ -2100,13 +2100,11 @@ QWidget#sidebar QLabel:disabled {
 /* Radio buttons & checkboxes */
 QWidget#sidebar QRadioButton {
     color: #aaaaaa;
-    font-size: 12px;
     spacing: 6px;
     background: transparent;
 }
 QWidget#sidebar QCheckBox {
     color: #aaaaaa;
-    font-size: 11px;
     spacing: 6px;
     background: transparent;
 }
@@ -2141,7 +2139,6 @@ QWidget#sidebar QPushButton {
     border: 1px solid #2e2e2e;
     border-radius: 4px;
     color: #aaaaaa;
-    font-size: 11px;
     padding: 3px 8px;
     min-height: 22px;
 }
@@ -2168,7 +2165,6 @@ QWidget#sidebar QComboBox {
     border: 1px solid #2e2e2e;
     border-radius: 4px;
     color: #aaaaaa;
-    font-size: 11px;
     padding: 2px 6px;
     min-height: 22px;
 }
@@ -2195,7 +2191,6 @@ QWidget#sidebar QSpinBox {
     border: 1px solid #2e2e2e;
     border-radius: 4px;
     color: #cccccc;
-    font-size: 11px;
     padding: 2px 6px;
     min-height: 22px;
 }
@@ -2256,7 +2251,6 @@ QWidget#sidebar QTabBar::tab {
     border: 1px solid #2e2e2e;
     border-bottom: none;
     padding: 4px 12px;
-    font-size: 10px;
     min-width: 40px;
 }
 
@@ -2304,7 +2298,6 @@ QWidget#stage_divider_row QWidget#stage_divider_line {
 }
 QWidget#stage_divider_row QLabel#stage_title_label {
     color: #6b7280;
-    font-size: 11px;
     padding: 0 8px;
     background: transparent;
 }
@@ -2315,7 +2308,6 @@ QWidget#sidebar QTabWidget#trig_adv_tab QTabBar::tab {
     border: none;
     border-bottom: 1px solid #333333;
     padding: 6px 14px;
-    font-size: 11px;
     min-width: 0px;
 }
 QWidget#sidebar QTabWidget#trig_adv_tab QTabBar::tab:selected {
@@ -2339,7 +2331,6 @@ QWidget#sidebar QTabWidget#trig_stage_tab QTabBar::tab {
     border: none;
     border-left: 2px solid transparent;
     padding: 8px 6px;
-    font-size: 10px;
     min-width: 0px;
 }
 QWidget#sidebar QTabWidget#trig_stage_tab QTabBar::tab:selected {
@@ -2361,7 +2352,6 @@ QWidget#sidebar QTableView {
     alternate-background-color: #1a1a1a;
     border: 1px solid #2e2e2e;
     color: #aaaaaa;
-    font-size: 11px;
     gridline-color: #222222;
     selection-background-color: rgba(147, 51, 234, 40);
     selection-color: #e5e5e5;
@@ -2378,7 +2368,6 @@ QWidget#sidebar QHeaderView::section {
     border-bottom: 1px solid #2e2e2e;
     border-right: 1px solid #2e2e2e;
     padding: 3px 6px;
-    font-size: 10px;
 }
 
 /* Splitter handle (protocol panel) */
@@ -2442,7 +2431,6 @@ QWidget#trigger_header_bar {
 }
 QWidget#trigger_header_bar QLabel#trigger_panel_title {
     color: #e0e0e0;
-    font-size: 14px;
     font-weight: 600;
 }
 
@@ -2452,7 +2440,6 @@ QWidget#decode_header_bar {
 }
 QWidget#decode_header_bar QLabel#decode_panel_title {
     color: #e0e0e0;
-    font-size: 13px;
     font-weight: 600;
 }
 
@@ -2525,7 +2512,6 @@ QWidget#decode_search_container QLineEdit#decode_ann_search_edit {
     background-color: transparent;
     border: none;
     color: #cccccc;
-    font-size: 12px;
     selection-background-color: #7c3aed;
     padding: 0px;
 }
@@ -2536,7 +2522,6 @@ QWidget#sidebar QLineEdit#decode_keyword_edit {
     border: 1px solid #444444;
     border-radius: 4px;
     color: #aaaaaa;
-    font-size: 12px;
     selection-background-color: #7c3aed;
     min-height: 28px;
     max-height: 28px;
@@ -2550,7 +2535,6 @@ QWidget#sidebar QCheckBox#decode_engine_both_cb,
 QWidget#sidebar QCheckBox#decode_engine_c_cb,
 QWidget#sidebar QCheckBox#decode_engine_py_cb {
     color: #aaaaaa;
-    font-size: 11px;
     spacing: 4px;
 }
 
@@ -2560,17 +2544,14 @@ QWidget#decode_match_row {
 }
 QWidget#decode_match_row QLabel#decode_matchs_title {
     color: #888888;
-    font-size: 12px;
 }
 QWidget#decode_match_row QLabel#decode_matchs_count {
     color: #dddddd;
-    font-size: 12px;
 }
 
 /* ── Decode Panel other labels (dark) ───────────────────────────── */
 QWidget#sidebar QLabel#decode_title_label {
     color: #888888;
-    font-size: 12px;
     padding-left: 4px;
 }
 
@@ -2581,7 +2562,6 @@ QWidget#measure_header_bar {
 }
 QWidget#measure_header_bar QLabel#measure_panel_title {
     color: #e0e0e0;
-    font-size: 14px;
     font-weight: 600;
 }
 
@@ -2618,7 +2598,6 @@ QWidget#sidebar QToolButton#measure_del_btn:hover {
 /* ── Measure Panel checkbox (dark) ──────────────────────────────── */
 QWidget#sidebar QCheckBox#measure_fen_checkbox {
     color: #aaaaaa;
-    font-size: 12px;
     spacing: 6px;
 }
 QWidget#sidebar QCheckBox#measure_fen_checkbox::indicator {
@@ -2638,7 +2617,6 @@ QWidget#measureWidget QGroupBox {
     margin-top: 10px;
     padding: 8px 6px 6px 6px;
     color: #eff0f1;
-    font-size: 11px;
     font-weight: normal;
 }
 QWidget#measureWidget QGroupBox::title {
@@ -2647,14 +2625,12 @@ QWidget#measureWidget QGroupBox::title {
     left: 8px;
     padding: 0 4px;
     color: #eff0f1;
-    font-size: 11px;
     font-weight: normal;
 }
 
 /* ── Measure Panel labels (dark) ────────────────────────────────── */
 QWidget#measureWidget QLabel {
     color: #aaaaaa;
-    font-size: 12px;
 }
 
 /* ── Cursor position label (dark) ───────────────────────────────── */
@@ -2663,7 +2639,6 @@ QWidget#measureWidget QLabel#cursor_pos_label {
     border: 1px solid #444444;
     border-radius: 3px;
     color: #cccccc;
-    font-size: 12px;
     padding: 1px 4px;
 }
 
@@ -2674,7 +2649,6 @@ QWidget#search_header_bar {
 }
 QWidget#search_header_bar QLabel#search_panel_title {
     color: #e0e0e0;
-    font-size: 14px;
     font-weight: 600;
 }
 
@@ -2685,7 +2659,6 @@ QWidget#filter_header_bar {
 }
 QWidget#filter_header_bar QLabel#filter_panel_title {
     color: #e0e0e0;
-    font-size: 14px;
     font-weight: 600;
 }
 
@@ -2697,7 +2670,6 @@ QWidget#glitchFilterWidget QGroupBox {
     margin-top: 10px;
     padding: 8px 6px 6px 6px;
     color: #eff0f1;
-    font-size: 11px;
     font-weight: normal;
 }
 QWidget#glitchFilterWidget QGroupBox::title {
@@ -2706,12 +2678,10 @@ QWidget#glitchFilterWidget QGroupBox::title {
     left: 8px;
     padding: 0 4px;
     color: #eff0f1;
-    font-size: 11px;
     font-weight: normal;
 }
 QWidget#glitchFilterWidget QLabel {
     color: #aaaaaa;
-    font-size: 12px;
 }
 
 /* ── Device Options Panel header bar (dark) ─────────────────────── */
@@ -2721,7 +2691,6 @@ QWidget#options_header_bar {
 }
 QWidget#options_header_bar QLabel#options_panel_title {
     color: #e0e0e0;
-    font-size: 14px;
     font-weight: 600;
 }
 
@@ -2733,7 +2702,6 @@ QWidget#deviceOptionsWidget QGroupBox {
     margin-top: 10px;
     padding: 8px 6px 6px 6px;
     color: #eff0f1;
-    font-size: 11px;
     font-weight: normal;
 }
 QWidget#deviceOptionsWidget QGroupBox::title {
@@ -2742,14 +2710,12 @@ QWidget#deviceOptionsWidget QGroupBox::title {
     left: 8px;
     padding: 0 4px;
     color: #eff0f1;
-    font-size: 11px;
     font-weight: normal;
 }
 
 /* ── Device Options Panel labels (dark) ──────────────────────────── */
 QWidget#deviceOptionsWidget QLabel {
     color: #aaaaaa;
-    font-size: 12px;
 }
 
 /* ── Search Panel nav buttons (dark) ────────────────────────────── */
@@ -2791,7 +2757,6 @@ QWidget#search_pattern_container QLineEdit#search_pattern_edit {
     background-color: transparent;
     border: none;
     color: #cccccc;
-    font-size: 12px;
     font-family: monospace;
     selection-background-color: #7c3aed;
     padding: 0px;
@@ -2803,7 +2768,6 @@ QPushButton#search_all_btn {
     border: none;
     border-radius: 4px;
     color: #ffffff;
-    font-size: 12px;
     padding: 4px 12px;
     min-height: 28px;
 }
@@ -2817,14 +2781,12 @@ QPushButton#search_all_btn:pressed {
 /* ── Search Panel hint label (dark) ─────────────────────────────── */
 QLabel#search_hint_label {
     color: #555555;
-    font-size: 11px;
     background: transparent;
     border: none;
 }
 
-/* ── Search Options Dialog (dark) ───────────────────────────────── */
+/* ΓöÇΓöÇ Search Options Dialog (dark) ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ */
 QDialog#searchDialog QWidget#TitleBar QLabel {
-    font-size: 14px;
     font-weight: 600;
     color: #e0e0e0;
 }
@@ -2835,18 +2797,15 @@ QDialog#searchDialog QWidget#search_divider {
 }
 QDialog#searchDialog QLabel#search_ch_name {
     color: #888888;
-    font-size: 12px;
 }
 QDialog#searchDialog QLabel#search_ch_idx {
     color: #aaaaaa;
-    font-size: 12px;
 }
 QDialog#searchDialog QLineEdit#search_ch_edit {
     background-color: #2a2a2a;
     border: 1px solid #444444;
     border-radius: 3px;
     color: #cccccc;
-    font-size: 12px;
     padding: 2px 4px;
     min-height: 22px;
     selection-background-color: #7c3aed;
@@ -2856,7 +2815,6 @@ QDialog#searchDialog QLineEdit#search_ch_edit:focus {
 }
 QDialog#searchDialog QLabel#search_legend {
     color: #555555;
-    font-size: 10px;
     padding-left: 12px;
     line-height: 1.6;
 }
@@ -2867,7 +2825,6 @@ QDialog#searchDialog QPushButton#device_ok_btn:flat {
     border: none;
     border-radius: 4px;
     color: #ffffff;
-    font-size: 12px;
     padding: 4px 16px;
     min-height: 24px;
 }
@@ -2882,7 +2839,6 @@ QDialog#searchDialog QPushButton#device_cancel_btn:flat {
     border: 1px solid #555555;
     border-radius: 4px;
     color: #cccccc;
-    font-size: 12px;
     padding: 4px 16px;
     min-height: 24px;
 }
@@ -2892,7 +2848,7 @@ QDialog#searchDialog QPushButton#device_cancel_btn:flat:hover {
     border-color: #666666;
 }
 
-/* ── Search Dock embedded editor (dark) ─────────────────────────── */
+/* ΓöÇΓöÇ Search Dock embedded editor (dark) ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ */
 QScrollArea#search_dock_scroll {
     background: transparent;
     border: none;
@@ -2937,14 +2893,13 @@ QWidget#search_editor_container QLabel#search_dock_legend {
     line-height: 1.6;
 }
 
-/* ── Device Options Dialog (dark) ──────────────────────────────── */
+/* ΓöÇΓöÇ Device Options Dialog (dark) ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ */
 QDialog#deviceOptionsDialog QWidget#TitleBar QLabel,
 QDialog#decoderOptionsDialog QWidget#TitleBar QLabel,
 QDialog#displayOptionsDialog QWidget#TitleBar QLabel,
 QDialog#logOptionsDialog QWidget#TitleBar QLabel,
 QDialog#aboutDialog QWidget#TitleBar QLabel,
 QDialog#dsMessageBoxDialog QWidget#TitleBar QLabel {
-    font-size: 14px;
     font-weight: 600;
     color: #e0e0e0;
 }
@@ -2964,7 +2919,6 @@ QDialog#deviceOptionsDialog QGroupBox {
     margin-top: 10px;
     padding: 8px 6px 6px 6px;
     color: #eff0f1;
-    font-size: 11px;
 }
 QDialog#deviceOptionsDialog QGroupBox::title {
     subcontrol-origin: margin;
@@ -2972,7 +2926,6 @@ QDialog#deviceOptionsDialog QGroupBox::title {
     left: 8px;
     padding: 0 4px;
     color: #eff0f1;
-    font-size: 11px;
 }
 QDialog#deviceOptionsDialog QComboBox,
 QDialog#logOptionsDialog QComboBox {
@@ -2980,7 +2933,6 @@ QDialog#logOptionsDialog QComboBox {
     border: 1px solid #444444;
     border-radius: 3px;
     color: #cccccc;
-    font-size: 12px;
     padding: 2px 20px 2px 6px;
     min-width: 88px;
     min-height: 22px;
@@ -3005,7 +2957,6 @@ QDialog#logOptionsDialog QComboBox QAbstractItemView {
 }
 QDialog#deviceOptionsDialog QRadioButton {
     color: #aaaaaa;
-    font-size: 12px;
     spacing: 6px;
 }
 QDialog#deviceOptionsDialog QRadioButton::indicator {
@@ -3022,7 +2973,6 @@ QDialog#deviceOptionsDialog QRadioButton::indicator:checked {
 QDialog#deviceOptionsDialog QLabel,
 QDialog#logOptionsDialog QLabel {
     color: #aaaaaa;
-    font-size: 12px;
 }
 QDialog#deviceOptionsDialog QCheckBox::indicator,
 QDialog#logOptionsDialog QCheckBox::indicator {
@@ -3034,14 +2984,13 @@ QDialog#deviceOptionsDialog QCheckBox::indicator:checked,
 QDialog#logOptionsDialog QCheckBox::indicator:checked {
     image: url(:/icons/sidebar/checkbox-checked.svg);
 }
-/* ── Decoder Options Dialog (dark) ──────────────────────────────── */
+/* ΓöÇΓöÇ Decoder Options Dialog (dark) ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ */
 QDialog#decoderOptionsDialog QGroupBox {
     border: 1px solid #333333;
     border-radius: 4px;
     margin-top: 10px;
     padding: 8px 6px 6px 6px;
     color: #eff0f1;
-    font-size: 11px;
 }
 QDialog#decoderOptionsDialog QGroupBox::title {
     subcontrol-origin: margin;
@@ -3049,18 +2998,15 @@ QDialog#decoderOptionsDialog QGroupBox::title {
     left: 8px;
     padding: 0 4px;
     color: #eff0f1;
-    font-size: 11px;
 }
 QDialog#decoderOptionsDialog QLabel {
     color: #cccccc;
-    font-size: 12px;
 }
 QDialog#decoderOptionsDialog QComboBox {
     background-color: #2a2a2a;
     border: 1px solid #444444;
     border-radius: 3px;
     color: #cccccc;
-    font-size: 12px;
     padding: 2px 20px 2px 6px;
     min-width: 88px;
     min-height: 22px;
@@ -3082,7 +3028,6 @@ QDialog#decoderOptionsDialog QComboBox QAbstractItemView {
 }
 QDialog#decoderOptionsDialog QCheckBox {
     color: #cccccc;
-    font-size: 12px;
     spacing: 6px;
 }
 QDialog#decoderOptionsDialog QCheckBox::indicator {
@@ -3099,7 +3044,6 @@ QDialog#decoderOptionsDialog QSpinBox {
     border: 1px solid #444444;
     border-radius: 3px;
     color: #cccccc;
-    font-size: 12px;
     padding: 2px 6px;
     min-height: 22px;
 }
@@ -3109,7 +3053,6 @@ QPushButton#device_ch_btn {
     border: 1px solid #444444;
     border-radius: 3px;
     color: #aaaaaa;
-    font-size: 12px;
     padding: 3px 10px;
     min-height: 22px;
 }
@@ -3122,7 +3065,6 @@ QPushButton#device_cancel_btn {
     border: 1px solid #555555;
     border-radius: 4px;
     color: #cccccc;
-    font-size: 12px;
     padding: 4px 16px;
     min-height: 24px;
 }
@@ -3135,7 +3077,6 @@ QPushButton#device_ok_btn {
     border: none;
     border-radius: 4px;
     color: #ffffff;
-    font-size: 12px;
     padding: 4px 16px;
     min-height: 24px;
 }
@@ -3143,44 +3084,14 @@ QPushButton#device_ok_btn:hover {
     background-color: #6d28d9;
 }
 
-/* ── Message / DSMessageBox (dark) ───────────────────────────── */
+/* ΓöÇΓöÇ Message / DSMessageBox (dark) ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ */
 QDialog#dsMessageBoxDialog QMessageBox#dsMessageBoxInner {
     background-color: transparent;
 }
 QDialog#dsMessageBoxDialog QMessageBox#dsMessageBoxInner QLabel {
     color: #aaaaaa;
-    font-size: 12px;
 }
 QDialog#dsMessageBoxDialog QMessageBox#dsMessageBoxInner QDialogButtonBox {
-    border-top: 1px solid #333333;
-    padding-top: 12px;
-    margin-top: 8px;
-}
-QDialog#dsMessageBoxDialog QMessageBox#dsMessageBoxInner QPushButton {
-    background-color: transparent;
-    border: 1px solid #555555;
-    border-radius: 4px;
-    color: #cccccc;
-    font-size: 12px;
-    padding: 4px 16px;
-    min-height: 24px;
-    min-width: 72px;
-}
-QDialog#dsMessageBoxDialog QMessageBox#dsMessageBoxInner QPushButton:hover {
-    background-color: #2a2a2a;
-    border-color: #666666;
-}
-QDialog#dsMessageBoxDialog QMessageBox#dsMessageBoxInner QPushButton:default {
-    background-color: #7c3aed;
-    border: none;
-    color: #ffffff;
-}
-QDialog#dsMessageBoxDialog QMessageBox#dsMessageBoxInner QPushButton:default:hover {
-    background-color: #6d28d9;
-}
-
-/* Vertical scrollbar strip beside the waveform view */
-pv--view--VerticalScrollBar {
     background-color: #1e1e1e;
     border: none;
 }

@@ -113,7 +113,7 @@ int Trace::get_name_width()
 {
     QFont font;
     float fSize = AppConfig::Instance().appOptions.fontSize;
-    font.setPointSizeF(fSize <= 10 ? fSize : 10);
+    font.setPixelSize(qRound(fSize <= 10 ? fSize : 10));
     QFontMetrics fm(font);
 
     return fm.boundingRect(get_name()).width();

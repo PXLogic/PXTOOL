@@ -40,6 +40,7 @@ public:
     static void RemoveDlgFromList(QWidget *w);
     static void TryCloseAllByScreenChanged(QScreen *windowScreen);
     static void SetCurrentScreen(QScreen *screen);
+    static void UpdateAllFonts();
 };
 
 #endif

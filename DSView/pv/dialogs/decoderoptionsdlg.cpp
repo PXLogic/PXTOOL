@@ -33,6 +33,7 @@
 #include <QVariant>
 #include <QGuiApplication>
 #include <QScreen>
+#include <QWindow>
 #include <QCheckBox>
 
 #include "../data/decoderstack.h"
@@ -142,7 +143,7 @@ void DecoderOptionsDlg::load_options_view()
     QGroupBox *region_box = new QGroupBox(
         tr("Decode Range"), dlg);
     QFont font = this->font();
-    font.setPointSizeF(AppConfig::Instance().appOptions.fontSize);
+    font.setPixelSize(qRound(AppConfig::Instance().appOptions.fontSize));
     region_box->setFont(font);
     QFormLayout *region_form = new QFormLayout();
     region_form->setContentsMargins(8, 16, 8, 8);
@@ -267,7 +268,12 @@ void DecoderOptionsDlg::load_options_view()
     overhead += 20;
 #endif
 
-    float sk = QGuiApplication::primaryScreen()->logicalDotsPerInch() / 96;
+    // Use the screen the dialog is currently on, not always the primary screen,
+    // so layout calculations are correct on secondary / external displays.
+    QScreen *_curScreen = (window() && window()->windowHandle())
+        ? window()->windowHandle()->screen()
+        : QGuiApplication::primaryScreen();
+    float sk = _curScreen->logicalDotsPerInch() / 96;
     const int srcHeight = 600;
     container_panel->setFixedHeight(content_height);
 
@@ -473,7 +479,7 @@ void DecoderOptionsDlg::create_decoder_form(
 	assert(decoder);
 
     QFont font = this->font();
-    font.setPointSizeF(AppConfig::Instance().appOptions.fontSize);
+    font.setPixelSize(qRound(AppConfig::Instance().appOptions.fontSize));
 
     QFormLayout *const decoder_form = new QFormLayout();
     decoder_form->setContentsMargins(0,0,0,0);

@@ -72,8 +72,6 @@ ProtocolDock::ProtocolDock(QWidget *parent, view::View &view, SigSession *sessio
     _cur_search_index = -1;
     _search_edited = false; 
     _pro_add_button = NULL;
-    _engine_filter_sync = false;
-
     //-----------------------------get protocol list
     GSList *l = const_cast<GSList*>(srd_decoder_list());
     std::map<std::string, int> pro_key_table;
@@ -160,12 +158,17 @@ ProtocolDock::ProtocolDock(QWidget *parent, view::View &view, SigSession *sessio
     _pro_keyword_edit->setObjectName("decode_keyword_edit");
     _pro_keyword_edit->setFixedHeight(decode_toolbar_btn_h);
 
-    _engine_both_cb = new QCheckBox(tr("Both"), top_panel);
+    _engine_both_cb = new QRadioButton(tr("Both"), top_panel);
     _engine_both_cb->setObjectName("decode_engine_both_cb");
-    _engine_c_cb = new QCheckBox(tr("C"), top_panel);
+    _engine_c_cb = new QRadioButton(tr("C"), top_panel);
     _engine_c_cb->setObjectName("decode_engine_c_cb");
-    _engine_py_cb = new QCheckBox(tr("Py"), top_panel);
+    _engine_py_cb = new QRadioButton(tr("Py"), top_panel);
     _engine_py_cb->setObjectName("decode_engine_py_cb");
+    _engine_btn_group = new QButtonGroup(top_panel);
+    _engine_btn_group->setExclusive(true);
+    _engine_btn_group->addButton(_engine_both_cb);
+    _engine_btn_group->addButton(_engine_c_cb);
+    _engine_btn_group->addButton(_engine_py_cb);
     _engine_both_cb->setChecked(true);
 
     QHBoxLayout *pro_search_lay = new QHBoxLayout();
@@ -308,9 +311,9 @@ ProtocolDock::ProtocolDock(QWidget *parent, view::View &view, SigSession *sessio
 
     connect(_ann_search_edit, SIGNAL(editingFinished()), this, SLOT(search_changed()));
 
-    connect(_engine_both_cb, SIGNAL(stateChanged(int)), this, SLOT(onEngineFilterChanged()));
-    connect(_engine_c_cb, SIGNAL(stateChanged(int)), this, SLOT(onEngineFilterChanged()));
-    connect(_engine_py_cb, SIGNAL(stateChanged(int)), this, SLOT(onEngineFilterChanged()));
+    connect(_engine_both_cb, SIGNAL(toggled(bool)), this, SLOT(onEngineFilterChanged()));
+    connect(_engine_c_cb, SIGNAL(toggled(bool)), this, SLOT(onEngineFilterChanged()));
+    connect(_engine_py_cb, SIGNAL(toggled(bool)), this, SLOT(onEngineFilterChanged()));
 
     ADD_UI(this);
 }
@@ -421,6 +424,16 @@ void ProtocolDock::sync_protocol_list_from_session()
         layer->m_decoderStatus = static_cast<DecoderStatus*>(stack->get_key_handel());
         layer->m_protocolId = protocolId;
         layer->_trace = trace;
+
+        // Append engine tag to the dock label when both C and Py are available,
+        // so the user can tell two same-protocol rows apart.
+        {
+            auto &c_reg = pv::cdecoders::CDecoderRegistry::instance();
+            if (c_reg.has_c_decoder_for_id(dec->id)) {
+                QString suffix = stack->use_c_decoder() ? " [C]" : " [Py]";
+                layer->set_label_name(protocolName + suffix);
+            }
+        }
 
         string fmt = AppConfig::Instance().GetProtocolFormat(protocolId.toStdString());
         if (fmt != "")
@@ -638,9 +651,21 @@ bool ProtocolDock::add_protocol_by_id(QString id, bool silent,
     _protocol_lay_items.push_back(layer);
     // insert before the trailing stretch (stretch is always the last item)
     _items_layout->insertLayout(_protocol_lay_items.size() - 1, layer);
-    layer->m_decoderStatus = dstatus; 
+    layer->m_decoderStatus = dstatus;
     layer->m_protocolId = protocolId;
     layer->_trace = trace;
+
+    // If this protocol has both a C and a Python implementation, append the
+    // engine tag (" [C]" or " [Py]") to the dock label so that two decoders
+    // of the same protocol type are visually distinguishable.
+    {
+        auto &c_reg = pv::cdecoders::CDecoderRegistry::instance();
+        pv::view::DecodeTrace *dt = dynamic_cast<pv::view::DecodeTrace*>(trace);
+        if (dt && dt->decoder() && c_reg.has_c_decoder_for_id(decoder->id)) {
+            QString suffix = dt->decoder()->use_c_decoder() ? " [C]" : " [Py]";
+            layer->set_label_name(protocolName + suffix);
+        }
+    }
 
     // set current protocol format
     string fmt = AppConfig::Instance().GetProtocolFormat(protocolId.toStdString());
@@ -1314,7 +1339,7 @@ bool ProtocolDock::protocol_sort_callback(const DecoderInfoItem *o1, const Decod
       }
 
       QFont font = this->font();
-      font.setPointSizeF(AppConfig::Instance().appOptions.fontSize);
+      font.setPixelSize(qRound(AppConfig::Instance().appOptions.fontSize));
       ui::set_form_font(panel, font);
 
       panel->SetItemClickHandle(this);
@@ -1356,27 +1381,15 @@ bool ProtocolDock::protocol_sort_callback(const DecoderInfoItem *o1, const Decod
 
  void ProtocolDock::onEngineFilterChanged()
  {
-     if (_engine_filter_sync || _engine_both_cb == NULL)
+     if (_engine_both_cb == NULL)
          return;
 
-     QCheckBox *sender_cb = qobject_cast<QCheckBox*>(sender());
-     _engine_filter_sync = true;
-
-     if (sender_cb == _engine_both_cb && _engine_both_cb->isChecked()) {
-         _engine_c_cb->setChecked(false);
-         _engine_py_cb->setChecked(false);
-     } else if (sender_cb != _engine_both_cb) {
-         if (_engine_c_cb->isChecked() || _engine_py_cb->isChecked())
-             _engine_both_cb->setChecked(false);
-     }
-
-     if (!_engine_both_cb->isChecked()
-         && !_engine_c_cb->isChecked()
-         && !_engine_py_cb->isChecked()) {
-         _engine_both_cb->setChecked(true);
-     }
-
-     _engine_filter_sync = false;
+     // QButtonGroup enforces mutual exclusion automatically.
+     // Only refresh filter when a button is being selected (toggled ON),
+     // to avoid a double refresh on the deselected button's toggled(false).
+     QRadioButton *sender_rb = qobject_cast<QRadioButton*>(sender());
+     if (sender_rb && !sender_rb->isChecked())
+         return;
 
      if (_active_picker)
          _active_picker->RefreshFilter();
@@ -1440,7 +1453,7 @@ void ProtocolDock::UpdateTheme()
 void ProtocolDock::UpdateFont()
  {
     QFont font = this->font();
-    font.setPointSizeF(AppConfig::Instance().appOptions.fontSize);
+    font.setPixelSize(qRound(AppConfig::Instance().appOptions.fontSize));
     ui::set_form_font(this, font);
     _table_view->setFont(font);
 
@@ -1448,15 +1461,15 @@ void ProtocolDock::UpdateFont()
         lay->update_font();
     }
 
-    font.setPointSizeF(font.pointSizeF() + 1);
+    font.setPixelSize(font.pixelSize() + 1);
     this->parentWidget()->setFont(font);
     _table_view->horizontalHeader()->setFont(font);
     _table_view->verticalHeader()->setFont(font);
 
     
     _table_view->setObjectName("DecodedDataView");
-    QString style = "#DecodedDataView QHeaderView{font-size: %1pt}";
-    style = style.arg(AppConfig::Instance().appOptions.fontSize);
+    QString style = "#DecodedDataView QHeaderView{font-size: %1px}";
+    style = style.arg(qRound(AppConfig::Instance().appOptions.fontSize));
     _table_view->setStyleSheet(style);
 
     adjustPannelSize(); 
@@ -1466,7 +1479,7 @@ void ProtocolDock::UpdateFont()
  {
     QString str = "DECODER";
     QFont font = this->font();
-    font.setPointSizeF(AppConfig::Instance().appOptions.fontSize);
+    font.setPixelSize(qRound(AppConfig::Instance().appOptions.fontSize));
     QFontMetrics fm(font);
     QRect rc = fm.boundingRect(str); 
 

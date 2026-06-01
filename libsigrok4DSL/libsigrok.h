@@ -1045,6 +1045,15 @@ enum sr_config_option_id
 
     SR_CONF_DEMO_CHANGE = 30107,
 
+    /**
+     * Whether the device (driver) supports the advanced multi-stage trigger.
+     * The UI queries this at device_updated() time; if the driver returns
+     * FALSE or does not handle this key (SR_ERR_NA), the Advanced Trigger
+     * radio button is disabled.  Drivers under development can return TRUE
+     * to keep the UI open for testing.
+     */
+    SR_CONF_HAVE_ADVANCED_TRIGGER = 30108,
+
 	/*--- Acquisition modes ---------------------------------------------*/
 
 	/**

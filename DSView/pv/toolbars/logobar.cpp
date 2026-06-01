@@ -168,20 +168,13 @@ void LogoBar::reStyle()
     _update->setIcon(QIcon(iconPath+"/update.svg"));
     _log->setIcon(QIcon(iconPath+"/log.svg"));
 
-    if (_connected)
-        _logo_button.setIcon(QIcon(iconPath+"/logo_color.svg"));
-    else
-        _logo_button.setIcon(QIcon(iconPath+"/logo_noColor.svg"));
+    _logo_button.setIcon(ui::application_icon());
 }
 
 void LogoBar::dsl_connected(bool conn)
 {
     _connected = conn;
-    QString iconPath =  GetIconPath();
-    if (_connected)
-        _logo_button.setIcon(QIcon(iconPath+"/logo_color.svg"));
-    else
-        _logo_button.setIcon(QIcon(iconPath+"/logo_noColor.svg"));
+    _logo_button.setIcon(ui::application_icon());
 }
 
 void LogoBar::on_actionEn_triggered()
@@ -411,7 +404,7 @@ void LogoBar::UpdateTheme()
 void LogoBar::UpdateFont()
 { 
     QFont font = this->font();
-    font.setPointSizeF(AppConfig::Instance().appOptions.fontSize);
+    font.setPixelSize(qRound(AppConfig::Instance().appOptions.fontSize));
     ui::set_toolbar_font(this, font);
 }
 

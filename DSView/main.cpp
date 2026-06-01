@@ -23,15 +23,18 @@
 #include <stdint.h>
 #include <getopt.h>
 #include <QApplication>
+#include <QFont>
+#include <QFontDatabase>
 #include <QIcon>
 #include <QDir>
-#include <QStyle> 
+#include <QStyle>
 #include <QGuiApplication>
 #include <QScreen>
 #include "dsapplication.h"
 #include "mystyle.h" 
 #include "pv/mainframe.h"
 #include "pv/config/appconfig.h"
+#include "pv/ui/fn.h"
 #include "config.h"
 #include "pv/appcontrol.h"
 #include "pv/log.h" 
@@ -164,15 +167,52 @@ bool bHighScale = true;
 		QApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
       	QApplication::setAttribute(Qt::AA_UseHighDpiPixmaps);
 	}
-#endif 
+
+#if QT_VERSION >= QT_VERSION_CHECK(5,14,0)
+	// Pass fractional scale factors through as-is so non-integer DPI screens
+	// (e.g. 1.5×) are not rounded, which would cause blurry text on secondary
+	// monitors whose scale factor differs from the primary display.
+	QGuiApplication::setHighDpiScaleFactorRoundingPolicy(
+		Qt::HighDpiScaleFactorRoundingPolicy::PassThrough);
+#endif
+#endif
 
 	//----------------------init app
     QApplication a(argcFinal, argvFinal);
     a.setStyle(new MyStyle);
 
-    QIcon appIcon;
-    appIcon.addFile(QString::fromUtf8(":/icons/dock_app_icon.png"), QSize(), QIcon::Normal, QIcon::Off);
-    QApplication::setWindowIcon(appIcon);
+    // On Windows, Qt may silently fall back to "Microsoft YaHei" (the full
+    // desktop font) instead of "Microsoft YaHei UI" (the UI-optimised variant
+    // used by all native controls and browsers).  The two fonts look noticeably
+    // different at small pixel sizes.  Explicitly prefer the UI variant here so
+    // every widget font that inherits from the app font gets the right family.
+    //
+    // IMPORTANT: we only change the font *family* — the size is taken from
+    // QApplication::font() so that Qt's platform-detected default size (read
+    // from Windows at QApplication construction time) is preserved unchanged.
+    // Creating QFont(name) without a size argument would use Qt's built-in
+    // default which can differ from the Windows system size and make menus /
+    // title-bar buttons appear too large.
+    {
+#ifdef _WIN32
+        QFontDatabase db;
+        const QStringList preferred = {
+            "Microsoft YaHei UI",   // Windows 8+ – UI-optimised CJK font
+            "Microsoft YaHei",      // Windows Vista/7 fallback
+        };
+        for (const QString &name : preferred) {
+            if (db.families().contains(name)) {
+                QFont appFont = QApplication::font(); // preserve platform size
+                appFont.setFamily(name);
+                a.setFont(appFont);
+                break;
+            }
+        }
+        // If neither preferred font is available, keep Qt's platform default.
+#endif
+    }
+
+    QApplication::setWindowIcon(ui::application_icon());
 
     // Set some application metadata
     QApplication::setApplicationVersion(DS_VERSION_STRING);

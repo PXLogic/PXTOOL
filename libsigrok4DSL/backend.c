@@ -417,7 +417,7 @@ SR_PRIV int sr_listen_hotplug(struct sr_context *ctx, hotplug_event_callback cal
                                            (libusb_hotplug_flag)LIBUSB_HOTPLUG_ENUMERATE,
                                            LIBUSB_HOTPLUG_MATCH_ANY,
                                            LIBUSB_HOTPLUG_MATCH_ANY,
-                                           LIBUSB_HOTPLUG_MATCH_ANY, 
+                                           LIBUSB_HOTPLUG_MATCH_ANY,
                                            (libusb_hotplug_callback_fn)sr_hotplug_callback,
                                            ctx, //user data
                                            &ctx->hotplug_handle);

@@ -260,7 +260,7 @@ void FileBar::UpdateTheme()
 void FileBar::UpdateFont()
 { 
     QFont font = this->font();
-    font.setPointSizeF(AppConfig::Instance().appOptions.fontSize);
+    font.setPixelSize(qRound(AppConfig::Instance().appOptions.fontSize));
     ui::set_toolbar_font(this, font);
 }
 

@@ -75,7 +75,7 @@ void ViewStatus::paintEvent(QPaintEvent *)
     float fSize = AppConfig::Instance().appOptions.fontSize;
     if (fSize > 10)
         fSize = 10;
-    font.setPointSizeF(fSize);
+    font.setPixelSize(qRound(fSize));
     p.setFont(font);
 
     int mode = _session->get_device()->get_work_mode();

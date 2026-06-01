@@ -207,7 +207,8 @@ void DSDialog::build_base(bool hasClose)
 void DSDialog::update_font()
 {
     QFont font = this->font();
-    font.setPointSizeF(AppConfig::Instance().appOptions.fontSize);
+    const float fs = AppConfig::Instance().appOptions.fontSize;
+    font.setPixelSize(qRound(fs >= 9.0f ? fs : 9.0f));
     ui::set_form_font(this, font);
 
     if (_titlebar != NULL){
@@ -218,7 +219,7 @@ void DSDialog::update_font()
 void DSDialog::show()
 {
     update_font();
-    
+    PopupDlgList::AddDlgTolist(this);
     QWidget::show();
 }
 

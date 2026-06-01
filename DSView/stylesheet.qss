@@ -35,10 +35,11 @@ pv--view--Viewport{
 QToolButton {
     border: none;
     border-style: flat;
-    padding: 0px;
+    padding: 2px;
     margin: 0px;
     color: white;
-    font: bold 9ft;
+    font-weight: bold;
+    min-height: 20px;
 }
 
 QPushButton:hover, QPushButton:pressed,
@@ -58,7 +59,7 @@ QPushButton {
     border-radius: 4px;
     color: white;
     background-color: rgb(255, 255, 255, 50);
-    font: bold 10ft;
+    font-weight: bold;
     min-height: 20px;
     min-width: 20px;
 }

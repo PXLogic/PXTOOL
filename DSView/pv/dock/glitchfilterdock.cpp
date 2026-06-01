@@ -8,6 +8,8 @@
 #include "glitchfilterdock.h"
 #include "../sigsession.h"
 #include "../data/logicsnapshot.h"
+#include "../config/appconfig.h"
+#include "../ui/fn.h"
 #include <libsigrok.h>
 #include <QScrollBar>
 #include <QShowEvent>
@@ -441,7 +443,17 @@ void GlitchFilterDock::showEvent(QShowEvent *event)
 
 void GlitchFilterDock::UpdateLanguage() { retranslateUi(); }
 void GlitchFilterDock::UpdateTheme()    {}
-void GlitchFilterDock::UpdateFont()     {}
+
+void GlitchFilterDock::UpdateFont()
+{
+    QFont font = this->font();
+    font.setPixelSize(qRound(AppConfig::Instance().appOptions.fontSize));
+    ui::set_form_font(this, font);
+
+    font.setPixelSize(font.pixelSize() + 1);
+    if (parentWidget())
+        parentWidget()->setFont(font);
+}
 
 } // namespace dock
 } // namespace pv

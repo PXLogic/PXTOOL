@@ -98,6 +98,9 @@ public:
 
     void ReShowWindow();
 
+    /** Re-apply exe/taskbar icons (native HWND + Qt child). Call after SetParent. */
+    void refreshWindowIcons();
+
     static void EnalbeNoClientArea(bool bEnabled);
 
 private:   

@@ -57,7 +57,7 @@ public:
 };
 
 
-#define APP_CONFIG_VERSION  3
+#define APP_CONFIG_VERSION  4
 #define NO_POINT_VALUE  -10000
 
 struct AppOptions
@@ -187,6 +187,9 @@ public:
   }
 
   static void GetFontSizeRange(float *minSize, float *maxSize);
+  // Returns the optimal default font size for the primary screen's DPI.
+  // Targets ~12 effective physical pixels, keeping Chinese characters legible.
+  static float GetDefaultFontSize();
 
   bool IsDarkStyle();
 

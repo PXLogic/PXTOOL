@@ -40,3 +40,6 @@ pv/cdecoders/example_spi/*.dylib
 pv/cdecoders/example_spi/*.so
 
 
+.codegraph
+*.zip
+.cursor

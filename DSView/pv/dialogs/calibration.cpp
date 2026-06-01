@@ -391,9 +391,7 @@ void Calibration::UpdateTheme()
 
 void Calibration::UpdateFont()
 {
-    QFont font = this->font();
-    font.setPointSizeF(AppConfig::Instance().appOptions.fontSize);
-    ui::set_form_font(this, font);
+    update_font();
 }
 
 } // namespace dialogs

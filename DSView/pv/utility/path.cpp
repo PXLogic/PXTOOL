@@ -20,11 +20,6 @@
  */
 
 #include "path.h"
-#ifdef _WIN32
-#include <QTextCodec>
-#include "../log.h"
-#include <string.h>
-#endif
 
 namespace pv{
 namespace path{
@@ -46,23 +41,10 @@ namespace path{
 
     std::string ToUnicodePath(QString path)
     {
-        std::string str;
-         
-#ifdef _WIN32
-        QTextCodec *codec = QTextCodec::codecForName("System");
-        if (codec != NULL){
-            QByteArray str_tmp = codec->fromUnicode(path);
-            str = str_tmp.data();
-        } 
-        else{
-            dsv_err("Error: can't get \"System\" page code");
-            str = path.toUtf8().data();
-        }       
-#else
-        str = path.toUtf8().data();        
-#endif
-
-        return str;
+        // Modern Windows APIs work fine with UTF-8 paths.
+        // The old QTextCodec::codecForName("System") approach is deprecated and
+        // unreliable in Qt 5.15+, so just use UTF-8 directly.
+        return path.toUtf8().toStdString();
     }
 }
 }

@@ -205,7 +205,7 @@ PopupLineEditInput::PopupLineEditInput(QWidget *parent)
     this->setLayout(lay);
 
     QFont font = this->font();
-    font.setPointSizeF(AppConfig::Instance().appOptions.fontSize);
+    font.setPixelSize(qRound(AppConfig::Instance().appOptions.fontSize));
     _textInput->setFont(font);
 
     connect(_textInput, &QLineEdit::returnPressed, [=]() {

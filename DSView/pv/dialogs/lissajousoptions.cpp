@@ -211,10 +211,8 @@ void LissajousOptions::UpdateTheme()
 }
 
 void LissajousOptions::UpdateFont()
-{ 
-    QFont font = this->font();
-    font.setPointSizeF(AppConfig::Instance().appOptions.fontSize);
-    ui::set_form_font(this, font);
+{
+    update_font();
 }
 
 } // namespace dialogs

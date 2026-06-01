@@ -910,6 +910,10 @@ static int config_get(int id, GVariant **data, const struct sr_dev_inst *sdi,
     case SR_CONF_HAVE_ZERO:
         *data = g_variant_new_boolean(FALSE);
         break;
+    case SR_CONF_HAVE_ADVANCED_TRIGGER:
+        /* Demo device is virtual; allow advanced trigger UI for testing. */
+        *data = g_variant_new_boolean(TRUE);
+        break;
     case SR_CONF_LOAD_DECODER:
         *data = g_variant_new_boolean(vdev->sample_generator != PATTERN_RANDOM);
         break;

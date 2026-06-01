@@ -792,20 +792,25 @@ void SearchDock::UpdateTheme()
 void SearchDock::UpdateFont()
 {
     QFont font = this->font();
-    font.setPointSizeF(AppConfig::Instance().appOptions.fontSize);
-    if (_search_value) _search_value->setFont(font);
-    if (_toggle_btn)   _toggle_btn->setFont(font);
-    if (_legend_lbl)   _legend_lbl->setFont(font);
+    font.setPixelSize(qRound(AppConfig::Instance().appOptions.fontSize));
+    ui::set_form_font(this, font);
 
     QFont monoFont("Monaco");
     monoFont.setStyleHint(QFont::Monospace);
     monoFont.setFixedPitch(true);
-    monoFont.setPointSizeF(AppConfig::Instance().appOptions.fontSize);
+    monoFont.setPixelSize(qRound(AppConfig::Instance().appOptions.fontSize));
+    if (_search_value)
+        _search_value->setFont(monoFont);
     for (auto *e : _channel_edits) {
-        if (e) e->setFont(monoFont);
+        if (e)
+            e->setFont(monoFont);
     }
-    if (_result_table) _result_table->setFont(monoFont);
-    if (_result_count_lbl) _result_count_lbl->setFont(font);
+    if (_result_table)
+        _result_table->setFont(monoFont);
+
+    font.setPixelSize(font.pixelSize() + 1);
+    if (parentWidget())
+        parentWidget()->setFont(font);
 }
 
 } // namespace dock

@@ -153,18 +153,21 @@ void DecodeTrace::set_view(pv::view::View *view)
 
 int DecodeTrace::get_name_width()
 {
-    int base = Trace::get_name_width();
     if (!_decoder_stack->stack().empty()) {
         const srd_decoder *root = _decoder_stack->stack().front()->decoder();
         if (root && pv::cdecoders::CDecoderRegistry::instance().has_c_decoder_for_id(root->id)) {
             QFont font;
             float fSize = AppConfig::Instance().appOptions.fontSize;
-            font.setPointSizeF(fSize <= 10 ? fSize : 10);
+            font.setPixelSize(qRound(fSize <= 10 ? fSize : 10));
             QFontMetrics fm(font);
-            base += fm.boundingRect(" [Py]").width();
+            // Measure the full displayed string to avoid font-metric addition
+            // errors (kerning etc.).  Always reserve space for " [Py]" (the
+            // wider tag) so the header never needs to shrink when the engine
+            // switches between C and Py variants.
+            return fm.boundingRect(_name + " [Py]").width();
         }
     }
-    return base;
+    return Trace::get_name_width();
 }
 
 void DecodeTrace::paint_label(QPainter &p, int right, const QPoint pt, QColor fore)

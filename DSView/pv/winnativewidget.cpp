@@ -23,6 +23,7 @@
 
 #include "winnativewidget.h"
 #include <QApplication>
+#include <QCoreApplication>
 #include <QDesktopWidget>
 #include <QScreen>
 #include <QGuiApplication>
@@ -48,6 +49,48 @@
 #define WINDOW_STATUS_MAX       1
 #define WINDOW_STATUS_NORMAL    2
 #define WINDOW_STATUS_MIN       3
+
+namespace {
+
+static HICON load_app_icon(HINSTANCE hInstance, int cx, int cy)
+{
+    HICON icon = (HICON)LoadImageW(hInstance, MAKEINTRESOURCE(1), IMAGE_ICON,
+                                 cx, cy, LR_DEFAULTCOLOR);
+    if (!icon)
+        icon = LoadIconW(hInstance, MAKEINTRESOURCE(1));
+    return icon;
+}
+
+static void apply_native_window_icons(HWND hWnd, HINSTANCE hInstance)
+{
+    HICON big = load_app_icon(hInstance,
+                              GetSystemMetrics(SM_CXICON),
+                              GetSystemMetrics(SM_CYICON));
+    HICON small = load_app_icon(hInstance,
+                                GetSystemMetrics(SM_CXSMICON),
+                                GetSystemMetrics(SM_CYSMICON));
+    if (!big) {
+        const QString path =
+            QCoreApplication::applicationDirPath()
+            + QStringLiteral("/win-app-logo.ico");
+        big = (HICON)LoadImageW(NULL, (LPCWSTR)path.utf16(), IMAGE_ICON,
+                                GetSystemMetrics(SM_CXICON),
+                                GetSystemMetrics(SM_CYICON),
+                                LR_LOADFROMFILE | LR_DEFAULTCOLOR);
+        small = (HICON)LoadImageW(NULL, (LPCWSTR)path.utf16(), IMAGE_ICON,
+                                  GetSystemMetrics(SM_CXSMICON),
+                                  GetSystemMetrics(SM_CYSMICON),
+                                  LR_LOADFROMFILE | LR_DEFAULTCOLOR);
+    }
+    if (big)
+        SendMessageW(hWnd, WM_SETICON, ICON_BIG, (LPARAM)big);
+    if (small)
+        SendMessageW(hWnd, WM_SETICON, ICON_SMALL, (LPARAM)small);
+    else if (big)
+        SendMessageW(hWnd, WM_SETICON, ICON_SMALL, (LPARAM)big);
+}
+
+} // namespace
 
 namespace pv {
 
@@ -89,6 +132,12 @@ WinNativeWidget::WinNativeWidget(const int x, const int y, const int width,
     wcx.lpszClassName = L"DSViewWindowClass";
     wcx.hCursor = LoadCursor(hInstance, IDC_ARROW);
     wcx.hbrBackground = CreateSolidBrush(RGB(r, g, b));
+    wcx.hIcon = load_app_icon(hInstance,
+                              GetSystemMetrics(SM_CXICON),
+                              GetSystemMetrics(SM_CYICON));
+    wcx.hIconSm = load_app_icon(hInstance,
+                                GetSystemMetrics(SM_CXSMICON),
+                                GetSystemMetrics(SM_CYSMICON));
  
     RegisterClassEx(&wcx);
     if (FAILED(RegisterClassEx(&wcx)))
@@ -110,6 +159,7 @@ WinNativeWidget::WinNativeWidget(const int x, const int y, const int width,
     }
     
     SetWindowLongPtr(_hWnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(this));
+    apply_native_window_icons(_hWnd, hInstance);
     SetWindowPos(_hWnd, NULL, 0, 0, 0, 0, SWP_FRAMECHANGED | SWP_NOMOVE | SWP_NOSIZE);
 
     if (!_is_native_border){
@@ -134,11 +184,22 @@ void WinNativeWidget::SetChildWidget(MainFrame *w)
 
     if (w != NULL){
         _childWindow = (HWND)w->winId();
+        refreshWindowIcons();
     }
     else if (_shadow != NULL){
         _shadow->hideShadow();
         _shadow->close(); //Set null, the applictoin will exit.
     }
+}
+
+void WinNativeWidget::refreshWindowIcons()
+{
+    if (!_hWnd)
+        return;
+    HINSTANCE hInstance = GetModuleHandle(nullptr);
+    apply_native_window_icons(_hWnd, hInstance);
+    if (_childWindow)
+        apply_native_window_icons(_childWindow, hInstance);
 }
 
 void WinNativeWidget::ReShowWindow()
@@ -449,16 +510,26 @@ LRESULT WinNativeWidget::hitTest(HWND hWnd, WPARAM wParam, LPARAM lParam)
     // title bar
     if (_titleBarWidget)
     {
-        QRect titleRect = _titleBarWidget->geometry(); 
+        // Use Qt's own coordinate mapping to correctly handle all DPI scenarios.
+        // devicePixelRatioF() gives the precise (possibly fractional) scale factor.
+        qreal dpr = _titleBarWidget->devicePixelRatioF();
 
-        int titleWidth = titleRect.width() * k - 55 * k;
-        int titleHeight = titleRect.height() * k;
-    
-        if (x > left + 2 * k && x < left + titleWidth)
+        // Convert Win32 physical screen coordinates to Qt logical global coordinates.
+        QPoint globalLogical((int)(x / dpr), (int)(y / dpr));
+
+        // Map to the title bar widget's local coordinate system.
+        QPoint localPos = _titleBarWidget->mapFromGlobal(globalLogical);
+
+        // Check if the cursor is inside the title bar at all.
+        if (_titleBarWidget->rect().contains(localPos))
         {
-            if (y > top + 2 * k && y < top + titleHeight){                        
-                return HTCAPTION;
+            // If cursor is over any visible child widget (buttons), let Qt handle it.
+            QWidget *child = _titleBarWidget->childAt(localPos);
+            if (child != nullptr) {
+                return HTCLIENT;
             }
+            // Cursor is in title bar empty space — treat as caption for window dragging.
+            return HTCAPTION;
         }
     }
 

@@ -170,7 +170,7 @@ void ProtocolItemLayer::LoadFormatSelect(bool bSingle)
  void ProtocolItemLayer::update_font()
  {
     QFont font = _protocol_label->font();
-    font.setPointSizeF(AppConfig::Instance().appOptions.fontSize);
+    font.setPixelSize(qRound(AppConfig::Instance().appOptions.fontSize));
     _protocol_label->setFont(font);
     _format_combox->setFont(font);
  }

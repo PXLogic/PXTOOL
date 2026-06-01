@@ -156,6 +156,7 @@ private:
 
 #include "../prop/property.h"
 #include "../config/appconfig.h"
+#include "../ui/fn.h"
 #include "../appcontrol.h"
 #include "../sigsession.h"
 #include "../ui/langresource.h"
@@ -333,7 +334,7 @@ void DeviceOptionsDock::build_content()
     _device_options_binding = new pv::prop::binding::DeviceOptions();
 
     QFont font = this->font();
-    font.setPointSizeF(AppConfig::Instance().appOptions.fontSize);
+    font.setPixelSize(qRound(AppConfig::Instance().appOptions.fontSize));
 
     // container panel
     _container_panel = new QWidget(_inner);
@@ -399,7 +400,7 @@ void DeviceOptionsDock::schedule_apply()
     if (_isBuilding || !_content_built)
         return;
     // Never auto-apply while a capture / decoder run is in progress; doing so
-    // would call init_signals() and clear live waveform data mid-capture.
+    // would rebuild signals mid-capture.
     if (_session->is_working())
         return;
     // Defer to the next event-loop iteration so rapid batched changes
@@ -466,14 +467,14 @@ void DeviceOptionsDock::on_apply()
         }
 
         // Rebuild the session signal list from the driver's (possibly updated)
-        // channel list, then notify the view to re-render. This is necessary
-        // when channel mode changes (e.g. "Use 6 Channels") because the driver
-        // updates sdi->channels immediately on radio-button press but the session
-        // signal list is not refreshed until we do so explicitly here.
-        _session->init_signals();
-        // Notify the view to redraw with the new (cleared) signal list.
-        // Without this the old waveform rendering persists even though the
-        // internal data buffers were already cleared by init_signals().
+        // channel list, then notify the view to re-render. init_signals() is
+        // required when there is no captured data (full channel rebuild).
+        // When waveforms are already on screen, reload() updates enable state
+        // without clearing _view_data (same as the old options-dialog path).
+        if (_session->have_view_data())
+            _session->reload();
+        else
+            _session->init_signals();
         _session->notify_signals_changed();
         // Refresh the sample rate dropdown — channel mode changes alter the
         // valid rate range and the SamplingBar must re-query config_list.
@@ -500,7 +501,7 @@ QLayout *DeviceOptionsDock::get_property_form(QWidget *parent)
     const auto &properties = _device_options_binding->properties();
 
     QFont font = this->font();
-    font.setPointSizeF(AppConfig::Instance().appOptions.fontSize);
+    font.setPixelSize(qRound(AppConfig::Instance().appOptions.fontSize));
 
     int i = 0;
     for (auto p : properties) {
@@ -546,7 +547,7 @@ void DeviceOptionsDock::logic_probes(QVBoxLayout &layout)
     _probes_checkBox_list.clear();
 
     QFont font = this->font();
-    font.setPointSizeF(AppConfig::Instance().appOptions.fontSize);
+    font.setPixelSize(qRound(AppConfig::Instance().appOptions.fontSize));
 
     if (_device_agent->get_work_mode() == LOGIC) {
         GVariant *gvar_opts = _device_agent->get_config_list(NULL, SR_CONF_CHANNEL_MODE);
@@ -679,7 +680,7 @@ void DeviceOptionsDock::analog_probes(QGridLayout &layout)
     tabWidget->setUsesScrollButtons(false);
 
     QFont font = this->font();
-    font.setPointSizeF(AppConfig::Instance().appOptions.fontSize);
+    font.setPixelSize(qRound(AppConfig::Instance().appOptions.fontSize));
 
     int ch_dex = 0;
     for (const GSList *l = _device_agent->get_channels(); l; l = l->next) {
@@ -771,7 +772,7 @@ QString DeviceOptionsDock::dynamic_widget(QLayout *lay)
             assert(grid);
 
             QFont font = this->font();
-            font.setPointSizeF(AppConfig::Instance().appOptions.fontSize);
+            font.setPixelSize(qRound(AppConfig::Instance().appOptions.fontSize));
 
             if (have_zero) {
                 auto config_button = new QPushButton(
@@ -816,7 +817,7 @@ void DeviceOptionsDock::build_dynamic_panel()
     }
 
     QFont font = this->font();
-    font.setPointSizeF(AppConfig::Instance().appOptions.fontSize);
+    font.setPixelSize(qRound(AppConfig::Instance().appOptions.fontSize));
 
     _dynamic_panel = new QGroupBox("group", _container_panel);
     _dynamic_panel->setFont(font);
@@ -1069,8 +1070,12 @@ void DeviceOptionsDock::UpdateLanguage()
 void DeviceOptionsDock::UpdateFont()
 {
     QFont font = this->font();
-    font.setPointSizeF(AppConfig::Instance().appOptions.fontSize);
-    setFont(font);
+    font.setPixelSize(qRound(AppConfig::Instance().appOptions.fontSize));
+    ui::set_form_font(this, font);
+
+    font.setPixelSize(font.pixelSize() + 1);
+    if (parentWidget())
+        parentWidget()->setFont(font);
 }
 
 } // namespace dock

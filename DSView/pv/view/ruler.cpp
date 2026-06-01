@@ -232,7 +232,7 @@ void Ruler::paintEvent(QPaintEvent*)
     float fSize = AppConfig::Instance().appOptions.fontSize;
     if (fSize > 10)
         fSize = 10;
-    font.setPointSizeF(fSize);
+    font.setPixelSize(qRound(fSize));
     p.setFont(font);
 
     SigSession *session = AppControl::Instance()->GetSession();

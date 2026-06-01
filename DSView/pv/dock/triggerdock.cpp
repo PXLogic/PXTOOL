@@ -112,7 +112,7 @@ TriggerDock::TriggerDock(QWidget *parent, SigSession *session) :
     connect(stages_comboBox, SIGNAL(currentIndexChanged(int)), this, SLOT(widget_enable(int)));
 
     QFont triggerTypeFont = this->font();
-    triggerTypeFont.setPointSizeF(AppConfig::Instance().appOptions.fontSize);
+    triggerTypeFont.setPixelSize(qRound(AppConfig::Instance().appOptions.fontSize));
     _simple_radioButton->setFont(triggerTypeFont);
     _adv_radioButton->setFont(triggerTypeFont);
 
@@ -215,23 +215,20 @@ void TriggerDock::simple_trigger()
 
 void TriggerDock::adv_trigger()
 {
+    // Check for stream mode (only DSLogic hardware supports this mode)
+    bool stream = false;
     if (_session->get_device()->is_hardware_logic()) {
-        bool stream = false;
-        _session->get_device()->get_config_bool(SR_CONF_STREAM, stream);   
-        
-        if (stream) {
-            QString strMsg(tr("Stream Mode Don't Support Advanced Trigger!"));
-            MsgBox::Show(strMsg);
-            _simple_radioButton->setChecked(true);
-        }
-        else {
-            widget_enable(0);
-        }
+        _session->get_device()->get_config_bool(SR_CONF_STREAM, stream);
     }
-    else if (_session->get_device()->is_file() == false){
-        QString strMsg(tr("Advanced Trigger need DSLogic Hardware Support!"));
+
+    if (stream) {
+        QString strMsg(tr("Stream Mode Don't Support Advanced Trigger!"));
         MsgBox::Show(strMsg);
         _simple_radioButton->setChecked(true);
+    }
+    else {
+        // All devices (DSLogic, PX-LOGIC, Demo, etc.) can use advanced trigger UI for testing
+        widget_enable(0);
     }
 }
 
@@ -287,7 +284,16 @@ void TriggerDock::device_updated()
             _session->get_device()->get_config_bool(SR_CONF_STREAM, stream);
             sample_limits = _session->get_device()->get_sample_limit();
 
-            _adv_radioButton->setEnabled(!stream);
+            // Ask the driver whether this device supports advanced trigger.
+            // Drivers return TRUE if they do (or are under development and
+            // need UI access for testing).  If the driver does not handle
+            // SR_CONF_HAVE_ADVANCED_TRIGGER (returns SR_ERR_NA), get_config_bool
+            // returns false and capKnown stays false → button disabled.
+            bool haveAdvTrig = false;
+            bool capKnown = _session->get_device()->get_config_bool(SR_CONF_HAVE_ADVANCED_TRIGGER, haveAdvTrig);
+            // Advanced trigger is unavailable in stream mode regardless of capability.
+            bool allowAdv = capKnown && haveAdvTrig && !stream;
+            _adv_radioButton->setEnabled(allowAdv);
             _position_spinBox->setEnabled(!stream);
             _position_slider->setEnabled(!stream);
 
@@ -297,11 +303,12 @@ void TriggerDock::device_updated()
                 maxRange = DS_MAX_TRIG_PERCENT;
             else
                 maxRange = ceil(hw_depth * DS_MAX_TRIG_PERCENT / sample_limits);
-            
+
             _position_spinBox->setRange(MinTrigPosition, maxRange);
             _position_slider->setRange(MinTrigPosition, maxRange);
 
-            if (_session->get_device()->is_virtual() || stream) {
+            // Stream mode or no capability → revert to simple trigger
+            if (!allowAdv && _adv_radioButton->isChecked()) {
                 _simple_radioButton->setChecked(true);
                 simple_trigger();
             }
@@ -587,7 +594,7 @@ void TriggerDock::setup_adv_tab()
    // font.setFixedPitch(true);
 
     QFont font = this->font();
-    font.setPointSizeF(AppConfig::Instance().appOptions.fontSize);
+    font.setPixelSize(qRound(AppConfig::Instance().appOptions.fontSize));
 
     _stage_tabWidget = new QTabWidget(_widget);
     _stage_tabWidget->setObjectName("trig_stage_tab");
@@ -1124,9 +1131,9 @@ void TriggerDock::UpdateTheme()
 void TriggerDock::UpdateFont()
 {
     QFont font = this->font();
-    font.setPointSizeF(AppConfig::Instance().appOptions.fontSize);
+    font.setPixelSize(qRound(AppConfig::Instance().appOptions.fontSize));
     ui::set_form_font(this, font);
-    font.setPointSizeF(font.pointSizeF() + 1);
+    font.setPixelSize(font.pixelSize() + 1);
     this->parentWidget()->setFont(font);
     
     _adv_tabWidget->setFont(font);
@@ -1135,7 +1142,7 @@ void TriggerDock::UpdateFont()
     _adv_tabWidget->tabBar()->setFont(font);
 
     QFont font2 = this->font();
-    font2.setPointSizeF(AppConfig::Instance().appOptions.fontSize);
+    font2.setPixelSize(qRound(AppConfig::Instance().appOptions.fontSize));
     QFontMetrics fm(font2);  
 
     auto edits = this->findChildren<PopupLineEdit*>();

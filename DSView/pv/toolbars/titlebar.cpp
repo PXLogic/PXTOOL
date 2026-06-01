@@ -31,6 +31,7 @@
 #include <QSizePolicy>
 #include <assert.h>
 #include <QTimer>
+#include <QApplication>
 #include <QGuiApplication>
 #include <QPixmap>
 
@@ -347,15 +348,34 @@ void TitleBar::UpdateTheme()
 }
 
 void TitleBar::UpdateFont()
-{  
-    QFont font = this->font();
-    /* Main window title ("DSView"): same size as QMenuBar#main_menu_bar (13px in QSS). */
+{
+    // Use the application-level font as the base so the family is always the
+    // system CJK font (set explicitly in main.cpp).  Using this->font() would
+    // pick up whatever the QSS engine resolved, which may be a different family.
+    QFont base = QApplication::font();
+
+    QFont titleFont = base;
     if (objectName() == QStringLiteral("main_window_title_bar"))
-        font.setPointSize(13);
+        titleFont.setPixelSize(qRound(AppConfig::Instance().appOptions.fontSize));
     else
-        font.setPointSizeF(AppConfig::Instance().appOptions.fontSize + 1);
-    font.setBold(true);
-    _title->setFont(font);
+        titleFont.setPointSizeF(AppConfig::Instance().appOptions.fontSize + 1);
+    titleFont.setBold(true);
+    _title->setFont(titleFont);
+
+    // Update the embedded File/Window/Help menu buttons and their dropdown menus.
+    // These QToolButtons have no explicit font-size in QSS and would otherwise
+    // inherit whatever size Qt chose for the app font – which can vary.
+    if (_menuBtns[0]) {   // only set when menus were added
+        QFont menuBtnFont = base;
+        menuBtnFont.setPixelSize(qRound(AppConfig::Instance().appOptions.fontSize));
+        menuBtnFont.setBold(false);
+        for (int i = 0; i < 3; ++i) {
+            if (_menuBtns[i])
+                _menuBtns[i]->setFont(menuBtnFont);
+            if (_menus[i])
+                ui::set_menu_font(_menus[i], menuBtnFont);
+        }
+    }
 }
 
 void TitleBar::EnableAbleDrag(bool bEnabled)
@@ -386,6 +406,7 @@ void TitleBar::addMenusToTitleBar(QMenu *fileMenu, QMenu *windowMenu, QMenu *hel
         btn->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
         lay->insertWidget(0, btn, 0, Qt::AlignVCenter);
         _menuBtns[i] = btn;
+        _menus[i] = defs[i].menu;  // Store menu pointer so UpdateFont() can reach it
     }
 
     // Left margin reserves space for the painted app logo (~41 px wide)

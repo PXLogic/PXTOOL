@@ -18,6 +18,9 @@
 ## along with this program; if not, see <http://www.gnu.org/licenses/>.
 ##
 
+import os
+import sys
+
 import sigrokdecode as srd
 from collections import namedtuple
 
@@ -188,6 +191,12 @@ class Decoder(srd.Decoder):
         self.put(ss, es, self.out_python, ['BITS', si_bits, so_bits])
         self.put(ss, es, self.out_python, ['DATA', si, so])
 
+        if os.environ.get('DSV_SPI_DBG'):
+            mosi_s = ('0x%02x' % si) if self.have_mosi and si is not None else 'None'
+            miso_s = ('0x%02x' % so) if self.have_miso and so is not None else 'None'
+            print('SPI[Py] DATA ss=%d es=%d mosi=%s miso=%s' % (ss, es, mosi_s, miso_s),
+                  file=sys.stderr)
+
         if self.have_miso:
             self.misobytes.append(Data(ss=ss, es=es, val=so))
         if self.have_mosi:
@@ -346,6 +355,16 @@ class Decoder(srd.Decoder):
                 self.put(self.ss_transfer, self.samplenum, self.out_python,
                     ['TRANSFER', self.mosibytes, self.misobytes])
 
+                if os.environ.get('DSV_SPI_DBG'):
+                    miso_hex = (' '.join('%02x' % x.val for x in self.misobytes)
+                                if self.have_miso else '')
+                    mosi_hex = (' '.join('%02x' % x.val for x in self.mosibytes)
+                                if self.have_mosi else '')
+                    print('SPI[Py] TRANSFER ss=%d es=%d count_miso=%d miso=%s mosi=%s' % (
+                        self.ss_transfer, self.samplenum,
+                        len(self.misobytes) if self.have_miso else 0,
+                        miso_hex, mosi_hex), file=sys.stderr)
+
             # Reset decoder state when CS# changes (and the CS# pin is used).
             self.reset_decoder_state()
 
@@ -403,6 +422,10 @@ class Decoder(srd.Decoder):
         self.have_cs = self.has_channel(3)
         if not self.have_cs:
             self.put(0, 0, self.out_python, ['CS-CHANGE', None, None])
+
+        if os.environ.get('DSV_SPI_DBG'):
+            print('SPI[Py] START have_clk=1 have_miso=%s have_mosi=%s have_cs=%s' % (
+                self.have_miso, self.have_mosi, self.have_cs), file=sys.stderr)
         
         # We want all CLK changes. We want all CS changes if CS is used.
         # Map 'have_cs' from boolean to an integer index. This simplifies

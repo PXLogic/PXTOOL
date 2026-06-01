@@ -22,6 +22,7 @@
 #include "sidebar.h"
 #include <QTimer>
 #include <QPointer>
+#include "../config/appconfig.h"
 #include "triggerdock.h"
 #include "dsotriggerdock.h"
 #include "protocoldock.h"
@@ -224,8 +225,8 @@ SideBar::SideBar(QWidget *parent, view::View &view, SigSession *session)
         _btns[i]->setIcon(QIcon(iconPaths[i]));
         _btns[i]->setText(tr(labels[i]));
         _btns[i]->setToolButtonStyle(Qt::ToolButtonTextUnderIcon);
-        _btns[i]->setIconSize(QSize(18, 18));
-        _btns[i]->setFixedSize(62, 54);
+        _btns[i]->setIconSize(QSize(16, 16));
+        _btns[i]->setFixedSize(kIconStripWidth, 46);
         _btns[i]->setCheckable(true);
 
         stripLayout->addWidget(_btns[i]);
@@ -468,8 +469,55 @@ void SideBar::retranslateUi()
 }
 
 void SideBar::UpdateLanguage() { retranslateUi(); }
-void SideBar::UpdateTheme()    {}
-void SideBar::UpdateFont()     {}
+
+void SideBar::UpdateTheme()
+{
+    // Re-apply title styles because color depends on the current theme.
+    applyTitleStyle();
+}
+
+void SideBar::UpdateFont()
+{
+    applyTitleStyle();
+
+    const int basePx = qRound(AppConfig::Instance().appOptions.fontSize);
+
+    QFont tabFont = font();
+    tabFont.setPixelSize(basePx);
+    tabFont.setBold(false);
+    for (int i = 0; i < TabCount; i++) {
+        if (_btns[i])
+            _btns[i]->setFont(tabFont);
+    }
+
+    QFont panelTitleFont = font();
+    panelTitleFont.setPixelSize(basePx + 1);
+    panelTitleFont.setWeight(QFont::DemiBold);
+    QLabel *titles[] = {
+        _title_trigger, _title_decode, _title_measure,
+        _title_search, _title_options, _title_filter
+    };
+    for (QLabel *lbl : titles) {
+        if (lbl)
+            lbl->setFont(panelTitleFont);
+    }
+}
+
+void SideBar::applyTitleStyle()
+{
+    // Only set theme-dependent color inline; size/weight come from UpdateFont().
+    // Do not set font-size here — it overrides QSS and blocks Display font scaling.
+    bool dark = AppConfig::Instance().IsDarkStyle();
+    QString color = dark ? QStringLiteral("#e0e0e0") : QStringLiteral("#222222");
+    QString style = QStringLiteral("color: %1; background: transparent;").arg(color);
+
+    if (_title_trigger) _title_trigger->setStyleSheet(style);
+    if (_title_decode)  _title_decode->setStyleSheet(style);
+    if (_title_measure) _title_measure->setStyleSheet(style);
+    if (_title_search)  _title_search->setStyleSheet(style);
+    if (_title_options) _title_options->setStyleSheet(style);
+    if (_title_filter)  _title_filter->setStyleSheet(style);
+}
 
 } // namespace dock
 } // namespace pv

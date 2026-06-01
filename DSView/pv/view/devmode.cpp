@@ -286,7 +286,7 @@ void DevMode::UpdateTheme()
 void DevMode::UpdateFont()
 {
     QFont font = this->font();
-    font.setPointSizeF(AppConfig::Instance().appOptions.fontSize);
+    font.setPixelSize(qRound(AppConfig::Instance().appOptions.fontSize));
     
     auto buttons = this->findChildren<QToolButton*>();
     for(auto o : buttons)

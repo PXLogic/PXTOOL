@@ -27,6 +27,7 @@
 #include <QDoubleSpinBox> 
 #include <QGuiApplication>
 #include <QScreen>
+#include <QWindow>
 #include <QScrollArea>
 #include <QLayoutItem>
 #include <assert.h>
@@ -97,7 +98,7 @@ void ChannelLabel::paintEvent(QPaintEvent *)
     p.setPen(checked ? Qt::white : QColor(160, 160, 160));
     QFont f = font();
     f.setBold(true);
-    f.setPointSize(12);
+    f.setPixelSize(9);
     p.setFont(f);
     p.drawText(rect(), Qt::AlignCenter, QString::number(_index));
 }
@@ -174,7 +175,7 @@ DeviceOptions::DeviceOptions(QWidget *parent) :
     scroll_lay->addWidget(_container_panel);
 
     QFont font = this->font();
-    font.setPointSizeF(AppConfig::Instance().appOptions.fontSize);
+    font.setPixelSize(qRound(AppConfig::Instance().appOptions.fontSize));
    
     // mode group box
     QGroupBox *props_box = new QGroupBox(tr("Mode"), this);
@@ -297,7 +298,7 @@ QLayout * DeviceOptions::get_property_form(QWidget * parent)
     const auto &properties =_device_options_binding.properties();
 
     QFont font = this->font();
-    font.setPointSizeF(AppConfig::Instance().appOptions.fontSize);
+    font.setPixelSize(qRound(AppConfig::Instance().appOptions.fontSize));
 
     int i = 0;
     for(auto p : properties)
@@ -351,7 +352,7 @@ void DeviceOptions::logic_probes(QVBoxLayout &layout)
     _probes_checkBox_list.clear();
 
     QFont font = this->font();
-    font.setPointSizeF(AppConfig::Instance().appOptions.fontSize);
+    font.setPixelSize(qRound(AppConfig::Instance().appOptions.fontSize));
   
     //channel count checked
     if (_device_agent->get_work_mode()== LOGIC) {
@@ -734,7 +735,7 @@ void DeviceOptions::analog_probes(QGridLayout &layout)
     tabWidget->setUsesScrollButtons(false);
 
     QFont font = this->font();
-    font.setPointSizeF(AppConfig::Instance().appOptions.fontSize);
+    font.setPixelSize(qRound(AppConfig::Instance().appOptions.fontSize));
 
     int ch_dex = 0;
     
@@ -847,7 +848,7 @@ QString DeviceOptions::dynamic_widget(QLayout *lay)
             assert(grid);
 
             QFont font = this->font();
-            font.setPointSizeF(AppConfig::Instance().appOptions.fontSize);
+            font.setPixelSize(qRound(AppConfig::Instance().appOptions.fontSize));
 
             if (have_zero) {
                 auto config_button = new QPushButton(tr("Auto Calibration"), this);
@@ -891,7 +892,7 @@ void DeviceOptions::build_dynamic_panel()
     }
 
     QFont font = this->font();
-    font.setPointSizeF(AppConfig::Instance().appOptions.fontSize);
+    font.setPixelSize(qRound(AppConfig::Instance().appOptions.fontSize));
 
     if (_dynamic_panel == NULL)
     {  
@@ -932,7 +933,12 @@ void DeviceOptions::try_resize_scroll()
     dlgHeight += 20;
 #endif
 
-    float sk = QGuiApplication::primaryScreen()->logicalDotsPerInch() / 96;
+    // Use the screen the dialog is currently on, not always the primary screen,
+    // so layout calculations are correct on secondary / external displays.
+    QScreen *_curScreen = (window() && window()->windowHandle())
+        ? window()->windowHandle()->screen()
+        : QGuiApplication::primaryScreen();
+    float sk = _curScreen->logicalDotsPerInch() / 96;
 
     int srcHeight = 600;
     int w = _width;
@@ -940,7 +946,7 @@ void DeviceOptions::try_resize_scroll()
 
 #ifdef _WIN32
     QFont font = this->font();
-    font.setPointSizeF(AppConfig::Instance().appOptions.fontSize);
+    font.setPixelSize(qRound(AppConfig::Instance().appOptions.fontSize));
     QFontMetrics fm(font); 
 
     auto labels = this->findChildren<QLabel*>();

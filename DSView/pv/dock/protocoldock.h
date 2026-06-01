@@ -36,6 +36,8 @@
 #include <QTableView>
 #include <QSortFilterProxyModel>
 #include <QCheckBox>
+#include <QRadioButton>
+#include <QButtonGroup>
 #include <QPointer>
 #include <vector>
 #include <mutex>
@@ -212,11 +214,11 @@ private:
     QPushButton *_ann_search_button;
     std::vector<DecoderInfoItem*> _decoderInfoList;
     KeywordLineEdit *_pro_keyword_edit;
-    QCheckBox *_engine_both_cb;
-    QCheckBox *_engine_c_cb;
-    QCheckBox *_engine_py_cb;
+    QRadioButton *_engine_both_cb;
+    QRadioButton *_engine_c_cb;
+    QRadioButton *_engine_py_cb;
+    QButtonGroup *_engine_btn_group;
     QPointer<SearchComboBox> _active_picker;
-    bool _engine_filter_sync;
     QString     _selected_protocol_id;
     /* The list entry the user just clicked in the protocol picker. We need
      * to keep the pointer (not just the id) because the C/Py split inserts

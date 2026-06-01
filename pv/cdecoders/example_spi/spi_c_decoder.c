@@ -60,11 +60,27 @@
 /* Stop every ~100k samples to check for abort */
 #define STOP_POLL_INTERVAL 100000
 
+/* Set DSV_SPI_DBG=1 to log per-byte DATA and per-CS TRANSFER on stderr
+ * (grep "SPI[C]" and compare with SPI[Py] from pd.py). */
+static int spi_env_dbg(void)
+{
+    const char *e = getenv("DSV_SPI_DBG");
+    return e && e[0] && !(e[0] == '0' && e[1] == '\0');
+}
+
+static void spi_log_data(uint64_t ss, uint64_t es, uint8_t mosi, uint8_t miso)
+{
+    if (!spi_env_dbg()) return;
+    fprintf(stderr, "SPI[C] DATA ss=%llu es=%llu mosi=0x%02x miso=0x%02x\n",
+            (unsigned long long)ss, (unsigned long long)es,
+            (unsigned)mosi, (unsigned)miso);
+}
+
 /* ------------------------------------------------------------------------- */
 /* Per-run state shared between streaming (v2) and batch (v1) paths          */
 /* ------------------------------------------------------------------------- */
 
-typedef struct spi_state {
+struct spi_state {
     uint8_t  prev_clk;
     uint8_t  prev_cs;
     uint8_t  mosi_byte;
@@ -84,7 +100,24 @@ typedef struct spi_state {
     uint8_t *xfer_miso;
     size_t   xfer_capacity;
     size_t   xfer_count;
-} spi_state;
+};
+
+typedef struct spi_state spi_state;
+
+static void spi_log_transfer(uint64_t ss, uint64_t es, const spi_state *st)
+{
+    size_t i;
+
+    if (!spi_env_dbg() || !st || st->xfer_count == 0) return;
+    fprintf(stderr, "SPI[C] TRANSFER ss=%llu es=%llu count=%zu miso=",
+            (unsigned long long)ss, (unsigned long long)es, st->xfer_count);
+    for (i = 0; i < st->xfer_count; i++)
+        fprintf(stderr, "%s%02x", i ? " " : "", st->xfer_miso[i]);
+    fprintf(stderr, " mosi=");
+    for (i = 0; i < st->xfer_count; i++)
+        fprintf(stderr, "%s%02x", i ? " " : "", st->xfer_mosi[i]);
+    fprintf(stderr, "\n");
+}
 
 /* Release any dynamically allocated buffers inside the state. Safe to call
  * on a zero-initialised state. Used both from spi_destroy() and from the
@@ -175,6 +208,8 @@ static void spi_emit_transfer(spi_state *st, uint64_t end_sample,
         st->xfer_active = 0;
         return;
     }
+
+    spi_log_transfer(st->xfer_start_sample, end_sample, st);
 
     /* Each byte expands to at most 3 chars ("xx " or "xx") + terminator. */
     size_t bufsize = st->xfer_count * 3 + 1;
@@ -304,6 +339,8 @@ static int spi_decode_samples(spi_state *st,
 
                 /* Accumulate into the current transfer (best effort: on
                  * allocation failure we drop the byte but keep decoding). */
+                spi_log_data(st->byte_start, bit_end, st->mosi_byte, st->miso_byte);
+
                 if (st->xfer_active && spi_xfer_reserve(st, 1) == 0) {
                     st->xfer_mosi[st->xfer_count] = st->mosi_byte;
                     st->xfer_miso[st->xfer_count] = st->miso_byte;

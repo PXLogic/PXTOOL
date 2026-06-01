@@ -1,1 +1,2 @@
-IDI_ICON1 ICON DISCARDABLE "logo-win.ico"
+/* Application icon (resource ID 1 = Windows shell / taskbar default). */
+1 ICON "win-app-logo.ico"

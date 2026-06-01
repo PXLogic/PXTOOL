@@ -23,6 +23,9 @@
 #include <QMenu>
 #include <QApplication>
 #include <QTimer>
+#include <QPainter>
+#include <QPaintEvent>
+#include <QStyleOptionToolButton>
 #include "../log.h" 
 
 #ifdef _WIN32
@@ -39,7 +42,64 @@ XToolButton::XToolButton(QWidget *parent)
     :QToolButton(parent)
 {
     _menu = NULL;
-    _is_mouse_down = false; 
+    _is_mouse_down = false;
+    _centerContent = false;
+}
+
+void XToolButton::setCenterContent(bool center)
+{
+    if (_centerContent == center)
+        return;
+    _centerContent = center;
+    update();
+}
+
+void XToolButton::paintEvent(QPaintEvent *event)
+{
+    if (!_centerContent || toolButtonStyle() != Qt::ToolButtonTextBesideIcon) {
+        QToolButton::paintEvent(event);
+        return;
+    }
+
+    QStyleOptionToolButton opt;
+    initStyleOption(&opt);
+
+    const QIcon icon = opt.icon;
+    const QString text = opt.text;
+    const QSize iconSz = opt.iconSize.isValid() ? opt.iconSize : iconSize();
+
+    opt.icon = QIcon();
+    opt.text = QString();
+
+    QPainter painter(this);
+    style()->drawComplexControl(QStyle::CC_ToolButton, &opt, &painter, this);
+
+    if (icon.isNull() && text.isEmpty())
+        return;
+
+    const int gap = 4;
+    const QFontMetrics fm(font());
+#if QT_VERSION >= QT_VERSION_CHECK(5, 11, 0)
+    const int textW = text.isEmpty() ? 0 : fm.horizontalAdvance(text);
+#else
+    const int textW = text.isEmpty() ? 0 : fm.width(text);
+#endif
+    const int iconW = icon.isNull() ? 0 : iconSz.width();
+    const int totalW = iconW + (icon.isNull() || text.isEmpty() ? 0 : gap) + textW;
+    int x = qMax(0, (width() - totalW) / 2);
+
+    if (!icon.isNull()) {
+        const int iconY = (height() - iconSz.height()) / 2;
+        icon.paint(&painter, x, iconY, iconSz.width(), iconSz.height());
+        x += iconSz.width() + gap;
+    }
+
+    if (!text.isEmpty()) {
+        painter.setPen(palette().color(isEnabled() ? QPalette::Active : QPalette::Disabled,
+                                       QPalette::ButtonText));
+        const int textY = (height() + fm.ascent() - fm.descent()) / 2;
+        painter.drawText(x, textY, text);
+    }
 }
 
 void XToolButton::mousePressEvent(QMouseEvent *event)

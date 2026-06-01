@@ -69,6 +69,9 @@ QWidget* Enum::get_widget(QWidget *parent, bool auto_commit)
     }
 
 	_selector = new DsComboBox(parent);
+	// Match the item height of the toolbar Buffer dropdown
+	// (min-height: 20px + 4px top/bottom padding = 28px).
+	_selector->setPopupItemHeight(28);
 
 	for (unsigned int i = 0; i < _values.size(); i++) {
 		const pair<GVariant*, QString> &v = _values[i];

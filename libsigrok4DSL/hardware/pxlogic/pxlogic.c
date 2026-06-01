@@ -1187,7 +1187,12 @@ static int config_get(int id, GVariant **data, const struct sr_dev_inst *sdi,
         case SR_CONF_STREAM:
             *data = g_variant_new_boolean(devc->stream);
         break;
-        
+
+        case SR_CONF_HAVE_ADVANCED_TRIGGER:
+            /* PX-LOGIC advanced trigger support is under active development.
+             * Return TRUE so the UI remains open for hardware testing. */
+            *data = g_variant_new_boolean(TRUE);
+        break;
 
     default:
 		return SR_ERR_NA;

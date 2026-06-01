@@ -152,7 +152,7 @@ void Header::paintEvent(QPaintEvent*)
     float fSize = AppConfig::Instance().appOptions.fontSize;
     if (fSize > 10)
         fSize = 10;
-    font.setPointSizeF(fSize);
+    font.setPixelSize(qRound(fSize));
     painter.setFont(font);
 
     for(auto t : traces)
@@ -436,7 +436,7 @@ void Header::changeName(QMouseEvent *event)
         header_resize();
         QFont font = this->font();
         float fsize = AppConfig::Instance().appOptions.fontSize;
-        font.setPointSizeF(fsize <= 10 ? fsize: 10);
+        font.setPixelSize(qRound(fsize <= 10 ? fsize: 10));
         nameEdit->setFont(font);
 
         nameEdit->setText(_context_trace->get_name());
@@ -590,6 +590,8 @@ void Header::contextMenuEvent(QContextMenuEvent *event)
     h4x->setCheckable(true);    h4x->setChecked(curMul == 4);
     h8x->setCheckable(true);    h8x->setChecked(curMul == 8);
 
+    ui::apply_compact_menu_font(&menu);
+
     /* "Decode Engine" submenu intentionally removed: the C / Python choice
      * is now made up-front when the user picks the protocol from the
      * protocol-list (entries appear as e.g. "SPI [C]" and "SPI [Py]").
@@ -665,6 +667,16 @@ void Header::UpdateTheme()
 
 void Header::UpdateFont()
 {
+    QFont font = this->font();
+    float fSize = AppConfig::Instance().appOptions.fontSize;
+    if (fSize > 10)
+        fSize = 10;
+    font.setPixelSize(qRound(fSize));
+    font.setWeight(QFont::Normal);
+    font.setBold(false);
+    setFont(font);
+    if (nameEdit)
+        nameEdit->setFont(font);
 }
 
 

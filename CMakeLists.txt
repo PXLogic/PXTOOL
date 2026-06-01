@@ -19,7 +19,7 @@
 ## along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ##
 
-cmake_minimum_required(VERSION 2.8.6)
+cmake_minimum_required(VERSION 3.5...3.27)
 
 project(DSView)
 
@@ -611,6 +611,9 @@ if(WIN32)
 	enable_language(RC)
 	# app icon
         list(APPEND DSView_SOURCES applogo.rc)
+	# Rebuild the .rc object when the .ico changes (Make does not track this by default).
+	set_source_files_properties(applogo.rc PROPERTIES
+		OBJECT_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/win-app-logo.ico")
 	# MinGW Unicode support
 	add_definitions(-municode)
 endif()
@@ -725,7 +728,17 @@ target_link_libraries(${PROJECT_NAME} ${DSVIEW_LINK_LIBS})
 
 if(WIN32)
 # Pass -mwindows so that no "DOS box" will open when PulseView is started.
-set_target_properties(${PROJECT_NAME} PROPERTIES LINK_FLAGS "-mwindows")
+set_target_properties(${PROJECT_NAME} PROPERTIES
+    LINK_FLAGS "-mwindows"
+    OUTPUT_NAME ${DS_TITLE}
+)
+    # Copy language files to build output directory so the app can find them at runtime
+    add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+            "${CMAKE_CURRENT_SOURCE_DIR}/lang"
+            "${CMAKE_CURRENT_SOURCE_DIR}/build.dir/lang"
+        COMMENT "Stage lang/ resources into build output"
+    )
 endif()
 
 #===============================================================================
@@ -786,6 +799,14 @@ if(APPLE)
             "${CMAKE_CURRENT_SOURCE_DIR}/lang"
             "${_BUNDLE_RES_DIR}/share/DSView/lang"
         COMMENT "Stage resources (icon, Python decoders, res/, demo/, lang/) into app bundle"
+    )
+else()
+    # For Linux and other non-macOS builds, copy lang/ to build output so app can find it at runtime
+    add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+            "${CMAKE_CURRENT_SOURCE_DIR}/lang"
+            "${CMAKE_CURRENT_SOURCE_DIR}/build.dir/lang"
+        COMMENT "Stage lang/ resources into build output"
     )
 endif()
 
@@ -861,6 +882,11 @@ set(CPACK_SOURCE_PACKAGE_FILE_NAME
 	"${CMAKE_PROJECT_NAME}-${DS_VERSION_MAJOR}.${DS_VERSION_MINOR}.${DS_VERSION_MICRO}")
 set(CPACK_SOURCE_GENERATOR "TGZ")
 set(CPACK_PACKAGE_CONTACT "913461865@qq.com")
+
+# Set the final package file name (used by ZIP and NSIS installers)
+# This will generate: PXTOOL-1.0.0-win64.exe and PXTOOL-1.0.0-win64.zip
+set(CPACK_PACKAGE_FILE_NAME "PXTOOL-${DS_VERSION_MAJOR}.${DS_VERSION_MINOR}.${DS_VERSION_MICRO}-win64")
+
 include(CPack)
 
 #===============================================================================

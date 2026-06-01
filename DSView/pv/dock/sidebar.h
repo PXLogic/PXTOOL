@@ -80,7 +80,9 @@ public:
     LogDock           *log_widget()            { return _log_widget; }
     GlitchFilterDock *glitch_filter_widget() { return _glitch_filter_widget; }
 
-    static constexpr int kIconStripWidth    = 62;
+    // 64 px gives ~56 px of usable text width (4 px side padding × 2),
+    // enough for the longest 7-character English label ("MEASURE") at 12 px.
+    static constexpr int kIconStripWidth    = 64;
     static constexpr int kStackMinWidth     = 200;
     static constexpr int kDefaultDockWidth  = 600;
 
@@ -103,6 +105,9 @@ protected:
 
 signals:
     void sig_search_visible(bool visible);
+
+private:
+    void applyTitleStyle();
 
 private slots:
     void onButtonClicked(int tab);

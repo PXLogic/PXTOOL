@@ -758,15 +758,16 @@ namespace pv
         }
 
         bool isDark = AppConfig::Instance().IsDarkStyle();
+        int fsz = qRound(AppConfig::Instance().appOptions.fontSize);
         QString bgColor   = isDark ? "#1E1E1E" : "#E8E8E8";
         QString selBg     = isDark ? "#2D2D2D" : "#FFFFFF";
         QString textColor = isDark ? "#CCCCCC" : "#333333";
         QString selText   = isDark ? "#FFFFFF" : "#000000";
         QString closeBtnStyle = isDark
-            ? "QPushButton{background:transparent;color:#888;border:none;font-size:11px;padding:0px;max-width:14px;min-width:14px;}"
-              "QPushButton:hover{color:#FF6060;}"
-            : "QPushButton{background:transparent;color:#999;border:none;font-size:11px;padding:0px;max-width:14px;min-width:14px;}"
-              "QPushButton:hover{color:#FF0000;}";
+            ? QString("QPushButton{background:transparent;color:#888;border:none;font-size:%1px;padding:0px;max-width:14px;min-width:14px;}"
+                      "QPushButton:hover{color:#FF6060;}").arg(fsz)
+            : QString("QPushButton{background:transparent;color:#999;border:none;font-size:%1px;padding:0px;max-width:14px;min-width:14px;}"
+                      "QPushButton:hover{color:#FF0000;}").arg(fsz);
 
         bool canCloseAny = (grp->session_uids.size() > 1) || grp->offline;
 
@@ -795,9 +796,10 @@ namespace pv
             nameBtn->setCursor(Qt::PointingHandCursor);
             nameBtn->setStyleSheet(QString(
                 "QPushButton{background:transparent;color:%1;border:none;"
-                "font-size:12px;padding:0px;text-align:left;}"
-                "QPushButton:hover{color:%2;}")
+                "font-size:%2px;padding:0px;text-align:left;}"
+                "QPushButton:hover{color:%3;}")
                 .arg(isActive ? selText : textColor)
+                .arg(fsz)
                 .arg(selText));
             int capturedUid = uid;
             connect(nameBtn, &QPushButton::clicked, this, [this, capturedUid]() {
@@ -832,10 +834,11 @@ namespace pv
         addBtn->setEnabled(!grp->offline);
         addBtn->setToolTip(grp->offline ? tr("Device is offline.") : tr("New session"));
         addBtn->setStyleSheet(QString(
-            "QPushButton{background:%1;color:%2;border-radius:4px;font-size:16px;font-weight:bold;border:none;}"
-            "QPushButton:hover{background:%3;}")
+            "QPushButton{background:%1;color:%2;border-radius:4px;font-size:%3px;font-weight:bold;border:none;}"
+            "QPushButton:hover{background:%4;}")
             .arg(isDark ? "#2A2A2A" : "#E0E0E0")
             .arg(isDark ? "#AAAAAA" : "#444444")
+            .arg(fsz + 2)
             .arg(isDark ? "#3A3A3A" : "#D0D0D0"));
         connect(addBtn, &QPushButton::clicked, this, &MainWindow::on_session_tab_add);
         _tab_bar_layout->addWidget(addBtn);
@@ -2651,6 +2654,7 @@ namespace pv
     void MainWindow::on_trigger_message(int msg)
     {
         if (msg == DSV_MSG_NEW_USB_DEVICE) {
+            dsv_info("on_trigger_message: DSV_MSG_NEW_USB_DEVICE received, dispatching to OnMessage.");
             OnMessage(msg);
             return;
         }
@@ -3041,9 +3045,16 @@ namespace pv
                              (unsigned long long)hw,
                              (unsigned long long)(_device_agent->handle()));
                     if (hw != NULL_HANDLE && hw != _device_agent->handle()) {
-                        dsv_info("New hardware attached while on demo; auto-switching.");
+                        dsv_info("DSV_MSG_NEW_USB_DEVICE: auto-switching to hw device.");
                         switch_to_device(hw);
+                    } else if (hw == NULL_HANDLE) {
+                        dsv_warn("DSV_MSG_NEW_USB_DEVICE: on_demo=true but find_latest_hardware_device_handle returned NULL!");
+                    } else {
+                        dsv_info("DSV_MSG_NEW_USB_DEVICE: already on hw device, no switch needed.");
                     }
+                } else {
+                    dsv_warn("DSV_MSG_NEW_USB_DEVICE: NOT on demo (on_demo=false), auto-switch skipped! "
+                             "_device_agent=%p", (void*)_device_agent);
                 }
                 break;
             }

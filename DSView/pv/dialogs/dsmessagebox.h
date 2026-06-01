@@ -46,6 +46,8 @@ public:
     QMessageBox *mBox(); 
 
     int exec();
+
+    void update_font();
     
     inline int IsYes(){return _bClickYes;}
 

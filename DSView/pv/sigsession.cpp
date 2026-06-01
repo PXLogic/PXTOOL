@@ -2012,6 +2012,7 @@ namespace pv
 
     void SigSession::device_lib_event_callback(int event)
     {
+        dsv_info("device_lib_event_callback: event=%d, _session=%p", event, (void*)_session);
         if (_session == NULL)
         {
             dsv_err("Error!Global variable \"_session\" is null.");
@@ -2022,9 +2023,10 @@ namespace pv
 
     void SigSession::on_device_lib_event(int event)
     {
+        dsv_info("on_device_lib_event: event=%d, _callback=%p", event, (void*)_callback);
         if (_callback == NULL)
         {
-            dsv_detail("The callback is null, so the device event was ignored.");
+            dsv_err("on_device_lib_event: callback is null, event=%d dropped!", event);
             return;
         }
 
@@ -2081,6 +2083,7 @@ namespace pv
         break;
 
         case DS_EV_NEW_DEVICE_ATTACH:
+            dsv_info("[HOTPLUG] SigSession: DS_EV_NEW_DEVICE_ATTACH received, forwarding DSV_MSG_NEW_USB_DEVICE to UI.");
             _callback->trigger_message(DSV_MSG_NEW_USB_DEVICE);
         break;
 

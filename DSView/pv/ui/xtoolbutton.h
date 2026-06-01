@@ -34,7 +34,12 @@ class XToolButton : public QToolButton
 
 public:
     XToolButton(QWidget *parent = nullptr);
+
+    void setCenterContent(bool center);
     
+protected:
+    void paintEvent(QPaintEvent *event) override;
+
 private:
     void mousePressEvent(QMouseEvent *event) override;
     void mouseReleaseEvent(QMouseEvent *event) override;
@@ -45,6 +50,7 @@ private slots:
 private:
     QMenu      *_menu;
     bool        _is_mouse_down;
+    bool        _centerContent = false;
 };
 
 #endif
