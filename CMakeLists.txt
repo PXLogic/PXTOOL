@@ -265,6 +265,7 @@ set(DSView_SOURCES
     DSView/pv/data/snapshot.cpp
     DSView/pv/data/signaldata.cpp
     DSView/pv/data/logicsnapshot.cpp
+    DSView/pv/data/spillmanager.cpp
     DSView/pv/data/analogsnapshot.cpp
     DSView/pv/dialogs/deviceoptions.cpp
     DSView/pv/prop/property.cpp
@@ -297,6 +298,7 @@ set(DSView_SOURCES
     DSView/pv/dock/deviceoptionsdock.cpp
     DSView/pv/toolbars/logobar.cpp
     DSView/pv/dialogs/about.cpp
+    DSView/pv/dialogs/diskcachedialog.cpp
     DSView/pv/dialogs/search.cpp
     DSView/pv/data/dsosnapshot.cpp
     DSView/pv/data/glitchfilter.cpp
@@ -399,6 +401,8 @@ set(DSView_HEADERS
     DSView/pv/sigsession.h
     DSView/pv/mainwindow.h
     DSView/pv/dialogs/deviceoptions.h
+    DSView/pv/data/spillmanager.h
+    DSView/pv/utility/diskcachesettings.h
     DSView/pv/prop/property.h
     DSView/pv/prop/int.h
     DSView/pv/prop/enum.h
@@ -425,6 +429,7 @@ set(DSView_HEADERS
     DSView/pv/dock/deviceoptionsdock.h
     DSView/pv/toolbars/logobar.h
     DSView/pv/dialogs/about.h
+    DSView/pv/dialogs/diskcachedialog.h
     DSView/pv/dialogs/search.h
     DSView/pv/dock/dsotriggerdock.h
     DSView/pv/view/trace.h
@@ -898,5 +903,4 @@ if(ENABLE_TESTS)
 	enable_testing()
 	add_test(test ${CMAKE_CURRENT_BINARY_DIR}/DSView/test/DSView-test)
 endif(ENABLE_TESTS)
-
 

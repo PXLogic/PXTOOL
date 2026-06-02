@@ -23,12 +23,15 @@
 #include "storeprogress.h" 
 #include "../sigsession.h"
 #include <QGridLayout>
-#include <QDialogButtonBox>
-#include <QTextEdit>
+#include <QLabel>
+#include <QLineEdit>
 #include <QPushButton>
 #include <QRadioButton>
 #include <QComboBox>
 #include <QFormLayout>
+#include <QHBoxLayout>
+#include <QVBoxLayout>
+#include <QBoxLayout>
 #include "../ui/msgbox.h"
 #include "../config/appconfig.h"
 #include "../interface/icallbacks.h"
@@ -43,13 +46,26 @@ namespace dialogs {
 StoreProgress::StoreProgress(SigSession *session, QWidget *parent) :
     DSDialog(parent)
 {
+    setObjectName("storeProgressDialog");
     _fileLab = NULL;
+    _pathLabel = NULL;
     _ckOrigin = NULL;
 
     _store_session = new StoreSession(session);
 
-    this->setMinimumSize(550, 220);
+    this->setMinimumSize(550, 240);
     this->setModal(true);
+    setTitleTextAlignment(Qt::AlignHCenter | Qt::AlignVCenter);
+    SetTitleSpace(8);
+    layout()->setSpacing(0);
+    layout()->setDirection(QBoxLayout::TopToBottom);
+    layout()->setAlignment(Qt::AlignTop);
+    layout()->setContentsMargins(0, 5, 0, 0);
+
+    auto *top_sep = new QWidget(this);
+    top_sep->setObjectName("device_options_divider");
+    top_sep->setFixedHeight(1);
+    layout()->addWidget(top_sep);
  
     _progress.setValue(0);
     _progress.setMaximum(100);
@@ -60,41 +76,60 @@ StoreProgress::StoreProgress(SigSession *session, QWidget *parent) :
     _end_cursor = NULL;
     _view = NULL;  
 
-    QGridLayout *grid = new QGridLayout(); 
+    QGridLayout *grid = new QGridLayout();
     _grid = grid;
-    grid->setContentsMargins(10, 20, 10, 10);
-    grid->setVerticalSpacing(25);
+    grid->setContentsMargins(16, 16, 16, 16);
+    grid->setHorizontalSpacing(8);
+    grid->setVerticalSpacing(10);
 
-    grid->setColumnStretch(0, 2);
-    grid->setColumnStretch(1, 2);
-    grid->setColumnStretch(2, 1);
-    grid->setColumnStretch(3, 1);
+    grid->setColumnStretch(0, 0);
+    grid->setColumnStretch(1, 1);
+    grid->setColumnStretch(2, 0);
 
-    _fileLab = new QTextEdit();
+    _pathLabel = new QLabel(tr("Save path"), this);
+    _fileLab = new QLineEdit(this);
     _fileLab->setReadOnly(true);   
     _fileLab->setObjectName("PathLine");
-    _fileLab->setMaximumHeight(50); 
+    _fileLab->setMinimumHeight(34);
+    _fileLab->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
 
     _openButton = new QPushButton(this);
-    _openButton->setText(tr("path"));
+    _openButton->setObjectName("device_cancel_btn");
+    _openButton->setText(tr("Open"));
+    _openButton->setMinimumWidth(76);
 
     _space = new QWidget(this);
     _space->setMinimumHeight(80);
     _space->setVisible(false);
 
-    grid->addWidget(&_progress, 0, 0, 1, 4);
-    grid->addWidget(_fileLab, 1, 0, 1, 3);
-    grid->addWidget(_openButton, 1, 3, 1, 1);    
-    grid->addWidget(_space);
-
-    QDialogButtonBox  *_button_box = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, 
-                                        Qt::Horizontal, this);
-    grid->addWidget(_button_box, 2, 2, 1, 2, Qt::AlignRight | Qt::AlignBottom);
+    grid->addWidget(&_progress, 0, 0, 1, 3);
+    grid->addWidget(_pathLabel, 1, 0, 1, 1);
+    grid->addWidget(_fileLab, 1, 1, 1, 1);
+    grid->addWidget(_openButton, 1, 2, 1, 1);
+    grid->addWidget(_space, 4, 0, 1, 3);
 
     layout()->addLayout(grid);
 
-    connect(_button_box, SIGNAL(rejected()), this, SLOT(reject()));
-    connect(_button_box, SIGNAL(accepted()), this, SLOT(accept()));
+    auto *bot_sep = new QWidget(this);
+    bot_sep->setObjectName("device_options_divider");
+    bot_sep->setFixedHeight(1);
+    layout()->addWidget(bot_sep);
+
+    auto *cancel_btn = new QPushButton(tr("Cancel"), this);
+    cancel_btn->setObjectName("device_cancel_btn");
+    auto *ok_btn = new QPushButton(tr("OK"), this);
+    ok_btn->setObjectName("device_ok_btn");
+
+    auto *footer_lay = new QHBoxLayout();
+    footer_lay->setContentsMargins(12, 10, 12, 10);
+    footer_lay->setSpacing(6);
+    footer_lay->addStretch();
+    footer_lay->addWidget(ok_btn);
+    footer_lay->addWidget(cancel_btn);
+    layout()->addLayout(footer_lay);
+
+    connect(cancel_btn, &QPushButton::clicked, this, &StoreProgress::reject);
+    connect(ok_btn, &QPushButton::clicked, this, &StoreProgress::accept);
 
     connect(_store_session, SIGNAL(progress_updated()),
         this, SLOT(on_progress_updated()), Qt::QueuedConnection);
@@ -176,8 +211,6 @@ void StoreProgress::accept()
         uint64_t start_index = 0;
         uint64_t end_index = 0;
 
-        auto &cursor_list = _view->get_cursorList();
-
         int dex1 = _start_cursor->currentIndex();
         int dex2 = _end_cursor->currentIndex();
 
@@ -222,8 +255,8 @@ void StoreProgress::accept()
     }
 
     _progress.setVisible(true);
-    _fileLab->setVisible(false);     
     _fileLab->setVisible(false);
+    _pathLabel->setVisible(false);
     _openButton->setVisible(false);
 
     if (_ckOrigin != NULL){
@@ -267,12 +300,16 @@ void StoreProgress::save_run(ISessionDataGetter *getter)
     if (_store_session->IsLogicDataType() && _view != NULL)
     {
         QFormLayout *lay = new QFormLayout();
-        lay->setContentsMargins(5, 0, 0, 0); 
+        lay->setContentsMargins(0, 4, 0, 0);
+        lay->setHorizontalSpacing(8);
+        lay->setVerticalSpacing(8);
         _start_cursor = new DsComboBox();
         _end_cursor = new DsComboBox();
+        _start_cursor->setObjectName("save_range_combo");
+        _end_cursor->setObjectName("save_range_combo");
    
-        _start_cursor->addItem("-");
-        _end_cursor->addItem("-");
+        _start_cursor->addItem(tr("Start"));
+        _end_cursor->addItem(tr("End"));
         
         auto &cursor_list = _view->get_cursorList();
 
@@ -286,7 +323,7 @@ void StoreProgress::save_run(ISessionDataGetter *getter)
 
         lay->addRow(tr("Start") , _start_cursor);
         lay->addRow(tr("End"), _end_cursor);
-        _grid->addLayout(lay, 2, 0, 1, 2);
+        _grid->addLayout(lay, 3, 0, 1, 2);
     }
 
     show();  
@@ -297,7 +334,9 @@ void StoreProgress::export_run()
     if (_store_session->IsLogicDataType())
     { 
         QFormLayout *lay = new QFormLayout();
-        lay->setContentsMargins(5, 0, 0, 0); 
+        lay->setContentsMargins(0, 4, 0, 0);
+        lay->setHorizontalSpacing(8);
+        lay->setVerticalSpacing(8);
         bool isOrg = AppConfig::Instance().appOptions.originalData;
 
         _ckOrigin  = new QRadioButton();
@@ -310,9 +349,11 @@ void StoreProgress::export_run()
 
         _start_cursor = new DsComboBox();
         _end_cursor = new DsComboBox();
+        _start_cursor->setObjectName("save_range_combo");
+        _end_cursor->setObjectName("save_range_combo");
    
-        _start_cursor->addItem("-");
-        _end_cursor->addItem("-");
+        _start_cursor->addItem(tr("Start"));
+        _end_cursor->addItem(tr("End"));
         
         auto &cursor_list = _view->get_cursorList();
         
@@ -333,7 +374,7 @@ void StoreProgress::export_run()
 
         lay->addRow("",_ckOrigin);
         lay->addRow("", _ckCompress);
-        _grid->addLayout(lay, 2, 0, 1, 2);
+        _grid->addLayout(lay, 3, 0, 1, 2);
 
         connect(_ckOrigin, SIGNAL(clicked(bool)), this, SLOT(on_ck_origin(bool)));
         connect(_ckCompress, SIGNAL(clicked(bool)), this, SLOT(on_ck_compress(bool)));

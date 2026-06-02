@@ -29,7 +29,8 @@
 #include "../dialogs/dsdialog.h" 
 #include "../interface/icallbacks.h"
 
-class QTextEdit;
+class QLabel;
+class QLineEdit;
 class QRadioButton;
 class QGridLayout;
 class QPushButton;
@@ -83,7 +84,8 @@ private:
     pv::StoreSession    *_store_session;
     QProgressBar        _progress;
     bool                _isExport;
-    QTextEdit           *_fileLab;
+    QLabel              *_pathLabel;
+    QLineEdit           *_fileLab;
     QRadioButton        *_ckOrigin;
     QRadioButton        *_ckCompress;
     QPushButton         *_openButton;

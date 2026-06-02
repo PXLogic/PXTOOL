@@ -942,10 +942,25 @@ namespace pv
             connect(&_sample_count, SIGNAL(currentIndexChanged(int)), this, SLOT(on_samplecount_sel(int)));
         }
 
-        void SamplingBar::update_buffer_label(bool /*stream_mode*/)
+        void SamplingBar::update_buffer_label(bool stream_mode)
         {
             if (!_lbl_buffer)
                 return;
+            if (stream_mode && _session && _session->disk_cache_settings().enabled) {
+                const auto &dc = _session->disk_cache_settings();
+                QString ram = dc.ram_limit_gb == 0
+                    ? QString("32 MB")
+                    : (dc.ram_limit_gb >= 1024
+                        ? QString("%1 TB").arg(dc.ram_limit_gb / 1024)
+                        : QString("%1 GB").arg(dc.ram_limit_gb));
+                QString disk = dc.disk_limit_gb == 0
+                    ? tr("Unlimited")
+                    : (dc.disk_limit_gb >= 1024
+                        ? QString("%1 TB").arg(dc.disk_limit_gb / 1024)
+                        : QString("%1 GB").arg(dc.disk_limit_gb));
+                _lbl_buffer->setText(QString("RAM: %1 / Disk: %2").arg(ram, disk));
+                return;
+            }
             _lbl_buffer->setText(tr("Buffer"));
         }
 
@@ -1626,15 +1641,6 @@ namespace pv
             update_mode_icon();
             update_triggers_toggle_btn();
 
-            if (_session->get_device()->is_demo() && bEnable)
-            {
-                QString opt_mode = _device_agent->get_demo_operation_mode();
-
-                if (opt_mode != "random" && mode == LOGIC){
-                    _sample_rate.setEnabled(false);
-                    _sample_count.setEnabled(false);
-                }
-            }
         }
 
         void SamplingBar::update_mode_icon()

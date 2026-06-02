@@ -1972,6 +1972,15 @@ QTextBrowser:hover
 QLineEdit#PathLine{
     color:#eff0f1;
 }
+QDialog#storeProgressDialog QLineEdit#PathLine {
+    color: #777777;
+}
+QDialog#storeProgressDialog QComboBox#save_range_combo {
+    padding-right: 28px;
+}
+QDialog#storeProgressDialog QComboBox#save_range_combo::drop-down {
+    width: 24px;
+}
 QTextEdit#PathLine{
     color:#eff0f1;
 }
@@ -2908,6 +2917,8 @@ QDialog#decoderOptionsDialog QWidget#device_options_divider,
 QDialog#displayOptionsDialog QWidget#device_options_divider,
 QDialog#logOptionsDialog QWidget#device_options_divider,
 QDialog#aboutDialog QWidget#device_options_divider,
+QDialog#storeProgressDialog QWidget#device_options_divider,
+QDialog#diskCacheSettingsDialog QWidget#device_options_divider,
 QDialog#dsMessageBoxDialog QWidget#device_options_divider {
     background-color: #333333;
     min-height: 1px;
@@ -2928,7 +2939,8 @@ QDialog#deviceOptionsDialog QGroupBox::title {
     color: #eff0f1;
 }
 QDialog#deviceOptionsDialog QComboBox,
-QDialog#logOptionsDialog QComboBox {
+QDialog#logOptionsDialog QComboBox,
+QDialog#diskCacheSettingsDialog QComboBox#disk_cache_combo {
     background-color: #2a2a2a;
     border: 1px solid #444444;
     border-radius: 3px;
@@ -2938,22 +2950,31 @@ QDialog#logOptionsDialog QComboBox {
     min-height: 22px;
 }
 QDialog#deviceOptionsDialog QComboBox::drop-down,
-QDialog#logOptionsDialog QComboBox::drop-down {
+QDialog#logOptionsDialog QComboBox::drop-down,
+QDialog#diskCacheSettingsDialog QComboBox#disk_cache_combo::drop-down {
     border: none;
     width: 16px;
 }
 QDialog#deviceOptionsDialog QComboBox::down-arrow,
-QDialog#logOptionsDialog QComboBox::down-arrow {
+QDialog#logOptionsDialog QComboBox::down-arrow,
+QDialog#diskCacheSettingsDialog QComboBox#disk_cache_combo::down-arrow {
     image: url(:/icons/sidebar/chevron-down.svg);
     width: 10px;
     height: 10px;
 }
 QDialog#deviceOptionsDialog QComboBox QAbstractItemView,
-QDialog#logOptionsDialog QComboBox QAbstractItemView {
+QDialog#logOptionsDialog QComboBox QAbstractItemView,
+QDialog#diskCacheSettingsDialog QComboBox#disk_cache_combo QAbstractItemView {
     background-color: #2a2a2a;
     border: 1px solid #444444;
     color: #cccccc;
     selection-background-color: #7c3aed;
+}
+QDialog#diskCacheSettingsDialog QComboBox#disk_cache_combo {
+    padding-right: 28px;
+}
+QDialog#diskCacheSettingsDialog QComboBox#disk_cache_combo::drop-down {
+    width: 24px;
 }
 QDialog#deviceOptionsDialog QRadioButton {
     color: #aaaaaa;

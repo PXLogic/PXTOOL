@@ -30,6 +30,9 @@
 #include <utility>
 #include <vector>
 #include <map>
+#include <unordered_map>
+
+namespace pv { namespace data { class SpillManager; } }
 
 #define CHANNEL_MAX_COUNT 64
 
@@ -166,6 +169,7 @@ public:
     }
 
     static int get_block_with_sample(uint64_t index, uint64_t *out_offset);
+    void set_spill_manager(SpillManager *mgr);
 
 private:
     bool get_sample_unlock(uint64_t index, int sig_index);
@@ -262,6 +266,13 @@ private:
     void move_first_node_to_last();
 
     void free_head_blocks(int count);
+    static bool is_spilled_lbp(const void *lbp);
+    static uint64_t block_id_from_index(uint64_t root_index, uint64_t lbp_index);
+    void *resolve_lbp_for_read(int order, uint64_t root_index, uint64_t lbp_index);
+    void *allocate_leaf_block();
+    void free_leaf_block(void *&lbp);
+    void check_pending_spills();
+    bool spill_oldest_block(uint16_t avoid_order, uint64_t avoid_root, uint64_t avoid_lbp);
 
 private:
     std::vector<std::vector<struct RootNode>> _ch_data;
@@ -277,6 +288,9 @@ private:
     std::vector<void*> _free_block_list;
     struct BlockIndex _cur_ref_block_indexs[CHANNEL_MAX_COUNT];
     int         _lst_free_block_index;
+    SpillManager *_spill_manager;
+    uint64_t    _ram_usage_bytes;
+    std::unordered_map<uint64_t, void*> _pending_spills;
  
 	friend class LogicSnapshotTest::Pow2;
 	friend class LogicSnapshotTest::Basic;

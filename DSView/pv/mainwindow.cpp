@@ -66,6 +66,7 @@
 #include "dialogs/regionoptions.h"
 #include "dialogs/applicationpardlg.h"
 #include "dialogs/shortcutdlg.h"
+#include "dialogs/diskcachedialog.h"
 
 #include "toolbars/samplingbar.h"
 #include "toolbars/trigbar.h"
@@ -268,6 +269,7 @@ namespace pv
         _action_load    = _menu_session->addAction(tr("Load..."));
         _action_store   = _menu_session->addAction(tr("Store..."));
         _action_default = _menu_session->addAction(tr("Default..."));
+        _action_disk_cache = _menu_session->addAction(tr("Disk Cache Settings..."));
         _action_open = _menu_file->addAction(tr("Open..."));
         _action_save    = _menu_file->addAction(tr("Save..."));
         _action_export  = _menu_file->addAction(tr("Export..."));
@@ -277,6 +279,7 @@ namespace pv
         connect(_action_load,    SIGNAL(triggered()), _file_bar, SLOT(on_actionLoad_triggered()));
         connect(_action_store,   SIGNAL(triggered()), _file_bar, SLOT(on_actionStore_triggered()));
         connect(_action_default, SIGNAL(triggered()), _file_bar, SLOT(on_actionDefault_triggered()));
+        connect(_action_disk_cache, &QAction::triggered, this, &MainWindow::on_disk_cache_settings);
         connect(_action_open,    SIGNAL(triggered()), _file_bar, SLOT(on_actionOpen_triggered()));
         connect(_action_save,    &QAction::triggered, this, &MainWindow::on_save);
         connect(_action_export,  &QAction::triggered, this, &MainWindow::on_export);
@@ -1336,6 +1339,20 @@ namespace pv
     {
         pv::dialogs::ApplicationParamDlg dlg;
         dlg.ShowDlg(this);
+    }
+
+    void MainWindow::on_disk_cache_settings()
+    {
+        pv::dialogs::DiskCacheDialog dlg(this);
+        dlg.set_settings(_session->disk_cache_settings());
+        if (dlg.exec() == QDialog::Accepted) {
+            pv::utility::DiskCacheSettings settings;
+            dlg.get_settings(settings);
+            settings.save();
+            _session->set_disk_cache_settings(settings);
+            if (_sampling_bar)
+                _sampling_bar->update_sample_count_list();
+        }
     }
 
     void MainWindow::on_screenShot()

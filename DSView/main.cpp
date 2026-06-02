@@ -38,8 +38,10 @@
 #include "config.h"
 #include "pv/appcontrol.h"
 #include "pv/log.h" 
+#include "pv/data/spillmanager.h"
 #include "pv/ui/langresource.h"
 #include <QDateTime>
+#include <QStandardPaths>
 #include <string>
 #include <ds_types.h>
 
@@ -222,6 +224,8 @@ bool bHighScale = true;
 
 	//----------------------init log
 	dsv_log_init(); // Don't call before QApplication be inited
+    pv::data::SpillManager::cleanup_stale_files(
+        QStandardPaths::writableLocation(QStandardPaths::TempLocation).toStdString());
 
 	if (bStoreLog && logLevel < XLOG_LEVEL_DBG){
 		logLevel = XLOG_LEVEL_DBG;

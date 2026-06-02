@@ -122,6 +122,7 @@ private slots:
     void on_screenShot();
     void on_save();
     void on_export();
+    void on_disk_cache_settings();
 
     // Shortcut slots
     void sc_start_collecting();
@@ -276,6 +277,7 @@ private:
     QAction *_action_save     = nullptr;
     QAction *_action_export   = nullptr;
     QAction *_action_capture  = nullptr;
+    QAction *_action_disk_cache = nullptr;
 
     // Window menu
     QMenu   *_menu_themes        = nullptr;

@@ -47,6 +47,7 @@
 #include "data/analogsnapshot.h"
 #include "data/dsosnapshot.h"
 #include "data/glitchfilter.h"
+#include "utility/diskcachesettings.h"
  
 struct srd_decoder;
 struct srd_channel;
@@ -59,6 +60,7 @@ namespace pv {
 namespace data {
 class SignalData;
 class Snapshot;
+class SpillManager;
 class AnalogSnapshot;
 class DsoSnapshot;
 class LogicSnapshot;
@@ -500,6 +502,8 @@ public:
     inline bool dso_data_is_out_off_range(){
         return _view_data->get_dso()->data_is_out_off_range();
     }
+    const utility::DiskCacheSettings& disk_cache_settings() const { return _disk_cache_settings; }
+    void set_disk_cache_settings(const utility::DiskCacheSettings& s) { _disk_cache_settings = s; }
 
     void update_lang_text();
 
@@ -679,6 +683,8 @@ private:
     std::vector<data::FlippedRegion> _glitch_undo_log;
     bool                             _glitch_filter_applied = false;
     bool                             _filter_in_progress = false;
+    utility::DiskCacheSettings       _disk_cache_settings;
+    data::SpillManager               *_spill_manager = nullptr;
     // Invalidate any pending glitch-filter state. Called from every code path
     // that replaces or reinitialises _view_data->get_logic(), because the
     // undo-log indices reference absolute sample positions in that snapshot.

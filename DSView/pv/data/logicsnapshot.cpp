@@ -28,6 +28,7 @@
 #include <algorithm>
  
 #include "logicsnapshot.h"
+#include "spillmanager.h"
 #include "../dsvdef.h"
 #include "../log.h"
 #include "../utility/array.h"
@@ -123,6 +124,8 @@ LogicSnapshot::LogicSnapshot() :
     _is_loop = false;
     _loop_offset = 0;
     _able_free = true;
+    _spill_manager = nullptr;
+    _ram_usage_bytes = 0;
 }
 
 LogicSnapshot::~LogicSnapshot()
@@ -137,7 +140,7 @@ void LogicSnapshot::free_data()
         for(auto& iter_rn : iter) {
             for (unsigned int k = 0; k < Scale; k++){
                 if (iter_rn.lbp[k] != NULL)
-                    free(iter_rn.lbp[k]);
+                    free_leaf_block(iter_rn.lbp[k]);
             }
         }
         std::vector<struct RootNode> void_vector;
@@ -145,6 +148,8 @@ void LogicSnapshot::free_data()
     }
     _ch_data.clear();
     _sample_count = 0;
+    _ram_usage_bytes = 0;
+    _pending_spills.clear();
 
     for(void *p : _free_block_list){
         free(p);
@@ -203,7 +208,8 @@ void LogicSnapshot::first_payload(const sr_datafeed_logic &logic, uint64_t total
     if (total_sample_count != _total_sample_count
         || channel_num != _channel_num
         || channel_changed
-        || _is_loop) {
+        || _is_loop
+        || _spill_manager) {
 
         free_data();
         _ch_index.clear();
@@ -249,7 +255,7 @@ void LogicSnapshot::first_payload(const sr_datafeed_logic &logic, uint64_t total
                 iter_rn.last = 0;
 
                 for (int j=0; j<64; j++){
-                    if (iter_rn.lbp[j] != NULL)
+                    if (iter_rn.lbp[j] != NULL && !is_spilled_lbp(iter_rn.lbp[j]))
                         memset(iter_rn.lbp[j], 0, LeafBlockSpace);
                 }
             }
@@ -284,6 +290,8 @@ void LogicSnapshot::append_cross_payload(const sr_datafeed_logic &logic)
     assert(logic.format == LA_CROSS_DATA);
     assert(logic.length >= ScaleSize * _channel_num);
     assert(logic.data);
+
+    check_pending_spills();
 
     uint8_t *data_src_ptr = (uint8_t*)logic.data;
     uint64_t len = logic.length;
@@ -348,7 +356,7 @@ void LogicSnapshot::append_cross_payload(const sr_datafeed_logic &logic)
 
             lbp = _ch_data[_ch_fraction][index0].lbp[index1];
             if (lbp == NULL){
-                lbp = malloc(LeafBlockSpace);
+                lbp = allocate_leaf_block();
                 if (lbp == NULL){
                     dsv_err("LogicSnapshot::append_cross_payload, Malloc memory failed!");
                     return;
@@ -400,7 +408,7 @@ void LogicSnapshot::append_cross_payload(const sr_datafeed_logic &logic)
     
     lbp = _ch_data[fill_chan][index0].lbp[index1];
     if (lbp == NULL){
-        lbp = malloc(LeafBlockSpace);
+        lbp = allocate_leaf_block();
         if (lbp == NULL){
             dsv_err("LogicSnapshot::append_cross_payload, Malloc memory failed!");
             return;
@@ -441,7 +449,7 @@ void LogicSnapshot::append_cross_payload(const sr_datafeed_logic &logic)
 
             lbp = _ch_data[fill_chan][index0].lbp[index1];
             if (lbp == NULL){
-                lbp = malloc(LeafBlockSpace);
+                lbp = allocate_leaf_block();
                 if (lbp == NULL){
                     dsv_err("LogicSnapshot::append_cross_payload, Malloc memory failed!");
                     return;
@@ -470,7 +478,7 @@ void LogicSnapshot::append_cross_payload(const sr_datafeed_logic &logic)
 
             lbp = _ch_data[fill_chan][index0].lbp[index1];
             if (lbp == NULL){
-                lbp = malloc(LeafBlockSpace);
+                lbp = allocate_leaf_block();
                 if (lbp == NULL){
                     dsv_err("LogicSnapshot::append_cross_payload, Malloc memory failed!");
                     return;
@@ -496,7 +504,7 @@ void LogicSnapshot::append_cross_payload(const sr_datafeed_logic &logic)
 
     lbp = _ch_data[_ch_fraction][index0].lbp[index1];
     if (lbp == NULL){
-        lbp = malloc(LeafBlockSpace);
+        lbp = allocate_leaf_block();
         if (lbp == NULL){
             dsv_err("LogicSnapshot::append_cross_payload, Malloc memory failed!");
             return;
@@ -515,12 +523,15 @@ void LogicSnapshot::append_cross_payload(const sr_datafeed_logic &logic)
             *_dest_ptr++ = *src_ptr++;
             len--;
         }
-    }   
+    }
+
+    check_pending_spills();
 }
 
 void LogicSnapshot::capture_ended()
 {
     std::lock_guard<std::mutex> lock(_mutex);
+    check_pending_spills();
 
     Snapshot::capture_ended();  
 
@@ -537,12 +548,13 @@ void LogicSnapshot::capture_ended()
     {
         for (unsigned int chan=0; chan<_channel_num; chan++)
         { 
-            if (_ch_data[chan][index0].lbp[index1] == NULL){
+            void *lbp = resolve_lbp_for_read(chan, index0, index1);
+            if (lbp == NULL || is_spilled_lbp(_ch_data[chan][index0].lbp[index1])){
                 dsv_err("ERROR:LogicSnapshot::capture_ended(),buffer is null.");
                 assert(false);
             }
-            const uint64_t *end_ptr = (uint64_t*)_ch_data[chan][index0].lbp[index1] + (LeafBlockSamples / Scale);
-            uint64_t *ptr = (uint64_t*)((uint8_t*)_ch_data[chan][index0].lbp[index1] + offset);
+            const uint64_t *end_ptr = (uint64_t*)lbp + (LeafBlockSamples / Scale);
+            uint64_t *ptr = (uint64_t*)((uint8_t*)lbp + offset);
 
             while (ptr < end_ptr){
                 *ptr++ = 0;
@@ -555,7 +567,9 @@ void LogicSnapshot::capture_ended()
 
 void LogicSnapshot::calc_mipmap(unsigned int order, uint8_t index0, uint8_t index1, uint64_t samples, bool isEnd)
 {
-    void *lbp = _ch_data[order][index0].lbp[index1];
+    void *lbp = resolve_lbp_for_read(order, index0, index1);
+    if (lbp == nullptr)
+        return;
     void *level1_ptr = (uint8_t*)lbp + LeafBlockSamples / 8;
     void *level2_ptr = (uint8_t*)level1_ptr + LeafBlockSamples / Scale / 8;
     void *level3_ptr = (uint8_t*)level2_ptr + LeafBlockSamples / Scale / Scale / 8;
@@ -644,18 +658,22 @@ void LogicSnapshot::calc_mipmap(unsigned int order, uint8_t index0, uint8_t inde
         uint64_t ref_root = _cur_ref_block_indexs[order].root_index;
         uint64_t ref_lbp  = _cur_ref_block_indexs[order].lbp_index;
 
-        if (_able_free || index0 > ref_root || (index0 == ref_root && index1 > ref_lbp))
-            free(_ch_data[order][index0].lbp[index1]);
-        else
+        if (_able_free || index0 > ref_root || (index0 == ref_root && index1 > ref_lbp)) {
+            free_leaf_block(_ch_data[order][index0].lbp[index1]);
+        } else if (_ch_data[order][index0].lbp[index1] != nullptr &&
+                   !is_spilled_lbp(_ch_data[order][index0].lbp[index1])) {
             _free_block_list.push_back(_ch_data[order][index0].lbp[index1]);
+        }
 
         _ch_data[order][index0].lbp[index1] = NULL;
     }
 
-    if (isEnd)
+    if (isEnd) {
         _last_calc_count[order] = 0;
-    else
+        spill_oldest_block(order, index0, index1);
+    } else {
         _last_calc_count[order] = samples;
+    }
 } 
 
 const uint8_t *LogicSnapshot::get_samples(uint64_t start_sample, uint64_t &end_sample, int sig_index, void **lbp)
@@ -688,16 +706,17 @@ const uint8_t *LogicSnapshot::get_samples(uint64_t start_sample, uint64_t &end_s
 
     _ring_sample_count -= _loop_offset;
 
-    if (order == -1 || _ch_data[order][index0].lbp[index1] == NULL)
+    void *resolved_lbp = (order == -1) ? nullptr : resolve_lbp_for_read(order, index0, index1);
+    if (order == -1 || resolved_lbp == NULL)
         return NULL;
     else{
         if (lbp != NULL)
-            *lbp = _ch_data[order][index0].lbp[index1];
+            *lbp = resolved_lbp;
 
         _cur_ref_block_indexs[order].root_index = index0;
         _cur_ref_block_indexs[order].lbp_index  = index1;
         
-        return (uint8_t*)_ch_data[order][index0].lbp[index1] + offset;
+        return (uint8_t*)resolved_lbp + offset;
     }
 }
 
@@ -734,7 +753,9 @@ bool LogicSnapshot::get_sample_self(uint64_t index, int sig_index)
             return (_ch_data[order][index0].first & root_pos_mask) != 0;
         }
         else {
-            uint64_t *lbp = (uint64_t*)_ch_data[order][index0].lbp[index1];
+            uint64_t *lbp = (uint64_t*)resolve_lbp_for_read(order, index0, index1);
+            if (!lbp)
+                return false;
             return *(lbp + ((index & LeafMask) >> ScalePower)) & index_mask;
         }
     }
@@ -862,7 +883,9 @@ bool LogicSnapshot::get_nxt_edge_self(uint64_t &index, bool last_sample, uint64_
                 }
 
                 if (!edge_hit) {
-                    uint64_t *lbp = (uint64_t*)_ch_data[order][i].lbp[inner_tog_pos];
+                    uint64_t *lbp = (uint64_t*)resolve_lbp_for_read(order, i, inner_tog_pos);
+                    if (!lbp)
+                        return false;
                     uint64_t blk_start = (i << (LeafBlockPower + RootScalePower)) + (inner_tog_pos << LeafBlockPower);
                     index = max(blk_start, index);
 
@@ -955,7 +978,9 @@ bool LogicSnapshot::get_pre_edge_self(uint64_t &index, bool last_sample,
                 }
 
                 if (!edge_hit) {
-                    uint64_t *lbp = (uint64_t*)_ch_data[order][i].lbp[inner_tog_pos];
+                    uint64_t *lbp = (uint64_t*)resolve_lbp_for_read(order, i, inner_tog_pos);
+                    if (!lbp)
+                        return false;
                     uint64_t blk_end = ((i << (LeafBlockPower + RootScalePower)) +
                                     (inner_tog_pos << LeafBlockPower)) | LeafMask;
                     index = min(blk_end, index);
@@ -1502,7 +1527,7 @@ uint8_t *LogicSnapshot::get_block_buf(int block_index, int sig_index, bool &samp
 
     uint64_t index = block_index / RootScale;
     uint8_t pos = block_index % RootScale;
-    uint8_t *lbp = (uint8_t*)_ch_data[order][index].lbp[pos];
+    uint8_t *lbp = (uint8_t*)resolve_lbp_for_read(order, index, pos);
 
     if (lbp == NULL)
         sample = (_ch_data[order][index].first & 1ULL << pos) != 0;
@@ -1538,10 +1563,8 @@ void LogicSnapshot::move_first_node_to_last()
 
         for (int x=0; x<(int)Scale; x++)
         {
-            if (rn.lbp[x] != NULL){
-                free(rn.lbp[x]);
-                rn.lbp[x] = NULL;
-            }
+            if (rn.lbp[x] != NULL)
+                free_leaf_block(rn.lbp[x]);
         }
 
         rn.tog = 0;
@@ -1586,10 +1609,8 @@ void LogicSnapshot::free_head_blocks(int count)
     for (int i = 0; i < (int)_channel_num; i++)
     {
         for (int j=_lst_free_block_index; j<count; j++){
-            if (_ch_data[i][0].lbp[j] != NULL){
-                free(_ch_data[i][0].lbp[j]);
-                _ch_data[i][0].lbp[j] = NULL;
-            }
+            if (_ch_data[i][0].lbp[j] != NULL)
+                free_leaf_block(_ch_data[i][0].lbp[j]);
 
             _ch_data[i][0].tog = (_ch_data[i][0].tog >> count) << count;
             _ch_data[i][0].first = (_ch_data[i][0].first >> count) << count;
@@ -1597,6 +1618,122 @@ void LogicSnapshot::free_head_blocks(int count)
         }
     }
     _lst_free_block_index = count;
+}
+
+void LogicSnapshot::set_spill_manager(SpillManager *mgr)
+{
+    _spill_manager = mgr;
+}
+
+bool LogicSnapshot::is_spilled_lbp(const void *lbp)
+{
+    return reinterpret_cast<uintptr_t>(lbp) == SpillManager::SPILLED_SENTINEL;
+}
+
+uint64_t LogicSnapshot::block_id_from_index(uint64_t root_index, uint64_t lbp_index)
+{
+    return root_index * RootScale + lbp_index;
+}
+
+void *LogicSnapshot::resolve_lbp_for_read(int order, uint64_t root_index, uint64_t lbp_index)
+{
+    if (order < 0 || (size_t)order >= _ch_data.size())
+        return nullptr;
+
+    void *lbp = _ch_data[order][root_index].lbp[lbp_index];
+    if (!is_spilled_lbp(lbp))
+        return lbp;
+
+    if (!_spill_manager)
+        return nullptr;
+
+    return const_cast<void*>(
+        _spill_manager->load_block((uint16_t)order, block_id_from_index(root_index, lbp_index)));
+}
+
+void *LogicSnapshot::allocate_leaf_block()
+{
+    void *lbp = malloc(LeafBlockSpace);
+    if (lbp != nullptr && _spill_manager) {
+        _ram_usage_bytes += LeafBlockSpace;
+        _spill_manager->notify_ram_usage(_ram_usage_bytes);
+    }
+    return lbp;
+}
+
+void LogicSnapshot::free_leaf_block(void *&lbp)
+{
+    if (lbp == nullptr)
+        return;
+    if (is_spilled_lbp(lbp)) {
+        lbp = nullptr;
+        return;
+    }
+    free(lbp);
+    if (_spill_manager && _ram_usage_bytes >= LeafBlockSpace) {
+        _ram_usage_bytes -= LeafBlockSpace;
+        _spill_manager->notify_ram_usage(_ram_usage_bytes);
+    }
+    lbp = nullptr;
+}
+
+void LogicSnapshot::check_pending_spills()
+{
+    if (!_spill_manager || _pending_spills.empty())
+        return;
+
+    std::vector<std::pair<uint16_t, uint64_t>> completed;
+    _spill_manager->drain_completed(completed);
+    for (const auto& item : completed) {
+        uint64_t key = (static_cast<uint64_t>(item.first) << 40) | (item.second & 0xFFFFFFFFFFULL);
+        auto it = _pending_spills.find(key);
+        if (it == _pending_spills.end())
+            continue;
+
+        uint64_t root_index = item.second / RootScale;
+        uint64_t lbp_index = item.second % RootScale;
+        void *&slot = _ch_data[item.first][root_index].lbp[lbp_index];
+        if (slot == it->second) {
+            free_leaf_block(slot);
+            slot = reinterpret_cast<void*>(SpillManager::SPILLED_SENTINEL);
+        }
+        _pending_spills.erase(it);
+    }
+}
+
+bool LogicSnapshot::spill_oldest_block(uint16_t avoid_order, uint64_t avoid_root, uint64_t avoid_lbp)
+{
+    if (!_spill_manager || !_spill_manager->should_spill() || _spill_manager->disk_full())
+        return false;
+
+    for (uint16_t order = 0; order < _ch_data.size(); ++order) {
+        for (uint64_t root = 0; root < _ch_data[order].size(); ++root) {
+            for (uint64_t lbp_index = 0; lbp_index < RootScale; ++lbp_index) {
+                if (order == avoid_order && root == avoid_root && lbp_index == avoid_lbp)
+                    continue;
+                if (_cur_ref_block_indexs[order].root_index == root &&
+                    _cur_ref_block_indexs[order].lbp_index == lbp_index)
+                    continue;
+
+                void *lbp = _ch_data[order][root].lbp[lbp_index];
+                if (lbp == nullptr || is_spilled_lbp(lbp))
+                    continue;
+                if (std::find(_free_block_list.begin(), _free_block_list.end(), lbp) != _free_block_list.end())
+                    continue;
+
+                uint64_t block_id = block_id_from_index(root, lbp_index);
+                uint64_t key = (static_cast<uint64_t>(order) << 40) | (block_id & 0xFFFFFFFFFFULL);
+                if (_pending_spills.find(key) != _pending_spills.end())
+                    continue;
+
+                if (_spill_manager->enqueue_spill(order, block_id, lbp, LeafBlockSpace)) {
+                    _pending_spills[key] = lbp;
+                    return true;
+                }
+            }
+        }
+    }
+    return false;
 }
 
 int LogicSnapshot::get_block_with_sample(uint64_t index, uint64_t *out_offset)
@@ -1744,8 +1881,23 @@ void LogicSnapshot::set_sample_block(uint64_t start_index, uint64_t end_index,
             uint8_t fill_byte = cur_val ? 0xFF : 0x00;
 
             void *lbp_buf = node.lbp[index1];
+            if (is_spilled_lbp(lbp_buf)) {
+                void *new_lbp = allocate_leaf_block();
+                if (!new_lbp) {
+                    dsv_err("LogicSnapshot::set_sample_block, malloc failed");
+                    return;
+                }
+                if (!_spill_manager->read_block_into(order, block_id_from_index(index0, index1),
+                                                     new_lbp, LeafBlockSpace)) {
+                    free_leaf_block(new_lbp);
+                    dsv_err("LogicSnapshot::set_sample_block, spill readback failed");
+                    return;
+                }
+                node.lbp[index1] = new_lbp;
+                lbp_buf = new_lbp;
+            }
             if (lbp_buf == nullptr) {
-                lbp_buf = malloc(LeafBlockSpace);
+                lbp_buf = allocate_leaf_block();
                 if (!lbp_buf) {
                     dsv_err("LogicSnapshot::set_sample_block, malloc failed");
                     return;

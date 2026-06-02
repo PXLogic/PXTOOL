@@ -33,6 +33,7 @@
 #include "data/decodermodel.h"
 #include "data/spectrumstack.h"
 #include "data/mathstack.h"
+#include "data/spillmanager.h"
 
 #include "view/analogsignal.h"
 #include "view/dsosignal.h"
@@ -55,6 +56,7 @@
 #include "config/appconfig.h"
 #include "utility/path.h"
 #include "ui/msgbox.h"
+#include <QStandardPaths>
 
 namespace pv
 {
@@ -128,6 +130,7 @@ namespace pv
         _repeat_wait_prog_timer.SetCallback(std::bind(&SigSession::repeat_wait_prog_timeout, this));
         _refresh_rt_timer.SetCallback(std::bind(&SigSession::realtime_refresh_timeout, this));       
         _trig_check_timer.SetCallback(std::bind(&SigSession::trig_check_timeout, this));
+        _disk_cache_settings.load();
     }
 
     SigSession::SigSession(SigSession &o)
@@ -137,6 +140,10 @@ namespace pv
 
     SigSession::~SigSession()
     {
+        if (_spill_manager) {
+            delete _spill_manager;
+            _spill_manager = nullptr;
+        }
         for(auto p : _data_list){
             p->clear();
             delete p;
@@ -1247,7 +1254,25 @@ namespace pv
 
         if (_capture_data->get_logic()->last_ended())
         {
-            _capture_data->get_logic()->set_loop(is_loop_mode());
+            if (_spill_manager) {
+                delete _spill_manager;
+                _spill_manager = nullptr;
+            }
+            if (_is_stream_mode && _disk_cache_settings.enabled) {
+                const uint64_t ram_limit = _disk_cache_settings.ram_limit_gb == 0
+                    ? SR_MB(32)
+                    : (_disk_cache_settings.ram_limit_gb * SR_GB(1));
+                const uint64_t disk_limit = _disk_cache_settings.disk_limit_gb == 0 ? 0 : (_disk_cache_settings.disk_limit_gb * SR_GB(1));
+                QString spill_dir = _disk_cache_settings.spill_dir.trimmed();
+                if (spill_dir.isEmpty())
+                    spill_dir = QStandardPaths::writableLocation(QStandardPaths::TempLocation);
+                _spill_manager = new data::SpillManager(ram_limit, disk_limit, spill_dir.toStdString());
+                _spill_manager->init_channels((uint16_t)get_ch_num(SR_CHANNEL_LOGIC),
+                                              QString::number((qulonglong)QDateTime::currentMSecsSinceEpoch()).toStdString());
+            }
+
+            _capture_data->get_logic()->set_loop(is_loop_mode() && !_spill_manager);
+            _capture_data->get_logic()->set_spill_manager(_spill_manager);
 
             bool bNotFree = is_decoding() && _view_data == _capture_data;
 
@@ -1483,6 +1508,12 @@ namespace pv
             _capture_data->get_logic()->capture_ended();
             _capture_data->get_dso()->capture_ended();
             _capture_data->get_analog()->capture_ended();
+            if (_spill_manager) {
+                _spill_manager->log_stats_summary();
+                _capture_data->get_logic()->set_spill_manager(nullptr);
+                delete _spill_manager;
+                _spill_manager = nullptr;
+            }
 
             if (packet->status != SR_PKT_OK)
             {
