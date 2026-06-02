@@ -189,8 +189,8 @@ SideBar::SideBar(QWidget *parent, view::View &view, SigSession *session)
     _stack->addWidget(measure_wrap);      // page 2: measures (header + measure dock)
     _stack->addWidget(search_wrap);       // page 3: search (header + search dock)
     _stack->addWidget(options_wrap);      // page 4: device options panel
-    _stack->addWidget(log_wrap);          // page 5: log panel
-    _stack->addWidget(filter_wrap);       // page 6: glitch filter
+    _stack->addWidget(filter_wrap);       // page 5: glitch filter
+    _stack->addWidget(log_wrap);          // page 6: log panel
     _stack->setVisible(false);
     _stack->setMinimumWidth(kStackMinWidth);
 
@@ -209,14 +209,14 @@ SideBar::SideBar(QWidget *parent, view::View &view, SigSession *session)
         ":/icons/sidebar/ruler.svg",
         ":/icons/sidebar/search.svg",
         ":/icons/sidebar/settings-2.svg",
-        ":/icons/sidebar/log.svg",
-        ":/icons/sidebar/filter.svg"
+        ":/icons/sidebar/filter.svg",
+        ":/icons/sidebar/log.svg"
     };
     static const char *labels[TabCount] = {
         QT_TR_NOOP("Trigger"), QT_TR_NOOP("Decode"),
         QT_TR_NOOP("Measure"), QT_TR_NOOP("Search"),
-        QT_TR_NOOP("Options"), QT_TR_NOOP("Log"),
-        QT_TR_NOOP("Filter")
+        QT_TR_NOOP("Options"), QT_TR_NOOP("Filter"),
+        QT_TR_NOOP("Log")
     };
 
     for (int i = 0; i < TabCount; i++) {
@@ -454,8 +454,8 @@ void SideBar::retranslateUi()
     static const char *labels[TabCount] = {
         QT_TR_NOOP("Trigger"), QT_TR_NOOP("Decode"),
         QT_TR_NOOP("Measure"), QT_TR_NOOP("Search"),
-        QT_TR_NOOP("Options"), QT_TR_NOOP("Log"),
-        QT_TR_NOOP("Filter")
+        QT_TR_NOOP("Options"), QT_TR_NOOP("Filter"),
+        QT_TR_NOOP("Log")
     };
     for (int i = 0; i < TabCount; i++)
         _btns[i]->setText(tr(labels[i]));

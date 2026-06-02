@@ -63,8 +63,8 @@ public:
         TabMeasures = 2,
         TabSearch   = 3,
         TabOptions  = 4,
-        TabLogs     = 5,
-        TabFilter   = 6,
+        TabFilter   = 5,
+        TabLogs     = 6,
         TabCount    = 7
     };
 
