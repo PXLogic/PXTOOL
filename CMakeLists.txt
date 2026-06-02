@@ -62,7 +62,7 @@ endif()
 set(DISABLE_WERROR TRUE) #Build without -Werror
 set(ENABLE_SIGNALS TRUE) #Build with UNIX signals
 set(ENABLE_COTIRE FALSE) #Enable cotire
-set(ENABLE_TESTS  FALSE) #Enable unit tests
+option(ENABLE_TESTS "Enable unit tests" OFF)
 set(STATIC_PKGDEPS_LIBS FALSE) #Statically link to (pkg-config) libraries
 
 if(WIN32)
@@ -383,6 +383,7 @@ set(DSView_SOURCES
     DSView/pv/ui/uimanager.cpp
     DSView/pv/ui/popupdlglist.cpp
     DSView/pv/dock/logdock.cpp
+    DSView/pv/dock/logsearch.cpp
     DSView/pv/sessioncallback.cpp
     DSView/pv/dialogs/shortcutdlg.cpp
 )
@@ -498,6 +499,7 @@ set(DSView_HEADERS
     DSView/pv/ui/fn.h
     DSView/pv/ui/xtoolbutton.h
     DSView/pv/dock/logdock.h
+    DSView/pv/dock/logsearch.h
     DSView/pv/dialogs/shortcutdlg.h
 )
  
@@ -899,8 +901,7 @@ include(CPack)
 #-------------------------------------------------------------------------------
 
 if(ENABLE_TESTS)
-	add_subdirectory(test)
+	add_subdirectory(DSView/test)
 	enable_testing()
-	add_test(test ${CMAKE_CURRENT_BINARY_DIR}/DSView/test/DSView-test)
+	add_test(NAME DSView-test COMMAND DSView-test)
 endif(ENABLE_TESTS)
-

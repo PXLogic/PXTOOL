@@ -97,6 +97,73 @@ namespace pv {
 namespace
 {
     bool g_enable_ncclient = true;
+
+    bool isTextInputWidget(QWidget *widget)
+    {
+        return qobject_cast<QLineEdit *>(widget) ||
+               qobject_cast<QTextEdit *>(widget) ||
+               qobject_cast<QPlainTextEdit *>(widget);
+    }
+
+    Qt::KeyboardModifiers currentKeyboardModifiers()
+    {
+        Qt::KeyboardModifiers modifiers;
+        if (GetKeyState(VK_SHIFT) & 0x8000)
+            modifiers |= Qt::ShiftModifier;
+        if (GetKeyState(VK_CONTROL) & 0x8000)
+            modifiers |= Qt::ControlModifier;
+        if (GetKeyState(VK_MENU) & 0x8000)
+            modifiers |= Qt::AltModifier;
+        return modifiers;
+    }
+
+    QString keyTextFromNative(WPARAM key, LPARAM scanCodeInfo)
+    {
+        if (key == VK_RETURN || key == VK_BACK || key == VK_DELETE ||
+            key == VK_LEFT || key == VK_RIGHT || key == VK_UP || key == VK_DOWN ||
+            key == VK_TAB || key == VK_ESCAPE) {
+            return QString();
+        }
+
+        BYTE keyboardState[256] = {};
+        if (!GetKeyboardState(keyboardState))
+            return QString();
+
+        WCHAR text[8] = {};
+        const UINT scanCode = (scanCodeInfo >> 16) & 0xff;
+        const int count = ToUnicode((UINT)key, scanCode, keyboardState,
+                                    text, sizeof(text) / sizeof(text[0]), 0);
+        if (count <= 0)
+            return QString();
+
+        return QString::fromWCharArray(text, count);
+    }
+
+    int qtKeyFromNative(WPARAM key)
+    {
+        switch (key) {
+        case VK_BACK:
+            return Qt::Key_Backspace;
+        case VK_DELETE:
+            return Qt::Key_Delete;
+        case VK_RETURN:
+            return Qt::Key_Return;
+        case VK_LEFT:
+            return Qt::Key_Left;
+        case VK_RIGHT:
+            return Qt::Key_Right;
+        case VK_UP:
+            return Qt::Key_Up;
+        case VK_DOWN:
+            return Qt::Key_Down;
+        case VK_TAB:
+            return Qt::Key_Tab;
+        case VK_ESCAPE:
+            return Qt::Key_Escape;
+        default:
+            return (int)key;
+        }
+    }
 }
 
 //-----------------------------WinNativeWidget 
@@ -238,15 +305,41 @@ LRESULT CALLBACK WinNativeWidget::WndProc(HWND hWnd, UINT message, WPARAM wParam
         }
         case WM_KEYDOWN:
         { 
-            //enable the hot key.
-            QKeyEvent keyEvent(QEvent::KeyPress, (int)wParam, 0);
-            QApplication::sendEvent(self->_childWidget->GetBodyView(), &keyEvent);
+            QWidget *target = QApplication::focusWidget();
+            const bool textInput = isTextInputWidget(target);
+            if (!textInput)
+                target = self->_childWidget->GetBodyView();
+
+            QKeyEvent keyEvent(QEvent::KeyPress, qtKeyFromNative(wParam),
+                               currentKeyboardModifiers(),
+                               textInput ? QString() : keyTextFromNative(wParam, lParam));
+            QApplication::sendEvent(target, &keyEvent);
+            break;
+        }
+        case WM_CHAR:
+        {
+            QWidget *target = QApplication::focusWidget();
+            if (!isTextInputWidget(target))
+                break;
+
+            const wchar_t ch = static_cast<wchar_t>(wParam);
+            if (ch >= 0x20) {
+                QKeyEvent keyEvent(QEvent::KeyPress, 0,
+                                   currentKeyboardModifiers(),
+                                   QString::fromWCharArray(&ch, 1));
+                QApplication::sendEvent(target, &keyEvent);
+            }
             break;
         }
         case WM_KEYUP:
         {   
-            QKeyEvent keyEvent(QEvent::KeyRelease, (int)wParam, 0);
-            QApplication::sendEvent(self->_childWidget->GetBodyView(), &keyEvent);
+            QWidget *target = QApplication::focusWidget();
+            if (!isTextInputWidget(target))
+                target = self->_childWidget->GetBodyView();
+
+            QKeyEvent keyEvent(QEvent::KeyRelease, qtKeyFromNative(wParam),
+                               currentKeyboardModifiers());
+            QApplication::sendEvent(target, &keyEvent);
             break;
         }
         case WM_ENTERSIZEMOVE:

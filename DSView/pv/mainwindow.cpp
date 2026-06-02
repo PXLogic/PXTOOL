@@ -32,6 +32,9 @@
 #include <QToolBar>
 #include <QDesktopServices>
 #include <QKeyEvent>
+#include <QLineEdit>
+#include <QPlainTextEdit>
+#include <QTextEdit>
 #include <QEvent>
 #include <QtGlobal>
 #include <QApplication>
@@ -2302,6 +2305,13 @@ namespace pv
     
         if (event->type() == QEvent::KeyPress)
         {
+            QWidget *focus = QApplication::focusWidget();
+            if (qobject_cast<QLineEdit *>(focus) ||
+                qobject_cast<QTextEdit *>(focus) ||
+                qobject_cast<QPlainTextEdit *>(focus)) {
+                return false;
+            }
+
             const auto &sigs = _session->get_signals();
             QKeyEvent *ke = (QKeyEvent *)event;
             
