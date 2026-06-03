@@ -49,6 +49,7 @@ class QVBoxLayout;
 class QStatusBar;
 class QToolBar;
 class QWidget;
+class QLabel;
 class QDockWidget;
 class AppControl;
 class DeviceAgent;
@@ -184,8 +185,12 @@ private:
     void reset_all_view();
     bool confirm_to_store_data();
     void update_toolbar_view_status();
-    void calc_min_height();    
+    void calc_min_height();
     void update_title_bar_text();
+    void setup_disk_cache_footer();
+    void update_disk_cache_footer();
+    QString format_disk_cache_bytes(uint64_t bytes) const;
+    QString format_disk_cache_speed(uint64_t bytes_per_sec) const;
 
     //json operation
 private:
@@ -337,6 +342,10 @@ private:
     QStackedWidget     *_session_stack;
     QWidget            *_session_tab_bar;
     QHBoxLayout        *_tab_bar_layout;
+    QWidget            *_disk_cache_footer_line = nullptr;
+    QWidget            *_disk_cache_footer = nullptr;
+    QLabel             *_disk_cache_footer_label = nullptr;
+    QTimer              _disk_cache_footer_timer;
 
     // Device-grouped multi-session bookkeeping (Task 2: scaffolding only,
     // no callers yet).

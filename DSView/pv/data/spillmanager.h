@@ -24,6 +24,7 @@ public:
 
     bool init_channels(uint16_t channel_count, const std::string& session_id);
     bool enqueue_spill(uint16_t channel, uint64_t block_id, const void* data, size_t size);
+    void wait_for_idle();
     void drain_completed(std::vector<std::pair<uint16_t, uint64_t>>& out);
     const void* load_block(uint16_t channel, uint64_t block_id);
     bool read_block_into(uint16_t channel, uint64_t block_id, void* out_buf, size_t size);
@@ -31,6 +32,9 @@ public:
     void notify_ram_usage(uint64_t bytes_in_ram);
     bool should_spill() const;
     bool disk_full() const;
+    uint64_t ram_usage_bytes() const;
+    uint64_t disk_usage_bytes() const;
+    uint64_t recent_write_bytes_per_sec() const;
     void log_stats_summary();
     static void cleanup_stale_files(const std::string& spill_dir);
 
@@ -45,11 +49,13 @@ private:
     struct WriteJob {
         uint16_t channel = 0;
         uint64_t block_id = 0;
-        std::vector<uint8_t> data;
+        const uint8_t* data = nullptr;
+        size_t size = 0;
     };
 
-    static constexpr int MAX_QUEUE_DEPTH = 32;
+    static constexpr int MAX_QUEUE_DEPTH = 128;
     static constexpr int LRU_SLOTS = 128;
+    static constexpr size_t FILE_BUFFER_BYTES = 4 * 1024 * 1024;
 
     static uint64_t make_key(uint16_t ch, uint64_t block_id)
     {
@@ -69,6 +75,7 @@ private:
 
     std::vector<FILE*> spill_files_;
     std::vector<std::string> spill_paths_;
+    std::vector<std::vector<char>> file_buffers_;
     std::mutex file_mutex_;
 
     std::unordered_map<uint64_t, uint64_t> block_offsets_;
@@ -79,8 +86,10 @@ private:
     std::mutex queue_mutex_;
     std::condition_variable queue_cv_;
     std::condition_variable queue_space_cv_;
+    std::condition_variable idle_cv_;
     bool stop_io_;
     std::thread io_thread_;
+    int active_writes_;
 
     std::deque<std::pair<uint16_t, uint64_t>> completed_spills_;
     std::mutex completed_mutex_;
@@ -95,6 +104,11 @@ private:
     std::atomic<uint64_t> stat_lru_misses_;
     std::atomic<uint64_t> stat_queue_peak_;
     std::atomic<uint64_t> stat_stalls_;
+    std::atomic<uint64_t> speed_window_start_ms_;
+    std::atomic<uint64_t> speed_window_bytes_;
+    std::atomic<uint64_t> speed_bytes_per_sec_;
+    std::atomic<uint64_t> first_write_ms_;
+    std::atomic<uint64_t> last_progress_log_ms_;
 };
 
 } // namespace data

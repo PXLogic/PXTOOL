@@ -505,6 +505,18 @@ public:
     const utility::DiskCacheSettings& disk_cache_settings() const { return _disk_cache_settings; }
     void set_disk_cache_settings(const utility::DiskCacheSettings& s) { _disk_cache_settings = s; }
 
+    struct DiskCacheStatus {
+        bool enabled = false;
+        bool active = false;
+        uint64_t ram_limit_gb = 0;
+        uint64_t disk_limit_gb = 0;
+        uint64_t cached_bytes = 0;
+        uint64_t write_bytes_per_sec = 0;
+        QString spill_dir;
+    };
+
+    DiskCacheStatus disk_cache_status() const;
+
     void update_lang_text();
 
     bool have_decoded_result();

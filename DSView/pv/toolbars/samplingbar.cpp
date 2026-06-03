@@ -822,12 +822,31 @@ namespace pv
                 return;
             }
 
+            uint64_t depth_for_duration = hw_depth;
+            if (stream_mode && _session && _session->disk_cache_settings().enabled) {
+                const auto &dc = _session->disk_cache_settings();
+                const uint64_t disk_gb = dc.disk_limit_gb == 0 ? 128 : dc.disk_limit_gb;
+                double stream_buff_gb = 0;
+                if (_device_agent->get_config_double(SR_CONF_STREAM_BUFF, stream_buff_gb) &&
+                    stream_buff_gb > 0) {
+                    const double scaled_depth =
+                        (static_cast<double>(hw_depth) * static_cast<double>(disk_gb)) /
+                        stream_buff_gb;
+                    depth_for_duration = qMax<uint64_t>(1, static_cast<uint64_t>(scaled_depth));
+                } else {
+                    const int ch_num = qMax(1, static_cast<int>(_session->get_ch_num(SR_CHANNEL_LOGIC)));
+                    depth_for_duration = disk_gb * SR_GB(1) * 8 / ch_num;
+                }
+            }
+
             const double hw_duration = hw_depth / (samplerate * (1.0 / SR_SEC(1)));
+            const double disk_cache_duration =
+                depth_for_duration / (samplerate * (1.0 / SR_SEC(1)));
 
             if (mode == DSO)
                 duration = max_timebase;
             else if (stream_mode)
-                duration = hw_duration;
+                duration = disk_cache_duration;
             else if (rle_support)
                 duration = rle_depth / (samplerate * (1.0 / SR_SEC(1)));
             else
@@ -944,23 +963,9 @@ namespace pv
 
         void SamplingBar::update_buffer_label(bool stream_mode)
         {
+            (void)stream_mode;
             if (!_lbl_buffer)
                 return;
-            if (stream_mode && _session && _session->disk_cache_settings().enabled) {
-                const auto &dc = _session->disk_cache_settings();
-                QString ram = dc.ram_limit_gb == 0
-                    ? QString("32 MB")
-                    : (dc.ram_limit_gb >= 1024
-                        ? QString("%1 TB").arg(dc.ram_limit_gb / 1024)
-                        : QString("%1 GB").arg(dc.ram_limit_gb));
-                QString disk = dc.disk_limit_gb == 0
-                    ? tr("Unlimited")
-                    : (dc.disk_limit_gb >= 1024
-                        ? QString("%1 TB").arg(dc.disk_limit_gb / 1024)
-                        : QString("%1 GB").arg(dc.disk_limit_gb));
-                _lbl_buffer->setText(QString("RAM: %1 / Disk: %2").arg(ram, disk));
-                return;
-            }
             _lbl_buffer->setText(tr("Buffer"));
         }
 

@@ -140,15 +140,15 @@ namespace pv
 
     SigSession::~SigSession()
     {
-        if (_spill_manager) {
-            delete _spill_manager;
-            _spill_manager = nullptr;
-        }
         for(auto p : _data_list){
             p->clear();
             delete p;
         }
         _data_list.clear();
+        if (_spill_manager) {
+            delete _spill_manager;
+            _spill_manager = nullptr;
+        }
     }
 
     bool SigSession::init()
@@ -683,6 +683,10 @@ namespace pv
         int mode = _device_agent.get_work_mode();
         bool bAddDecoder = false;
         bool bSwapBuffer = false;
+        const bool suspend_live_decode_for_disk_cache =
+            mode == LOGIC && _is_stream_mode && _disk_cache_settings.enabled
+            && _device_agent.is_demo()
+            && _device_agent.get_demo_operation_mode() == "random";
    
         if (mode == DSO || mode == ANALOG)
         {
@@ -727,8 +731,14 @@ namespace pv
         }
 
         if (bAddDecoder){
-            clear_all_decode_task2();
-            clear_decode_result(); 
+            if (suspend_live_decode_for_disk_cache) {
+                bAddDecoder = false;
+                dsv_warn("SigSession::exec_capture: live protocol decode suspended "
+                         "for demo random disk-cache stream stress test.");
+            } else {
+                clear_all_decode_task2();
+                clear_decode_result();
+            }
         }
 
         // Set the buffer to store the captured data
@@ -1510,9 +1520,6 @@ namespace pv
             _capture_data->get_analog()->capture_ended();
             if (_spill_manager) {
                 _spill_manager->log_stats_summary();
-                _capture_data->get_logic()->set_spill_manager(nullptr);
-                delete _spill_manager;
-                _spill_manager = nullptr;
             }
 
             if (packet->status != SR_PKT_OK)
@@ -2715,6 +2722,21 @@ namespace pv
     void SigSession::apply_samplerate()
     {
         on_load_config_end();
+    }
+
+    SigSession::DiskCacheStatus SigSession::disk_cache_status() const
+    {
+        DiskCacheStatus st;
+        st.enabled = _disk_cache_settings.enabled;
+        st.ram_limit_gb = _disk_cache_settings.ram_limit_gb;
+        st.disk_limit_gb = _disk_cache_settings.disk_limit_gb;
+        st.spill_dir = _disk_cache_settings.spill_dir;
+        st.active = _spill_manager != nullptr;
+        if (_spill_manager) {
+            st.cached_bytes = _spill_manager->ram_usage_bytes() + _spill_manager->disk_usage_bytes();
+            st.write_bytes_per_sec = _spill_manager->recent_write_bytes_per_sec();
+        }
+        return st;
     }
 
     pv::data::LogicSnapshot* SigSession::get_view_logic_snapshot()

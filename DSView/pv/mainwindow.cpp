@@ -26,6 +26,7 @@
 #include <QMessageBox>
 #include <QMenu>
 #include <QMenuBar>
+#include <QLabel>
 #include <QStatusBar>
 #include <QVBoxLayout>
 #include <QWidget>
@@ -47,6 +48,7 @@
 #include <QTextStream>
 #include <QJsonValue>
 #include <QJsonArray>
+#include <QStringList>
 #include <QSet>
 #include <QDateTime>
 #include <functional>
@@ -105,6 +107,7 @@
 #include "dsvdef.h"
 #include "appcontrol.h"
 #include "utility/encoding.h"
+#include "utility/diskcachesettings.h"
 #include "utility/path.h"
 #include "log.h"
 #include "sigsession.h"
@@ -243,6 +246,7 @@ namespace pv
         _vertical_layout->addWidget(_session_tab_bar);
 
         rebuild_tab_buttons();
+        setup_disk_cache_footer();
 
         // Unified sidebar (replaces individual trigger/protocol/measure/search docks)
         _sidebar_dock = new QDockWidget(this);
@@ -395,6 +399,11 @@ namespace pv
                 _sampling_bar,
                 &pv::toolbars::SamplingBar::update_sample_count_list);
 
+        connect(_sidebar_widget->device_options_widget(),
+                &dock::DeviceOptionsDock::sig_disk_cache_settings_changed,
+                this,
+                &MainWindow::update_disk_cache_footer);
+
         // SamplingBar
         connect(_sampling_bar, SIGNAL(sig_store_session_data()), this, SLOT(on_save()));
         connect(_sampling_bar, &pv::toolbars::SamplingBar::sig_switch_device,
@@ -404,7 +413,9 @@ namespace pv
         connect(_sidebar_widget->dso_trigger_widget(), SIGNAL(set_trig_pos(int)), _view, SLOT(set_trig_pos(int)));
 
         _delay_prop_msg_timer.SetCallback(std::bind(&MainWindow::on_delay_prop_msg, this));
- 
+        connect(&_disk_cache_footer_timer, &QTimer::timeout,
+                this, &MainWindow::update_disk_cache_footer);
+
         _logo_bar->set_mainform_callback(this);
 
         // Try load from file.
@@ -427,6 +438,83 @@ namespace pv
 
         on_load_device_first();
         setup_shortcuts();
+        update_disk_cache_footer();
+    }
+
+    void MainWindow::setup_disk_cache_footer()
+    {
+        _disk_cache_footer_line = new QWidget(_central_widget);
+        _disk_cache_footer_line->setObjectName("disk_cache_footer_line");
+        _disk_cache_footer_line->setFixedHeight(1);
+        _vertical_layout->addWidget(_disk_cache_footer_line);
+
+        _disk_cache_footer = new QWidget(_central_widget);
+        _disk_cache_footer->setObjectName("disk_cache_footer");
+        _disk_cache_footer->setFixedHeight(22);
+
+        auto *layout = new QHBoxLayout(_disk_cache_footer);
+        layout->setContentsMargins(8, 0, 8, 0);
+        layout->setSpacing(10);
+
+        _disk_cache_footer_label = new QLabel(_disk_cache_footer);
+        _disk_cache_footer_label->setObjectName("disk_cache_footer_label");
+        _disk_cache_footer_label->setAlignment(Qt::AlignVCenter | Qt::AlignRight);
+        _disk_cache_footer_label->setTextInteractionFlags(Qt::TextSelectableByMouse);
+        layout->addWidget(_disk_cache_footer_label, 1);
+
+        _vertical_layout->addWidget(_disk_cache_footer);
+    }
+
+    QString MainWindow::format_disk_cache_bytes(uint64_t bytes) const
+    {
+        static const char *units[] = {"B", "KB", "MB", "GB", "TB"};
+        double value = static_cast<double>(bytes);
+        int unit = 0;
+        while (value >= 1024.0 && unit < 4) {
+            value /= 1024.0;
+            unit++;
+        }
+        if (unit == 0)
+            return QStringLiteral("%1 %2").arg(bytes).arg(units[unit]);
+        return QStringLiteral("%1 %2").arg(value, 0, 'f', value >= 100.0 ? 0 : 1).arg(units[unit]);
+    }
+
+    QString MainWindow::format_disk_cache_speed(uint64_t bytes_per_sec) const
+    {
+        return tr("%1/s").arg(format_disk_cache_bytes(bytes_per_sec));
+    }
+
+    void MainWindow::update_disk_cache_footer()
+    {
+        if (!_disk_cache_footer || !_disk_cache_footer_label || !_session)
+            return;
+
+        const SigSession::DiskCacheStatus st = _session->disk_cache_status();
+        AppConfig &app = AppConfig::Instance();
+        const bool isDark = (app.frameOptions.style == "dark");
+        const QString border = isDark ? QStringLiteral("#333333") : QStringLiteral("#BBBBBB");
+        if (_disk_cache_footer_line)
+            _disk_cache_footer_line->setStyleSheet(QStringLiteral(
+                "QWidget#disk_cache_footer_line{background:%1;}").arg(border));
+
+        QStringList parts;
+        parts << (st.enabled ? tr("Disk Cache: Enabled") : tr("Disk Cache: Disabled"));
+        if (st.enabled) {
+            parts << tr("RAM %1").arg(pv::utility::DiskCacheSettings::format_ram_limit_text(st.ram_limit_gb));
+            parts << tr("Disk %1").arg(pv::utility::DiskCacheSettings::format_disk_limit_text(st.disk_limit_gb));
+            if (st.active || st.cached_bytes > 0 || st.write_bytes_per_sec > 0) {
+                parts << tr("Write %1").arg(format_disk_cache_speed(st.write_bytes_per_sec));
+                parts << tr("Cached %1").arg(format_disk_cache_bytes(st.cached_bytes));
+            }
+        }
+
+        _disk_cache_footer_label->setText(parts.join(QStringLiteral("   ")));
+
+        const bool should_poll = st.enabled && (_session->is_working() || st.active);
+        if (should_poll && !_disk_cache_footer_timer.isActive())
+            _disk_cache_footer_timer.start(1000);
+        else if (!should_poll && _disk_cache_footer_timer.isActive())
+            _disk_cache_footer_timer.stop();
     }
 
     void MainWindow::on_load_device_first()
@@ -945,6 +1033,7 @@ namespace pv
         // For the else branch, switch_to_session already called rebuild_tab_buttons.
 
         _sampling_bar->sync_selected_device(handle);
+        update_disk_cache_footer();
     }
 
     void MainWindow::switch_to_session_for_handle(int global_index, ds_device_handle handle)
@@ -1007,6 +1096,7 @@ namespace pv
                      (unsigned long long)handle);
 
         update_toolbar_view_status();
+        update_disk_cache_footer();
     }
 
     void MainWindow::switch_to_session(int index)
@@ -1082,6 +1172,7 @@ namespace pv
         _sampling_bar->sync_selected_device(new_group->handle);
         _sampling_bar->update_sample_rate_list();
         update_toolbar_view_status();
+        update_disk_cache_footer();
     }
 
     void MainWindow::on_session_tab_switch(int index)
@@ -1355,6 +1446,9 @@ namespace pv
             _session->set_disk_cache_settings(settings);
             if (_sampling_bar)
                 _sampling_bar->update_sample_count_list();
+            if (_sidebar_widget && _sidebar_widget->device_options_widget())
+                _sidebar_widget->device_options_widget()->refresh_disk_cache_settings();
+            update_disk_cache_footer();
         }
     }
 
@@ -2506,6 +2600,7 @@ namespace pv
         // Refresh tab bar colors when theme changes
         if (_session_tab_bar)
             rebuild_tab_buttons();
+        update_disk_cache_footer();
 
         data_updated();
     }
@@ -2910,19 +3005,22 @@ namespace pv
                 update_toolbar_view_status();
                 _view->on_state_changed(false);
                 _sidebar_widget->protocol_widget()->update_view_status();
+                update_disk_cache_footer();
                 break;
-            }        
+            }
             case DSV_MSG_COLLECT_END:
             {
                 prgRate(0);
                 _view->repeat_unshow();
                 _view->on_state_changed(true);
+                update_disk_cache_footer();
                 break;
             }
             case DSV_MSG_END_COLLECT_WORK:
             {
                 update_toolbar_view_status();
-                _sidebar_widget->protocol_widget()->update_view_status();   
+                _sidebar_widget->protocol_widget()->update_view_status();
+                update_disk_cache_footer();
                 break;
             }
             case DSV_MSG_CURRENT_DEVICE_CHANGE_PREV:
@@ -2953,6 +3051,7 @@ namespace pv
                 update_toolbar_view_status();
                 _sidebar_widget->refresh_device_options();
                 _session->device_event_object()->device_updated();
+                update_disk_cache_footer();
 
                 if (_device_agent->is_hardware())
                 {

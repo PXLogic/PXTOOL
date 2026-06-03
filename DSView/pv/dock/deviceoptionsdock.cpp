@@ -29,6 +29,8 @@
 #include <QComboBox>
 #include <QSpinBox>
 #include <QDoubleSpinBox>
+#include <QFileDialog>
+#include <QStandardPaths>
 #include <QGuiApplication>
 #include <QResizeEvent>
 #include <QScreen>
@@ -162,6 +164,7 @@ private:
 #include "../ui/langresource.h"
 #include "../log.h"
 #include "../ui/msgbox.h"
+#include "../utility/diskcachesettings.h"
 
 using namespace std;
 
@@ -173,17 +176,25 @@ static QPointer<DeviceOptionsDock> s_active_device_options_dock;
 DeviceOptionsDock::DeviceOptionsDock(QWidget *parent, SigSession *session)
     : QScrollArea(parent)
     , _session(session)
+    , _device_agent(nullptr)
+    , _inner(nullptr)
+    , _inner_lay(nullptr)
+    , _container_lay(nullptr)
+    , _container_panel(nullptr)
+    , _dynamic_panel(nullptr)
+    , _stream_buffer_widget(nullptr)
+    , _disk_cache_inline(nullptr)
+    , _disk_cache_enable(nullptr)
+    , _disk_cache_ram(nullptr)
+    , _disk_cache_disk(nullptr)
+    , _disk_cache_dir(nullptr)
+    , _disk_cache_browse(nullptr)
     , _opt_mode(0)
     , _groupHeight1(0)
     , _groupHeight2(0)
     , _isBuilding(false)
     , _cur_analog_tag_index(0)
     , _content_built(false)
-    , _dynamic_panel(nullptr)
-    , _container_panel(nullptr)
-    , _container_lay(nullptr)
-    , _inner(nullptr)
-    , _inner_lay(nullptr)
     , _device_options_binding(nullptr)
 {
     _device_agent = session->get_device();
@@ -328,6 +339,13 @@ void DeviceOptionsDock::build_content()
     _channel_mode_indexs.clear();
     _dso_channel_list.clear();
     _dynamic_panel = nullptr;
+    _stream_buffer_widget = nullptr;
+    _disk_cache_inline = nullptr;
+    _disk_cache_enable = nullptr;
+    _disk_cache_ram = nullptr;
+    _disk_cache_disk = nullptr;
+    _disk_cache_dir = nullptr;
+    _disk_cache_browse = nullptr;
 
     // (Re-)create the device options binding now that the device is ready
     delete _device_options_binding;
@@ -425,6 +443,7 @@ void DeviceOptionsDock::on_apply()
              (int)has_op_mode, op_mode,
              (int)has_stream_cfg, (int)stream_cfg,
              (int)_device_agent->is_stream_mode());
+    update_stream_buffer_enabled_state();
 
     // Commit probe enabled state; track which probe indices went from
     // enabled -> disabled so we can selectively notify listeners (the
@@ -522,12 +541,199 @@ QLayout *DeviceOptionsDock::get_property_form(QWidget *parent)
         wid->setFont(font);
         layout->addWidget(wid, i, 1);
         layout->setRowMinimumHeight(i, 22);
+
+        if (p->name() == QLatin1String("Stream buff Size")) {
+            _stream_buffer_widget = wid;
+            i++;
+            layout->addWidget(create_disk_cache_inline_editor(parent), i, 0, 1, 2);
+            layout->setRowMinimumHeight(i, 96);
+        }
+
         i++;
     }
+
+    refresh_disk_cache_inline();
 
     _groupHeight1 = parent->sizeHint().height() + 30;
     parent->setFixedHeight(_groupHeight1);
     return layout;
+}
+
+QWidget *DeviceOptionsDock::create_disk_cache_inline_editor(QWidget *parent)
+{
+    _disk_cache_inline = new QWidget(parent);
+    _disk_cache_inline->setObjectName("disk_cache_inline");
+
+    QFont font = this->font();
+    font.setPixelSize(qRound(AppConfig::Instance().appOptions.fontSize));
+
+    auto *outer = new QGridLayout(_disk_cache_inline);
+    outer->setContentsMargins(0, 4, 0, 4);
+    outer->setHorizontalSpacing(6);
+    outer->setVerticalSpacing(4);
+
+    auto *title = new QLabel(tr("Disk Cache"), _disk_cache_inline);
+    title->setFont(font);
+    title->setAlignment(Qt::AlignLeft | Qt::AlignTop);
+
+    _disk_cache_enable = new QCheckBox(tr("Enable disk cache"), _disk_cache_inline);
+    _disk_cache_enable->setFont(font);
+
+    _disk_cache_ram = new QLineEdit(_disk_cache_inline);
+    _disk_cache_disk = new QLineEdit(_disk_cache_inline);
+    _disk_cache_dir = new QLineEdit(_disk_cache_inline);
+    _disk_cache_browse = new QPushButton(tr("Browse..."), _disk_cache_inline);
+    _disk_cache_browse->setObjectName("device_cancel_btn");
+    _disk_cache_browse->setMinimumWidth(76);
+
+    _disk_cache_ram->setPlaceholderText(QStringLiteral("4 GB"));
+    _disk_cache_disk->setPlaceholderText(QStringLiteral("128 GB"));
+    _disk_cache_dir->setPlaceholderText(QStandardPaths::writableLocation(QStandardPaths::TempLocation));
+
+    _disk_cache_ram->setFont(font);
+    _disk_cache_disk->setFont(font);
+    _disk_cache_dir->setFont(font);
+    _disk_cache_browse->setFont(font);
+
+    auto *form = new QGridLayout;
+    form->setContentsMargins(0, 0, 0, 0);
+    form->setHorizontalSpacing(6);
+    form->setVerticalSpacing(3);
+
+    auto *ram_label = new QLabel(tr("RAM hot window:"), _disk_cache_inline);
+    auto *disk_label = new QLabel(tr("Disk total depth:"), _disk_cache_inline);
+    auto *dir_label = new QLabel(tr("Cache directory:"), _disk_cache_inline);
+    ram_label->setFont(font);
+    disk_label->setFont(font);
+    dir_label->setFont(font);
+
+    form->addWidget(_disk_cache_enable, 0, 0, 1, 3);
+    form->addWidget(ram_label, 1, 0);
+    form->addWidget(_disk_cache_ram, 1, 1, 1, 2);
+    form->addWidget(disk_label, 2, 0);
+    form->addWidget(_disk_cache_disk, 2, 1, 1, 2);
+    form->addWidget(dir_label, 3, 0);
+    form->addWidget(_disk_cache_dir, 3, 1);
+    form->addWidget(_disk_cache_browse, 3, 2);
+
+    outer->addWidget(title, 0, 0);
+    outer->addLayout(form, 0, 1);
+    outer->setColumnStretch(1, 1);
+
+    connect(_disk_cache_enable, &QCheckBox::stateChanged,
+            this, &DeviceOptionsDock::on_disk_cache_enabled_changed);
+    connect(_disk_cache_ram, &QLineEdit::editingFinished,
+            this, &DeviceOptionsDock::on_disk_cache_text_finished);
+    connect(_disk_cache_disk, &QLineEdit::editingFinished,
+            this, &DeviceOptionsDock::on_disk_cache_text_finished);
+    connect(_disk_cache_dir, &QLineEdit::editingFinished,
+            this, &DeviceOptionsDock::on_disk_cache_text_finished);
+    connect(_disk_cache_browse, &QPushButton::clicked,
+            this, &DeviceOptionsDock::on_disk_cache_browse);
+
+    return _disk_cache_inline;
+}
+
+void DeviceOptionsDock::refresh_disk_cache_settings()
+{
+    refresh_disk_cache_inline();
+}
+
+void DeviceOptionsDock::refresh_disk_cache_inline()
+{
+    if (!_session || !_disk_cache_enable)
+        return;
+
+    const auto &settings = _session->disk_cache_settings();
+    const bool blocked = _disk_cache_enable->blockSignals(true);
+    _disk_cache_enable->setChecked(settings.enabled);
+    _disk_cache_enable->blockSignals(blocked);
+
+    _disk_cache_ram->setText(pv::utility::DiskCacheSettings::format_ram_limit_text(settings.ram_limit_gb));
+    _disk_cache_disk->setText(pv::utility::DiskCacheSettings::format_disk_limit_text(settings.disk_limit_gb));
+    _disk_cache_dir->setText(settings.spill_dir);
+
+    const bool enabled = settings.enabled;
+    _disk_cache_ram->setEnabled(enabled);
+    _disk_cache_disk->setEnabled(enabled);
+    _disk_cache_dir->setEnabled(enabled);
+    _disk_cache_browse->setEnabled(enabled);
+    update_stream_buffer_enabled_state();
+}
+
+void DeviceOptionsDock::update_stream_buffer_enabled_state()
+{
+    if (!_stream_buffer_widget || !_session)
+        return;
+
+    const bool disk_enabled = _session->disk_cache_settings().enabled;
+    bool stream_mode = false;
+    if (_device_agent)
+        _device_agent->get_config_bool(SR_CONF_STREAM, stream_mode);
+
+    const bool lock_stream_buffer = disk_enabled && stream_mode;
+    _stream_buffer_widget->setEnabled(!lock_stream_buffer);
+    _stream_buffer_widget->setToolTip(lock_stream_buffer
+        ? tr("Disk cache is enabled; disk total depth controls stream capture depth.")
+        : QString());
+}
+
+bool DeviceOptionsDock::commit_disk_cache_inline()
+{
+    if (!_session || !_disk_cache_enable)
+        return false;
+
+    pv::utility::DiskCacheSettings settings = _session->disk_cache_settings();
+    settings.enabled = _disk_cache_enable->isChecked();
+
+    uint64_t ram_gb = 0;
+    uint64_t disk_gb = 0;
+    if (!pv::utility::DiskCacheSettings::parse_ram_limit_text(_disk_cache_ram->text(), ram_gb)) {
+        MsgBox::Show(tr("Invalid RAM hot window. Use 32 MB or a positive GB value."));
+        refresh_disk_cache_inline();
+        return false;
+    }
+    if (!pv::utility::DiskCacheSettings::parse_disk_limit_text(_disk_cache_disk->text(), disk_gb)) {
+        MsgBox::Show(tr("Invalid disk total depth. Use a positive GB value or Unlimited."));
+        refresh_disk_cache_inline();
+        return false;
+    }
+
+    settings.ram_limit_gb = ram_gb;
+    settings.disk_limit_gb = disk_gb;
+    settings.spill_dir = _disk_cache_dir->text().trimmed();
+    if (settings.spill_dir.isEmpty())
+        settings.spill_dir = QStandardPaths::writableLocation(QStandardPaths::TempLocation);
+
+    settings.save();
+    _session->set_disk_cache_settings(settings);
+    refresh_disk_cache_inline();
+    emit sig_sample_count_refresh_needed();
+    emit sig_disk_cache_settings_changed();
+    return true;
+}
+
+void DeviceOptionsDock::on_disk_cache_enabled_changed(int state)
+{
+    (void)state;
+    commit_disk_cache_inline();
+}
+
+void DeviceOptionsDock::on_disk_cache_text_finished()
+{
+    commit_disk_cache_inline();
+}
+
+void DeviceOptionsDock::on_disk_cache_browse()
+{
+    if (!_disk_cache_dir)
+        return;
+    QString dir = QFileDialog::getExistingDirectory(
+        this, tr("Select cache directory"), _disk_cache_dir->text());
+    if (dir.isEmpty())
+        return;
+    _disk_cache_dir->setText(dir);
+    commit_disk_cache_inline();
 }
 
 // ---------------------------------------------------------------------------
@@ -1024,6 +1230,8 @@ void DeviceOptionsDock::mode_check_timeout()
 {
     if (_isBuilding || !_content_built)
         return;
+
+    update_stream_buffer_enabled_state();
 
     if (_device_agent->is_hardware()) {
         bool test;

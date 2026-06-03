@@ -27,6 +27,7 @@
 #include <QGroupBox>
 #include <QPushButton>
 #include <QCheckBox>
+#include <QLineEdit>
 #include <QRadioButton>
 #include <QSet>
 #include <QTimer>
@@ -69,6 +70,9 @@ public:
     /** Call when the active device changes within the current session. */
     void on_device_changed();
 
+    /** Refresh inline disk cache controls after settings changed elsewhere. */
+    void refresh_disk_cache_settings();
+
 signals:
     /** Emitted after Apply commits channel changes. The set of channel
      * indices that went from enabled -> disabled is passed so listeners
@@ -80,6 +84,8 @@ signals:
     void sig_channel_mode_changed();
     /** Stream buff / other device-option changes that alter SR_CONF_HW_DEPTH. */
     void sig_sample_count_refresh_needed();
+    /** Disk cache settings changed from the inline editor or menu dialog. */
+    void sig_disk_cache_settings_changed();
 
 private:
     void build_content();
@@ -88,6 +94,10 @@ private:
     void analog_probes(QGridLayout &layout);
     QString dynamic_widget(QLayout *lay);
     QLayout *get_property_form(QWidget *parent);
+    QWidget *create_disk_cache_inline_editor(QWidget *parent);
+    bool commit_disk_cache_inline();
+    void refresh_disk_cache_inline();
+    void update_stream_buffer_enabled_state();
 
     void set_all_probes(bool set);
     void enable_max_probes();
@@ -113,6 +123,9 @@ private slots:
     void on_analog_channel_enable();
     void zero_adj();
     void on_calibration();
+    void on_disk_cache_enabled_changed(int state);
+    void on_disk_cache_text_finished();
+    void on_disk_cache_browse();
 
 private:
     SigSession    *_session;
@@ -125,6 +138,13 @@ private:
     QWidget       *_dynamic_panel;
 
     QTimer         _mode_check_timer;
+    QWidget       *_stream_buffer_widget;
+    QWidget       *_disk_cache_inline;
+    QCheckBox     *_disk_cache_enable;
+    QLineEdit     *_disk_cache_ram;
+    QLineEdit     *_disk_cache_disk;
+    QLineEdit     *_disk_cache_dir;
+    QPushButton   *_disk_cache_browse;
     int            _opt_mode;
     int            _groupHeight1;
     int            _groupHeight2;

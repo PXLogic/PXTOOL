@@ -19,6 +19,7 @@
 
 add_executable(DSView-test
     test.cpp
+    test_diskcachesettings.cpp
     test_logsearch.cpp
     ../pv/dock/logsearch.cpp
 )

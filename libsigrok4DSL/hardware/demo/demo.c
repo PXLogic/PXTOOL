@@ -1511,13 +1511,12 @@ static int receive_data_logic(int fd, int revents, const struct sr_dev_inst *sdi
         memset(logic_post_buf,LOGIC_LOW_LEVEL,chan_num * vdev->packet_len);
         if(vdev->logic_mem_limit)
         {
-            for(int i = 0; i < vdev->logic_sel_probe_num;i++)
-            {
-                uint8_t probe_index = vdev->logic_sel_probe_list[i];
-                for(uint16_t j = 0 ; j< vdev->packet_len/8;j++)
-                {
-                    uint64_t cur_index = (probe_index*8) + (j*vdev->enabled_probes*8);
-                    memset(logic_post_buf+cur_index,LOGIC_HIGH_LEVEL,8);
+            for(uint16_t j = 0; j < vdev->packet_len / 8; j++) {
+                for(uint8_t probe_index = 0; probe_index < vdev->enabled_probes; probe_index++) {
+                    uint64_t cur_index = (probe_index * 8) + (j * vdev->enabled_probes * 8);
+                    uint64_t value = ((j + probe_index + vdev->logci_cur_packet_num) & 1)
+                        ? UINT64_MAX : 0;
+                    *((uint64_t *)(logic_post_buf + cur_index)) = value;
                 }
             }
         }
@@ -1534,18 +1533,6 @@ static int receive_data_logic(int fd, int revents, const struct sr_dev_inst *sdi
         logic_delay_time(vdev);
         ds_data_forward(sdi, &packet);
 
-        if(vdev->logic_mem_limit)
-        {
-            uint16_t target_packet = (LOGIC_BLOCK_LEN/vdev->packet_len);
-            if(vdev->logci_cur_packet_num % target_packet == 0)
-            {
-                vdev->logic_sel_probe_num = rand()%vdev->enabled_probes+1;
-                memset(vdev->logic_sel_probe_list,0,vdev->enabled_probes);
-                for(int i = 0; i< vdev->logic_sel_probe_num;i++){
-                    vdev->logic_sel_probe_list[i] = rand()%vdev->enabled_probes;
-                }
-            }
-        }
         vdev->logci_cur_packet_num++;
     }
 

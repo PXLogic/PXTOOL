@@ -21,6 +21,7 @@ SpillManager::SpillManager(uint64_t ram_limit_bytes, uint64_t disk_limit_bytes, 
     , ram_usage_(0)
     , disk_usage_(0)
     , stop_io_(false)
+    , active_writes_(0)
     , lru_tick_(0)
     , stat_spilled_(0)
     , stat_bytes_written_(0)
@@ -28,6 +29,11 @@ SpillManager::SpillManager(uint64_t ram_limit_bytes, uint64_t disk_limit_bytes, 
     , stat_lru_misses_(0)
     , stat_queue_peak_(0)
     , stat_stalls_(0)
+    , speed_window_start_ms_(0)
+    , speed_window_bytes_(0)
+    , speed_bytes_per_sec_(0)
+    , first_write_ms_(0)
+    , last_progress_log_ms_(0)
 {
     lru_.resize(LRU_SLOTS);
 }
@@ -59,6 +65,8 @@ bool SpillManager::init_channels(uint16_t channel_count, const std::string& sess
     channel_count_ = channel_count;
     spill_files_.assign(channel_count_, nullptr);
     spill_paths_.assign(channel_count_, std::string());
+    file_buffers_.clear();
+    file_buffers_.resize(channel_count_);
 
     QDir dir(QString::fromStdString(spill_dir_));
     if (!dir.exists() && !dir.mkpath(".")) {
@@ -78,6 +86,9 @@ bool SpillManager::init_channels(uint16_t channel_count, const std::string& sess
                     spill_paths_[ch].c_str(), strerror(errno));
             return false;
         }
+        file_buffers_[ch].resize(FILE_BUFFER_BYTES);
+        if (setvbuf(spill_files_[ch], file_buffers_[ch].data(), _IOFBF, file_buffers_[ch].size()) != 0)
+            dsv_warn("[SpillMgr] setvbuf failed for %s", spill_paths_[ch].c_str());
         dsv_info("[SpillMgr] Spill file created: %s", spill_paths_[ch].c_str());
     }
 
@@ -101,17 +112,18 @@ bool SpillManager::enqueue_spill(uint16_t channel, uint64_t block_id, const void
     WriteJob job;
     job.channel = channel;
     job.block_id = block_id;
-    job.data.assign(static_cast<const uint8_t*>(data),
-                    static_cast<const uint8_t*>(data) + size);
+    job.data = static_cast<const uint8_t*>(data);
+    job.size = size;
 
     std::unique_lock<std::mutex> lk(queue_mutex_);
     if (write_queue_.size() >= static_cast<size_t>(MAX_QUEUE_DEPTH)) {
         stat_stalls_++;
-        queue_space_cv_.wait(lk, [this] {
-            return stop_io_ || write_queue_.size() < static_cast<size_t>(MAX_QUEUE_DEPTH);
-        });
-        if (stop_io_)
-            return false;
+        uint64_t stalls = stat_stalls_.load(std::memory_order_relaxed);
+        if (stalls <= 5 || (stalls % 100) == 0) {
+            dsv_warn("[SpillMgr] Write queue full: depth=%zu active=%d stalls=%llu",
+                     write_queue_.size(), active_writes_, (unsigned long long)stalls);
+        }
+        return false;
     }
 
     write_queue_.push_back(std::move(job));
@@ -123,6 +135,16 @@ bool SpillManager::enqueue_spill(uint16_t channel, uint64_t block_id, const void
     lk.unlock();
     queue_cv_.notify_one();
     return true;
+}
+
+void SpillManager::wait_for_idle()
+{
+    std::unique_lock<std::mutex> lk(queue_mutex_);
+    while (!write_queue_.empty() || active_writes_ != 0) {
+        dsv_info("[SpillMgr] wait_for_idle: queue=%zu active=%d",
+                 write_queue_.size(), active_writes_);
+        idle_cv_.wait_for(lk, std::chrono::milliseconds(500));
+    }
 }
 
 void SpillManager::drain_completed(std::vector<std::pair<uint16_t, uint64_t>>& out)
@@ -228,13 +250,36 @@ bool SpillManager::disk_full() const
     return disk_limit_ > 0 && disk_usage_.load(std::memory_order_relaxed) >= disk_limit_;
 }
 
+uint64_t SpillManager::ram_usage_bytes() const
+{
+    return ram_usage_.load(std::memory_order_relaxed);
+}
+
+uint64_t SpillManager::disk_usage_bytes() const
+{
+    return disk_usage_.load(std::memory_order_relaxed);
+}
+
+uint64_t SpillManager::recent_write_bytes_per_sec() const
+{
+    return speed_bytes_per_sec_.load(std::memory_order_relaxed);
+}
+
 void SpillManager::log_stats_summary()
 {
-    dsv_info("[SpillMgr] Session end: spilled=%llu blocks written=%lluMB ram_usage=%lluMB limit=%lluMB lru_hit=%llu lru_miss=%llu queue_peak=%llu stalls=%llu",
+    const uint64_t first_ms = first_write_ms_.load(std::memory_order_relaxed);
+    const uint64_t last_ms = last_progress_log_ms_.load(std::memory_order_relaxed);
+    const uint64_t elapsed_ms = (first_ms > 0 && last_ms > first_ms) ? (last_ms - first_ms) : 0;
+    const uint64_t bytes_written = stat_bytes_written_.load(std::memory_order_relaxed);
+    const uint64_t avg_bps = elapsed_ms > 0 ? (bytes_written * 1000 / elapsed_ms) : 0;
+
+    dsv_info("[SpillMgr] Session end: spilled=%llu blocks written=%lluMB ram_usage=%lluMB limit=%lluMB avg_write=%lluMB/s last_write=%lluMB/s lru_hit=%llu lru_miss=%llu queue_peak=%llu stalls=%llu",
              (unsigned long long)stat_spilled_.load(),
-             (unsigned long long)(stat_bytes_written_.load() >> 20),
+             (unsigned long long)(bytes_written >> 20),
              (unsigned long long)(ram_usage_.load() >> 20),
              (unsigned long long)(ram_limit_ >> 20),
+             (unsigned long long)(avg_bps >> 20),
+             (unsigned long long)(speed_bytes_per_sec_.load(std::memory_order_relaxed) >> 20),
              (unsigned long long)stat_lru_hits_.load(),
              (unsigned long long)stat_lru_misses_.load(),
              (unsigned long long)stat_queue_peak_.load(),
@@ -254,9 +299,16 @@ void SpillManager::io_thread_func()
                 break;
             job = std::move(write_queue_.front());
             write_queue_.pop_front();
+            active_writes_++;
         }
         queue_space_cv_.notify_one();
         write_block_to_file(job);
+        {
+            std::lock_guard<std::mutex> lk(queue_mutex_);
+            active_writes_--;
+            if (write_queue_.empty() && active_writes_ == 0)
+                idle_cv_.notify_all();
+        }
     }
 }
 
@@ -277,12 +329,11 @@ bool SpillManager::write_block_to_file(WriteJob& job)
         if (offset < 0)
             return false;
 
-        written = fwrite(job.data.data(), 1, job.data.size(), f);
-        fflush(f);
+        written = fwrite(job.data, 1, job.size, f);
     }
-    if (written != job.data.size()) {
+    if (written != job.size) {
         dsv_err("[SpillMgr] Short write ch%u block#%llu: wrote %zu of %zu",
-                job.channel, (unsigned long long)job.block_id, written, job.data.size());
+                job.channel, (unsigned long long)job.block_id, written, job.size);
         return false;
     }
 
@@ -296,6 +347,38 @@ bool SpillManager::write_block_to_file(WriteJob& job)
     disk_usage_ += written;
     stat_spilled_++;
     stat_bytes_written_ += written;
+
+    const uint64_t now_ms = static_cast<uint64_t>(
+        std::chrono::duration_cast<std::chrono::milliseconds>(
+            std::chrono::steady_clock::now().time_since_epoch()).count());
+    uint64_t expected_first = 0;
+    if (first_write_ms_.compare_exchange_strong(expected_first, now_ms, std::memory_order_relaxed)) {
+        dsv_info("[SpillMgr] First spill write: ch%u block#%llu size=%zu",
+                 job.channel, (unsigned long long)job.block_id, written);
+    }
+    uint64_t start_ms = speed_window_start_ms_.load(std::memory_order_relaxed);
+    if (start_ms == 0) {
+        speed_window_start_ms_.store(now_ms, std::memory_order_relaxed);
+        speed_window_bytes_.store(written, std::memory_order_relaxed);
+    } else {
+        const uint64_t elapsed = now_ms > start_ms ? now_ms - start_ms : 0;
+        const uint64_t window_bytes =
+            speed_window_bytes_.fetch_add(written, std::memory_order_relaxed) + written;
+        if (elapsed >= 1000) {
+            const uint64_t bps = window_bytes * 1000 / elapsed;
+            speed_bytes_per_sec_.store(bps, std::memory_order_relaxed);
+            speed_window_start_ms_.store(now_ms, std::memory_order_relaxed);
+            speed_window_bytes_.store(0, std::memory_order_relaxed);
+
+            dsv_info("[SpillMgr] Write progress: written=%lluMB speed=%lluMB/s ram=%lluMB queue_peak=%llu stalls=%llu",
+                     (unsigned long long)(stat_bytes_written_.load(std::memory_order_relaxed) >> 20),
+                     (unsigned long long)(bps >> 20),
+                     (unsigned long long)(ram_usage_.load(std::memory_order_relaxed) >> 20),
+                     (unsigned long long)stat_queue_peak_.load(std::memory_order_relaxed),
+                     (unsigned long long)stat_stalls_.load(std::memory_order_relaxed));
+        }
+    }
+    last_progress_log_ms_.store(now_ms, std::memory_order_relaxed);
 
     {
         std::lock_guard<std::mutex> lk(completed_mutex_);

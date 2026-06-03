@@ -134,6 +134,10 @@ LogicSnapshot::~LogicSnapshot()
 
 void LogicSnapshot::free_data()
 {
+    if (_spill_manager)
+        _spill_manager->wait_for_idle();
+    check_pending_spills();
+
     Snapshot::free_data();
 
     for(auto& iter : _ch_data) {
@@ -185,6 +189,11 @@ void LogicSnapshot::clear()
 
 void LogicSnapshot::first_payload(const sr_datafeed_logic &logic, uint64_t total_sample_count, GSList *channels, bool able_free)
 {
+    dsv_info("LogicSnapshot::first_payload begin len=%llu total=%llu spill=%d",
+             (unsigned long long)logic.length,
+             (unsigned long long)total_sample_count,
+             (int)(_spill_manager != nullptr));
+
     bool channel_changed = false;
     uint16_t channel_num = 0;
     _able_free = able_free;
@@ -275,6 +284,10 @@ void LogicSnapshot::first_payload(const sr_datafeed_logic &logic, uint64_t total
     }
 
     append_payload(logic);
+    dsv_info("LogicSnapshot::first_payload end samples=%llu ram=%llu pending=%llu",
+             (unsigned long long)_ring_sample_count,
+             (unsigned long long)_ram_usage_bytes,
+             (unsigned long long)_pending_spills.size());
     _last_ended = false;
 }
 
@@ -290,6 +303,15 @@ void LogicSnapshot::append_cross_payload(const sr_datafeed_logic &logic)
     assert(logic.format == LA_CROSS_DATA);
     assert(logic.length >= ScaleSize * _channel_num);
     assert(logic.data);
+
+    static uint64_t s_append_log_count = 0;
+    const bool log_this_append = (++s_append_log_count <= 5 || (s_append_log_count % 100) == 0);
+    if (log_this_append) {
+        dsv_info("LogicSnapshot::append_cross_payload begin len=%llu ram=%llu pending=%llu",
+                 (unsigned long long)logic.length,
+                 (unsigned long long)_ram_usage_bytes,
+                 (unsigned long long)_pending_spills.size());
+    }
 
     check_pending_spills();
 
@@ -526,10 +548,24 @@ void LogicSnapshot::append_cross_payload(const sr_datafeed_logic &logic)
     }
 
     check_pending_spills();
+    if (log_this_append) {
+        dsv_info("LogicSnapshot::append_cross_payload end samples=%llu ram=%llu pending=%llu",
+                 (unsigned long long)_ring_sample_count,
+                 (unsigned long long)_ram_usage_bytes,
+                 (unsigned long long)_pending_spills.size());
+    }
 }
 
 void LogicSnapshot::capture_ended()
 {
+    if (_spill_manager) {
+        dsv_info("LogicSnapshot::capture_ended wait_for_idle begin ram=%llu pending=%llu",
+                 (unsigned long long)_ram_usage_bytes,
+                 (unsigned long long)_pending_spills.size());
+        _spill_manager->wait_for_idle();
+        dsv_info("LogicSnapshot::capture_ended wait_for_idle end");
+    }
+
     std::lock_guard<std::mutex> lock(_mutex);
     check_pending_spills();
 
@@ -1706,6 +1742,10 @@ bool LogicSnapshot::spill_oldest_block(uint16_t avoid_order, uint64_t avoid_root
     if (!_spill_manager || !_spill_manager->should_spill() || _spill_manager->disk_full())
         return false;
 
+    check_pending_spills();
+    if (!_spill_manager->should_spill() || _spill_manager->disk_full())
+        return false;
+
     for (uint16_t order = 0; order < _ch_data.size(); ++order) {
         for (uint64_t root = 0; root < _ch_data[order].size(); ++root) {
             for (uint64_t lbp_index = 0; lbp_index < RootScale; ++lbp_index) {
@@ -1730,6 +1770,9 @@ bool LogicSnapshot::spill_oldest_block(uint16_t avoid_order, uint64_t avoid_root
                     _pending_spills[key] = lbp;
                     return true;
                 }
+                dsv_err("LogicSnapshot::spill_oldest_block, spill enqueue failed.");
+                _memory_failed = true;
+                return false;
             }
         }
     }
