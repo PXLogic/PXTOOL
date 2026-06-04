@@ -2733,7 +2733,9 @@ namespace pv
         st.spill_dir = _disk_cache_settings.spill_dir;
         st.active = _spill_manager != nullptr;
         if (_spill_manager) {
-            st.cached_bytes = _spill_manager->ram_usage_bytes() + _spill_manager->disk_usage_bytes();
+            st.ram_cached_bytes = _spill_manager->ram_usage_bytes();
+            st.disk_cached_bytes = _spill_manager->disk_usage_bytes();
+            st.cached_bytes = st.ram_cached_bytes + st.disk_cached_bytes;
             st.write_bytes_per_sec = _spill_manager->recent_write_bytes_per_sec();
         }
         return st;

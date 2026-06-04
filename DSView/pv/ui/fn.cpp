@@ -48,6 +48,55 @@
 
 namespace ui
 {
+    static QString menu_font_family_qss(const QFont &font)
+    {
+        QString family = font.family();
+        family.replace("\\", "\\\\");
+        family.replace("\"", "\\\"");
+        return family;
+    }
+
+    static void apply_menu_style_recursive(QMenu *menu, const QString &style)
+    {
+        if (menu == nullptr)
+            return;
+
+        menu->setStyleSheet(style);
+        for (QAction *action : menu->actions()) {
+            if (action == nullptr)
+                continue;
+            if (QMenu *sub = action->menu())
+                apply_menu_style_recursive(sub, style);
+        }
+    }
+
+    static void apply_menu_popup_style(QMenu *menu, const QFont &font)
+    {
+        if (!menu)
+            return;
+
+        set_menu_font(menu, font);
+
+        // QMenu::setFont alone can be ignored by the Windows native style.
+        // Keep the popup metrics aligned with sampling bar combo popups.
+        const int px = font.pixelSize();
+        const int itemHeight = qMax(20, px + 8);
+        const QString family = menu_font_family_qss(font);
+        const bool dark = AppConfig::Instance().IsDarkStyle();
+        const QString fg = dark ? QStringLiteral("#eff0f1")
+                                : QStringLiteral("#2A2A2A");
+        const QString style = QString(
+            "QMenu { color: %2; font-family: \"%3\"; font-size: %1px; font-weight: normal; "
+            "padding: 6px 0; }"
+            "QMenu::item { color: %2; font-family: \"%3\"; font-size: %1px; font-weight: normal; "
+            "padding: 4px 12px; min-height: %4px; border: 1px solid transparent; }"
+            "QMenu::item:selected { background-color: #1185D1; color: #ffffff; }")
+            .arg(px)
+            .arg(fg)
+            .arg(family)
+            .arg(itemHeight);
+        apply_menu_style_recursive(menu, style);
+    }
 
     void set_font_param(QFont &font, struct FontParam &param)
     {
@@ -129,10 +178,20 @@ namespace ui
         // Start from the app-level font so the family is always the system CJK
         // font; then override only size and weight.
         QFont font = QApplication::font();
-        font.setPixelSize(qRound(AppConfig::Instance().appOptions.fontSize));
+        const int px = qMax(12, qRound(AppConfig::Instance().appOptions.fontSize));
+        font.setPixelSize(px);
         font.setWeight(QFont::Normal);
         font.setBold(false);
+        font.setStyleStrategy(QFont::PreferAntialias);
         return font;
+    }
+
+    void apply_application_menu_font(QMenu *menu)
+    {
+        if (!menu)
+            return;
+
+        apply_menu_popup_style(menu, application_menu_font());
     }
 
     QFont compact_menu_font()
@@ -152,24 +211,7 @@ namespace ui
         if (!menu)
             return;
 
-        const QFont font = compact_menu_font();
-        set_menu_font(menu, font);
-
-        /* On Windows, QMenu::setFont alone is often ignored; font-size in
-         * stylesheet matches channel header labels (10px cap). */
-        const int px = font.pixelSize();
-        const bool dark = AppConfig::Instance().IsDarkStyle();
-        const QString selFg = dark ? QStringLiteral("#eff0f1")
-                                   : QStringLiteral("#2A2A2A");
-        const QString fg = selFg;
-        menu->setStyleSheet(QString(
-            "QMenu { color: %2; font-size: %1px; font-weight: normal; }"
-            "QMenu::item { color: %2; font-size: %1px; font-weight: normal; "
-            "padding: 2px 24px; }"
-            "QMenu::item:selected { background-color: #1185D1; color: %3; }")
-            .arg(px)
-            .arg(fg)
-            .arg(selFg));
+        apply_menu_popup_style(menu, compact_menu_font());
     }
     
     void set_form_font(QWidget *wid, QFont font)

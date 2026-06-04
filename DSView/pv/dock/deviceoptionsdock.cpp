@@ -579,15 +579,21 @@ QWidget *DeviceOptionsDock::create_disk_cache_inline_editor(QWidget *parent)
     _disk_cache_enable = new QCheckBox(tr("Enable disk cache"), _disk_cache_inline);
     _disk_cache_enable->setFont(font);
 
-    _disk_cache_ram = new QLineEdit(_disk_cache_inline);
-    _disk_cache_disk = new QLineEdit(_disk_cache_inline);
+    _disk_cache_ram = new QSpinBox(_disk_cache_inline);
+    _disk_cache_disk = new QSpinBox(_disk_cache_inline);
     _disk_cache_dir = new QLineEdit(_disk_cache_inline);
     _disk_cache_browse = new QPushButton(tr("Browse..."), _disk_cache_inline);
     _disk_cache_browse->setObjectName("device_cancel_btn");
     _disk_cache_browse->setMinimumWidth(76);
 
-    _disk_cache_ram->setPlaceholderText(QStringLiteral("4 GB"));
-    _disk_cache_disk->setPlaceholderText(QStringLiteral("128 GB"));
+    _disk_cache_ram->setRange(0, 4096);
+    _disk_cache_ram->setSingleStep(1);
+    _disk_cache_ram->setSuffix(QStringLiteral(" GB"));
+    _disk_cache_ram->setSpecialValueText(QStringLiteral("32 MB"));
+    _disk_cache_disk->setRange(0, 65536);
+    _disk_cache_disk->setSingleStep(1);
+    _disk_cache_disk->setSuffix(QStringLiteral(" GB"));
+    _disk_cache_disk->setSpecialValueText(QStringLiteral("Unlimited"));
     _disk_cache_dir->setPlaceholderText(QStandardPaths::writableLocation(QStandardPaths::TempLocation));
 
     _disk_cache_ram->setFont(font);
@@ -622,9 +628,9 @@ QWidget *DeviceOptionsDock::create_disk_cache_inline_editor(QWidget *parent)
 
     connect(_disk_cache_enable, &QCheckBox::stateChanged,
             this, &DeviceOptionsDock::on_disk_cache_enabled_changed);
-    connect(_disk_cache_ram, &QLineEdit::editingFinished,
+    connect(_disk_cache_ram, QOverload<int>::of(&QSpinBox::valueChanged),
             this, &DeviceOptionsDock::on_disk_cache_text_finished);
-    connect(_disk_cache_disk, &QLineEdit::editingFinished,
+    connect(_disk_cache_disk, QOverload<int>::of(&QSpinBox::valueChanged),
             this, &DeviceOptionsDock::on_disk_cache_text_finished);
     connect(_disk_cache_dir, &QLineEdit::editingFinished,
             this, &DeviceOptionsDock::on_disk_cache_text_finished);
@@ -649,8 +655,12 @@ void DeviceOptionsDock::refresh_disk_cache_inline()
     _disk_cache_enable->setChecked(settings.enabled);
     _disk_cache_enable->blockSignals(blocked);
 
-    _disk_cache_ram->setText(pv::utility::DiskCacheSettings::format_ram_limit_text(settings.ram_limit_gb));
-    _disk_cache_disk->setText(pv::utility::DiskCacheSettings::format_disk_limit_text(settings.disk_limit_gb));
+    const bool ram_blocked = _disk_cache_ram->blockSignals(true);
+    const bool disk_blocked = _disk_cache_disk->blockSignals(true);
+    _disk_cache_ram->setValue((int)std::min<uint64_t>(settings.ram_limit_gb, 4096));
+    _disk_cache_disk->setValue((int)std::min<uint64_t>(settings.disk_limit_gb, 65536));
+    _disk_cache_ram->blockSignals(ram_blocked);
+    _disk_cache_disk->blockSignals(disk_blocked);
     _disk_cache_dir->setText(settings.spill_dir);
 
     const bool enabled = settings.enabled;
@@ -667,14 +677,10 @@ void DeviceOptionsDock::update_stream_buffer_enabled_state()
         return;
 
     const bool disk_enabled = _session->disk_cache_settings().enabled;
-    bool stream_mode = false;
-    if (_device_agent)
-        _device_agent->get_config_bool(SR_CONF_STREAM, stream_mode);
-
-    const bool lock_stream_buffer = disk_enabled && stream_mode;
+    const bool lock_stream_buffer = disk_enabled;
     _stream_buffer_widget->setEnabled(!lock_stream_buffer);
     _stream_buffer_widget->setToolTip(lock_stream_buffer
-        ? tr("Disk cache is enabled; disk total depth controls stream capture depth.")
+        ? tr("Disk cache is enabled; disk total depth controls capture depth.")
         : QString());
 }
 
@@ -686,21 +692,8 @@ bool DeviceOptionsDock::commit_disk_cache_inline()
     pv::utility::DiskCacheSettings settings = _session->disk_cache_settings();
     settings.enabled = _disk_cache_enable->isChecked();
 
-    uint64_t ram_gb = 0;
-    uint64_t disk_gb = 0;
-    if (!pv::utility::DiskCacheSettings::parse_ram_limit_text(_disk_cache_ram->text(), ram_gb)) {
-        MsgBox::Show(tr("Invalid RAM hot window. Use 32 MB or a positive GB value."));
-        refresh_disk_cache_inline();
-        return false;
-    }
-    if (!pv::utility::DiskCacheSettings::parse_disk_limit_text(_disk_cache_disk->text(), disk_gb)) {
-        MsgBox::Show(tr("Invalid disk total depth. Use a positive GB value or Unlimited."));
-        refresh_disk_cache_inline();
-        return false;
-    }
-
-    settings.ram_limit_gb = ram_gb;
-    settings.disk_limit_gb = disk_gb;
+    settings.ram_limit_gb = (uint64_t)_disk_cache_ram->value();
+    settings.disk_limit_gb = (uint64_t)_disk_cache_disk->value();
     settings.spill_dir = _disk_cache_dir->text().trimmed();
     if (settings.spill_dir.isEmpty())
         settings.spill_dir = QStandardPaths::writableLocation(QStandardPaths::TempLocation);

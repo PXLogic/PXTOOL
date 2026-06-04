@@ -510,6 +510,8 @@ public:
         bool active = false;
         uint64_t ram_limit_gb = 0;
         uint64_t disk_limit_gb = 0;
+        uint64_t ram_cached_bytes = 0;
+        uint64_t disk_cached_bytes = 0;
         uint64_t cached_bytes = 0;
         uint64_t write_bytes_per_sec = 0;
         QString spill_dir;

@@ -420,6 +420,61 @@ Please resave it after loaded.</source>
         <source>To switch the new device?</source>
         <translation>是否切換到新設備?</translation>
     </message>
+    <message>
+        <source>Disk Cache Settings...</source>
+        <translation>磁碟快取設定...</translation>
+    </message>
+    <message>
+        <source>Disk Cache: Enabled</source>
+        <translation>磁碟快取: 已啟用</translation>
+    </message>
+    <message>
+        <source>Disk Cache: Disabled</source>
+        <translation>磁碟快取: 已停用</translation>
+    </message>
+    <message>
+        <source>RAM %1</source>
+        <translation>RAM %1</translation>
+    </message>
+    <message>
+        <source>Disk %1</source>
+        <translation>磁碟 %1</translation>
+    </message>
+    <message>
+        <source>Write %1</source>
+        <translation>寫入 %1</translation>
+    </message>
+    <message>
+        <source>Cached %1</source>
+        <translation>已快取 %1</translation>
+    </message>
+</context>
+<context>
+    <name>pv::dialogs::DiskCacheDialog</name>
+    <message>
+        <source>Disk Cache Settings</source>
+        <translation>磁碟快取設定</translation>
+    </message>
+    <message>
+        <source>Enable disk cache (extends capture depth beyond RAM)</source>
+        <translation>啟用磁碟快取（將擷取深度延伸到 RAM 之外）</translation>
+    </message>
+    <message>
+        <source>Browse...</source>
+        <translation>瀏覽...</translation>
+    </message>
+    <message>
+        <source>RAM hot window:</source>
+        <translation>RAM 熱窗口:</translation>
+    </message>
+    <message>
+        <source>Disk total depth:</source>
+        <translation>磁碟總深度:</translation>
+    </message>
+    <message>
+        <source>Cache directory:</source>
+        <translation>快取目錄:</translation>
+    </message>
 </context>
 <context>
     <name>pv::StoreSession</name>
@@ -1466,6 +1521,38 @@ It can take a while!</source>
         <translation>自動校準程序即將啓動，請勿連接任何探針。
 這可能需要一些時間！</translation>
     </message>
+    <message>
+        <source>Disk Cache</source>
+        <translation>磁碟快取</translation>
+    </message>
+    <message>
+        <source>Enable disk cache</source>
+        <translation>啟用磁碟快取</translation>
+    </message>
+    <message>
+        <source>Browse...</source>
+        <translation>瀏覽...</translation>
+    </message>
+    <message>
+        <source>RAM hot window:</source>
+        <translation>RAM 熱窗口:</translation>
+    </message>
+    <message>
+        <source>Disk total depth:</source>
+        <translation>磁碟總深度:</translation>
+    </message>
+    <message>
+        <source>Cache directory:</source>
+        <translation>快取目錄:</translation>
+    </message>
+    <message>
+        <source>Disk cache is enabled; disk total depth controls capture depth.</source>
+        <translation>磁碟快取已啟用；磁碟總深度控制擷取深度。</translation>
+    </message>
+    <message>
+        <source>Select cache directory</source>
+        <translation>選擇快取目錄</translation>
+    </message>
 </context>
 <context>
     <name>pv::dock::DsoTriggerDock</name>
@@ -1763,6 +1850,24 @@ It can take a while!</source>
         <location filename="../pv/dock/logdock.cpp" line="182" />
         <source>Clear</source>
         <translation>清除</translation>
+    </message>
+    <message>
+        <location filename="../pv/dock/logdock.cpp" line="69" />
+        <location filename="../pv/dock/logdock.cpp" line="399" />
+        <source>Search</source>
+        <translation>搜索</translation>
+    </message>
+    <message>
+        <location filename="../pv/dock/logdock.cpp" line="75" />
+        <location filename="../pv/dock/logdock.cpp" line="402" />
+        <source>Search log</source>
+        <translation>搜索日誌</translation>
+    </message>
+    <message>
+        <location filename="../pv/dock/logdock.cpp" line="84" />
+        <location filename="../pv/dock/logdock.cpp" line="404" />
+        <source>Exact</source>
+        <translation>精確</translation>
     </message>
 </context>
 <context>

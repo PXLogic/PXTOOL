@@ -52,7 +52,10 @@ namespace ui
     /** Standard popup menu font (matches title bar File/Window/Help menus). */
     QFont application_menu_font();
 
-    /** Waveform/header context menus; same 10px cap as channel labels. */
+    /** Apply application_menu_font to @p menu and all submenus/actions. */
+    void apply_application_menu_font(QMenu *menu);
+
+    /** Waveform context menus; same 10px cap as channel labels. */
     QFont compact_menu_font();
 
     /** Apply compact_menu_font to @p menu and all submenus/actions. */

@@ -50,6 +50,26 @@
  
 using namespace std;
 
+namespace {
+
+QFont header_ui_font(const QFont &base)
+{
+    QFont font(base);
+    const QString appFamily = QApplication::font().family();
+    if (!appFamily.isEmpty())
+        font.setFamily(appFamily);
+
+    float fSize = AppConfig::Instance().appOptions.fontSize;
+    if (fSize > 10)
+        fSize = 10;
+    font.setPixelSize(qRound(fSize));
+    font.setWeight(QFont::Normal);
+    font.setBold(false);
+    return font;
+}
+
+}
+
 namespace pv {
 namespace view {
 
@@ -148,11 +168,7 @@ void Header::paintEvent(QPaintEvent*)
     QColor fore(QWidget::palette().color(QWidget::foregroundRole()));
     fore.setAlpha(View::ForeAlpha);
  
-    QFont font(painter.font());
-    float fSize = AppConfig::Instance().appOptions.fontSize;
-    if (fSize > 10)
-        fSize = 10;
-    font.setPixelSize(qRound(fSize));
+    QFont font = header_ui_font(painter.font());
     painter.setFont(font);
 
     for(auto t : traces)
@@ -434,9 +450,7 @@ void Header::changeName(QMouseEvent *event)
         && event->button() == Qt::LeftButton) 
     {
         header_resize();
-        QFont font = this->font();
-        float fsize = AppConfig::Instance().appOptions.fontSize;
-        font.setPixelSize(qRound(fsize <= 10 ? fsize: 10));
+        QFont font = header_ui_font(this->font());
         nameEdit->setFont(font);
 
         nameEdit->setText(_context_trace->get_name());
@@ -590,7 +604,7 @@ void Header::contextMenuEvent(QContextMenuEvent *event)
     h4x->setCheckable(true);    h4x->setChecked(curMul == 4);
     h8x->setCheckable(true);    h8x->setChecked(curMul == 8);
 
-    ui::apply_compact_menu_font(&menu);
+    ui::apply_application_menu_font(&menu);
 
     /* "Decode Engine" submenu intentionally removed: the C / Python choice
      * is now made up-front when the user picks the protocol from the
@@ -667,13 +681,7 @@ void Header::UpdateTheme()
 
 void Header::UpdateFont()
 {
-    QFont font = this->font();
-    float fSize = AppConfig::Instance().appOptions.fontSize;
-    if (fSize > 10)
-        fSize = 10;
-    font.setPixelSize(qRound(fSize));
-    font.setWeight(QFont::Normal);
-    font.setBold(false);
+    QFont font = header_ui_font(this->font());
     setFont(font);
     if (nameEdit)
         nameEdit->setFont(font);

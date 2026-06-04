@@ -28,6 +28,7 @@
 #include <QPushButton>
 #include <QCheckBox>
 #include <QLineEdit>
+#include <QSpinBox>
 #include <QRadioButton>
 #include <QSet>
 #include <QTimer>
@@ -141,8 +142,8 @@ private:
     QWidget       *_stream_buffer_widget;
     QWidget       *_disk_cache_inline;
     QCheckBox     *_disk_cache_enable;
-    QLineEdit     *_disk_cache_ram;
-    QLineEdit     *_disk_cache_disk;
+    QSpinBox      *_disk_cache_ram;
+    QSpinBox      *_disk_cache_disk;
     QLineEdit     *_disk_cache_dir;
     QPushButton   *_disk_cache_browse;
     int            _opt_mode;

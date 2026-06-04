@@ -28,6 +28,8 @@
 #include <QAbstractItemView>
 #include <QStandardItemModel>
 #include <QStyleFactory>
+#include <QApplication>
+#include <QToolButton>
 #include <math.h>
 #include <libusb-1.0/libusb.h>
 #include "../dialogs/deviceoptions.h"
@@ -56,6 +58,39 @@ namespace pv
 {
     namespace toolbars
     {
+        static QString capture_button_font_family_qss(QString family)
+        {
+            family.replace("\\", "\\\\");
+            family.replace("\"", "\\\"");
+            return family;
+        }
+
+        static QFont capture_button_font()
+        {
+            QFont font = QApplication::font();
+            const int px = qMax(12, qRound(AppConfig::Instance().appOptions.fontSize));
+            font.setPixelSize(px);
+            font.setWeight(QFont::Normal);
+            font.setBold(false);
+            font.setStyleStrategy(QFont::PreferAntialias);
+            return font;
+        }
+
+        static QString capture_button_font_qss()
+        {
+            const QFont font = capture_button_font();
+            return QString("font-family: \"%1\"; font-size: %2px; font-weight: normal;")
+                .arg(capture_button_font_family_qss(font.family()))
+                .arg(font.pixelSize());
+        }
+
+        static void apply_capture_button_font(QToolButton *button)
+        {
+            if (button == nullptr)
+                return;
+
+            button->setFont(capture_button_font());
+        }
 
         const QString SamplingBar::RLEString = "(RLE)";
         const QString SamplingBar::DIVString = " / div";
@@ -210,6 +245,7 @@ namespace pv
             _run_stop_button.setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
             _run_stop_button.setCenterContent(true);
             _run_stop_button.setStyle(QStyleFactory::create("Fusion"));
+            apply_capture_button_font(&_run_stop_button);
             apply_run_stop_button_style(false);
             lay->addWidget(&_run_stop_button);
 
@@ -220,10 +256,11 @@ namespace pv
             _instant_button.setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
             _instant_button.setCenterContent(true);
             _instant_button.setStyle(QStyleFactory::create("Fusion"));
+            apply_capture_button_font(&_instant_button);
             _instant_button.setStyleSheet(
                 "QToolButton { background-color: rgba(22,163,74,0.1);"
                 "  border: 1px solid rgba(22,163,74,0.5); border-radius: 4px;"
-                "  color: #4ade80; font-size: 10px; font-weight: 500;"
+                "  color: #4ade80; " + capture_button_font_qss() +
                 "  padding: 0px; }"
                 "QToolButton:hover { background-color: rgba(22,163,74,0.2);"
                 "  border-color: #16a34a; color: #86efac; }"
@@ -357,11 +394,13 @@ namespace pv
 
         void SamplingBar::apply_run_stop_button_style(bool capturing)
         {
+            apply_capture_button_font(&_run_stop_button);
+
             if (capturing) {
                 _run_stop_button.setStyleSheet(
                     "QToolButton { background-color: rgba(220,38,38,0.2);"
                     "  border: 1px solid #dc2626; border-radius: 4px;"
-                    "  color: #f87171; font-size: 10px; font-weight: 500;"
+                    "  color: #f87171; " + capture_button_font_qss() +
                     "  padding: 0px; }"
                     "QToolButton:hover { background-color: rgba(220,38,38,0.3);"
                     "  border-color: #ef4444; color: #fca5a5; }");
@@ -369,7 +408,7 @@ namespace pv
                 _run_stop_button.setStyleSheet(
                     "QToolButton { background-color: rgba(147,51,234,0.2);"
                     "  border: 1px solid #9333ea; border-radius: 4px;"
-                    "  color: #c084fc; font-size: 10px; font-weight: 500;"
+                    "  color: #c084fc; " + capture_button_font_qss() +
                     "  padding: 0px; }"
                     "QToolButton:hover { background-color: rgba(147,51,234,0.3);"
                     "  border-color: #a855f7; color: #e9d5ff; }");
@@ -1618,18 +1657,20 @@ namespace pv
                 apply_run_stop_button_style(!bEnable);
 
             if (_is_run_as_instant && !bEnable) {
+                apply_capture_button_font(&_instant_button);
                 _instant_button.setStyleSheet(
                     "QToolButton { background-color: rgba(220,38,38,0.2);"
                     "  border: 1px solid #dc2626; border-radius: 4px;"
-                    "  color: #f87171; font-size: 10px; font-weight: 500;"
+                    "  color: #f87171; " + capture_button_font_qss() +
                     "  padding: 0px; }"
                     "QToolButton:hover { background-color: rgba(220,38,38,0.3);"
                     "  border-color: #ef4444; color: #fca5a5; }");
             } else {
+                apply_capture_button_font(&_instant_button);
                 _instant_button.setStyleSheet(
                     "QToolButton { background-color: rgba(22,163,74,0.1);"
                     "  border: 1px solid rgba(22,163,74,0.5); border-radius: 4px;"
-                    "  color: #4ade80; font-size: 10px; font-weight: 500;"
+                    "  color: #4ade80; " + capture_button_font_qss() +
                     "  padding: 0px; }"
                     "QToolButton:hover { background-color: rgba(22,163,74,0.2);"
                     "  border-color: #16a34a; color: #86efac; }"
@@ -1687,6 +1728,9 @@ namespace pv
                 ui::set_toolbar_font(_capture_strip, font);
             else
                 ui::set_toolbar_font(this, font);
+
+            apply_capture_button_font(&_run_stop_button);
+            apply_capture_button_font(&_instant_button);
 
             QFont labelFont = font;
             labelFont.setBold(false);

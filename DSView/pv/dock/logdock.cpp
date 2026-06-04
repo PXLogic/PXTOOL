@@ -21,20 +21,142 @@
 
 #include "logdock.h"
 #include "logsearch.h"
+#include <QAbstractItemView>
+#include <QApplication>
 #include <QCheckBox>
 #include <QColor>
+#include <QComboBox>
 #include <QEvent>
+#include <QFontMetrics>
+#include <QFontDatabase>
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QKeyEvent>
 #include <QLabel>
 #include <QLineEdit>
+#include <QPlainTextEdit>
+#include <QPushButton>
 #include <QScrollBar>
 #include <QTextEdit>
 #include <QTextCharFormat>
 #include <QTextCursor>
 #include <QToolButton>
+#include <QtGlobal>
+
+#include "../config/appconfig.h"
 #include <log/xlog.h>
+
+namespace {
+
+QFont logDockUiFont()
+{
+    QFont font = QApplication::font();
+    const int px = qMax(12, qRound(AppConfig::Instance().appOptions.fontSize));
+    font.setPixelSize(px);
+    font.setWeight(QFont::Normal);
+    font.setBold(false);
+    font.setStyleStrategy(QFont::PreferAntialias);
+    return font;
+}
+
+QFont logDockTextFont()
+{
+    QFont font = logDockUiFont();
+
+#ifdef _WIN32
+    const QStringList preferred = {
+        QStringLiteral("Microsoft YaHei UI"),
+        QStringLiteral("Microsoft YaHei"),
+        QStringLiteral("Cascadia Mono"),
+        QStringLiteral("Consolas")
+    };
+#else
+    const QStringList preferred = {
+        QStringLiteral("Noto Sans Mono CJK SC"),
+        QStringLiteral("Noto Sans Mono CJK TC"),
+        QStringLiteral("Noto Sans Mono"),
+        QStringLiteral("Monospace")
+    };
+#endif
+
+    const QStringList families = QFontDatabase().families();
+    for (const QString &family : preferred) {
+        if (families.contains(family)) {
+            font.setFamily(family);
+            break;
+        }
+    }
+
+    return font;
+}
+
+QString logDockFontFamilyQss(QString family)
+{
+    family.replace("\\", "\\\\");
+    family.replace("\"", "\\\"");
+    return family;
+}
+
+QString logDockComboStyle(const QFont &font)
+{
+    const int px = font.pixelSize();
+    const int itemHeight = qMax(20, px + 8);
+    const QString family = logDockFontFamilyQss(font.family());
+    const bool dark = AppConfig::Instance().IsDarkStyle();
+    const QString bg = dark ? QStringLiteral("#1e1e1e") : QStringLiteral("#ffffff");
+    const QString border = dark ? QStringLiteral("#444444") : QStringLiteral("#d4d4d4");
+    const QString fg = dark ? QStringLiteral("#eff0f1") : QStringLiteral("#2A2A2A");
+    const QString disabledFg = dark ? QStringLiteral("#555555") : QStringLiteral("#9ca3af");
+
+    return QString(
+        "QComboBox { background-color: %1; border: 1px solid %2; border-radius: 3px;"
+        " padding: 2px 22px 2px 8px; min-height: %5px; color: %3;"
+        " font-family: \"%4\"; font-size: %6px; font-weight: normal; }"
+        "QComboBox:disabled { color: %7; }"
+        "QComboBox::drop-down { border: none; width: 18px; }"
+        "QAbstractItemView { background-color: %1; border: 1px solid %2; color: %3;"
+        " outline: none; padding: 6px 0; font-family: \"%4\";"
+        " font-size: %6px; font-weight: normal; }"
+        "QAbstractItemView::item { min-height: %5px; padding: 4px 12px;"
+        " border: 1px solid transparent; }"
+        "QAbstractItemView::item:selected { background-color: #1185D1; color: #ffffff; }"
+        "QAbstractItemView::item:hover { background-color: #1185D1; color: #ffffff; }")
+        .arg(bg)
+        .arg(border)
+        .arg(fg)
+        .arg(family)
+        .arg(itemHeight)
+        .arg(px)
+        .arg(disabledFg);
+}
+
+QString logDockButtonStyle(const QFont &font)
+{
+    const int px = font.pixelSize();
+    const QString family = logDockFontFamilyQss(font.family());
+    const bool dark = AppConfig::Instance().IsDarkStyle();
+    const QString bg = dark ? QStringLiteral("#1f1f1f") : QStringLiteral("#ffffff");
+    const QString hoverBg = dark ? QStringLiteral("#2a2a2a") : QStringLiteral("#f3f4f6");
+    const QString border = dark ? QStringLiteral("#444444") : QStringLiteral("#d4d4d4");
+    const QString fg = dark ? QStringLiteral("#eff0f1") : QStringLiteral("#2A2A2A");
+    const QString disabledFg = dark ? QStringLiteral("#555555") : QStringLiteral("#9ca3af");
+
+    return QString(
+        "QPushButton { background-color: %1; border: 1px solid %2; border-radius: 3px;"
+        " padding: 4px 14px; color: %3; font-family: \"%4\";"
+        " font-size: %5px; font-weight: normal; }"
+        "QPushButton:hover { background-color: %6; }"
+        "QPushButton:disabled { color: %7; }")
+        .arg(bg)
+        .arg(border)
+        .arg(fg)
+        .arg(family)
+        .arg(px)
+        .arg(hoverBg)
+        .arg(disabledFg);
+}
+
+}
 
 namespace pv {
 namespace dock {
@@ -68,13 +190,13 @@ LogDock::LogDock(QWidget *parent)
 
     _search_btn = new QPushButton(tr("Search"), toolbar);
     _search_btn->setObjectName("log_search_btn");
-    _search_btn->setFixedHeight(24);
+    _search_btn->setFixedHeight(28);
 
     _search_edit = new QLineEdit(toolbar);
     _search_edit->setObjectName("log_search_edit");
     _search_edit->setPlaceholderText(tr("Search log"));
     _search_edit->setClearButtonEnabled(true);
-    _search_edit->setFixedHeight(24);
+    _search_edit->setFixedHeight(28);
     _search_edit->setEnabled(true);
     _search_edit->setReadOnly(false);
     _search_edit->setFocusPolicy(Qt::StrongFocus);
@@ -87,19 +209,19 @@ LogDock::LogDock(QWidget *parent)
     _search_prev_btn = new QToolButton(toolbar);
     _search_prev_btn->setObjectName("log_search_prev");
     _search_prev_btn->setText("<");
-    _search_prev_btn->setFixedSize(24, 24);
+    _search_prev_btn->setFixedSize(28, 28);
 
     _search_next_btn = new QToolButton(toolbar);
     _search_next_btn->setObjectName("log_search_next");
     _search_next_btn->setText(">");
-    _search_next_btn->setFixedSize(24, 24);
+    _search_next_btn->setFixedSize(28, 28);
 
     _search_counter = new QLabel("0/0", toolbar);
     _search_counter->setObjectName("log_search_counter");
 
     _clear_btn = new QPushButton(tr("Clear"), toolbar);
     _clear_btn->setObjectName("log_clear_btn");
-    _clear_btn->setFixedHeight(24);
+    _clear_btn->setFixedHeight(28);
 
     tbLayout->addWidget(levelLabel,  0, Qt::AlignVCenter);
     tbLayout->addWidget(_level_combo, 0, Qt::AlignVCenter);
@@ -117,10 +239,7 @@ LogDock::LogDock(QWidget *parent)
     _text->setObjectName("log_text");
     _text->setReadOnly(true);
     _text->setWordWrapMode(QTextOption::NoWrap);
-    QFont f = _text->font();
-    f.setFamily("Monospace");
-    f.setPixelSize(10);
-    _text->setFont(f);
+    UpdateFont();
 
     // Main layout
     auto *mainLayout = new QVBoxLayout(this);
@@ -411,10 +530,77 @@ void LogDock::UpdateLanguage()
     _level_combo->addItem(tr("Debug"),   XLOG_LEVEL_DBG);
     _level_combo->addItem(tr("Verbose"), XLOG_LEVEL_DETAIL);
     _level_combo->setCurrentIndex(idx);
+    UpdateFont();
 }
 
 void LogDock::UpdateTheme()  {}
-void LogDock::UpdateFont()   {}
+void LogDock::UpdateFont()
+{
+    const QFont uiFont = logDockUiFont();
+    const QFont textFont = logDockTextFont();
+
+    setFont(uiFont);
+
+    QWidget *uiWidgets[] = {
+        _level_label,
+        _level_combo,
+        _search_btn,
+        _search_edit,
+        _exact_check,
+        _search_prev_btn,
+        _search_next_btn,
+        _search_counter,
+        _clear_btn
+    };
+
+    for (QWidget *widget : uiWidgets) {
+        if (widget)
+            widget->setFont(uiFont);
+    }
+
+    if (_level_combo && _level_combo->view())
+        _level_combo->view()->setFont(uiFont);
+
+    const int controlHeight = qMax(28, uiFont.pixelSize() + 16);
+    if (_level_combo) {
+        _level_combo->setFixedHeight(controlHeight);
+        _level_combo->setStyleSheet(logDockComboStyle(uiFont));
+        _level_combo->setPopupItemHeight(qMax(20, uiFont.pixelSize() + 8));
+        if (_level_combo->view())
+            _level_combo->view()->setStyleSheet(logDockComboStyle(uiFont));
+    }
+
+    QPushButton *buttons[] = {
+        _search_btn,
+        _clear_btn
+    };
+
+    QFontMetrics fm(uiFont);
+    int buttonMinWidth = 0;
+    for (QPushButton *button : buttons) {
+        if (button)
+            buttonMinWidth = qMax(buttonMinWidth, fm.horizontalAdvance(button->text()));
+    }
+    buttonMinWidth = qMax(56, buttonMinWidth + 32);
+
+    for (QPushButton *button : buttons) {
+        if (button) {
+            button->setFixedHeight(controlHeight);
+            button->setMinimumWidth(buttonMinWidth);
+            button->setStyleSheet(logDockButtonStyle(uiFont));
+        }
+    }
+
+    if (_search_edit)
+        _search_edit->setFixedHeight(controlHeight);
+    if (_search_prev_btn)
+        _search_prev_btn->setFixedSize(controlHeight, controlHeight);
+    if (_search_next_btn)
+        _search_next_btn->setFixedSize(controlHeight, controlHeight);
+
+    if (_text)
+        _text->setFont(textFont);
+}
 
 } // namespace dock
 } // namespace pv

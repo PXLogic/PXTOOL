@@ -504,7 +504,9 @@ namespace pv
             parts << tr("Disk %1").arg(pv::utility::DiskCacheSettings::format_disk_limit_text(st.disk_limit_gb));
             if (st.active || st.cached_bytes > 0 || st.write_bytes_per_sec > 0) {
                 parts << tr("Write %1").arg(format_disk_cache_speed(st.write_bytes_per_sec));
-                parts << tr("Cached %1").arg(format_disk_cache_bytes(st.cached_bytes));
+                parts << tr("Cache RAM %1 Disk %2")
+                    .arg(format_disk_cache_bytes(st.ram_cached_bytes))
+                    .arg(format_disk_cache_bytes(st.disk_cached_bytes));
             }
         }
 
