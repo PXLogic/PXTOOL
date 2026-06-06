@@ -43,3 +43,4 @@ pv/cdecoders/example_spi/*.so
 .codegraph
 *.zip
 .cursor
+docs/superpowers

@@ -71,6 +71,45 @@ For multi-step tasks, state a brief plan:
 
 Strong success criteria let you loop independently. Weak criteria ("make it work") require constant clarification.
 
+## 5. Qt CJK UI Text Rendering
+
+**When Chinese/Japanese/Korean text looks blurry, uneven, clipped, or one glyph appears smaller, treat it as a font + metrics bug, not just a cosmetic color issue.**
+
+For Qt widgets in this project:
+
+- Use `QApplication::font()` as the source of truth for UI font family.
+- On Windows, prefer the app-level CJK UI font already configured in `main.cpp` (`Microsoft YaHei UI`, then `Microsoft YaHei` fallback).
+- Do not hardcode `"Monospace"` or English-only fonts for UI text that may contain Chinese.
+- Avoid tiny fixed `10px` text for CJK controls unless the control is intentionally dense, such as waveform labels.
+- Use at least `12px` for normal menus, toolbar buttons, log panels, search controls, and combo box popups.
+- Use `font.setWeight(QFont::Normal)` and `font.setBold(false)` for normal CJK UI text.
+- Prefer `QFont::PreferAntialias` when manually constructing fonts for small controls.
+- Apply font both ways when Qt native/style-sheet rendering is involved: call `setFont(...)` on the widget/action and include `font-family`, `font-size`, and `font-weight` in local QSS.
+
+For menus and popup lists:
+
+- For `QMenu`, set font recursively on the menu, actions, and submenus.
+- For `QMenu`, also set local QSS because Windows native menu rendering can ignore `QMenu::setFont`.
+- Use popup item metrics similar to: `padding: 4px 12px`, `min-height: max(20, fontSize + 8)`.
+- For `QComboBox` / `DsComboBox`, set the combo font, popup view font, popup item height, and `QAbstractItemView::item` QSS.
+- If matching the channel header context menu style, use selected/hover background `#1185D1` and white selected text.
+
+For buttons with translated CJK text:
+
+- Do not rely on `sizeHint()` alone after language changes.
+- Recompute button width after `UpdateLanguage()` changes text.
+- Use `QFontMetrics::horizontalAdvance(...)` with the final font and add generous horizontal padding.
+- Give CJK buttons enough height: use at least `28px`, or `max(28, fontSize + 16)`.
+- If two nearby buttons should visually match, compute a shared minimum width from the widest translated text.
+- Avoid `font-weight: 500` for small CJK button text; it can trigger synthesized weights and uneven glyphs.
+
+Verification checklist:
+
+- Test Chinese translations, not only English.
+- Check the main control and its popup/submenu separately.
+- Check text after `UpdateLanguage()`, `UpdateFont()`, and theme/style refresh paths.
+- Build at least the touched object file; run full link after closing any running `PXTOOL.exe`.
+
 ---
 
 **These guidelines are working if:** fewer unnecessary changes in diffs, fewer rewrites due to overcomplication, and clarifying questions come before implementation rather than after mistakes.
