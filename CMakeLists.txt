@@ -613,7 +613,7 @@ set(DSView_RESOURCES
 
 
 if(WIN32)
-	# Use the DSView icon for the DSView.exe executable.
+	# Use the app icon for the PXTOOL.exe executable.
 	set(CMAKE_RC_COMPILE_OBJECT "${CMAKE_RC_COMPILER} -O coff -I${CMAKE_CURRENT_SOURCE_DIR} <SOURCE> <OBJECT>")
 	enable_language(RC)
 	# app icon
@@ -743,7 +743,7 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
     add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_directory
             "${CMAKE_CURRENT_SOURCE_DIR}/lang"
-            "${CMAKE_CURRENT_SOURCE_DIR}/build.dir/lang"
+            "${CMAKE_CURRENT_SOURCE_DIR}/build.windows/lang"
         COMMENT "Stage lang/ resources into build output"
     )
 endif()
@@ -807,7 +807,7 @@ if(APPLE)
             "${_BUNDLE_RES_DIR}/share/DSView/lang"
         COMMENT "Stage resources (icon, Python decoders, res/, demo/, lang/) into app bundle"
     )
-else()
+elseif(NOT WIN32)
     # For Linux and other non-macOS builds, copy lang/ to build output so app can find it at runtime
     add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_directory
@@ -822,8 +822,13 @@ if(ENABLE_COTIRE)
 	cotire(${PROJECT_NAME})
 endif()
 
-message(STATUS "Output dir: ${CMAKE_CURRENT_SOURCE_DIR}/build.dir")
-set(EXECUTABLE_OUTPUT_PATH "${CMAKE_CURRENT_SOURCE_DIR}/build.dir")
+if(WIN32)
+    message(STATUS "Output dir: ${CMAKE_CURRENT_SOURCE_DIR}/build.windows")
+    set(EXECUTABLE_OUTPUT_PATH "${CMAKE_CURRENT_SOURCE_DIR}/build.windows")
+else()
+    message(STATUS "Output dir: ${CMAKE_CURRENT_SOURCE_DIR}/build.dir")
+    set(EXECUTABLE_OUTPUT_PATH "${CMAKE_CURRENT_SOURCE_DIR}/build.dir")
+endif()
 
 #===============================================================================
 #= Installation

@@ -1,3 +1,3 @@
 @echo off
-cd /d "%~dp0\..\..\build.dir"
-DSView.exe
+cd /d "%~dp0\..\..\build.windows"
+PXTOOL.exe
