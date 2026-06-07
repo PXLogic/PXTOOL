@@ -16,9 +16,9 @@ if %ERRORLEVEL% EQU 0 (
 )
 
 echo [Step 0b] Cleaning old build artifacts...
-rmdir /s /q build.dir\CMakeFiles 2>nul
-del /f /q build.dir\CMakeCache.txt 2>nul
-del /f /q build.dir\PXTOOL.exe 2>nul
+rmdir /s /q build.windows\CMakeFiles 2>nul
+del /f /q build.windows\CMakeCache.txt 2>nul
+del /f /q build.windows\PXTOOL.exe 2>nul
 echo Done.
 echo.
 
@@ -53,8 +53,8 @@ powershell -NoProfile -ExecutionPolicy Bypass -Command ^
   "Write-Host \"  Version : $ver\"; " ^
   "Write-Host \"  Output  : $zipPath\"; " ^
   "Get-ChildItem \"$root\" -Filter 'PXTOOL-*-win64.zip' | ForEach-Object { Remove-Item $_.FullName -Force; Write-Host \"  Deleted : $($_.Name)\" }; " ^
-  "$buildDir = \"$root\build.dir\"; " ^
-  "if (-not (Test-Path $buildDir)) { Write-Host 'ERROR: build.dir not found'; exit 1 }; " ^
+  "$buildDir = \"$root\build.windows\"; " ^
+  "if (-not (Test-Path $buildDir)) { Write-Host 'ERROR: build.windows not found'; exit 1 }; " ^
   "Compress-Archive -Path \"$buildDir\*\" -DestinationPath $zipPath -CompressionLevel Optimal; " ^
   "Write-Host \"  Done: $zipName ($([math]::Round((Get-Item $zipPath).Length/1MB,1)) MB)\""
 

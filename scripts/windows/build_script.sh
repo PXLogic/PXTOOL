@@ -11,7 +11,7 @@ export PATH="$MINGW_PREFIX/bin:/usr/bin:/bin:$PATH"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SOURCE_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
-BUILD_DIR="$SOURCE_DIR/build.dir"
+BUILD_DIR="$SOURCE_DIR/build.windows"
 
 echo ""
 echo "======================================"
@@ -44,8 +44,8 @@ echo "Make     : $("$MINGW_PREFIX/bin/mingw32-make.exe" --version | head -1)"
 echo ""
 
 cd "$SOURCE_DIR"
-mkdir -p build.dir
-cd build.dir
+mkdir -p build.windows
+cd build.windows
 
 # --------------------------------------------------------------------------
 # CMake configuration
@@ -84,7 +84,7 @@ echo ""
 # Step 1b: Compile language files (.ts → .qm)
 # lrelease regenerates .qm in-place inside DSView/languages/ so that
 # language.qrc embeds up-to-date translations when rcc runs during make.
-# Note: qt5_add_translation in CMakeLists.txt outputs to build.dir/ which is
+# Note: qt5_add_translation in CMakeLists.txt outputs to the build output dir,
 # a different location than the .qm files referenced by language.qrc —
 # therefore we must run lrelease here to update the source-dir .qm files.
 # --------------------------------------------------------------------------
@@ -131,7 +131,7 @@ else
 fi
 echo ""
 
-# Stop a running PXTOOL.exe so the linker can overwrite build.dir/PXTOOL.exe
+# Stop a running PXTOOL.exe so the linker can overwrite build.windows/PXTOOL.exe
 if command -v tasklist.exe &>/dev/null && command -v taskkill.exe &>/dev/null; then
     if tasklist.exe 2>/dev/null | grep -qi 'PXTOOL.exe'; then
         echo "Stopping running PXTOOL.exe (required to relink)..."
@@ -190,7 +190,7 @@ if [ $MAKE_EXIT -ne 0 ]; then
 elif [ -f "$BUILD_DIR/PXTOOL.exe" ]; then
     if [ -f "$SOURCE_DIR/win-app-logo.ico" ]; then
         cp -f "$SOURCE_DIR/win-app-logo.ico" "$BUILD_DIR/win-app-logo.ico"
-        echo "  -> win-app-logo.ico copied to build.dir (runtime window icon)"
+        echo "  -> win-app-logo.ico copied to build.windows (runtime window icon)"
     fi
     echo "Build successful!"
     echo ""

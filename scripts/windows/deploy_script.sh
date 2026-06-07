@@ -1,7 +1,7 @@
 #!/bin/bash
 # =============================================================================
 # DSView Deploy Script
-# Copies all runtime dependencies to build.dir after compilation.
+# Copies all runtime dependencies to build.windows after compilation.
 # Run this once after BUILD, or when dependencies change.
 # =============================================================================
 
@@ -18,9 +18,9 @@ fi
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SOURCE_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
-BUILD_DIR="$SOURCE_DIR/build.dir"
+BUILD_DIR="$SOURCE_DIR/build.windows"
 
-cd "$BUILD_DIR" || { echo "ERROR: build.dir not found"; exit 1; }
+cd "$BUILD_DIR" || { echo "ERROR: build.windows not found"; exit 1; }
 
 if [ ! -f PXTOOL.exe ]; then
     echo "ERROR: PXTOOL.exe not found in $BUILD_DIR"
@@ -96,7 +96,7 @@ echo "  -> qt.conf written."
 # --------------------------------------------------------------------------
 # Step 4: Resource directories (res, demo, themes)
 # Always sync with rsync (or cp -r --update as fallback) so that changes
-# in the source tree are reflected in build.dir without a full clean.
+# in the source tree are reflected in build.windows without a full clean.
 # --------------------------------------------------------------------------
 echo "[4/6] Syncing resource directories..."
 
@@ -152,7 +152,7 @@ fi
 # --------------------------------------------------------------------------
 echo "[6/7] Bundling Python standard library..."
 
-# Detect the Python version from the DLL already in build.dir
+# Detect the Python version from the DLL already in build.windows
 PY_VER=$(ls libpython3.*.dll 2>/dev/null | grep -oP '3\.\d+' | head -1)
 
 if [ -z "$PY_VER" ]; then
@@ -193,14 +193,14 @@ fi
 # --------------------------------------------------------------------------
 echo "[7/7] Setting up C decoders..."
 mkdir -p cdecoders
-# Copy spi.dll built by CMake (lives in build.dir root after build)
+# Copy spi.dll built by CMake (lives in build.windows root after build)
 if [ -f spi.dll ] && [ ! -f cdecoders/spi.dll ]; then
     cp spi.dll cdecoders/spi.dll
     echo "  -> spi.dll -> cdecoders/spi.dll"
 elif [ -f cdecoders/spi.dll ]; then
     echo "  -> cdecoders/spi.dll already present, skipping."
 else
-    echo "  -> WARNING: spi.dll not found in build.dir (C decoders may not show [C]/[Py] options)"
+    echo "  -> WARNING: spi.dll not found in build.windows (C decoders may not show [C]/[Py] options)"
 fi
 
 # --------------------------------------------------------------------------
