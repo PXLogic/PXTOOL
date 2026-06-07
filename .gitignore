@@ -29,6 +29,7 @@
 # Local install and app build output
 /package-root/
 /build.dir/
+/build.windows/
 /build/
 /logo/
 
