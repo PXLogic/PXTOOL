@@ -8,8 +8,9 @@ Matches on <source> text.
 """
 import json, re, os
 
-DSVIEW_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-MAP_FILE = os.path.join(DSVIEW_ROOT, "scripts", "translation_map.json")
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+DSVIEW_ROOT = os.path.dirname(os.path.dirname(SCRIPT_DIR))
+MAP_FILE = os.path.join(SCRIPT_DIR, "translation_map.json")
 TS_FILE  = os.path.join(DSVIEW_ROOT, "DSView", "languages", "zh_CN.ts")
 
 with open(MAP_FILE, encoding="utf-8") as f:

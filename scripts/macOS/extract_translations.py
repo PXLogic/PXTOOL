@@ -3,12 +3,13 @@
 Extract L_S() calls from DSView source and map English defaults to
 Chinese translations from JSON files. Outputs translation_map.json.
 
-Usage: python3 scripts/extract_translations.py
-Output: scripts/translation_map.json
+Usage: python3 scripts/macOS/extract_translations.py
+Output: scripts/macOS/translation_map.json
 """
 import re, json, os, sys
 
-DSVIEW_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+DSVIEW_ROOT = os.path.dirname(os.path.dirname(SCRIPT_DIR))
 LANG_CN_DIR = os.path.join(DSVIEW_ROOT, "lang", "cn")
 SOURCE_DIR  = os.path.join(DSVIEW_ROOT, "DSView", "pv")
 
@@ -56,7 +57,7 @@ def main():
                     mapping[english] = chinese
                 total += 1
 
-    out = os.path.join(os.path.dirname(__file__), "translation_map.json")
+    out = os.path.join(SCRIPT_DIR, "translation_map.json")
     with open(out, "w", encoding="utf-8") as f:
         json.dump(mapping, f, ensure_ascii=False, indent=2)
     print(f"Scanned {total} L_S() calls (MSG/TOOLBAR/DLG only)")

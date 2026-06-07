@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-APP_PATH="${ROOT_DIR}/build.dir/DSView.app"
-APP_NAME="DSView"
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+APP_NAME="PXTOOL"
+APP_PATH="${ROOT_DIR}/build.dir/${APP_NAME}.app"
 
 # C decoder runtime directory must match GetUserDataDir()+"/cdecoders" in
 # pv/config/appconfig.cpp (Qt QStandardPaths::AppDataLocation +

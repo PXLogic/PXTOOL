@@ -5,8 +5,11 @@ new labels: Trigger, Decode, Measure, Search, Options, Log (sidebar tabs),
 Device, Sample Rate, Buffer, Mode (sampling bar labels).
 """
 import re
+import os
 
-TS_FILE = "DSView/languages/zh_CN.ts"
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+DSVIEW_ROOT = os.path.dirname(os.path.dirname(SCRIPT_DIR))
+TS_FILE = os.path.join(DSVIEW_ROOT, "DSView", "languages", "zh_CN.ts")
 
 # Map of English source -> desired Chinese translation
 new_trans = {

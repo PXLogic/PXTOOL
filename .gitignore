@@ -3,6 +3,7 @@
 
 # Packaged distribution output
 /dist/
+/build.macOS/
 
 # Local documentation (not tracked)
 /docs/
@@ -22,6 +23,8 @@
 /CPackSourceConfig.cmake
 /_CPack_Packages/
 /DSView-*-Darwin.dmg
+/PXTOOL-*-Darwin.dmg
+/PXTOOL-*-arm64-macOS.dmg
 
 # Local install and app build output
 /package-root/
@@ -45,3 +48,10 @@ pv/cdecoders/example_spi/*.so
 .cursor
 docs/superpowers
 /spi.dylib
+
+# Python runtime/cache artifacts
+__pycache__/
+*.py[cod]
+
+# Local Python environments
+/.venv*/

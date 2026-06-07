@@ -2,7 +2,8 @@
 """Fill in missing Chinese translations in zh_CN.ts."""
 import re, os
 
-DSVIEW_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+DSVIEW_ROOT = os.path.dirname(os.path.dirname(SCRIPT_DIR))
 TS_FILE = os.path.join(DSVIEW_ROOT, "DSView", "languages", "zh_CN.ts")
 
 # Map: English source → Chinese translation

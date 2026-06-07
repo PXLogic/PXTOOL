@@ -4,11 +4,12 @@ Replace L_S() macro calls with Qt tr() in DSView source files.
 Only targets MSG, TOOLBAR, DLG pages (static UI strings).
 DSL/DECODER dynamic lookups are left unchanged.
 
-Usage: python3 scripts/replace_ls_macro.py [--dry-run]
+Usage: python3 scripts/macOS/replace_ls_macro.py [--dry-run]
 """
 import re, os, sys
 
-DSVIEW_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+DSVIEW_ROOT = os.path.dirname(os.path.dirname(SCRIPT_DIR))
 SOURCE_DIR  = os.path.join(DSVIEW_ROOT, "DSView", "pv")
 
 DRY_RUN = "--dry-run" in sys.argv
