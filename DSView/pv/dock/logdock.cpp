@@ -29,6 +29,7 @@
 #include <QEvent>
 #include <QFontMetrics>
 #include <QFontDatabase>
+#include <QIcon>
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QKeyEvent>
@@ -37,10 +38,10 @@
 #include <QPlainTextEdit>
 #include <QPushButton>
 #include <QScrollBar>
+#include <QSize>
 #include <QTextEdit>
 #include <QTextCharFormat>
 #include <QTextCursor>
-#include <QToolButton>
 #include <QtGlobal>
 
 #include "../config/appconfig.h"
@@ -187,10 +188,7 @@ LogDock::LogDock(QWidget *parent)
     _level_combo->addItem(tr("Debug"),   XLOG_LEVEL_DBG);
     _level_combo->addItem(tr("Verbose"), XLOG_LEVEL_DETAIL);
     _level_combo->setCurrentIndex(2); // Info
-
-    _search_btn = new QPushButton(tr("Search"), toolbar);
-    _search_btn->setObjectName("log_search_btn");
-    _search_btn->setFixedHeight(28);
+    _level_combo->installEventFilter(this);
 
     _search_edit = new QLineEdit(toolbar);
     _search_edit->setObjectName("log_search_edit");
@@ -206,15 +204,17 @@ LogDock::LogDock(QWidget *parent)
     _exact_check = new QCheckBox(tr("Exact"), toolbar);
     _exact_check->setObjectName("log_search_exact");
 
-    _search_prev_btn = new QToolButton(toolbar);
-    _search_prev_btn->setObjectName("log_search_prev");
-    _search_prev_btn->setText("<");
-    _search_prev_btn->setFixedSize(28, 28);
+    _search_prev_btn = new QPushButton(toolbar);
+    _search_prev_btn->setObjectName("log_prev_btn");
+    _search_prev_btn->setFixedSize(24, 24);
+    _search_prev_btn->setIcon(QIcon(":/icons/sidebar/chevron-left.svg"));
+    _search_prev_btn->setIconSize(QSize(14, 14));
 
-    _search_next_btn = new QToolButton(toolbar);
-    _search_next_btn->setObjectName("log_search_next");
-    _search_next_btn->setText(">");
-    _search_next_btn->setFixedSize(28, 28);
+    _search_next_btn = new QPushButton(toolbar);
+    _search_next_btn->setObjectName("log_next_btn");
+    _search_next_btn->setFixedSize(24, 24);
+    _search_next_btn->setIcon(QIcon(":/icons/sidebar/chevron-right.svg"));
+    _search_next_btn->setIconSize(QSize(14, 14));
 
     _search_counter = new QLabel("0/0", toolbar);
     _search_counter->setObjectName("log_search_counter");
@@ -225,7 +225,6 @@ LogDock::LogDock(QWidget *parent)
 
     tbLayout->addWidget(levelLabel,  0, Qt::AlignVCenter);
     tbLayout->addWidget(_level_combo, 0, Qt::AlignVCenter);
-    tbLayout->addWidget(_search_btn, 0, Qt::AlignVCenter);
     tbLayout->addWidget(_search_edit, 1, Qt::AlignVCenter);
     tbLayout->addWidget(_exact_check, 0, Qt::AlignVCenter);
     tbLayout->addWidget(_search_prev_btn, 0, Qt::AlignVCenter);
@@ -257,15 +256,13 @@ LogDock::LogDock(QWidget *parent)
     connect(_clear_btn,   &QPushButton::clicked,         this, &LogDock::onClear);
     connect(_level_combo, QOverload<int>::of(&QComboBox::currentIndexChanged),
             this, &LogDock::onLevelChanged);
-    connect(_search_btn, &QPushButton::clicked,
-            this, &LogDock::onSearchClicked);
     connect(_search_edit, &QLineEdit::textChanged,
             this, &LogDock::onSearchTextChanged);
     connect(_exact_check, &QCheckBox::toggled,
             this, &LogDock::onExactSearchChanged);
-    connect(_search_prev_btn, &QToolButton::clicked,
+    connect(_search_prev_btn, &QPushButton::clicked,
             this, &LogDock::onSearchPrevious);
-    connect(_search_next_btn, &QToolButton::clicked,
+    connect(_search_next_btn, &QPushButton::clicked,
             this, &LogDock::onSearchNext);
 
     ADD_UI(this);
@@ -278,6 +275,9 @@ LogDock::~LogDock()
 
 bool LogDock::eventFilter(QObject *watched, QEvent *event)
 {
+    if (watched == _level_combo && event->type() == QEvent::Resize)
+        syncLevelComboPopupWidth();
+
     if (watched == _search_edit && event->type() == QEvent::KeyPress) {
         auto *keyEvent = static_cast<QKeyEvent *>(event);
         if (keyEvent->key() == Qt::Key_Return || keyEvent->key() == Qt::Key_Enter) {
@@ -292,6 +292,32 @@ bool LogDock::eventFilter(QObject *watched, QEvent *event)
     }
 
     return QWidget::eventFilter(watched, event);
+}
+
+void LogDock::syncLevelComboPopupWidth()
+{
+    if (!_level_combo)
+        return;
+
+    const int popupW = _level_combo->width();
+    if (popupW <= 0)
+        return;
+
+    if (popupW == _level_combo_popup_width)
+        return;
+    _level_combo_popup_width = popupW;
+
+    if (QAbstractItemView *levelView = _level_combo->view()) {
+        levelView->setMinimumWidth(popupW);
+        levelView->setMaximumWidth(popupW);
+    }
+
+    QString base = _level_combo->styleSheet();
+    const int idx = base.indexOf("QAbstractItemView{min-width:");
+    if (idx != -1)
+        base = base.left(idx);
+    _level_combo->setStyleSheet(base
+        + QString("QAbstractItemView{min-width:%1px; max-width:%1px;}").arg(popupW));
 }
 
 void LogDock::appendEntries(const QList<UiLogEntry> &entries)
@@ -385,12 +411,6 @@ void LogDock::onLevelChanged(int index)
     _filter_level = _level_combo->itemData(index).toInt();
     dsv_set_ui_log_level(_filter_level);
     rerenderAll();
-}
-
-void LogDock::onSearchClicked()
-{
-    if (_search_edit)
-        _search_edit->setFocus();
 }
 
 void LogDock::onSearchTextChanged(const QString &)
@@ -515,8 +535,6 @@ void LogDock::UpdateLanguage()
 {
     if (_level_label)
         _level_label->setText(tr("Level:"));
-    if (_search_btn)
-        _search_btn->setText(tr("Search"));
     if (_search_edit)
         _search_edit->setPlaceholderText(tr("Search log"));
     if (_exact_check)
@@ -544,7 +562,6 @@ void LogDock::UpdateFont()
     QWidget *uiWidgets[] = {
         _level_label,
         _level_combo,
-        _search_btn,
         _search_edit,
         _exact_check,
         _search_prev_btn,
@@ -564,14 +581,15 @@ void LogDock::UpdateFont()
     const int controlHeight = qMax(28, uiFont.pixelSize() + 16);
     if (_level_combo) {
         _level_combo->setFixedHeight(controlHeight);
+        _level_combo_popup_width = -1;
         _level_combo->setStyleSheet(logDockComboStyle(uiFont));
         _level_combo->setPopupItemHeight(qMax(20, uiFont.pixelSize() + 8));
         if (_level_combo->view())
             _level_combo->view()->setStyleSheet(logDockComboStyle(uiFont));
+        syncLevelComboPopupWidth();
     }
 
     QPushButton *buttons[] = {
-        _search_btn,
         _clear_btn
     };
 
@@ -593,10 +611,15 @@ void LogDock::UpdateFont()
 
     if (_search_edit)
         _search_edit->setFixedHeight(controlHeight);
-    if (_search_prev_btn)
-        _search_prev_btn->setFixedSize(controlHeight, controlHeight);
-    if (_search_next_btn)
-        _search_next_btn->setFixedSize(controlHeight, controlHeight);
+    QSize iconSz(14, 14);
+    if (_search_prev_btn) {
+        _search_prev_btn->setFixedSize(24, 24);
+        _search_prev_btn->setIconSize(iconSz);
+    }
+    if (_search_next_btn) {
+        _search_next_btn->setFixedSize(24, 24);
+        _search_next_btn->setIconSize(iconSz);
+    }
 
     if (_text)
         _text->setFont(textFont);

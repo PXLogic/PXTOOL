@@ -30,6 +30,7 @@
 #include <QStyleFactory>
 #include <QApplication>
 #include <QToolButton>
+#include <QFontMetrics>
 #include <math.h>
 #include <libusb-1.0/libusb.h>
 #include "../dialogs/deviceoptions.h"
@@ -357,9 +358,10 @@ namespace pv
                 }
             }
             _configure_button.setText(tr("Options"));
-           _mode_button.setItemText(0, QString(tr("Single")).remove('&'));
-           _mode_button.setItemText(1, QString(tr("Repetitive")).remove('&'));
-           _mode_button.setItemText(2, QString(tr("Loop")).remove('&'));
+            _mode_button.setItemText(0, QString(tr("Single")).remove('&'));
+            _mode_button.setItemText(1, QString(tr("Repetitive")).remove('&'));
+            _mode_button.setItemText(2, QString(tr("Loop")).remove('&'));
+            sync_mode_combo_width();
 
             int mode = _device_agent->get_work_mode();
             bool is_working = _session->is_working();
@@ -432,6 +434,36 @@ namespace pv
             _sample_rate.setPopupItemHeight(popupItemHeight);
             _sample_count.setPopupItemHeight(popupItemHeight);
             _mode_button.setPopupItemHeight(popupItemHeight);
+        }
+
+        void SamplingBar::sync_mode_combo_width()
+        {
+            const QFontMetrics fm(_mode_button.fontMetrics());
+            int textW = 0;
+            for (int i = 0; i < _mode_button.count(); ++i)
+                textW = qMax(textW, fm.boundingRect(_mode_button.itemText(i)).width());
+
+            if (textW <= 0)
+                return;
+
+            // Match Buffer combo and popup sizing.
+            const int comboW = qMin(textW + 16 + 16 + 15, ComboBoxMaxWidth);
+            const int popupW = qMin(textW + 24 + 45, ComboBoxMaxWidth);
+
+            _mode_button.setMinimumWidth(comboW);
+
+            if (QAbstractItemView *modeView = _mode_button.view()) {
+                modeView->setTextElideMode(Qt::ElideNone);
+                modeView->setMinimumWidth(popupW);
+                modeView->setMaximumWidth(QWIDGETSIZE_MAX);
+            }
+
+            QString base = _mode_button.styleSheet();
+            const int idx = base.indexOf("QAbstractItemView{min-width:");
+            if (idx != -1)
+                base = base.left(idx);
+            _mode_button.setStyleSheet(base
+                + QString("QAbstractItemView{min-width:%1px;}").arg(popupW));
         }
 
         void SamplingBar::sync_buffer_combo_width()
@@ -507,6 +539,7 @@ namespace pv
 
             apply_device_bar_combo_popup();
             sync_buffer_combo_width();
+            sync_mode_combo_width();
 
             bool bDev = _device_agent->have_instance();
 

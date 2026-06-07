@@ -839,7 +839,7 @@ if(APPLE)
     install(TARGETS ${PROJECT_NAME} BUNDLE DESTINATION .)
 
     # Normally resources in macOS app bundle are packed at Contents/Resources
-    set(MAC_RES_PREFIX ${CMAKE_INSTALL_PREFIX}/${PROJECT_NAME}.app/Contents/Resources/)
+    set(MAC_RES_PREFIX ${CMAKE_INSTALL_PREFIX}/${DS_TITLE}.app/Contents/Resources/)
 
     # Adding icon via add_executable / target_sources does not work, hack around this
     install(FILES DSView.icns DESTINATION ${MAC_RES_PREFIX})
@@ -895,9 +895,16 @@ set(CPACK_SOURCE_PACKAGE_FILE_NAME
 set(CPACK_SOURCE_GENERATOR "TGZ")
 set(CPACK_PACKAGE_CONTACT "913461865@qq.com")
 
-# Set the final package file name (used by ZIP and NSIS installers)
-# This will generate: PXTOOL-1.0.0-win64.exe and PXTOOL-1.0.0-win64.zip
-set(CPACK_PACKAGE_FILE_NAME "PXTOOL-${DS_VERSION_MAJOR}.${DS_VERSION_MINOR}.${DS_VERSION_MICRO}-win64")
+# Set the final package file name.
+if(WIN32)
+    # This will generate: PXTOOL-1.0.0-win64.exe and PXTOOL-1.0.0-win64.zip
+    set(CPACK_PACKAGE_FILE_NAME "PXTOOL-${DS_VERSION_MAJOR}.${DS_VERSION_MINOR}.${DS_VERSION_MICRO}-win64")
+elseif(APPLE)
+    set(CPACK_PACKAGE_FILE_NAME "PXTOOL-${DS_VERSION_MAJOR}.${DS_VERSION_MINOR}.${DS_VERSION_MICRO}-arm64-macOS")
+    set(CPACK_PACKAGE_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/build.macOS")
+else()
+    set(CPACK_PACKAGE_FILE_NAME "PXTOOL-${DS_VERSION_MAJOR}.${DS_VERSION_MINOR}.${DS_VERSION_MICRO}")
+endif()
 
 include(CPack)
 

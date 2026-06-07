@@ -41,8 +41,9 @@ QVector<LogSearchMatch> findLogSearchMatches(const QString &text,
         if (found < 0)
             break;
 
-        matches.push_back(LogSearchMatch{found, query.size()});
-        pos = found + query.size();
+        const int queryLength = static_cast<int>(query.size());
+        matches.push_back(LogSearchMatch{found, queryLength});
+        pos = found + queryLength;
     }
 
     return matches;

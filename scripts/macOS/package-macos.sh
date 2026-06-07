@@ -2,20 +2,22 @@
 # Build a distributable macOS .app bundle + .dmg for PXTOOL.
 #
 # Usage:
-#   bash scripts/package-macos.sh [--skip-build] [--no-dmg]
+#   bash scripts/macOS/package-macos.sh [--skip-build] [--no-dmg]
 #
 # Output:
-#   dist/PXTOOL.app   — standalone app bundle
-#   dist/PXTOOL.dmg   — DMG installer (unless --no-dmg)
+#   build.macOS/PXTOOL.app   — standalone app bundle
+#   build.macOS/PXTOOL.dmg   — DMG installer (unless --no-dmg)
 
 set -euo pipefail
 
 # ── Config ────────────────────────────────────────────────────────────────────
-ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
+INSTALL_PREFIX="${ROOT}/package-root"
 BUILD_APP="${ROOT}/build.dir/PXTOOL.app"
-PKG_ROOT="${ROOT}/package-root/DSView.app"
-DIST_DIR="${ROOT}/dist"
+PKG_ROOT="${INSTALL_PREFIX}/PXTOOL.app"
+DIST_DIR="${ROOT}/build.macOS"
 DIST_APP="${DIST_DIR}/PXTOOL.app"
+FRAMEWORKS_DIR="${DIST_APP}/Contents/Frameworks"
 DMG_OUT="${DIST_DIR}/PXTOOL.dmg"
 
 SKIP_BUILD=0
@@ -31,9 +33,11 @@ done
 if [ $SKIP_BUILD -eq 0 ]; then
   echo "[1/6] Building PXTOOL..."
   cd "$ROOT"
+  cmake -DCMAKE_POLICY_VERSION_MINIMUM=3.5 -DCMAKE_INSTALL_PREFIX="$INSTALL_PREFIX" .
   make -j"$(sysctl -n hw.ncpu 2>/dev/null || echo 8)"
+  cmake --install .
 else
-  echo "[1/6] Skipping build (--skip-build)"
+  echo "[1/6] Skipping build/install (--skip-build)"
 fi
 
 # ── Step 2: Assemble bundle ───────────────────────────────────────────────────
@@ -51,14 +55,75 @@ find "$DIST_APP/Contents/Resources" -type l -delete
 # Copy data resources from package-root (res/, decoders, lang, demo, etc.)
 cp -R "$PKG_ROOT/Contents/Resources/" "$DIST_APP/Contents/Resources/"
 
+# Bundle Python before macdeployqt scans dependencies. Homebrew's Python
+# framework exposes compatibility paths that macdeployqt may not resolve, so
+# make the app point at the in-bundle framework first.
+echo "[3/6] Bundling Python.framework and running macdeployqt..."
+mkdir -p "$FRAMEWORKS_DIR"
+install_name_tool -add_rpath "@executable_path/../Frameworks" \
+  "$DIST_APP/Contents/MacOS/PXTOOL" 2>/dev/null || true
+
+PY_HOMEBREW_LIB=$(otool -L "$DIST_APP/Contents/MacOS/PXTOOL" 2>/dev/null \
+  | grep -E "/opt/homebrew.*Python.framework.*/Python" | awk '{print $1}' || true)
+
+if [ -n "$PY_HOMEBREW_LIB" ]; then
+  PY_VERSION=$(echo "$PY_HOMEBREW_LIB" | grep -oE "Versions/[0-9.]+" | head -1 | cut -d/ -f2)
+  PY_FRAMEWORK_SRC=$(echo "$PY_HOMEBREW_LIB" | sed 's|/Versions/.*||')
+  PY_DEST="$FRAMEWORKS_DIR/Python.framework"
+
+  echo "  Found Python ${PY_VERSION} at: $PY_FRAMEWORK_SRC"
+  rm -rf "$PY_DEST"
+  mkdir -p "$PY_DEST/Versions/${PY_VERSION}"
+  cp -R "$PY_FRAMEWORK_SRC/Versions/${PY_VERSION}/." "$PY_DEST/Versions/${PY_VERSION}/"
+  ln -sf "${PY_VERSION}" "$PY_DEST/Versions/Current"
+  ln -sf "Versions/Current/Python" "$PY_DEST/Python"
+  ln -sf "Versions/Current/Resources" "$PY_DEST/Resources"
+  chmod +w "$PY_DEST/Versions/${PY_VERSION}/Python"
+
+  install_name_tool -id \
+    "@rpath/Python.framework/Versions/${PY_VERSION}/Python" \
+    "$PY_DEST/Versions/${PY_VERSION}/Python"
+  install_name_tool -change \
+    "$PY_HOMEBREW_LIB" \
+    "@rpath/Python.framework/Versions/${PY_VERSION}/Python" \
+    "$DIST_APP/Contents/MacOS/PXTOOL"
+else
+  echo "  No Homebrew Python.framework reference found."
+fi
+
 # ── Step 3: macdeployqt — bundle Qt frameworks ────────────────────────────────
-echo "[3/6] Running macdeployqt..."
 MACDEPLOYQT="$(which macdeployqt)"
-"$MACDEPLOYQT" "$DIST_APP" -verbose=1
+MACDEPLOYQT_LOG="$(mktemp)"
+MACDEPLOYQT_ARGS=("$DIST_APP" -verbose=1 -no-codesign)
+for libpath in /opt/homebrew/lib /opt/homebrew/Frameworks; do
+  if [ -d "$libpath" ]; then
+    MACDEPLOYQT_ARGS+=("-libpath=$libpath")
+  fi
+done
+if ! "$MACDEPLOYQT" "${MACDEPLOYQT_ARGS[@]}" >"$MACDEPLOYQT_LOG" 2>&1; then
+  cat "$MACDEPLOYQT_LOG"
+  exit 1
+fi
+awk '
+  /QtPdf\.framework|QtVirtualKeyboard(Qml)?\.framework/ { skip_next = 1; next }
+  skip_next && /using QList/ { skip_next = 0; next }
+  { skip_next = 0; print }
+' "$MACDEPLOYQT_LOG"
+rm -f "$MACDEPLOYQT_LOG"
+
+# macdeployqt deploys broad plugin sets. PXTOOL does not use these optional
+# plugins, and they can drag in optional Homebrew Qt frameworks.
+for plugin in \
+  "$DIST_APP/Contents/PlugIns/imageformats/libqpdf.dylib" \
+  "$DIST_APP/Contents/PlugIns/platforminputcontexts/libqtvirtualkeyboardplugin.dylib"; do
+  if [ -f "$plugin" ]; then
+    rm -f "$plugin"
+    echo "  Removed optional plugin: ${plugin#$DIST_APP/Contents/PlugIns/}"
+  fi
+done
 
 # ── Step 4: Ensure rpath is set (macdeployqt handles Qt + most dylibs) ────────
 echo "[4/6] Verifying rpath and macdeployqt-bundled dylibs..."
-FRAMEWORKS_DIR="$DIST_APP/Contents/Frameworks"
 
 # Ensure @executable_path/../Frameworks is in rpath for non-Qt libs
 install_name_tool -add_rpath "@executable_path/../Frameworks" \
@@ -83,45 +148,15 @@ for dylib in spi.dylib; do
   fi
 done
 
-# ── Step 5: Bundle Python.framework + fix remaining homebrew paths ────────────
-echo "[5/6] Bundling Python.framework and verifying dependencies..."
+# ── Step 5: Verify dependencies and sign ──────────────────────────────────────
+echo "[5/6] Verifying dependencies and signing..."
 
-# Locate Python framework from Homebrew
-PY_HOMEBREW_LIB=$(otool -L "$DIST_APP/Contents/MacOS/PXTOOL" 2>/dev/null \
-  | grep -E "/opt/homebrew.*Python.framework.*/Python" | awk '{print $1}' || true)
-
-if [ -n "$PY_HOMEBREW_LIB" ]; then
-  # Derive the framework root from the library path
-  # e.g. /opt/homebrew/opt/python@3.13/Frameworks/Python.framework/Versions/3.13/Python
-  PY_VERSION=$(echo "$PY_HOMEBREW_LIB" | grep -oE "Versions/[0-9.]+" | head -1 | cut -d/ -f2)
-  PY_FRAMEWORK_SRC=$(echo "$PY_HOMEBREW_LIB" | sed 's|/Versions/.*||')
-
-  echo "  Found Python ${PY_VERSION} at: $PY_FRAMEWORK_SRC"
-  echo "  Copying Python.framework into bundle..."
-
-  PY_DEST="$FRAMEWORKS_DIR/Python.framework"
-  rm -rf "$PY_DEST"
-  mkdir -p "$PY_DEST/Versions/${PY_VERSION}"
-  cp -R "$PY_FRAMEWORK_SRC/Versions/${PY_VERSION}/." "$PY_DEST/Versions/${PY_VERSION}/"
-  ln -sf "${PY_VERSION}" "$PY_DEST/Versions/Current"
-  ln -sf "Versions/Current/Python" "$PY_DEST/Python"
-  ln -sf "Versions/Current/Resources" "$PY_DEST/Resources"
-  chmod +w "$PY_DEST/Versions/${PY_VERSION}/Python"
-
-  echo "  Fixing install names..."
-  install_name_tool -id \
-    "@rpath/Python.framework/Versions/${PY_VERSION}/Python" \
-    "$PY_DEST/Versions/${PY_VERSION}/Python"
-  install_name_tool -change \
-    "$PY_HOMEBREW_LIB" \
-    "@rpath/Python.framework/Versions/${PY_VERSION}/Python" \
-    "$DIST_APP/Contents/MacOS/PXTOOL"
-
-  echo "  Re-signing app bundle..."
-  codesign --force --deep --sign - "$DIST_APP" 2>&1 | grep -v "^$" || true
-else
-  echo "  No Python.framework reference found, skipping."
+if [ -d "$FRAMEWORKS_DIR/Python.framework" ]; then
+  echo "  OK: Python.framework"
 fi
+
+echo "  Re-signing app bundle..."
+codesign --force --deep --sign - "$DIST_APP" 2>&1 | grep -v "^$" || true
 
 # Final check for any remaining homebrew paths
 BROKEN=$(otool -L "$DIST_APP/Contents/MacOS/PXTOOL" 2>/dev/null \
@@ -140,7 +175,7 @@ if [ $NO_DMG -eq 0 ]; then
   echo "[6/6] Creating DMG..."
   # Get version from Info.plist
   VERSION=$(defaults read "$DIST_APP/Contents/Info.plist" CFBundleShortVersionString 2>/dev/null || echo "1.0")
-  DMG_OUT="${DIST_DIR}/PXTOOL-${VERSION}.dmg"
+  DMG_OUT="${DIST_DIR}/PXTOOL-${VERSION}-arm64-macOS.dmg"
 
   create-dmg \
     --volname "PXTOOL ${VERSION}" \

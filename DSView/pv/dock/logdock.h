@@ -37,7 +37,6 @@
 class QCheckBox;
 class QEvent;
 class QLineEdit;
-class QToolButton;
 
 namespace pv {
 namespace dock {
@@ -61,7 +60,6 @@ private slots:
     void onTimer();
     void onClear();
     void onLevelChanged(int index);
-    void onSearchClicked();
     void onSearchTextChanged(const QString &text);
     void onExactSearchChanged(bool checked);
     void onSearchNext();
@@ -74,19 +72,20 @@ private:
     void updateSearchHighlights();
     void updateSearchCounter();
     void gotoSearchMatch(int index);
+    void syncLevelComboPopupWidth();
 
     QPlainTextEdit     *_text = nullptr;
     QLabel             *_level_label = nullptr;
     DsComboBox         *_level_combo = nullptr;
-    QPushButton        *_search_btn = nullptr;
     QLineEdit          *_search_edit = nullptr;
     QCheckBox          *_exact_check = nullptr;
-    QToolButton        *_search_prev_btn = nullptr;
-    QToolButton        *_search_next_btn = nullptr;
+    QPushButton        *_search_prev_btn = nullptr;
+    QPushButton        *_search_next_btn = nullptr;
     QLabel             *_search_counter = nullptr;
     QPushButton        *_clear_btn = nullptr;
     QTimer             *_timer = nullptr;
     int                 _filter_level;
+    int                 _level_combo_popup_width = -1;
     QList<UiLogEntry>   _history;
     QVector<LogSearchMatch> _search_matches;
     int                 _current_search_match = -1;
