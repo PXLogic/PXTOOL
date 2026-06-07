@@ -152,6 +152,11 @@ static void _loadApp(AppOptions &o, QSettings &st)
     {
         o.fontSize = AppConfig::GetDefaultFontSize();
     }
+
+#ifdef Q_OS_MACOS
+    if (o.fontSize == 9.0f)
+        o.fontSize = AppConfig::GetDefaultFontSize();
+#endif
    
     st.endGroup();
 }
@@ -502,6 +507,9 @@ void AppConfig::GetFontSizeRange(float *minSize, float *maxSize)
 
 float AppConfig::GetDefaultFontSize()
 {
+#ifdef Q_OS_MACOS
+    return 12.0f;
+#else
     // Target ~12 effective physical pixels so Chinese characters are legible
     // on any screen, regardless of its DPI / Windows scaling factor.
     //
@@ -526,6 +534,7 @@ float AppConfig::GetDefaultFontSize()
     if (size > maxSize) size = maxSize;
 
     return size;
+#endif
 }
 
 bool AppConfig::IsDarkStyle()

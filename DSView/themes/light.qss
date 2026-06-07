@@ -2398,7 +2398,9 @@ QWidget#sidebar QPushButton#decode_settings_btn,
 QWidget#sidebar QPushButton#decode_save_btn,
 QWidget#sidebar QPushButton#decode_nav_btn,
 QWidget#sidebar QPushButton#decode_prev_btn,
-QWidget#sidebar QPushButton#decode_next_btn {
+QWidget#sidebar QPushButton#decode_next_btn,
+QWidget#sidebar QPushButton#log_prev_btn,
+QWidget#sidebar QPushButton#log_next_btn {
     background-color: transparent;
     border: 1px solid #cccccc;
     border-radius: 4px;
@@ -2409,7 +2411,9 @@ QWidget#sidebar QPushButton#decode_next_btn {
     padding: 0px;
 }
 QWidget#sidebar QPushButton#decode_prev_btn,
-QWidget#sidebar QPushButton#decode_next_btn {
+QWidget#sidebar QPushButton#decode_next_btn,
+QWidget#sidebar QPushButton#log_prev_btn,
+QWidget#sidebar QPushButton#log_next_btn {
     min-width: 24px;
     max-width: 24px;
     min-height: 24px;
@@ -2430,7 +2434,9 @@ QWidget#sidebar QPushButton#decode_nav_btn:hover {
     background-color: rgba(124, 58, 237, 0.12);
 }
 QWidget#sidebar QPushButton#decode_prev_btn:hover,
-QWidget#sidebar QPushButton#decode_next_btn:hover {
+QWidget#sidebar QPushButton#decode_next_btn:hover,
+QWidget#sidebar QPushButton#log_prev_btn:hover,
+QWidget#sidebar QPushButton#log_next_btn:hover {
     border-color: #7c3aed;
     background-color: rgba(124, 58, 237, 0.08);
 }
