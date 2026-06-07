@@ -1,29 +1,40 @@
 ![DreamSourceLab Logo](DSView/icons/dsl_logo.svg)
 
+# PXTOOL
 
-# DSView 
-DSView is a GUI program for supporting various instruments from [DreamSourceLab](http://www.dreamsourcelab.com), including logic analyzers, oscilloscopes, etc. DSView is based on the [sigrok project](https://sigrok.org).
+PXTOOL is the current product name for this DreamSourceLab desktop application. It provides a Qt-based GUI for DreamSourceLab instruments, including logic analyzers, oscilloscopes, and related capture/analysis workflows.
 
-The sigrok project aims at creating a portable, cross-platform, Free/Libre/Open-Source signal analysis software suite that supports various device types (such as logic analyzers, oscilloscopes, multimeters, and more).
+The project is based on the [sigrok](https://sigrok.org) ecosystem and continues to use a number of historical `DSView` names internally for source directories, build targets, and resource paths. On GitHub, this repository now documents the application as **PXTOOL** to match the current product branding used by the app itself.
 
-# Status
+## Features
 
-The DSView software is in a usable state and has official tarball releases. However, it is still a work in progress. Some basic functionality is available and working, but other things are always on the TODO list.
+- Device control and data acquisition for DreamSourceLab instruments
+- Signal visualization and measurement
+- Protocol decoding workflows built on the sigrok stack
+- Cross-platform Qt application with packaging support for Windows, Linux, and macOS
 
-# Useful links
+## Build Notes
 
-- [dreamsourcelab.com](https://www.dreamsourcelab.com)
-- [kickstarter.com](https://www.kickstarter.com/projects/dreamsourcelab/dslogic-multifunction-instruments-for-everyone)
-- [sigrok.org](https://sigrok.org)
+The CMake project still uses `project(DSView)` internally, while the packaged application title is `PXTOOL`.
 
-# Copyright and license
+Typical local build flow:
 
-DSView software is licensed under the terms of the GNU General Public License
-(GPL), version 3 or later.
+```bash
+cmake -S . -B build
+cmake --build build
+```
 
-While some individual source code files are licensed under the GPLv2+, and
-some files are licensed under the GPLv3+, this doesn't change the fact that
-the program as a whole is licensed under the terms of the GPLv3+ (e.g. also
-due to the fact that it links against GPLv3+ libraries).
+## Project Status
 
-Please see the individual source files for the full list of copyright holders.
+PXTOOL is actively developed from the long-running DSView codebase. Some repository paths and filenames intentionally keep their historical names for compatibility, but the user-facing application title has been updated to `PXTOOL`.
+
+## Useful Links
+
+- [DreamSourceLab](https://www.dreamsourcelab.com)
+- [sigrok](https://sigrok.org)
+
+## License
+
+This project is licensed under the GNU General Public License, version 3 or later.
+
+Some individual source files may carry GPLv2+ or GPLv3+ notices, but the program as a whole is distributed under GPLv3+ terms. See the source files and [LICENSE](LICENSE) for details.

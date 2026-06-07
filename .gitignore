@@ -44,3 +44,4 @@ pv/cdecoders/example_spi/*.so
 *.zip
 .cursor
 docs/superpowers
+/spi.dylib
