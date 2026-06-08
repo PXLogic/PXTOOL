@@ -8,6 +8,7 @@ APP_PATH="${OUTPUT_DIR}/DSView"
 SHARE_DIR="${ROOT_DIR}/share"
 SPI_OUTPUT_PATH="${OUTPUT_DIR}/spi.so"
 SPI_MODULE_PATH="${BUILD_DIR}/spi.so"
+UDEV_RULES_PATH="/etc/udev/rules.d/60-dreamsourcelab.rules"
 
 cd "${ROOT_DIR}"
 
@@ -38,6 +39,11 @@ if [ -f "${SPI_OUTPUT_PATH}" ]; then
 elif [ -f "${SPI_MODULE_PATH}" ]; then
     mkdir -p "${SHARE_DIR}/DSView/cdecoders"
     cmake -E copy_if_different "${SPI_MODULE_PATH}" "${SHARE_DIR}/DSView/cdecoders/spi.so"
+fi
+
+if [ ! -f "${UDEV_RULES_PATH}" ]; then
+    echo "WARNING: USB udev rules are not installed."
+    echo "         Run: bash scripts/linux/install_udev_rules.sh"
 fi
 
 echo "[4/4] Launch"

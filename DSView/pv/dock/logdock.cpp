@@ -339,6 +339,8 @@ void LogDock::appendEntries(const QList<UiLogEntry> &entries)
         if (e.level > _filter_level)
             continue;
 
+        fmt.setFontWeight(QFont::Normal);
+        fmt.setFontItalic(false);
         switch (e.level) {
         case XLOG_LEVEL_ERR:
             fmt.setForeground(QColor("#e06c75"));
@@ -621,8 +623,15 @@ void LogDock::UpdateFont()
         _search_next_btn->setIconSize(iconSz);
     }
 
-    if (_text)
+    if (_text) {
         _text->setFont(textFont);
+        _text->document()->setDefaultFont(textFont);
+        _text->setStyleSheet(QString(
+            "QPlainTextEdit#log_text { font-family: \"%1\"; font-size: %2px;"
+            " font-weight: normal; font-style: normal; }")
+            .arg(logDockFontFamilyQss(textFont.family()))
+            .arg(textFont.pixelSize()));
+    }
 }
 
 } // namespace dock

@@ -80,6 +80,9 @@ static void post_event_async(int event);
 static void send_event(int event);
 static void make_demo_device_to_list();
 static void process_attach_event(int isEvent);
+static void poll_usb_hotplug_fallback();
+static struct libusb_device* get_new_attached_usb_device_impl(int log_missing);
+static struct libusb_device* get_new_detached_usb_device_impl(int log_missing);
 static struct libusb_device* get_new_attached_usb_device();
 static struct libusb_device* get_new_detached_usb_device();
 
@@ -168,7 +171,9 @@ SR_API int ds_lib_init()
 	sr_info("Scan all connected hardware device.");
 	process_attach_event(0);
 
-	sr_listen_hotplug(lib_ctx.sr_ctx, hotplug_event_listen_callback);
+	ret = sr_listen_hotplug(lib_ctx.sr_ctx, hotplug_event_listen_callback);
+	if (ret != SR_OK)
+		sr_warn("USB hotplug callback is not active; Linux polling fallback will still check device changes.");
 
 	/** Start usb hotplug thread */
 	lib_ctx.hotplug_thread = g_thread_new("hotplug_proc", usb_hotplug_process_proc, (gpointer)0);
@@ -1248,6 +1253,11 @@ static void hotplug_event_listen_callback(struct libusb_context *ctx, struct lib
 
 	if (event == USB_EV_HOTPLUG_ATTACH)
 	{
+		if (sr_usb_device_is_exists(dev)){
+			sr_info("Attached device already exists in device list, handle:%p", dev);
+			return;
+		}
+
 		sr_info("----------One device attached,handle:%p", dev);
 
 		if (lib_ctx.is_waitting_reconnect)
@@ -1423,6 +1433,7 @@ static gpointer usb_hotplug_process_proc(gpointer data)
 	while (!lib_ctx.lib_exit_flag)
 	{
 		sr_hotplug_wait_timout(lib_ctx.sr_ctx);
+		poll_usb_hotplug_fallback();
 
 		if (lib_ctx.attach_event_flag){
 			process_attach_event(1);
@@ -1476,6 +1487,32 @@ static gpointer usb_hotplug_process_proc(gpointer data)
 	sr_info("Hotplug thread end!");
 
 	return NULL;
+}
+
+static void poll_usb_hotplug_fallback()
+{
+#ifdef __linux__
+	struct libusb_device *dev;
+
+	if (lib_ctx.sr_ctx == NULL)
+		return;
+
+	if (lib_ctx.attach_event_flag || lib_ctx.detach_event_flag || lib_ctx.is_waitting_reconnect)
+		return;
+
+	dev = get_new_attached_usb_device_impl(0);
+	if (dev != NULL) {
+		sr_info("Linux USB hotplug polling fallback detected attached device, handle:%p", dev);
+		hotplug_event_listen_callback(lib_ctx.sr_ctx->libusb_ctx, dev, USB_EV_HOTPLUG_ATTACH);
+		return;
+	}
+
+	dev = get_new_detached_usb_device_impl(0);
+	if (dev != NULL) {
+		sr_info("Linux USB hotplug polling fallback detected detached device, handle:%p", dev);
+		hotplug_event_listen_callback(lib_ctx.sr_ctx->libusb_ctx, dev, USB_EV_HOTPLUG_DETTACH);
+	}
+#endif
 }
 
 static void make_demo_device_to_list()
@@ -1589,7 +1626,7 @@ static void send_event(int event)
 	}
 }
 
-static struct libusb_device* get_new_attached_usb_device()
+static struct libusb_device* get_new_attached_usb_device_impl(int log_missing)
 {
 	struct libusb_device* array[MAX_DEVCIE_LIST_LENGTH];
 	int num;
@@ -1624,14 +1661,19 @@ static struct libusb_device* get_new_attached_usb_device()
 
 	pthread_mutex_unlock(&lib_ctx.mutext);
 
-	if (dev == NULL){
+	if (dev == NULL && log_missing){
 		sr_info("Not found attached device.");
 	}
 
 	return dev;
 }
 
-static struct libusb_device* get_new_detached_usb_device()
+static struct libusb_device* get_new_attached_usb_device()
+{
+	return get_new_attached_usb_device_impl(1);
+}
+
+static struct libusb_device* get_new_detached_usb_device_impl(int log_missing)
 {
     struct libusb_device* array[MAX_DEVCIE_LIST_LENGTH];
 	int num;
@@ -1671,11 +1713,16 @@ static struct libusb_device* get_new_detached_usb_device()
 
 	pthread_mutex_unlock(&lib_ctx.mutext);
 
-	if (dev == NULL){
+	if (dev == NULL && log_missing){
 		sr_info("Not found detached device.");
 	}
 
 	return dev;
+}
+
+static struct libusb_device* get_new_detached_usb_device()
+{
+	return get_new_detached_usb_device_impl(1);
 }
 
 SR_PRIV int post_message_callback(int msg)

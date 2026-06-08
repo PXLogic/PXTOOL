@@ -72,6 +72,7 @@ typedef void (*hotplug_event_callback)(struct libusb_context *ctx, struct libusb
 struct sr_context {
 	libusb_context*			libusb_ctx;
 	libusb_hotplug_callback_handle hotplug_handle;
+	int 					hotplug_registered;
 	hotplug_event_callback  hotplug_callback;
 	struct 					timeval hotplug_tv;
 	int (*listen_hotplug_ext)(struct sr_context *ctx);

@@ -31,6 +31,20 @@
 #undef LOG_PREFIX
 #define LOG_PREFIX "hwdriver: "
 
+static int is_supported_hotplug_device(uint16_t vid, uint16_t pid)
+{
+	switch (vid) {
+	case DS_VENDOR_ID:
+		return 1;
+	case 0x16c0:
+		return pid == 0x05dc;
+	case 0x1a86:
+		return pid == 0x5237;
+	default:
+		return 0;
+	}
+}
+
 /**
  * @file
  *
@@ -407,7 +421,7 @@ SR_PRIV int ds_scan_all_device_list(libusb_context *usb_ctx,struct libusb_device
             continue;
         }
 
-		if (des.idVendor == DS_VENDOR_ID){
+		if (is_supported_hotplug_device(des.idVendor, des.idProduct)){
 			if (wr >= size){
 				sr_err("ds_scan_all_device_list(), buffer length is too short.");
 				break;

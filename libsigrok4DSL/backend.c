@@ -406,10 +406,18 @@ SR_PRIV int sr_listen_hotplug(struct sr_context *ctx, hotplug_event_callback cal
 	sr_info("Register hotplug callback.");
 
 	ctx->hotplug_callback = callback;
+	ctx->hotplug_registered = 0;
 
 	// Call user custom function.
 	if (ctx->listen_hotplug_ext != NULL){
-		return ctx->listen_hotplug_ext(ctx);		
+		ret = ctx->listen_hotplug_ext(ctx);
+		ctx->hotplug_registered = (ret == SR_OK || ret == 0);
+		return ret;
+	}
+
+	if (!libusb_has_capability(LIBUSB_CAP_HAS_HOTPLUG)) {
+		sr_warn("libusb hotplug capability is not available; USB attach/detach will use polling fallback when supported.");
+		return SR_ERR_CALL_STATUS;
 	}
 
     ret = libusb_hotplug_register_callback(ctx->libusb_ctx,
@@ -422,8 +430,12 @@ SR_PRIV int sr_listen_hotplug(struct sr_context *ctx, hotplug_event_callback cal
                                            ctx, //user data
                                            &ctx->hotplug_handle);
     if (LIBUSB_SUCCESS != ret){
-       return -1;
+       sr_err("Failed to register libusb hotplug callback: %s.", libusb_error_name(ret));
+       return ret;
     }
+
+	ctx->hotplug_registered = 1;
+	sr_info("libusb hotplug callback registered.");
 
 	return 0;
 }
@@ -441,7 +453,10 @@ SR_PRIV int sr_close_hotplug(struct sr_context *ctx)
 		return ctx->close_hotplug_ext(ctx);
 	}
 
-	libusb_hotplug_deregister_callback(ctx->libusb_ctx, ctx->hotplug_handle);
+	if (ctx->hotplug_registered) {
+		libusb_hotplug_deregister_callback(ctx->libusb_ctx, ctx->hotplug_handle);
+		ctx->hotplug_registered = 0;
+	}
 
 	return 0;
 }
