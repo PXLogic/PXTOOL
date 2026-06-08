@@ -764,6 +764,21 @@ if(APPLE)
     set_target_properties(spi PROPERTIES SUFFIX ".dylib")
 endif()
 
+if(WIN32)
+    set_target_properties(spi PROPERTIES
+        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/build.windows"
+        LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/build.windows"
+    )
+elseif(APPLE)
+    set_target_properties(spi PROPERTIES
+        LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/build.dir"
+    )
+else()
+    set_target_properties(spi PROPERTIES
+        LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/build.linux"
+    )
+endif()
+
 if(APPLE)
     set_target_properties(${PROJECT_NAME} PROPERTIES
         BUNDLE TRUE
@@ -805,14 +820,27 @@ if(APPLE)
         COMMAND ${CMAKE_COMMAND} -E copy_directory
             "${CMAKE_CURRENT_SOURCE_DIR}/lang"
             "${_BUNDLE_RES_DIR}/share/DSView/lang"
-        COMMENT "Stage resources (icon, Python decoders, res/, demo/, lang/) into app bundle"
+        # Bundled C decoders
+        COMMAND ${CMAKE_COMMAND} -E make_directory
+            "${_BUNDLE_RES_DIR}/share/DSView/cdecoders"
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "$<TARGET_FILE:spi>"
+            "${_BUNDLE_RES_DIR}/share/DSView/cdecoders/spi.dylib"
+        COMMENT "Stage resources (icon, Python decoders, res/, demo/, lang/, cdecoders/) into app bundle"
     )
 elseif(NOT WIN32)
-    # For Linux and other non-macOS builds, copy lang/ to build output so app can find it at runtime
+    # For Linux and other non-macOS builds, stage runtime resources used by the
+    # in-tree executable. GetAppDataDir() resolves build.linux/DSView to
+    # ../share/DSView, so C decoders must be copied under share/DSView.
     add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_directory
             "${CMAKE_CURRENT_SOURCE_DIR}/lang"
             "${CMAKE_CURRENT_SOURCE_DIR}/build.linux/lang"
+        COMMAND ${CMAKE_COMMAND} -E make_directory
+            "${CMAKE_CURRENT_SOURCE_DIR}/share/DSView/cdecoders"
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "$<TARGET_FILE:spi>"
+            "${CMAKE_CURRENT_SOURCE_DIR}/share/DSView/cdecoders/spi.so"
         COMMENT "Stage lang/ resources into build output"
     )
 endif()

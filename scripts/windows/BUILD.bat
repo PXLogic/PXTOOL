@@ -27,4 +27,19 @@ if %ERRORLEVEL% NEQ 0 (
 echo.
 echo [OK] Build succeeded.
 echo.
+
+echo [Deploy] Copying runtime dependencies...
+C:\msys64\usr\bin\bash.exe --login -c "cd \"$(cygpath -u '%CD%')\" && bash scripts/windows/deploy_script.sh"
+
+if %ERRORLEVEL% NEQ 0 (
+    echo.
+    echo [ERROR] Deploy failed. See output above.
+    echo.
+    pause
+    exit /b 1
+)
+
+echo.
+echo [OK] Deploy succeeded.
+echo.
 pause

@@ -194,11 +194,9 @@ fi
 echo "[7/7] Setting up C decoders..."
 mkdir -p cdecoders
 # Copy spi.dll built by CMake (lives in build.windows root after build)
-if [ -f spi.dll ] && [ ! -f cdecoders/spi.dll ]; then
-    cp spi.dll cdecoders/spi.dll
+if [ -f spi.dll ]; then
+    cp -f spi.dll cdecoders/spi.dll
     echo "  -> spi.dll -> cdecoders/spi.dll"
-elif [ -f cdecoders/spi.dll ]; then
-    echo "  -> cdecoders/spi.dll already present, skipping."
 else
     echo "  -> WARNING: spi.dll not found in build.windows (C decoders may not show [C]/[Py] options)"
 fi
