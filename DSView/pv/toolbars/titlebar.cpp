@@ -34,6 +34,7 @@
 #include <QApplication>
 #include <QGuiApplication>
 #include <QPixmap>
+#include <QWindow>
 
 #include "../config/appconfig.h"
 #include "../appcontrol.h"
@@ -71,6 +72,7 @@ TitleBar::TitleBar(bool top, QWidget *parent, ITitleParent *titleParent, bool ha
     QHBoxLayout *lay1 = new QHBoxLayout(this);
 
     _title = new QLabel(this);
+    _title->setAttribute(Qt::WA_TransparentForMouseEvents);
     lay1->addWidget(_title);
 
     if (_isTop) {
@@ -139,6 +141,12 @@ bool TitleBar::ParentIsMaxsized()
     else{
         return parentWidget()->isMaximized();
     }
+}
+
+bool TitleBar::canStartDragAt(const QPoint &pos) const
+{
+    QWidget *child = childAt(pos);
+    return child == nullptr || child == _title;
 }
 
 void TitleBar::paintEvent(QPaintEvent *event)
@@ -222,10 +230,23 @@ void TitleBar::mousePressEvent(QMouseEvent* event)
         int x = event->pos().x();
         int y = event->pos().y(); 
         
+        if (!canStartDragAt(event->pos())) {
+            QWidget::mousePressEvent(event);
+            return;
+        }
+
         bool bTopWidow = AppControl::Instance()->GetTopWindow() == _parent;
         bool bClick = (x >= 6 && y >= 5 && x <= width() - 6);  //top window need resize hit check
  
         if (!bTopWidow || bClick ){
+#if defined(Q_OS_LINUX) && QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)
+            QWindow *window = this->window()->windowHandle();
+            if (window && window->startSystemMove()) {
+                event->accept();
+                return;
+            }
+#endif
+
             _is_draging = true;             
 
             _clickPos = event->globalPos(); 

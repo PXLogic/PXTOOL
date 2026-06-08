@@ -85,6 +85,7 @@ private:
     void reStyle();
 
     bool ParentIsMaxsized();
+    bool canStartDragAt(const QPoint &pos) const;
 
 signals:
     void normalShow();

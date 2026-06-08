@@ -1326,8 +1326,13 @@ bool ProtocolDock::protocol_sort_callback(const DecoderInfoItem *o1, const Decod
 
   void ProtocolDock::show_protocol_select()
   {
+      QWidget *anchor = _pro_keyword_edit;
+#ifdef Q_OS_LINUX
+      SearchComboBox *panel = new SearchComboBox(anchor);
+#else
       // Top-level so move() uses screen coordinates (ProtocolDock is a QScrollArea).
       SearchComboBox *panel = new SearchComboBox(nullptr);
+#endif
 
       for (auto info : _decoderInfoList)
       {
@@ -1352,7 +1357,6 @@ bool ProtocolDock::protocol_sort_callback(const DecoderInfoItem *o1, const Decod
           _active_picker = nullptr;
       });
 
-      QWidget *anchor = _pro_keyword_edit;
       panel->ShowDlg(anchor);
       panel->RefreshFilter();
   }

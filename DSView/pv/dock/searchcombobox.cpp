@@ -61,7 +61,11 @@ SearchComboBox::SearchComboBox(QWidget *parent)
     _clear_btn = NULL;
     _ignore_activation = false;
     setObjectName("decode_protocol_picker");
+#ifdef Q_OS_LINUX
+    setWindowFlags(Qt::Popup | Qt::FramelessWindowHint);
+#else
     setWindowFlags(Qt::Dialog | Qt::FramelessWindowHint | Qt::WindowSystemMenuHint);
+#endif
 }
 
 SearchComboBox::~SearchComboBox(){
@@ -158,11 +162,17 @@ void SearchComboBox::ShowDlg(QWidget *editline)
     connect(_clear_btn, SIGNAL(clicked()), this, SLOT(on_clear_clicked()));
 
     _ignore_activation = true;
+#ifdef Q_OS_LINUX
+    if (editline != NULL)
+        move(editline->mapToGlobal(QPoint(0, editline->height())));
+    show();
+#else
     show();
 
     // Top-level popup: screen coordinates from anchor top-left (keyword container).
     if (editline != NULL)
         move(editline->mapToGlobal(QPoint(0, 0)));
+#endif
 
     _search_edit->setFocus();
     _ignore_activation = false;
