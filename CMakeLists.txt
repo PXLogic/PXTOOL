@@ -662,7 +662,7 @@ if(NOT DISABLE_WERROR)
         add_definitions(-Werror)
 endif()
 
-set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14")
 set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99")
 
 
@@ -812,7 +812,7 @@ elseif(NOT WIN32)
     add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_directory
             "${CMAKE_CURRENT_SOURCE_DIR}/lang"
-            "${CMAKE_CURRENT_SOURCE_DIR}/build.dir/lang"
+            "${CMAKE_CURRENT_SOURCE_DIR}/build.linux/lang"
         COMMENT "Stage lang/ resources into build output"
     )
 endif()
@@ -825,9 +825,12 @@ endif()
 if(WIN32)
     message(STATUS "Output dir: ${CMAKE_CURRENT_SOURCE_DIR}/build.windows")
     set(EXECUTABLE_OUTPUT_PATH "${CMAKE_CURRENT_SOURCE_DIR}/build.windows")
-else()
+elseif(APPLE)
     message(STATUS "Output dir: ${CMAKE_CURRENT_SOURCE_DIR}/build.dir")
     set(EXECUTABLE_OUTPUT_PATH "${CMAKE_CURRENT_SOURCE_DIR}/build.dir")
+else()
+    message(STATUS "Output dir: ${CMAKE_CURRENT_SOURCE_DIR}/build.linux")
+    set(EXECUTABLE_OUTPUT_PATH "${CMAKE_CURRENT_SOURCE_DIR}/build.linux")
 endif()
 
 #===============================================================================

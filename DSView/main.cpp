@@ -287,7 +287,6 @@ bool bHighScale = true;
 		pv::MainFrame w;
 		control->Start();
 		w.ShowFormInit();  
-		w.ShowHelpDocAsync();  //to show the dailog for open help document
 		
 		ret = a.exec(); //Run the application
 		control->Stop();
