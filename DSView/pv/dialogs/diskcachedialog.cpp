@@ -7,6 +7,7 @@
 #include <QFileDialog>
 #include <QStandardPaths>
 #include <QBoxLayout>
+#include "../ui/dscombobox.h"
 
 namespace pv {
 namespace dialogs {
@@ -33,8 +34,8 @@ DiskCacheDialog::DiskCacheDialog(QWidget* parent)
     layout()->addWidget(top_sep);
 
     _chk_enabled = new QCheckBox(tr("Enable disk cache (extends capture depth beyond RAM)"));
-    _cmb_ram = new QComboBox;
-    _cmb_disk = new QComboBox;
+    _cmb_ram = new DsComboBox;
+    _cmb_disk = new DsComboBox;
     _cmb_ram->setObjectName("disk_cache_combo");
     _cmb_disk->setObjectName("disk_cache_combo");
     _edt_dir = new QLineEdit;

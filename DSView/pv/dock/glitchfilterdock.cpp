@@ -9,11 +9,11 @@
 #include "../sigsession.h"
 #include "../data/logicsnapshot.h"
 #include "../config/appconfig.h"
+#include "../ui/dscombobox.h"
 #include "../ui/fn.h"
 #include <libsigrok.h>
 #include <QScrollBar>
 #include <QShowEvent>
-#include <QComboBox>
 
 namespace pv {
 namespace dock {
@@ -110,7 +110,7 @@ void GlitchFilterDock::buildUi()
         row.threshold_sb->setSuffix(tr(" smp")); // unit embedded in spinbox
         row.threshold_sb->setEnabled(false);
         row.unit_label   = new QLabel(_ch_group); // kept but not in grid
-        row.mode_cb      = new QComboBox(_ch_group);
+        row.mode_cb      = new DsComboBox(_ch_group);
         // Items are re-set in retranslateUi(); indices match FilterMode enum.
         row.mode_cb->addItem(tr("Both"),      static_cast<int>(data::FilterMode::Both));
         row.mode_cb->addItem(tr("High only"), static_cast<int>(data::FilterMode::HighOnly));

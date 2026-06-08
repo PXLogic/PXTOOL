@@ -90,6 +90,9 @@ DsComboBox::DsComboBox(QWidget *parent)
     _bPopup = false;
     _popupFitContents = false;
     QComboBox::setSizeAdjustPolicy(QComboBox::AdjustToContents);   
+#ifdef Q_OS_LINUX
+    setProperty("linuxPopupBelowControl", true);
+#endif
 }
 
 void DsComboBox::setPopupFitContents(bool fit)
@@ -237,8 +240,8 @@ void DsComboBox::showPopup()
 #else
     QComboBox::showPopup();
 
-    if (_popupFitContents) {
-        if (QFrame *popup = this->findChild<QFrame*>()) {
+    if (QFrame *popup = this->findChild<QFrame*>()) {
+        if (_popupFitContents) {
             const int w = popupContentWidth();
             if (w > 0)
                 popup->setFixedWidth(w);

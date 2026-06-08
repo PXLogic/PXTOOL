@@ -23,6 +23,8 @@
 #define MYSTYLE_H
 
 #include <QProxyStyle>
+#include <QVariant>
+#include <QWidget>
 
 class MyStyle : public QProxyStyle
 {
@@ -34,6 +36,18 @@ class MyStyle : public QProxyStyle
             s = 24;
         }
         return s;
+    }
+
+    int styleHint(StyleHint hint, const QStyleOption * option = 0,
+                  const QWidget * widget = 0,
+                  QStyleHintReturn * returnData = 0) const override {
+#ifdef Q_OS_LINUX
+        if (hint == QStyle::SH_ComboBox_Popup && widget &&
+            widget->property("linuxPopupBelowControl").toBool()) {
+            return 0;
+        }
+#endif
+        return QProxyStyle::styleHint(hint, option, widget, returnData);
     }
 };
 
