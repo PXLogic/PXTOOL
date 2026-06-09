@@ -9,7 +9,7 @@ import os
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 DSVIEW_ROOT = os.path.dirname(os.path.dirname(SCRIPT_DIR))
-TS_FILE = os.path.join(DSVIEW_ROOT, "DSView", "languages", "zh_CN.ts")
+TS_FILE = os.path.join(DSVIEW_ROOT, "PXTOOL", "languages", "zh_CN.ts")
 
 # Map of English source -> desired Chinese translation
 new_trans = {

@@ -8,7 +8,7 @@ import json, os
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 DSVIEW_ROOT = os.path.dirname(os.path.dirname(SCRIPT_DIR))
 MAP_FILE = os.path.join(SCRIPT_DIR, "translation_map.json")
-OUT_FILE = os.path.join(DSVIEW_ROOT, "DSView", "languages", "zh_CN.ts")
+OUT_FILE = os.path.join(DSVIEW_ROOT, "PXTOOL", "languages", "zh_CN.ts")
 
 mapping = json.load(open(MAP_FILE, encoding="utf-8"))
 

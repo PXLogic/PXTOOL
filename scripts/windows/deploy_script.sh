@@ -117,16 +117,16 @@ sync_dir() {
     fi
 }
 
-sync_dir "$SOURCE_DIR/DSView/res"    ./res    "res/ (firmware & device configs)"
-sync_dir "$SOURCE_DIR/DSView/demo"   ./demo   "demo/ (demo pattern files)"
-sync_dir "$SOURCE_DIR/DSView/themes" ./themes "themes/"
+sync_dir "$SOURCE_DIR/PXTOOL/res"    ./res    "res/ (firmware & device configs)"
+sync_dir "$SOURCE_DIR/PXTOOL/demo"   ./demo   "demo/ (demo pattern files)"
+sync_dir "$SOURCE_DIR/PXTOOL/themes" ./themes "themes/"
 
 # Note: translations are embedded inside PXTOOL.exe as Qt resources
 # (language.qrc → qrc_language.cpp).  There is no separate lang/ directory
 # needed at runtime; the block below is kept only for forward-compatibility
 # in case a disk-based loader is added later.
-if [ -d "$SOURCE_DIR/DSView/lang" ]; then
-    sync_dir "$SOURCE_DIR/DSView/lang" ./lang "lang/ (optional disk translations)"
+if [ -d "$SOURCE_DIR/PXTOOL/lang" ]; then
+    sync_dir "$SOURCE_DIR/PXTOOL/lang" ./lang "lang/ (optional disk translations)"
 fi
 
 # --------------------------------------------------------------------------

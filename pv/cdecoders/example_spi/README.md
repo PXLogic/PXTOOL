@@ -88,9 +88,9 @@ cd pv/cdecoders/example_spi
 cmake -S . -B build
 cmake --build build
 # macOS
-cp build/spi.dylib ~/Library/Application\ Support/DSView/cdecoders/
+cp build/spi.dylib ~/Library/Application\ Support/DreamSourceLab/PXTOOL/cdecoders/
 # Linux
-cp build/spi.so ~/.local/share/DSView/cdecoders/
+cp build/spi.so ~/.local/share/DreamSourceLab/PXTOOL/cdecoders/
 ```
 
 You should see this in the DSView log at startup:

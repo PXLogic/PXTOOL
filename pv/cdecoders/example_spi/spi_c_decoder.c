@@ -12,7 +12,7 @@
  *
  * Install:
  *   cp spi.dylib (or spi.so) $APP_DATA_DIR/cdecoders/
- *   (e.g. ~/.local/share/DSView/cdecoders/ on Linux)
+ *   (e.g. ~/.local/share/PXTOOL/cdecoders/ on Linux)
  *
  * Annotation layout:
  *   Row 0 "bits"            — individual decoded bits (mosi and miso)

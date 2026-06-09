@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Encoding=UTF-8
+Name=PXTOOL
+Comment=GUI Program for DreamSourceLab USB-based Instruments
+TryExec=PXTOOL
+Exec=PXTOOL
+Icon=dsview
+Terminal=false
+Categories=Development;Electronics;Qt;

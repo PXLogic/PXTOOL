@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# Regenerate DSView.icns from DSView/icons/dock_app_icon.png.
+# Regenerate DSView.icns from PXTOOL/icons/dock_app_icon.png.
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
-PNG="$ROOT/DSView/icons/dock_app_icon.png"
+PNG="$ROOT/PXTOOL/icons/dock_app_icon.png"
 OUT="$ROOT/DSView.icns"
 TMP=$(mktemp -d)
 IST="$TMP/icon.iconset"

@@ -5,12 +5,12 @@
 #   bash scripts/macOS/package-macos.sh [--skip-build] [--no-dmg]
 #
 # Output:
-#   build.macOS/PXTOOL.app   — standalone app bundle
-#   build.macOS/PXTOOL.dmg   — DMG installer (unless --no-dmg)
+#   build.macOS/PXTOOL.app   - standalone app bundle
+#   build.macOS/PXTOOL.dmg   - DMG installer (unless --no-dmg)
 
 set -euo pipefail
 
-# ── Config ────────────────────────────────────────────────────────────────────
+# Config
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 INSTALL_PREFIX="${ROOT}/package-root"
 BUILD_APP="${ROOT}/build.dir/PXTOOL.app"
@@ -29,7 +29,7 @@ for arg in "$@"; do
   esac
 done
 
-# ── Step 1: Build ─────────────────────────────────────────────────────────────
+# Step 1: Build
 if [ $SKIP_BUILD -eq 0 ]; then
   echo "[1/6] Building PXTOOL..."
   cd "$ROOT"
@@ -40,7 +40,7 @@ else
   echo "[1/6] Skipping build/install (--skip-build)"
 fi
 
-# ── Step 2: Assemble bundle ───────────────────────────────────────────────────
+# Step 2: Assemble bundle
 echo "[2/6] Assembling app bundle..."
 rm -rf "$DIST_DIR" || { rm -rf "$DIST_DIR"/* "$DIST_DIR"/.[!.]* 2>/dev/null; true; }
 mkdir -p "$DIST_DIR"
@@ -91,7 +91,7 @@ else
   echo "  No Homebrew Python.framework reference found."
 fi
 
-# ── Step 3: macdeployqt — bundle Qt frameworks ────────────────────────────────
+# Step 3: macdeployqt - bundle Qt frameworks
 MACDEPLOYQT="$(which macdeployqt)"
 MACDEPLOYQT_LOG="$(mktemp)"
 MACDEPLOYQT_ARGS=("$DIST_APP" -verbose=1 -no-codesign)
@@ -122,7 +122,7 @@ for plugin in \
   fi
 done
 
-# ── Step 4: Ensure rpath is set (macdeployqt handles Qt + most dylibs) ────────
+# Step 4: Ensure rpath is set (macdeployqt handles Qt + most dylibs)
 echo "[4/6] Verifying rpath and macdeployqt-bundled dylibs..."
 
 # Ensure @executable_path/../Frameworks is in rpath for non-Qt libs
@@ -134,21 +134,21 @@ for lib in libglib-2.0.0.dylib libusb-1.0.0.dylib libfftw3.3.dylib; do
   if [ -f "$FRAMEWORKS_DIR/$lib" ]; then
     echo "  OK: $lib"
   else
-    echo "  WARNING: $lib not found in bundle — macdeployqt may have missed it"
+    echo "  WARNING: $lib not found in bundle - macdeployqt may have missed it"
   fi
 done
 
 # Confirm bundled C decoders survived the copy from package-root/.
-CDECODERS_DIR="$DIST_APP/Contents/Resources/share/DSView/cdecoders"
+CDECODERS_DIR="$DIST_APP/Contents/Resources/share/PXTOOL/cdecoders"
 for dylib in spi.dylib; do
   if [ -f "$CDECODERS_DIR/$dylib" ]; then
     echo "  OK: cdecoders/$dylib"
   else
-    echo "  WARNING: cdecoders/$dylib missing — did 'make install' populate package-root?"
+    echo "  WARNING: cdecoders/$dylib missing - did 'make install' populate package-root?"
   fi
 done
 
-# ── Step 5: Verify dependencies and sign ──────────────────────────────────────
+# Step 5: Verify dependencies and sign
 echo "[5/6] Verifying dependencies and signing..."
 
 if [ -d "$FRAMEWORKS_DIR/Python.framework" ]; then
@@ -170,7 +170,7 @@ else
   echo "  All external libs resolved."
 fi
 
-# ── Step 6: Create DMG ────────────────────────────────────────────────────────
+# Step 6: Create DMG
 if [ $NO_DMG -eq 0 ]; then
   echo "[6/6] Creating DMG..."
   # Get version from Info.plist

@@ -1,10 +1,10 @@
-![DreamSourceLab Logo](DSView/icons/dsl_logo.svg)
+![DreamSourceLab Logo](PXTOOL/icons/dsl_logo.svg)
 
 # PXTOOL
 
 PXTOOL is the current product name for this DreamSourceLab desktop application. It provides a Qt-based GUI for DreamSourceLab instruments, including logic analyzers, oscilloscopes, and related capture/analysis workflows.
 
-The project is based on the [sigrok](https://sigrok.org) ecosystem and continues to use a number of historical `DSView` names internally for source directories, build targets, and resource paths. On GitHub, this repository now documents the application as **PXTOOL** to match the current product branding used by the app itself.
+The project is based on the [sigrok](https://sigrok.org) ecosystem and now uses `PXTOOL` for the main source directory and packaged application title. Some historical `DSView` names remain internally for build targets and legacy resource filenames.
 
 ## Features
 
@@ -26,7 +26,7 @@ cmake --build build
 
 ## Project Status
 
-PXTOOL is actively developed from the long-running DSView codebase. Some repository paths and filenames intentionally keep their historical names for compatibility, but the user-facing application title has been updated to `PXTOOL`.
+PXTOOL is actively developed from the long-running DSView codebase. Some filenames intentionally keep their historical names for compatibility, but the main source directory and user-facing application title are now `PXTOOL`.
 
 ## Useful Links
 

@@ -36,8 +36,8 @@ set(DS_VERSION_MICRO 0)
 set(DS_VERSION_STRING  ${DS_VERSION_MAJOR}.${DS_VERSION_MINOR}.${DS_VERSION_MICRO})
 
 configure_file (
-	${PROJECT_SOURCE_DIR}/DSView/config.h.in
-	${PROJECT_BINARY_DIR}/DSView/config.h
+	${PROJECT_SOURCE_DIR}/PXTOOL/config.h.in
+	${PROJECT_BINARY_DIR}/PXTOOL/config.h
 )
 
 #===============================================================================
@@ -84,7 +84,7 @@ endif()
 #= first search path
 #-------------------------------------------------------------------------------
 include_directories(
-   ./DSView
+   ./PXTOOL
    ./pv/cdecoders
    ./libsigrok4DSL
    ./libsigrokdecode4DSL
@@ -257,257 +257,257 @@ find_package(Threads)
 #-------------------------------------------------------------------------------
 
 set(DSView_SOURCES
-    DSView/main.cpp
-    DSView/dsapplication.cpp
-    DSView/pv/log.cpp
-    DSView/pv/sigsession.cpp
-    DSView/pv/mainwindow.cpp
-    DSView/pv/data/snapshot.cpp
-    DSView/pv/data/signaldata.cpp
-    DSView/pv/data/logicsnapshot.cpp
-    DSView/pv/data/spillmanager.cpp
-    DSView/pv/data/analogsnapshot.cpp
-    DSView/pv/dialogs/deviceoptions.cpp
-    DSView/pv/prop/property.cpp
-    DSView/pv/prop/int.cpp
-    DSView/pv/prop/enum.cpp
-    DSView/pv/prop/double.cpp
-    DSView/pv/prop/bool.cpp
-    DSView/pv/prop/binding/binding.cpp
-    DSView/pv/toolbars/samplingbar.cpp
-    DSView/pv/view/viewport.cpp
-    DSView/pv/view/view.cpp
-    DSView/pv/view/timemarker.cpp
-    DSView/pv/view/signal.cpp
-    DSView/pv/view/ruler.cpp
-    DSView/pv/view/waveformscrollbar.cpp
-    DSView/pv/view/verticalscrollbar.cpp
-    DSView/pv/view/logicsignal.cpp
-    DSView/pv/view/header.cpp
-    DSView/pv/view/cursor.cpp
-    DSView/pv/view/analogsignal.cpp
-    DSView/pv/prop/binding/deviceoptions.cpp
-    DSView/pv/toolbars/trigbar.cpp
-    DSView/pv/toolbars/filebar.cpp
-    DSView/pv/dock/protocoldock.cpp
-    DSView/pv/dock/triggerdock.cpp
-    DSView/pv/dock/measuredock.cpp
-    DSView/pv/dock/searchdock.cpp
-    DSView/pv/dock/sidebar.cpp
-    DSView/pv/dock/glitchfilterdock.cpp
-    DSView/pv/dock/deviceoptionsdock.cpp
-    DSView/pv/toolbars/logobar.cpp
-    DSView/pv/dialogs/about.cpp
-    DSView/pv/dialogs/diskcachedialog.cpp
-    DSView/pv/dialogs/search.cpp
-    DSView/pv/data/dsosnapshot.cpp
-    DSView/pv/data/glitchfilter.cpp
-    DSView/pv/view/dsosignal.cpp
-    DSView/pv/view/dsldial.cpp
-    DSView/pv/dock/dsotriggerdock.cpp
-    DSView/pv/view/trace.cpp
-    DSView/pv/view/selectableitem.cpp
-    DSView/pv/data/decoderstack.cpp
-    DSView/pv/data/decode/rowdata.cpp
-    DSView/pv/data/decode/row.cpp
-    DSView/pv/data/decode/decoder.cpp
-    DSView/pv/data/decode/annotation.cpp
-    DSView/pv/view/decodetrace.cpp
+    PXTOOL/main.cpp
+    PXTOOL/dsapplication.cpp
+    PXTOOL/pv/log.cpp
+    PXTOOL/pv/sigsession.cpp
+    PXTOOL/pv/mainwindow.cpp
+    PXTOOL/pv/data/snapshot.cpp
+    PXTOOL/pv/data/signaldata.cpp
+    PXTOOL/pv/data/logicsnapshot.cpp
+    PXTOOL/pv/data/spillmanager.cpp
+    PXTOOL/pv/data/analogsnapshot.cpp
+    PXTOOL/pv/dialogs/deviceoptions.cpp
+    PXTOOL/pv/prop/property.cpp
+    PXTOOL/pv/prop/int.cpp
+    PXTOOL/pv/prop/enum.cpp
+    PXTOOL/pv/prop/double.cpp
+    PXTOOL/pv/prop/bool.cpp
+    PXTOOL/pv/prop/binding/binding.cpp
+    PXTOOL/pv/toolbars/samplingbar.cpp
+    PXTOOL/pv/view/viewport.cpp
+    PXTOOL/pv/view/view.cpp
+    PXTOOL/pv/view/timemarker.cpp
+    PXTOOL/pv/view/signal.cpp
+    PXTOOL/pv/view/ruler.cpp
+    PXTOOL/pv/view/waveformscrollbar.cpp
+    PXTOOL/pv/view/verticalscrollbar.cpp
+    PXTOOL/pv/view/logicsignal.cpp
+    PXTOOL/pv/view/header.cpp
+    PXTOOL/pv/view/cursor.cpp
+    PXTOOL/pv/view/analogsignal.cpp
+    PXTOOL/pv/prop/binding/deviceoptions.cpp
+    PXTOOL/pv/toolbars/trigbar.cpp
+    PXTOOL/pv/toolbars/filebar.cpp
+    PXTOOL/pv/dock/protocoldock.cpp
+    PXTOOL/pv/dock/triggerdock.cpp
+    PXTOOL/pv/dock/measuredock.cpp
+    PXTOOL/pv/dock/searchdock.cpp
+    PXTOOL/pv/dock/sidebar.cpp
+    PXTOOL/pv/dock/glitchfilterdock.cpp
+    PXTOOL/pv/dock/deviceoptionsdock.cpp
+    PXTOOL/pv/toolbars/logobar.cpp
+    PXTOOL/pv/dialogs/about.cpp
+    PXTOOL/pv/dialogs/diskcachedialog.cpp
+    PXTOOL/pv/dialogs/search.cpp
+    PXTOOL/pv/data/dsosnapshot.cpp
+    PXTOOL/pv/data/glitchfilter.cpp
+    PXTOOL/pv/view/dsosignal.cpp
+    PXTOOL/pv/view/dsldial.cpp
+    PXTOOL/pv/dock/dsotriggerdock.cpp
+    PXTOOL/pv/view/trace.cpp
+    PXTOOL/pv/view/selectableitem.cpp
+    PXTOOL/pv/data/decoderstack.cpp
+    PXTOOL/pv/data/decode/rowdata.cpp
+    PXTOOL/pv/data/decode/row.cpp
+    PXTOOL/pv/data/decode/decoder.cpp
+    PXTOOL/pv/data/decode/annotation.cpp
+    PXTOOL/pv/view/decodetrace.cpp
     pv/cdecoders/c_decoder_registry.cpp
-    DSView/pv/prop/binding/decoderoptions.cpp
-    DSView/pv/widgets/fakelineedit.cpp
-    DSView/pv/widgets/searchedgeflagedit.cpp
-    DSView/pv/widgets/decodermenu.cpp
-    DSView/pv/widgets/decodergroupbox.cpp
-    DSView/pv/prop/string.cpp
-    DSView/pv/dialogs/storeprogress.cpp
-    DSView/pv/storesession.cpp
-    DSView/pv/view/devmode.cpp
-    DSView/pv/dialogs/waitingdialog.cpp
-    DSView/pv/dialogs/dsomeasure.cpp
-    DSView/pv/dialogs/calibration.cpp
-    DSView/pv/data/decodermodel.cpp
-    DSView/pv/dialogs/protocollist.cpp
-    DSView/pv/dialogs/protocolexp.cpp
-    DSView/pv/dialogs/fftoptions.cpp
-    DSView/pv/data/mathstack.cpp
-    DSView/pv/view/mathtrace.cpp   
-    DSView/pv/toolbars/titlebar.cpp
-    DSView/pv/mainframe.cpp
-    DSView/pv/widgets/border.cpp
-    DSView/pv/dialogs/dsmessagebox.cpp
-    DSView/pv/dialogs/shadow.cpp
-    DSView/pv/dialogs/dsdialog.cpp
-    DSView/pv/dialogs/interval.cpp
-    DSView/pv/prop/binding/probeoptions.cpp
-    DSView/pv/view/viewstatus.cpp
-    DSView/pv/dialogs/lissajousoptions.cpp
-    DSView/pv/view/lissajoustrace.cpp
-    DSView/pv/view/spectrumtrace.cpp
-    DSView/pv/data/spectrumstack.cpp
-    DSView/pv/dialogs/mathoptions.cpp
-    DSView/pv/dialogs/regionoptions.cpp
-    DSView/pv/view/xcursor.cpp
-    DSView/pv/dock/protocoldock.cpp
-    DSView/pv/data/decoderstack.cpp
-    DSView/pv/data/decode/annotation.cpp
-    DSView/pv/data/decode/decoder.cpp
-    DSView/pv/data/decode/row.cpp
-    DSView/pv/data/decode/rowdata.cpp
-    DSView/pv/prop/binding/decoderoptions.cpp
-    DSView/pv/view/decodetrace.cpp
-    DSView/pv/widgets/decodergroupbox.cpp
-    DSView/pv/widgets/decodermenu.cpp
-    DSView/pv/config/appconfig.cpp
-    DSView/pv/appcontrol.cpp
-    DSView/pv/dstimer.cpp
-    DSView/pv/eventobject.cpp
-    DSView/pv/ZipMaker.cpp
-    DSView/pv/data/decode/annotationrestable.cpp
-    DSView/pv/data/decode/decoderstatus.cpp
-    DSView/pv/dock/protocolitemlayer.cpp
-    DSView/pv/ui/msgbox.cpp
-    DSView/pv/ui/dscombobox.cpp
-    DSView/pv/dsvdef.cpp
-    DSView/pv/dialogs/applicationpardlg.cpp
-    DSView/pv/dock/keywordlineedit.cpp
-    DSView/pv/dock/searchcombobox.cpp
-    DSView/pv/dialogs/decoderoptionsdlg.cpp
-    DSView/pv/utility/encoding.cpp
-    DSView/pv/utility/path.cpp
-    DSView/pv/utility/array.cpp
-    DSView/pv/deviceagent.cpp
-    DSView/pv/ui/langresource.cpp
-    DSView/pv/ui/fn.cpp
-    DSView/pv/ui/xtoolbutton.cpp
-    DSView/pv/ui/uimanager.cpp
-    DSView/pv/ui/popupdlglist.cpp
-    DSView/pv/dock/logdock.cpp
-    DSView/pv/dock/logsearch.cpp
-    DSView/pv/sessioncallback.cpp
-    DSView/pv/dialogs/shortcutdlg.cpp
+    PXTOOL/pv/prop/binding/decoderoptions.cpp
+    PXTOOL/pv/widgets/fakelineedit.cpp
+    PXTOOL/pv/widgets/searchedgeflagedit.cpp
+    PXTOOL/pv/widgets/decodermenu.cpp
+    PXTOOL/pv/widgets/decodergroupbox.cpp
+    PXTOOL/pv/prop/string.cpp
+    PXTOOL/pv/dialogs/storeprogress.cpp
+    PXTOOL/pv/storesession.cpp
+    PXTOOL/pv/view/devmode.cpp
+    PXTOOL/pv/dialogs/waitingdialog.cpp
+    PXTOOL/pv/dialogs/dsomeasure.cpp
+    PXTOOL/pv/dialogs/calibration.cpp
+    PXTOOL/pv/data/decodermodel.cpp
+    PXTOOL/pv/dialogs/protocollist.cpp
+    PXTOOL/pv/dialogs/protocolexp.cpp
+    PXTOOL/pv/dialogs/fftoptions.cpp
+    PXTOOL/pv/data/mathstack.cpp
+    PXTOOL/pv/view/mathtrace.cpp
+    PXTOOL/pv/toolbars/titlebar.cpp
+    PXTOOL/pv/mainframe.cpp
+    PXTOOL/pv/widgets/border.cpp
+    PXTOOL/pv/dialogs/dsmessagebox.cpp
+    PXTOOL/pv/dialogs/shadow.cpp
+    PXTOOL/pv/dialogs/dsdialog.cpp
+    PXTOOL/pv/dialogs/interval.cpp
+    PXTOOL/pv/prop/binding/probeoptions.cpp
+    PXTOOL/pv/view/viewstatus.cpp
+    PXTOOL/pv/dialogs/lissajousoptions.cpp
+    PXTOOL/pv/view/lissajoustrace.cpp
+    PXTOOL/pv/view/spectrumtrace.cpp
+    PXTOOL/pv/data/spectrumstack.cpp
+    PXTOOL/pv/dialogs/mathoptions.cpp
+    PXTOOL/pv/dialogs/regionoptions.cpp
+    PXTOOL/pv/view/xcursor.cpp
+    PXTOOL/pv/dock/protocoldock.cpp
+    PXTOOL/pv/data/decoderstack.cpp
+    PXTOOL/pv/data/decode/annotation.cpp
+    PXTOOL/pv/data/decode/decoder.cpp
+    PXTOOL/pv/data/decode/row.cpp
+    PXTOOL/pv/data/decode/rowdata.cpp
+    PXTOOL/pv/prop/binding/decoderoptions.cpp
+    PXTOOL/pv/view/decodetrace.cpp
+    PXTOOL/pv/widgets/decodergroupbox.cpp
+    PXTOOL/pv/widgets/decodermenu.cpp
+    PXTOOL/pv/config/appconfig.cpp
+    PXTOOL/pv/appcontrol.cpp
+    PXTOOL/pv/dstimer.cpp
+    PXTOOL/pv/eventobject.cpp
+    PXTOOL/pv/ZipMaker.cpp
+    PXTOOL/pv/data/decode/annotationrestable.cpp
+    PXTOOL/pv/data/decode/decoderstatus.cpp
+    PXTOOL/pv/dock/protocolitemlayer.cpp
+    PXTOOL/pv/ui/msgbox.cpp
+    PXTOOL/pv/ui/dscombobox.cpp
+    PXTOOL/pv/dsvdef.cpp
+    PXTOOL/pv/dialogs/applicationpardlg.cpp
+    PXTOOL/pv/dock/keywordlineedit.cpp
+    PXTOOL/pv/dock/searchcombobox.cpp
+    PXTOOL/pv/dialogs/decoderoptionsdlg.cpp
+    PXTOOL/pv/utility/encoding.cpp
+    PXTOOL/pv/utility/path.cpp
+    PXTOOL/pv/utility/array.cpp
+    PXTOOL/pv/deviceagent.cpp
+    PXTOOL/pv/ui/langresource.cpp
+    PXTOOL/pv/ui/fn.cpp
+    PXTOOL/pv/ui/xtoolbutton.cpp
+    PXTOOL/pv/ui/uimanager.cpp
+    PXTOOL/pv/ui/popupdlglist.cpp
+    PXTOOL/pv/dock/logdock.cpp
+    PXTOOL/pv/dock/logsearch.cpp
+    PXTOOL/pv/sessioncallback.cpp
+    PXTOOL/pv/dialogs/shortcutdlg.cpp
 )
 
 # Windows-specific QT source files
 if(WIN32)
 	list(APPEND DSView_SOURCES
-		DSView/pv/winnativewidget.cpp
-		DSView/pv/winshadow.cpp
+		PXTOOL/pv/winnativewidget.cpp
+		PXTOOL/pv/winshadow.cpp
 	)
 endif ()
 
 set(DSView_HEADERS
-    DSView/mystyle.h
-    DSView/pv/log.h
-    DSView/pv/sigsession.h
-    DSView/pv/mainwindow.h
-    DSView/pv/dialogs/deviceoptions.h
-    DSView/pv/data/spillmanager.h
-    DSView/pv/utility/diskcachesettings.h
-    DSView/pv/prop/property.h
-    DSView/pv/prop/int.h
-    DSView/pv/prop/enum.h
-    DSView/pv/prop/double.h
-    DSView/pv/prop/bool.h
-    DSView/pv/toolbars/samplingbar.h
-    DSView/pv/view/viewport.h
-    DSView/pv/view/view.h
-    DSView/pv/view/timemarker.h
-    DSView/pv/view/ruler.h
-    DSView/pv/view/waveformscrollbar.h
-    DSView/pv/view/verticalscrollbar.h
-    DSView/pv/view/header.h
-    DSView/pv/view/cursor.h
-    DSView/pv/toolbars/trigbar.h
-    DSView/pv/toolbars/filebar.h
-    DSView/pv/dock/protocoldock.h
-    DSView/pv/dock/triggerdock.h
-    DSView/pv/dock/measuredock.h
-    DSView/pv/dock/searchdock.h
-    DSView/pv/dock/sidebar.h
-    DSView/pv/dock/glitchfilterdock.h
-    DSView/pv/data/glitchfilter.h
-    DSView/pv/dock/deviceoptionsdock.h
-    DSView/pv/toolbars/logobar.h
-    DSView/pv/dialogs/about.h
-    DSView/pv/dialogs/diskcachedialog.h
-    DSView/pv/dialogs/search.h
-    DSView/pv/dock/dsotriggerdock.h
-    DSView/pv/view/trace.h
-    DSView/pv/view/selectableitem.h
-    DSView/pv/data/decoderstack.h
-    DSView/pv/view/decodetrace.h
-    DSView/pv/widgets/fakelineedit.h
-    DSView/pv/widgets/searchedgeflagedit.h
-    DSView/pv/widgets/decodermenu.h
-    DSView/pv/widgets/decodergroupbox.h
-    DSView/pv/prop/string.h
-    DSView/pv/dialogs/storeprogress.h
-    DSView/pv/storesession.h
-    DSView/pv/view/devmode.h
-    DSView/pv/dialogs/waitingdialog.h
-    DSView/pv/dialogs/dsomeasure.h
-    DSView/pv/dialogs/calibration.h
-    DSView/pv/dialogs/protocollist.h
-    DSView/pv/dialogs/protocolexp.h
-    DSView/pv/dialogs/fftoptions.h
-    DSView/pv/data/mathstack.h
-    DSView/pv/view/mathtrace.h
-    DSView/pv/view/viewstatus.h
-    DSView/pv/toolbars/titlebar.h
-    DSView/pv/mainframe.h
-    DSView/pv/widgets/border.h
-    DSView/pv/dialogs/dsmessagebox.h
-    DSView/pv/dialogs/shadow.h
-    DSView/pv/dialogs/dsdialog.h
-    DSView/pv/dialogs/interval.h
-    DSView/pv/dialogs/lissajousoptions.h
-    DSView/pv/view/lissajoustrace.h
-    DSView/pv/view/spectrumtrace.h
-    DSView/pv/data/spectrumstack.h
-    DSView/pv/dialogs/mathoptions.h
-    DSView/pv/dialogs/regionoptions.h
-    DSView/pv/view/xcursor.h
-    DSView/pv/view/signal.h
-    DSView/pv/view/logicsignal.h
-    DSView/pv/view/analogsignal.h
-    DSView/pv/view/dsosignal.h 
-    DSView/pv/dock/protocoldock.h
-    DSView/pv/data/decoderstack.h
-    DSView/pv/view/decodetrace.h
-    DSView/pv/widgets/decodergroupbox.h
-    DSView/pv/widgets/decodermenu.h
-    DSView/pv/config/appconfig.h
-    DSView/pv/appcontrol.h
-    DSView/pv/dstimer.h
-    DSView/pv/eventobject.h
-    DSView/pv/ZipMaker.h
-    DSView/pv/data/decode/annotationrestable.h
-    DSView/pv/data/decode/decoderstatus.h
-    DSView/pv/dock/protocolitemlayer.h
-    DSView/pv/ui/msgbox.h
-    DSView/pv/ui/dscombobox.h
-    DSView/pv/dsvdef.h
-    DSView/pv/dialogs/applicationpardlg.h
-    DSView/pv/dock/keywordlineedit.h
-    DSView/pv/dock/searchcombobox.h
-    DSView/pv/dialogs/decoderoptionsdlg.h
-    DSView/pv/utility/encoding.h
-    DSView/pv/utility/path.h
-    DSView/pv/utility/array.h
-    DSView/pv/deviceagent.h
-    DSView/pv/ui/fn.h
-    DSView/pv/ui/xtoolbutton.h
-    DSView/pv/dock/logdock.h
-    DSView/pv/dock/logsearch.h
-    DSView/pv/dialogs/shortcutdlg.h
+    PXTOOL/mystyle.h
+    PXTOOL/pv/log.h
+    PXTOOL/pv/sigsession.h
+    PXTOOL/pv/mainwindow.h
+    PXTOOL/pv/dialogs/deviceoptions.h
+    PXTOOL/pv/data/spillmanager.h
+    PXTOOL/pv/utility/diskcachesettings.h
+    PXTOOL/pv/prop/property.h
+    PXTOOL/pv/prop/int.h
+    PXTOOL/pv/prop/enum.h
+    PXTOOL/pv/prop/double.h
+    PXTOOL/pv/prop/bool.h
+    PXTOOL/pv/toolbars/samplingbar.h
+    PXTOOL/pv/view/viewport.h
+    PXTOOL/pv/view/view.h
+    PXTOOL/pv/view/timemarker.h
+    PXTOOL/pv/view/ruler.h
+    PXTOOL/pv/view/waveformscrollbar.h
+    PXTOOL/pv/view/verticalscrollbar.h
+    PXTOOL/pv/view/header.h
+    PXTOOL/pv/view/cursor.h
+    PXTOOL/pv/toolbars/trigbar.h
+    PXTOOL/pv/toolbars/filebar.h
+    PXTOOL/pv/dock/protocoldock.h
+    PXTOOL/pv/dock/triggerdock.h
+    PXTOOL/pv/dock/measuredock.h
+    PXTOOL/pv/dock/searchdock.h
+    PXTOOL/pv/dock/sidebar.h
+    PXTOOL/pv/dock/glitchfilterdock.h
+    PXTOOL/pv/data/glitchfilter.h
+    PXTOOL/pv/dock/deviceoptionsdock.h
+    PXTOOL/pv/toolbars/logobar.h
+    PXTOOL/pv/dialogs/about.h
+    PXTOOL/pv/dialogs/diskcachedialog.h
+    PXTOOL/pv/dialogs/search.h
+    PXTOOL/pv/dock/dsotriggerdock.h
+    PXTOOL/pv/view/trace.h
+    PXTOOL/pv/view/selectableitem.h
+    PXTOOL/pv/data/decoderstack.h
+    PXTOOL/pv/view/decodetrace.h
+    PXTOOL/pv/widgets/fakelineedit.h
+    PXTOOL/pv/widgets/searchedgeflagedit.h
+    PXTOOL/pv/widgets/decodermenu.h
+    PXTOOL/pv/widgets/decodergroupbox.h
+    PXTOOL/pv/prop/string.h
+    PXTOOL/pv/dialogs/storeprogress.h
+    PXTOOL/pv/storesession.h
+    PXTOOL/pv/view/devmode.h
+    PXTOOL/pv/dialogs/waitingdialog.h
+    PXTOOL/pv/dialogs/dsomeasure.h
+    PXTOOL/pv/dialogs/calibration.h
+    PXTOOL/pv/dialogs/protocollist.h
+    PXTOOL/pv/dialogs/protocolexp.h
+    PXTOOL/pv/dialogs/fftoptions.h
+    PXTOOL/pv/data/mathstack.h
+    PXTOOL/pv/view/mathtrace.h
+    PXTOOL/pv/view/viewstatus.h
+    PXTOOL/pv/toolbars/titlebar.h
+    PXTOOL/pv/mainframe.h
+    PXTOOL/pv/widgets/border.h
+    PXTOOL/pv/dialogs/dsmessagebox.h
+    PXTOOL/pv/dialogs/shadow.h
+    PXTOOL/pv/dialogs/dsdialog.h
+    PXTOOL/pv/dialogs/interval.h
+    PXTOOL/pv/dialogs/lissajousoptions.h
+    PXTOOL/pv/view/lissajoustrace.h
+    PXTOOL/pv/view/spectrumtrace.h
+    PXTOOL/pv/data/spectrumstack.h
+    PXTOOL/pv/dialogs/mathoptions.h
+    PXTOOL/pv/dialogs/regionoptions.h
+    PXTOOL/pv/view/xcursor.h
+    PXTOOL/pv/view/signal.h
+    PXTOOL/pv/view/logicsignal.h
+    PXTOOL/pv/view/analogsignal.h
+    PXTOOL/pv/view/dsosignal.h
+    PXTOOL/pv/dock/protocoldock.h
+    PXTOOL/pv/data/decoderstack.h
+    PXTOOL/pv/view/decodetrace.h
+    PXTOOL/pv/widgets/decodergroupbox.h
+    PXTOOL/pv/widgets/decodermenu.h
+    PXTOOL/pv/config/appconfig.h
+    PXTOOL/pv/appcontrol.h
+    PXTOOL/pv/dstimer.h
+    PXTOOL/pv/eventobject.h
+    PXTOOL/pv/ZipMaker.h
+    PXTOOL/pv/data/decode/annotationrestable.h
+    PXTOOL/pv/data/decode/decoderstatus.h
+    PXTOOL/pv/dock/protocolitemlayer.h
+    PXTOOL/pv/ui/msgbox.h
+    PXTOOL/pv/ui/dscombobox.h
+    PXTOOL/pv/dsvdef.h
+    PXTOOL/pv/dialogs/applicationpardlg.h
+    PXTOOL/pv/dock/keywordlineedit.h
+    PXTOOL/pv/dock/searchcombobox.h
+    PXTOOL/pv/dialogs/decoderoptionsdlg.h
+    PXTOOL/pv/utility/encoding.h
+    PXTOOL/pv/utility/path.h
+    PXTOOL/pv/utility/array.h
+    PXTOOL/pv/deviceagent.h
+    PXTOOL/pv/ui/fn.h
+    PXTOOL/pv/ui/xtoolbutton.h
+    PXTOOL/pv/dock/logdock.h
+    PXTOOL/pv/dock/logsearch.h
+    PXTOOL/pv/dialogs/shortcutdlg.h
 )
  
 # Windows-specific QT headers
 if(WIN32)
 	list(APPEND DSView_HEADERS
-		DSView/pv/winnativewidget.h
-		DSView/pv/winshadow.h
+		PXTOOL/pv/winnativewidget.h
+		PXTOOL/pv/winshadow.h
 	)
 endif ()
 
@@ -606,9 +606,9 @@ set(DSView_FORMS
 )
 
 set(DSView_RESOURCES
-    DSView/DSView.qrc
-    DSView/themes/breeze.qrc
-    DSView/languages/language.qrc
+    PXTOOL/DSView.qrc
+    PXTOOL/themes/breeze.qrc
+    PXTOOL/languages/language.qrc
 )
 
 
@@ -633,8 +633,8 @@ elseif(Qt6Core_FOUND)
 endif()
 
 set(DSVIEW_TS_FILES
-    DSView/languages/zh_CN.ts
-    DSView/languages/zh_TW.ts
+    PXTOOL/languages/zh_CN.ts
+    PXTOOL/languages/zh_TW.ts
 )
 if(Qt5LinguistTools_FOUND)
 	qt5_add_translation(DSVIEW_QM_FILES ${DSVIEW_TS_FILES})
@@ -753,7 +753,7 @@ endif()
 #-------------------------------------------------------------------------------
 # Build the example SPI C decoder as a loadable module so it can be dlopen'd by
 # CDecoderRegistry at startup. Installing it into <bundle>/Contents/Resources/
-# share/DSView/cdecoders/ (macOS) or <prefix>/share/DSView/cdecoders/ (Linux)
+# share/PXTOOL/cdecoders/ (macOS) or <prefix>/share/PXTOOL/cdecoders/ (Linux)
 # makes it discoverable via GetBundledCDecodeDir() = GetAppDataDir()+"/cdecoders".
 add_library(spi MODULE pv/cdecoders/example_spi/spi_c_decoder.c)
 set_target_properties(spi PROPERTIES
@@ -810,37 +810,37 @@ if(APPLE)
             "${_BUNDLE_RES_DIR}/share/libsigrokdecode4DSL/decoders"
         # DSView resources (res/, demo/, lang/) used at runtime
         COMMAND ${CMAKE_COMMAND} -E make_directory
-            "${_BUNDLE_RES_DIR}/share/DSView"
+            "${_BUNDLE_RES_DIR}/share/PXTOOL"
         COMMAND ${CMAKE_COMMAND} -E copy_directory
-            "${CMAKE_CURRENT_SOURCE_DIR}/DSView/res"
-            "${_BUNDLE_RES_DIR}/share/DSView/res"
+            "${CMAKE_CURRENT_SOURCE_DIR}/PXTOOL/res"
+            "${_BUNDLE_RES_DIR}/share/PXTOOL/res"
         COMMAND ${CMAKE_COMMAND} -E copy_directory
-            "${CMAKE_CURRENT_SOURCE_DIR}/DSView/demo"
-            "${_BUNDLE_RES_DIR}/share/DSView/demo"
+            "${CMAKE_CURRENT_SOURCE_DIR}/PXTOOL/demo"
+            "${_BUNDLE_RES_DIR}/share/PXTOOL/demo"
         COMMAND ${CMAKE_COMMAND} -E copy_directory
             "${CMAKE_CURRENT_SOURCE_DIR}/lang"
-            "${_BUNDLE_RES_DIR}/share/DSView/lang"
+            "${_BUNDLE_RES_DIR}/share/PXTOOL/lang"
         # Bundled C decoders
         COMMAND ${CMAKE_COMMAND} -E make_directory
-            "${_BUNDLE_RES_DIR}/share/DSView/cdecoders"
+            "${_BUNDLE_RES_DIR}/share/PXTOOL/cdecoders"
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
             "$<TARGET_FILE:spi>"
-            "${_BUNDLE_RES_DIR}/share/DSView/cdecoders/spi.dylib"
+            "${_BUNDLE_RES_DIR}/share/PXTOOL/cdecoders/spi.dylib"
         COMMENT "Stage resources (icon, Python decoders, res/, demo/, lang/, cdecoders/) into app bundle"
     )
 elseif(NOT WIN32)
     # For Linux and other non-macOS builds, stage runtime resources used by the
-    # in-tree executable. GetAppDataDir() resolves build.linux/DSView to
-    # ../share/DSView, so C decoders must be copied under share/DSView.
+    # in-tree executable. GetAppDataDir() resolves build.linux/PXTOOL to
+    # ../share/PXTOOL, so C decoders must be copied under share/PXTOOL.
     add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_directory
             "${CMAKE_CURRENT_SOURCE_DIR}/lang"
             "${CMAKE_CURRENT_SOURCE_DIR}/build.linux/lang"
         COMMAND ${CMAKE_COMMAND} -E make_directory
-            "${CMAKE_CURRENT_SOURCE_DIR}/share/DSView/cdecoders"
+            "${CMAKE_CURRENT_SOURCE_DIR}/share/PXTOOL/cdecoders"
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
             "$<TARGET_FILE:spi>"
-            "${CMAKE_CURRENT_SOURCE_DIR}/share/DSView/cdecoders/spi.so"
+            "${CMAKE_CURRENT_SOURCE_DIR}/share/PXTOOL/cdecoders/spi.so"
         COMMENT "Stage lang/ resources into build output"
     )
 endif()
@@ -877,39 +877,39 @@ if(APPLE)
 else()
     install(TARGETS ${PROJECT_NAME} DESTINATION bin)
 endif()
-install(DIRECTORY DSView/res DESTINATION ${MAC_RES_PREFIX}share/DSView)
-install(DIRECTORY DSView/demo DESTINATION ${MAC_RES_PREFIX}share/DSView)
-install(FILES DSView/icons/logo.svg DESTINATION ${MAC_RES_PREFIX}share/DSView RENAME logo.svg)
-install(FILES DSView/icons/logo.svg DESTINATION ${MAC_RES_PREFIX}share/icons/hicolor/scalable/apps RENAME dsview.svg)
-install(FILES DSView/icons/logo.svg DESTINATION ${MAC_RES_PREFIX}share/pixmaps RENAME dsview.svg)
+install(DIRECTORY PXTOOL/res DESTINATION ${MAC_RES_PREFIX}share/PXTOOL)
+install(DIRECTORY PXTOOL/demo DESTINATION ${MAC_RES_PREFIX}share/PXTOOL)
+install(FILES PXTOOL/icons/logo.svg DESTINATION ${MAC_RES_PREFIX}share/PXTOOL RENAME logo.svg)
+install(FILES PXTOOL/icons/logo.svg DESTINATION ${MAC_RES_PREFIX}share/icons/hicolor/scalable/apps RENAME dsview.svg)
+install(FILES PXTOOL/icons/logo.svg DESTINATION ${MAC_RES_PREFIX}share/pixmaps RENAME dsview.svg)
 
 if(CMAKE_SYSTEM_NAME MATCHES "Linux")	
-	install(FILES DSView/DSView.desktop DESTINATION /usr/share/applications RENAME dsview.desktop)
+	install(FILES PXTOOL/DSView.desktop DESTINATION /usr/share/applications RENAME dsview.desktop)
 	
 	#add_compile_definitions(_DEFAULT_SOURCE)
 
 	if(IS_DIRECTORY /usr/lib/udev/rules.d)
-		install(FILES DSView/DreamSourceLab.rules DESTINATION /usr/lib/udev/rules.d RENAME 60-dreamsourcelab.rules)
+		install(FILES PXTOOL/DreamSourceLab.rules DESTINATION /usr/lib/udev/rules.d RENAME 60-dreamsourcelab.rules)
 	elseif(IS_DIRECTORY /lib/udev/rules.d)
-		install(FILES DSView/DreamSourceLab.rules DESTINATION /lib/udev/rules.d RENAME 60-dreamsourcelab.rules)
+		install(FILES PXTOOL/DreamSourceLab.rules DESTINATION /lib/udev/rules.d RENAME 60-dreamsourcelab.rules)
 	elseif(IS_DIRECTORY /etc/udev/rules.d)
-		install(FILES DSView/DreamSourceLab.rules DESTINATION /etc/udev/rules.d RENAME 60-dreamsourcelab.rules)
+		install(FILES PXTOOL/DreamSourceLab.rules DESTINATION /etc/udev/rules.d RENAME 60-dreamsourcelab.rules)
 	endif()
 
 endif()
 
-install(FILES NEWS25 DESTINATION ${MAC_RES_PREFIX}share/DSView RENAME NEWS25)
-install(FILES NEWS31 DESTINATION ${MAC_RES_PREFIX}share/DSView RENAME NEWS31)
-install(FILES ug25.pdf DESTINATION ${MAC_RES_PREFIX}share/DSView RENAME ug25.pdf)
-install(FILES ug31.pdf DESTINATION ${MAC_RES_PREFIX}share/DSView RENAME ug31.pdf)
+install(FILES NEWS25 DESTINATION ${MAC_RES_PREFIX}share/PXTOOL RENAME NEWS25)
+install(FILES NEWS31 DESTINATION ${MAC_RES_PREFIX}share/PXTOOL RENAME NEWS31)
+install(FILES ug25.pdf DESTINATION ${MAC_RES_PREFIX}share/PXTOOL RENAME ug25.pdf)
+install(FILES ug31.pdf DESTINATION ${MAC_RES_PREFIX}share/PXTOOL RENAME ug31.pdf)
 
 install(DIRECTORY libsigrokdecode4DSL/decoders DESTINATION ${MAC_RES_PREFIX}share/libsigrokdecode4DSL)
-install(DIRECTORY lang DESTINATION ${MAC_RES_PREFIX}share/DSView)
+install(DIRECTORY lang DESTINATION ${MAC_RES_PREFIX}share/PXTOOL)
 
-# Bundled C decoders go alongside res/, demo/, lang/ under share/DSView.
+# Bundled C decoders go alongside res/, demo/, lang/ under share/PXTOOL.
 # On macOS MAC_RES_PREFIX expands to <bundle>/Contents/Resources/, on Linux it
-# is empty so the destination resolves to <prefix>/share/DSView/cdecoders.
-install(TARGETS spi LIBRARY DESTINATION ${MAC_RES_PREFIX}share/DSView/cdecoders)
+# is empty so the destination resolves to <prefix>/share/PXTOOL/cdecoders.
+install(TARGETS spi LIBRARY DESTINATION ${MAC_RES_PREFIX}share/PXTOOL/cdecoders)
 
 #===============================================================================
 #= Packaging (handled by CPack)
@@ -918,8 +918,8 @@ install(TARGETS spi LIBRARY DESTINATION ${MAC_RES_PREFIX}share/DSView/cdecoders)
 set(CPACK_PACKAGE_VERSION_MAJOR ${DS_VERSION_MAJOR})
 set(CPACK_PACKAGE_VERSION_MINOR ${DS_VERSION_MINOR})
 set(CPACK_PACKAGE_VERSION_PATCH ${DS_VERSION_MICRO})
-set(CPACK_PACKAGE_DESCRIPTION_FILE ${CMAKE_CURRENT_SOURCE_DIR}/DSView/README)
-set(CPACK_RESOURCE_FILE_LICENSE ${CMAKE_CURRENT_SOURCE_DIR}/DSView/COPYING)
+set(CPACK_PACKAGE_DESCRIPTION_FILE ${CMAKE_CURRENT_SOURCE_DIR}/PXTOOL/README)
+set(CPACK_RESOURCE_FILE_LICENSE ${CMAKE_CURRENT_SOURCE_DIR}/PXTOOL/COPYING)
 set(CPACK_SOURCE_IGNORE_FILES ${CMAKE_CURRENT_BINARY_DIR} ".gitignore" ".git")
 set(CPACK_SOURCE_PACKAGE_FILE_NAME
 	"${CMAKE_PROJECT_NAME}-${DS_VERSION_MAJOR}.${DS_VERSION_MINOR}.${DS_VERSION_MICRO}")
@@ -944,7 +944,7 @@ include(CPack)
 #-------------------------------------------------------------------------------
 
 if(ENABLE_TESTS)
-	add_subdirectory(DSView/test)
+	add_subdirectory(PXTOOL/test)
 	enable_testing()
 	add_test(NAME DSView-test COMMAND DSView-test)
 endif(ENABLE_TESTS)

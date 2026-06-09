@@ -10,7 +10,7 @@ import re, os, sys
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 DSVIEW_ROOT = os.path.dirname(os.path.dirname(SCRIPT_DIR))
-SOURCE_DIR  = os.path.join(DSVIEW_ROOT, "DSView", "pv")
+SOURCE_DIR  = os.path.join(DSVIEW_ROOT, "PXTOOL", "pv")
 
 DRY_RUN = "--dry-run" in sys.argv
 

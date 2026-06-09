@@ -11,7 +11,7 @@ import re, json, os, sys
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 DSVIEW_ROOT = os.path.dirname(os.path.dirname(SCRIPT_DIR))
 LANG_CN_DIR = os.path.join(DSVIEW_ROOT, "lang", "cn")
-SOURCE_DIR  = os.path.join(DSVIEW_ROOT, "DSView", "pv")
+SOURCE_DIR  = os.path.join(DSVIEW_ROOT, "PXTOOL", "pv")
 
 PAGE_TO_JSON = {
     "STR_PAGE_MSG":     ["msg.json"],
