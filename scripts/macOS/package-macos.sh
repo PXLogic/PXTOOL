@@ -13,7 +13,7 @@ set -euo pipefail
 # Config
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 INSTALL_PREFIX="${ROOT}/package-root"
-BUILD_APP="${ROOT}/build.dir/PXTOOL.app"
+BUILD_APP="${ROOT}/build.macOS/PXTOOL.app"
 PKG_ROOT="${INSTALL_PREFIX}/PXTOOL.app"
 DIST_DIR="${ROOT}/build.macOS"
 DIST_APP="${DIST_DIR}/PXTOOL.app"
@@ -42,11 +42,15 @@ fi
 
 # Step 2: Assemble bundle
 echo "[2/6] Assembling app bundle..."
-rm -rf "$DIST_DIR" || { rm -rf "$DIST_DIR"/* "$DIST_DIR"/.[!.]* 2>/dev/null; true; }
 mkdir -p "$DIST_DIR"
 
-# Start from the built binary + existing bundle shell
-cp -R "$BUILD_APP" "$DIST_APP"
+if [ "$BUILD_APP" != "$DIST_APP" ]; then
+  rm -rf "$DIST_APP"
+  cp -R "$BUILD_APP" "$DIST_APP"
+elif [ ! -d "$DIST_APP" ]; then
+  echo "ERROR: built app not found at $DIST_APP"
+  exit 1
+fi
 
 # The build tree may contain symlinks back into package-root (e.g. share ->).
 # Remove them before overlaying the real resources so cp doesn't see identical inodes.

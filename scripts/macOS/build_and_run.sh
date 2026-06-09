@@ -3,9 +3,9 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 APP_NAME="PXTOOL"
-APP_PATH="${ROOT_DIR}/build.dir/${APP_NAME}.app"
+APP_PATH="${ROOT_DIR}/build.macOS/${APP_NAME}.app"
 APP_CDECODER_DIR="${APP_PATH}/Contents/Resources/share/PXTOOL/cdecoders"
-SPI_MODULE_PATH="${ROOT_DIR}/build.dir/spi.dylib"
+SPI_MODULE_PATH="${ROOT_DIR}/build.macOS/spi.dylib"
 
 # C decoder runtime directory must match GetUserDataDir()+"/cdecoders" in
 # pv/config/appconfig.cpp (Qt QStandardPaths::AppDataLocation +

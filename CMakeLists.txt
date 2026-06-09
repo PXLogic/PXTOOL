@@ -748,6 +748,8 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
     )
 endif()
 
+set(MACOS_BUILD_OUTPUT_DIR "${CMAKE_CURRENT_SOURCE_DIR}/build.macOS")
+
 #===============================================================================
 #= Bundled C decoders (shipped inside the app bundle)
 #-------------------------------------------------------------------------------
@@ -771,7 +773,7 @@ if(WIN32)
     )
 elseif(APPLE)
     set_target_properties(spi PROPERTIES
-        LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/build.dir"
+        LIBRARY_OUTPUT_DIRECTORY "${MACOS_BUILD_OUTPUT_DIR}"
     )
 else()
     set_target_properties(spi PROPERTIES
@@ -790,6 +792,7 @@ if(APPLE)
         MACOSX_BUNDLE_SHORT_VERSION_STRING ${DS_VERSION_STRING}
         MACOSX_BUNDLE_INFO_PLIST ${CMAKE_SOURCE_DIR}/mac_appbundle_template.plist.in
         MACOSX_BUNDLE_ICON_FILE DSView.icns
+        RUNTIME_OUTPUT_DIRECTORY "${MACOS_BUILD_OUTPUT_DIR}"
     )
     # `make` does not run `install`; without these POST_BUILD copies the
     # bundle would have no icon and -- more importantly -- no Python decoder
@@ -854,8 +857,8 @@ if(WIN32)
     message(STATUS "Output dir: ${CMAKE_CURRENT_SOURCE_DIR}/build.windows")
     set(EXECUTABLE_OUTPUT_PATH "${CMAKE_CURRENT_SOURCE_DIR}/build.windows")
 elseif(APPLE)
-    message(STATUS "Output dir: ${CMAKE_CURRENT_SOURCE_DIR}/build.dir")
-    set(EXECUTABLE_OUTPUT_PATH "${CMAKE_CURRENT_SOURCE_DIR}/build.dir")
+    message(STATUS "Output dir: ${MACOS_BUILD_OUTPUT_DIR}")
+    set(EXECUTABLE_OUTPUT_PATH "${MACOS_BUILD_OUTPUT_DIR}")
 else()
     message(STATUS "Output dir: ${CMAKE_CURRENT_SOURCE_DIR}/build.linux")
     set(EXECUTABLE_OUTPUT_PATH "${CMAKE_CURRENT_SOURCE_DIR}/build.linux")

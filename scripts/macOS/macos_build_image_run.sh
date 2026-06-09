@@ -47,7 +47,7 @@ fi
 
 if [[ "${OPEN_APP}" -eq 1 ]]; then
   echo "[4/4] Launch app"
-  open "${ROOT_DIR}/build.dir/PXTOOL.app"
+  open "${ROOT_DIR}/build.macOS/PXTOOL.app"
 else
   echo "[4/4] Skip app launch (--no-open)"
 fi
