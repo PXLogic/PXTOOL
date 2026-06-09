@@ -657,7 +657,7 @@ QString GetDecodeScriptDir()
     }
 
     // QDir dir(QCoreApplication::applicationDirPath());
-    // if (dir.cd("..") && dir.cd("share") && dir.cd("libsigrokdecode4DSL") && dir.cd("decoders"))
+    // if (dir.cd("..") && dir.cd("share") && dir.cd("libsigrokdecode") && dir.cd("decoders"))
     // {
     //      return dir.absolutePath();        
     // }
@@ -666,16 +666,16 @@ QString GetDecodeScriptDir()
     dir1.cd(QCoreApplication::applicationDirPath());
     //if (dir1.cd("..") && dir1.cd("Resources") && dir1.cd("share") && dir1.cd("PXTOOL") &&
     if (dir1.cd("..") && dir1.cd("Resources") && dir1.cd("share") &&
-        dir1.cd("libsigrokdecode4DSL") && dir1.cd("decoders"))
+        dir1.cd("libsigrokdecode") && dir1.cd("decoders"))
     {
          return dir1.absolutePath();
     }
 
 #elif defined(Q_OS_UNIX)
     QDir dir(QCoreApplication::applicationDirPath());
-    // ../share/PXView/libsigrokdecode4DSL/decoders
-    //if (dir.cd("..") && dir.cd("share")&& dir.cd("PXView")  && dir.cd("libsigrokdecode4DSL") && dir.cd("decoders"))
-    if (dir.cd("..") && dir.cd("share") && dir.cd("libsigrokdecode4DSL") && dir.cd("decoders"))
+    // ../share/PXView/libsigrokdecode/decoders
+    //if (dir.cd("..") && dir.cd("share")&& dir.cd("PXView")  && dir.cd("libsigrokdecode") && dir.cd("decoders"))
+    if (dir.cd("..") && dir.cd("share") && dir.cd("libsigrokdecode") && dir.cd("decoders"))
     {
         return dir.absolutePath();        
     }

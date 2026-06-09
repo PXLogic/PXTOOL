@@ -9,9 +9,9 @@ Matches on <source> text.
 import json, re, os
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-DSVIEW_ROOT = os.path.dirname(os.path.dirname(SCRIPT_DIR))
+PXTOOL_ROOT = os.path.dirname(os.path.dirname(SCRIPT_DIR))
 MAP_FILE = os.path.join(SCRIPT_DIR, "translation_map.json")
-TS_FILE  = os.path.join(DSVIEW_ROOT, "PXTOOL", "languages", "zh_CN.ts")
+TS_FILE  = os.path.join(PXTOOL_ROOT, "PXTOOL", "languages", "zh_CN.ts")
 
 with open(MAP_FILE, encoding="utf-8") as f:
     mapping = json.load(f)

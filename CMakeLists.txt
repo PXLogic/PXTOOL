@@ -86,8 +86,8 @@ endif()
 include_directories(
    ./PXTOOL
    ./pv/cdecoders
-   ./libsigrok4DSL
-   ./libsigrokdecode4DSL
+   ./libsigrok
+   ./libsigrokdecode
    ./common
 )
 
@@ -512,72 +512,72 @@ if(WIN32)
 endif ()
 
 #===============================================================================
-#= libsigrok4DSL source
+#= libsigrok source
 #-------------------------------------------------------------------------------
-set(libsigrok4DSL_SOURCES
-    libsigrok4DSL/version.c
-    libsigrok4DSL/strutil.c
-    libsigrok4DSL/std.c
-    libsigrok4DSL/session_driver.c
-    libsigrok4DSL/session.c
-    libsigrok4DSL/log.c
-    libsigrok4DSL/hwdriver.c
-    libsigrok4DSL/error.c
-    libsigrok4DSL/backend.c
-    libsigrok4DSL/output/output.c
-    libsigrok4DSL/input/input.c
-    libsigrok4DSL/hardware/demo/demo.c
-    libsigrok4DSL/input/in_binary.c
-    libsigrok4DSL/input/in_vcd.c
-    libsigrok4DSL/input/in_wav.c
-    libsigrok4DSL/output/csv.c
-    libsigrok4DSL/output/gnuplot.c
-    libsigrok4DSL/output/srzip.c
-    libsigrok4DSL/output/vcd.c
-    libsigrok4DSL/hardware/DSL/dslogic.c
-    libsigrok4DSL/hardware/common/usb.c
-    libsigrok4DSL/hardware/common/ezusb.c
-    libsigrok4DSL/trigger.c
-    libsigrok4DSL/dsdevice.c
-    libsigrok4DSL/hardware/DSL/dscope.c
-    libsigrok4DSL/hardware/DSL/command.c
-    libsigrok4DSL/hardware/DSL/dsl.c
-    libsigrok4DSL/hardware/pxlogic/pxlogic.c
-    libsigrok4DSL/hardware/pxlogic/usb_ctrl.c
-    libsigrok4DSL/lib_main.c
+set(libsigrok_SOURCES
+    libsigrok/version.c
+    libsigrok/strutil.c
+    libsigrok/std.c
+    libsigrok/session_driver.c
+    libsigrok/session.c
+    libsigrok/log.c
+    libsigrok/hwdriver.c
+    libsigrok/error.c
+    libsigrok/backend.c
+    libsigrok/output/output.c
+    libsigrok/input/input.c
+    libsigrok/hardware/demo/demo.c
+    libsigrok/input/in_binary.c
+    libsigrok/input/in_vcd.c
+    libsigrok/input/in_wav.c
+    libsigrok/output/csv.c
+    libsigrok/output/gnuplot.c
+    libsigrok/output/srzip.c
+    libsigrok/output/vcd.c
+    libsigrok/hardware/DSL/dslogic.c
+    libsigrok/hardware/common/usb.c
+    libsigrok/hardware/common/ezusb.c
+    libsigrok/trigger.c
+    libsigrok/dsdevice.c
+    libsigrok/hardware/DSL/dscope.c
+    libsigrok/hardware/DSL/command.c
+    libsigrok/hardware/DSL/dsl.c
+    libsigrok/hardware/pxlogic/pxlogic.c
+    libsigrok/hardware/pxlogic/usb_ctrl.c
+    libsigrok/lib_main.c
 )
 
-set(libsigrok4DSL_HEADERS
-    libsigrok4DSL/version.h
-    libsigrok4DSL/libsigrok-internal.h
-    libsigrok4DSL/libsigrok.h
-    libsigrok4DSL/config.h
-    libsigrok4DSL/hardware/DSL/command.h
-    libsigrok4DSL/hardware/DSL/dsl.h
+set(libsigrok_HEADERS
+    libsigrok/version.h
+    libsigrok/libsigrok-internal.h
+    libsigrok/libsigrok.h
+    libsigrok/config.h
+    libsigrok/hardware/DSL/command.h
+    libsigrok/hardware/DSL/dsl.h
 )
  
 #===============================================================================
-#= libsigrokdecode4DSL source
+#= libsigrokdecode source
 #-------------------------------------------------------------------------------
-set(libsigrokdecode4DSL_SOURCES
-    libsigrokdecode4DSL/type_decoder.c
-    libsigrokdecode4DSL/srd.c
-    libsigrokdecode4DSL/module_sigrokdecode.c
-    libsigrokdecode4DSL/decoder.c
-    libsigrokdecode4DSL/error.c
-    libsigrokdecode4DSL/exception.c
-    libsigrokdecode4DSL/instance.c
-    libsigrokdecode4DSL/log.c
-    libsigrokdecode4DSL/session.c
-    libsigrokdecode4DSL/util.c
-    libsigrokdecode4DSL/version.c
+set(libsigrokdecode_SOURCES
+    libsigrokdecode/type_decoder.c
+    libsigrokdecode/srd.c
+    libsigrokdecode/module_sigrokdecode.c
+    libsigrokdecode/decoder.c
+    libsigrokdecode/error.c
+    libsigrokdecode/exception.c
+    libsigrokdecode/instance.c
+    libsigrokdecode/log.c
+    libsigrokdecode/session.c
+    libsigrokdecode/util.c
+    libsigrokdecode/version.c
 )
 
-set(libsigrokdecode4DSL_HEADERS
-    libsigrokdecode4DSL/libsigrokdecode-internal.h
-    libsigrokdecode4DSL/libsigrokdecode.h
-    libsigrokdecode4DSL/config.h
-    libsigrokdecode4DSL/version.h
+set(libsigrokdecode_HEADERS
+    libsigrokdecode/libsigrokdecode-internal.h
+    libsigrokdecode/libsigrokdecode.h
+    libsigrokdecode/config.h
+    libsigrokdecode/version.h
 )
 
 #===============================================================================
@@ -727,8 +727,8 @@ add_executable(${PROJECT_NAME}
 	${DSView_HEADERS_MOC}
 	${DSView_FORMS_HEADERS}
 	${DSView_RESOURCES_RCC}
-	${libsigrok4DSL_SOURCES}
-	${libsigrokdecode4DSL_SOURCES}
+	${libsigrok_SOURCES}
+	${libsigrokdecode_SOURCES}
 )
 
 target_link_libraries(${PROJECT_NAME} ${DSVIEW_LINK_LIBS})
@@ -796,7 +796,7 @@ if(APPLE)
     )
     # `make` does not run `install`; without these POST_BUILD copies the
     # bundle would have no icon and -- more importantly -- no Python decoder
-    # scripts (Resources/share/libsigrokdecode4DSL/decoders), making the
+    # scripts (Resources/share/libsigrokdecode/decoders), making the
     # Decode Protocol picker show an empty list.
     set(_BUNDLE_RES_DIR "$<TARGET_FILE_DIR:${PROJECT_NAME}>/../Resources")
     add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
@@ -807,10 +807,10 @@ if(APPLE)
             "${_BUNDLE_RES_DIR}/DSView.icns"
         # Python decoders (the protocol picker reads this dir at startup)
         COMMAND ${CMAKE_COMMAND} -E make_directory
-            "${_BUNDLE_RES_DIR}/share/libsigrokdecode4DSL"
+            "${_BUNDLE_RES_DIR}/share/libsigrokdecode"
         COMMAND ${CMAKE_COMMAND} -E copy_directory
-            "${CMAKE_CURRENT_SOURCE_DIR}/libsigrokdecode4DSL/decoders"
-            "${_BUNDLE_RES_DIR}/share/libsigrokdecode4DSL/decoders"
+            "${CMAKE_CURRENT_SOURCE_DIR}/libsigrokdecode/decoders"
+            "${_BUNDLE_RES_DIR}/share/libsigrokdecode/decoders"
         # DSView resources (res/, demo/, lang/) used at runtime
         COMMAND ${CMAKE_COMMAND} -E make_directory
             "${_BUNDLE_RES_DIR}/share/PXTOOL"
@@ -906,7 +906,7 @@ install(FILES NEWS31 DESTINATION ${MAC_RES_PREFIX}share/PXTOOL RENAME NEWS31)
 install(FILES ug25.pdf DESTINATION ${MAC_RES_PREFIX}share/PXTOOL RENAME ug25.pdf)
 install(FILES ug31.pdf DESTINATION ${MAC_RES_PREFIX}share/PXTOOL RENAME ug31.pdf)
 
-install(DIRECTORY libsigrokdecode4DSL/decoders DESTINATION ${MAC_RES_PREFIX}share/libsigrokdecode4DSL)
+install(DIRECTORY libsigrokdecode/decoders DESTINATION ${MAC_RES_PREFIX}share/libsigrokdecode)
 install(DIRECTORY lang DESTINATION ${MAC_RES_PREFIX}share/PXTOOL)
 
 # Bundled C decoders go alongside res/, demo/, lang/ under share/PXTOOL.

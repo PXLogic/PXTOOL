@@ -28,11 +28,11 @@ if [ ! -x "${APP_PATH}" ]; then
 fi
 
 echo "[3/4] Stage runtime resources"
-mkdir -p "${SHARE_DIR}/PXTOOL" "${SHARE_DIR}/libsigrokdecode4DSL"
+mkdir -p "${SHARE_DIR}/PXTOOL" "${SHARE_DIR}/libsigrokdecode"
 cmake -E copy_directory "${ROOT_DIR}/PXTOOL/res" "${SHARE_DIR}/PXTOOL/res"
 cmake -E copy_directory "${ROOT_DIR}/PXTOOL/demo" "${SHARE_DIR}/PXTOOL/demo"
 cmake -E copy_directory "${ROOT_DIR}/lang" "${SHARE_DIR}/PXTOOL/lang"
-cmake -E copy_directory "${ROOT_DIR}/libsigrokdecode4DSL/decoders" "${SHARE_DIR}/libsigrokdecode4DSL/decoders"
+cmake -E copy_directory "${ROOT_DIR}/libsigrokdecode/decoders" "${SHARE_DIR}/libsigrokdecode/decoders"
 if [ -f "${SPI_OUTPUT_PATH}" ]; then
     mkdir -p "${SHARE_DIR}/PXTOOL/cdecoders"
     cmake -E copy_if_different "${SPI_OUTPUT_PATH}" "${SHARE_DIR}/PXTOOL/cdecoders/spi.so"

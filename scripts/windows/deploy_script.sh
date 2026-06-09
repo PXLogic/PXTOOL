@@ -130,11 +130,11 @@ if [ -d "$SOURCE_DIR/PXTOOL/lang" ]; then
 fi
 
 # --------------------------------------------------------------------------
-# Step 5: Python protocol decoders (libsigrokdecode4DSL)
+# Step 5: Python protocol decoders (libsigrokdecode)
 # --------------------------------------------------------------------------
 echo "[5/6] Copying Python decoders..."
 if [ ! -d decoders ]; then
-    cp -r "$SOURCE_DIR/libsigrokdecode4DSL/decoders" ./decoders
+    cp -r "$SOURCE_DIR/libsigrokdecode/decoders" ./decoders
     # Remove non-Python files that cause "Failed to load decoder" errors
     rm -f ./decoders/文件夹.bat ./decoders/subfolders_list.txt 2>/dev/null || true
     DECODER_COUNT=$(find ./decoders -name "pd.py" | wc -l)

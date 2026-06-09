@@ -1,17 +1,17 @@
 #!/usr/bin/env python3
 """
-Extract L_S() calls from DSView source and map English defaults to
+Extract L_S() calls from PXTOOL source and map English defaults to
 Chinese translations from JSON files. Outputs translation_map.json.
 
-Usage: python3 scripts/macOS/extract_translations.py
-Output: scripts/macOS/translation_map.json
+Usage: python3 scripts/misc/extract_translations.py
+Output: scripts/misc/translation_map.json
 """
 import re, json, os, sys
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-DSVIEW_ROOT = os.path.dirname(os.path.dirname(SCRIPT_DIR))
-LANG_CN_DIR = os.path.join(DSVIEW_ROOT, "lang", "cn")
-SOURCE_DIR  = os.path.join(DSVIEW_ROOT, "PXTOOL", "pv")
+PXTOOL_ROOT = os.path.dirname(os.path.dirname(SCRIPT_DIR))
+LANG_CN_DIR = os.path.join(PXTOOL_ROOT, "lang", "cn")
+SOURCE_DIR  = os.path.join(PXTOOL_ROOT, "PXTOOL", "pv")
 
 PAGE_TO_JSON = {
     "STR_PAGE_MSG":     ["msg.json"],

@@ -1,16 +1,16 @@
 #!/usr/bin/env python3
 """
-Replace L_S() macro calls with Qt tr() in DSView source files.
+Replace L_S() macro calls with Qt tr() in PXTOOL source files.
 Only targets MSG, TOOLBAR, DLG pages (static UI strings).
 DSL/DECODER dynamic lookups are left unchanged.
 
-Usage: python3 scripts/macOS/replace_ls_macro.py [--dry-run]
+Usage: python3 scripts/misc/replace_ls_macro.py [--dry-run]
 """
 import re, os, sys
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-DSVIEW_ROOT = os.path.dirname(os.path.dirname(SCRIPT_DIR))
-SOURCE_DIR  = os.path.join(DSVIEW_ROOT, "PXTOOL", "pv")
+PXTOOL_ROOT = os.path.dirname(os.path.dirname(SCRIPT_DIR))
+SOURCE_DIR  = os.path.join(PXTOOL_ROOT, "PXTOOL", "pv")
 
 DRY_RUN = "--dry-run" in sys.argv
 
@@ -37,7 +37,7 @@ def main():
             if fname.endswith((".cpp", ".h")):
                 fpath = os.path.join(root, fname)
                 if process(fpath):
-                    rel = os.path.relpath(fpath, DSVIEW_ROOT)
+                    rel = os.path.relpath(fpath, PXTOOL_ROOT)
                     modified.append(rel)
                     print(f"{'[DRY]' if DRY_RUN else 'Modified'}: {rel}")
     print(f"\nTotal files {'would be ' if DRY_RUN else ''}modified: {len(modified)}")

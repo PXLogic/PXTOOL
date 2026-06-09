@@ -1,40 +1,56 @@
-![DreamSourceLab Logo](PXTOOL/icons/dsl_logo.svg)
-
 # PXTOOL
 
-PXTOOL is the current product name for this DreamSourceLab desktop application. It provides a Qt-based GUI for DreamSourceLab instruments, including logic analyzers, oscilloscopes, and related capture/analysis workflows.
+PXTOOL is a cross-platform Qt desktop application for signal capture,
+visualization, measurement, and protocol decoding workflows.
 
-The project is based on the [sigrok](https://sigrok.org) ecosystem and now uses `PXTOOL` for the main source directory and packaged application title. Some historical `DSView` names remain internally for build targets and legacy resource filenames.
+The codebase includes the application sources under `PXTOOL/`, the bundled
+sigrok core under `libsigrok/`, and the bundled protocol decoder runtime and
+Python decoders under `libsigrokdecode/`.
 
 ## Features
 
-- Device control and data acquisition for DreamSourceLab instruments
-- Signal visualization and measurement
-- Protocol decoding workflows built on the sigrok stack
-- Cross-platform Qt application with packaging support for Windows, Linux, and macOS
+- Device connection and capture control
+- Digital and analog waveform visualization
+- Measurement, search, export, and session workflows
+- Protocol decoding based on the bundled sigrok decoder stack
+- Packaging support for Windows, Linux, and macOS
 
 ## Build Notes
 
-The CMake project still uses `project(DSView)` internally, while the packaged application title is `PXTOOL`.
+On macOS, the local app bundle is generated at:
 
-Typical local build flow:
-
-```bash
-cmake -S . -B build
-cmake --build build
+```text
+build.macOS/PXTOOL.app
 ```
 
-## Project Status
+For macOS development builds, use:
 
-PXTOOL is actively developed from the long-running DSView codebase. Some filenames intentionally keep their historical names for compatibility, but the main source directory and user-facing application title are now `PXTOOL`.
+```bash
+bash scripts/macOS/build_and_run.sh
+```
 
-## Useful Links
+For a distributable macOS app bundle or DMG, use:
 
-- [DreamSourceLab](https://www.dreamsourcelab.com)
-- [sigrok](https://sigrok.org)
+```bash
+bash scripts/macOS/package-macos.sh
+```
+
+Pass `--no-dmg` to skip DMG creation, or `--skip-build` to package an existing
+build.
+
+Non-build maintenance helpers, such as translation utilities and icon
+regeneration, live under `scripts/misc/`.
+
+## Project Layout
+
+- `PXTOOL/` - Qt application sources and resources
+- `libsigrok/` - bundled sigrok core
+- `libsigrokdecode/` - bundled protocol decoder runtime and Python decoders
+- `pv/cdecoders/` - bundled C decoder examples/modules
+- `scripts/` - platform build, run, and packaging helpers
 
 ## License
 
-This project is licensed under the GNU General Public License, version 3 or later.
-
-Some individual source files may carry GPLv2+ or GPLv3+ notices, but the program as a whole is distributed under GPLv3+ terms. See the source files and [LICENSE](LICENSE) for details.
+This project is licensed under the GNU General Public License, version 3 or
+later. Some individual source files may carry GPLv2+ or GPLv3+ notices. See the
+source files and [LICENSE](LICENSE) for details.

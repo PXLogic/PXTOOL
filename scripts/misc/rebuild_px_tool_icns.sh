@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Regenerate DSView.icns from PXTOOL/icons/dock_app_icon.png.
+# Regenerate the macOS app icon from PXTOOL/icons/dock_app_icon.png.
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 PNG="$ROOT/PXTOOL/icons/dock_app_icon.png"

@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 """
 Generate a zh_CN.ts stub from translation_map.json.
-Groups all entries under a single "DSView" context.
+Groups all entries under a single "PXTOOL" context.
 """
 import json, os
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-DSVIEW_ROOT = os.path.dirname(os.path.dirname(SCRIPT_DIR))
+PXTOOL_ROOT = os.path.dirname(os.path.dirname(SCRIPT_DIR))
 MAP_FILE = os.path.join(SCRIPT_DIR, "translation_map.json")
-OUT_FILE = os.path.join(DSVIEW_ROOT, "PXTOOL", "languages", "zh_CN.ts")
+OUT_FILE = os.path.join(PXTOOL_ROOT, "PXTOOL", "languages", "zh_CN.ts")
 
 mapping = json.load(open(MAP_FILE, encoding="utf-8"))
 
@@ -25,7 +25,7 @@ ts_content = """<?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE TS>
 <TS version="2.1" language="zh_CN" sourcelanguage="en">
 <context>
-    <name>DSView</name>
+    <name>PXTOOL</name>
 """ + "\n".join(messages) + """
 </context>
 </TS>
