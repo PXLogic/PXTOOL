@@ -2,7 +2,7 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-RULE_SRC="${ROOT_DIR}/DSView/DreamSourceLab.rules"
+RULE_SRC="${ROOT_DIR}/PXTOOL/DreamSourceLab.rules"
 RULE_DST="/etc/udev/rules.d/60-dreamsourcelab.rules"
 
 if [ ! -f "${RULE_SRC}" ]; then

@@ -82,7 +82,7 @@ echo ""
 
 # --------------------------------------------------------------------------
 # Step 1b: Compile language files (.ts → .qm)
-# lrelease regenerates .qm in-place inside DSView/languages/ so that
+# lrelease regenerates .qm in-place inside PXTOOL/languages/ so that
 # language.qrc embeds up-to-date translations when rcc runs during make.
 # Note: qt5_add_translation in CMakeLists.txt outputs to the build output dir,
 # a different location than the .qm files referenced by language.qrc —
@@ -106,7 +106,7 @@ if [ -z "$LRELEASE_BIN" ]; then
 else
     echo "  Using: $LRELEASE_BIN"
     QM_UPDATED=0
-    for TS_FILE in "$SOURCE_DIR/DSView/languages"/*.ts; do
+    for TS_FILE in "$SOURCE_DIR/PXTOOL/languages"/*.ts; do
         [ -f "$TS_FILE" ] || continue
         QM_FILE="${TS_FILE%.ts}.qm"
         if [ ! -f "$QM_FILE" ] || [ "$TS_FILE" -nt "$QM_FILE" ]; then
@@ -123,7 +123,7 @@ else
     if [ "$QM_UPDATED" -gt 0 ]; then
         # Touch language.qrc so CMake/make detects it changed and re-runs rcc,
         # which re-embeds the updated .qm files into qrc_language.cpp.
-        touch "$SOURCE_DIR/DSView/languages/language.qrc"
+        touch "$SOURCE_DIR/PXTOOL/languages/language.qrc"
         echo "  -> language.qrc touched — rcc will re-embed $QM_UPDATED updated file(s)"
     else
         echo "  -> All language files are up to date."
@@ -156,8 +156,8 @@ if [ -f "$ICO_SRC" ]; then
         echo "  -> Icon or applogo.rc changed; removing stale applogo.rc.obj"
         rm -f "$RC_OBJ"
     fi
-    if [ "$ICO_SRC" -nt "$SOURCE_DIR/DSView/DSView.qrc" ]; then
-        touch "$SOURCE_DIR/DSView/DSView.qrc"
+    if [ "$ICO_SRC" -nt "$SOURCE_DIR/PXTOOL/DSView.qrc" ]; then
+        touch "$SOURCE_DIR/PXTOOL/DSView.qrc"
         echo "  -> win-app-logo.ico changed; touching DSView.qrc for rcc rebuild"
     fi
 fi

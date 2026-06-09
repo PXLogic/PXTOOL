@@ -1,0 +1,2592 @@
+
+---
+events:
+  -
+    kind: "message-v1"
+    backtrace:
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineSystem.cmake:212 (message)"
+      - "CMakeLists.txt:24 (project)"
+    message: |
+      The system is: Windows - 10.0.26200 - AMD64
+  -
+    kind: "find-v1"
+    backtrace:
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeMinGWFindMake.cmake:5 (find_program)"
+      - "CMakeLists.txt:24 (project)"
+    mode: "program"
+    variable: "CMAKE_MAKE_PROGRAM"
+    description: "Path to a program."
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: true
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "mingw32-make.exe"
+    candidate_directories:
+      - "C:/Users/ZhaiYuanji/.codex/tmp/arg0/codex-arg0aQURBj/"
+      - "C:/Windows/System32/"
+      - "C:/Windows/"
+      - "C:/Windows/System32/wbem/"
+      - "C:/Windows/System32/WindowsPowerShell/v1.0/"
+      - "C:/Windows/System32/OpenSSH/"
+      - "C:/Program Files/Microsoft SQL Server/170/Tools/Binn/"
+      - "C:/Program Files/Microsoft SQL Server/Client SDK/ODBC/170/Tools/Binn/"
+      - "C:/Program Files/dotnet/"
+      - "C:/Program Files/Git/cmd/"
+      - "D:/software/nvm/"
+      - "C:/nvm4w/nodejs/"
+      - "C:/Users/ZhaiYuanji/AppData/Local/codegraph/current/bin/"
+      - "C:/Users/ZhaiYuanji/AppData/Local/Microsoft/WindowsApps/"
+      - "C:/Users/ZhaiYuanji/.dotnet/tools/"
+      - "C:/Users/ZhaiYuanji/AppData/Local/Programs/cursor/resources/app/bin/"
+      - "C:/Users/ZhaiYuanji/AppData/Local/PowerToys/DSCModules/"
+      - "D:/software/Microsoft VS Code/bin/"
+      - "C:/Users/ZhaiYuanji/.vscode/extensions/openai.chatgpt-26.602.30954-win32-x64/bin/windows-x86_64/"
+      - "/REGISTRY-NOTFOUND/bin/"
+      - "c:/MinGW/bin/"
+      - "/MinGW/bin/"
+      - "/REGISTRY-NOTFOUND/MinGW/bin/"
+    searched_directories:
+      - "C:/Users/ZhaiYuanji/.codex/tmp/arg0/codex-arg0aQURBj/mingw32-make.exe.com"
+      - "C:/Users/ZhaiYuanji/.codex/tmp/arg0/codex-arg0aQURBj/mingw32-make.exe"
+      - "C:/Windows/System32/mingw32-make.exe.com"
+      - "C:/Windows/System32/mingw32-make.exe"
+      - "C:/Windows/mingw32-make.exe.com"
+      - "C:/Windows/mingw32-make.exe"
+      - "C:/Windows/System32/wbem/mingw32-make.exe.com"
+      - "C:/Windows/System32/wbem/mingw32-make.exe"
+      - "C:/Windows/System32/WindowsPowerShell/v1.0/mingw32-make.exe.com"
+      - "C:/Windows/System32/WindowsPowerShell/v1.0/mingw32-make.exe"
+      - "C:/Windows/System32/OpenSSH/mingw32-make.exe.com"
+      - "C:/Windows/System32/OpenSSH/mingw32-make.exe"
+      - "C:/Program Files/Microsoft SQL Server/170/Tools/Binn/mingw32-make.exe.com"
+      - "C:/Program Files/Microsoft SQL Server/170/Tools/Binn/mingw32-make.exe"
+      - "C:/Program Files/Microsoft SQL Server/Client SDK/ODBC/170/Tools/Binn/mingw32-make.exe.com"
+      - "C:/Program Files/Microsoft SQL Server/Client SDK/ODBC/170/Tools/Binn/mingw32-make.exe"
+      - "C:/Program Files/dotnet/mingw32-make.exe.com"
+      - "C:/Program Files/dotnet/mingw32-make.exe"
+      - "C:/Program Files/Git/cmd/mingw32-make.exe.com"
+      - "C:/Program Files/Git/cmd/mingw32-make.exe"
+      - "D:/software/nvm/mingw32-make.exe.com"
+      - "D:/software/nvm/mingw32-make.exe"
+      - "C:/nvm4w/nodejs/mingw32-make.exe.com"
+      - "C:/nvm4w/nodejs/mingw32-make.exe"
+      - "C:/Users/ZhaiYuanji/AppData/Local/codegraph/current/bin/mingw32-make.exe.com"
+      - "C:/Users/ZhaiYuanji/AppData/Local/codegraph/current/bin/mingw32-make.exe"
+      - "C:/Users/ZhaiYuanji/AppData/Local/Microsoft/WindowsApps/mingw32-make.exe.com"
+      - "C:/Users/ZhaiYuanji/AppData/Local/Microsoft/WindowsApps/mingw32-make.exe"
+      - "C:/Users/ZhaiYuanji/.dotnet/tools/mingw32-make.exe.com"
+      - "C:/Users/ZhaiYuanji/.dotnet/tools/mingw32-make.exe"
+      - "C:/Users/ZhaiYuanji/AppData/Local/Programs/cursor/resources/app/bin/mingw32-make.exe.com"
+      - "C:/Users/ZhaiYuanji/AppData/Local/Programs/cursor/resources/app/bin/mingw32-make.exe"
+      - "C:/Users/ZhaiYuanji/AppData/Local/PowerToys/DSCModules/mingw32-make.exe.com"
+      - "C:/Users/ZhaiYuanji/AppData/Local/PowerToys/DSCModules/mingw32-make.exe"
+      - "D:/software/Microsoft VS Code/bin/mingw32-make.exe.com"
+      - "D:/software/Microsoft VS Code/bin/mingw32-make.exe"
+      - "C:/Users/ZhaiYuanji/.vscode/extensions/openai.chatgpt-26.602.30954-win32-x64/bin/windows-x86_64/mingw32-make.exe.com"
+      - "C:/Users/ZhaiYuanji/.vscode/extensions/openai.chatgpt-26.602.30954-win32-x64/bin/windows-x86_64/mingw32-make.exe"
+      - "/REGISTRY-NOTFOUND/bin/mingw32-make.exe.com"
+      - "/REGISTRY-NOTFOUND/bin/mingw32-make.exe"
+      - "c:/MinGW/bin/mingw32-make.exe.com"
+      - "c:/MinGW/bin/mingw32-make.exe"
+      - "/MinGW/bin/mingw32-make.exe.com"
+      - "/MinGW/bin/mingw32-make.exe"
+      - "/REGISTRY-NOTFOUND/MinGW/bin/mingw32-make.exe.com"
+      - "/REGISTRY-NOTFOUND/MinGW/bin/mingw32-make.exe"
+    found: false
+    search_context:
+      ENV{PATH}:
+        - "C:\\Users\\ZhaiYuanji\\.codex\\tmp\\arg0\\codex-arg0aQURBj"
+        - "C:\\WINDOWS\\system32"
+        - "C:\\WINDOWS"
+        - "C:\\WINDOWS\\System32\\Wbem"
+        - "C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\"
+        - "C:\\WINDOWS\\System32\\OpenSSH\\"
+        - "C:\\Program Files\\Microsoft SQL Server\\170\\Tools\\Binn\\"
+        - "C:\\Program Files\\Microsoft SQL Server\\Client SDK\\ODBC\\170\\Tools\\Binn\\"
+        - "C:\\Program Files\\dotnet\\"
+        - "C:\\Program Files\\Git\\cmd"
+        - "D:\\software\\nvm"
+        - "C:\\nvm4w\\nodejs"
+        - "C:\\Users\\ZhaiYuanji\\AppData\\Local\\codegraph\\current\\bin"
+        - "C:\\Users\\ZhaiYuanji\\AppData\\Local\\Microsoft\\WindowsApps"
+        - "C:\\Users\\ZhaiYuanji\\.dotnet\\tools"
+        - "C:\\Users\\ZhaiYuanji\\AppData\\Local\\Programs\\cursor\\resources\\app\\bin"
+        - "C:\\Users\\ZhaiYuanji\\AppData\\Local\\PowerToys\\DSCModules\\"
+        - "D:\\software\\Microsoft VS Code\\bin"
+        - "D:\\software\\nvm"
+        - "C:\\nvm4w\\nodejs"
+        - "c:\\Users\\ZhaiYuanji\\.vscode\\extensions\\openai.chatgpt-26.602.30954-win32-x64\\bin\\windows-x86_64"
+...
+
+---
+events:
+  -
+    kind: "find-v1"
+    backtrace:
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCompilerId.cmake:468 (find_file)"
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCompilerId.cmake:506 (CMAKE_DETERMINE_COMPILER_ID_WRITE)"
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCompilerId.cmake:8 (CMAKE_DETERMINE_COMPILER_ID_BUILD)"
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCompilerId.cmake:64 (__determine_compiler_id_test)"
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCCompiler.cmake:122 (CMAKE_DETERMINE_COMPILER_ID)"
+      - "CMakeLists.txt:24 (project)"
+    mode: "file"
+    variable: "src_in"
+    description: "Path to a file."
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: true
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "CMakeCCompilerId.c.in"
+    candidate_directories:
+      - "C:/msys64/mingw64/share/cmake/Modules/"
+    found: "C:/msys64/mingw64/share/cmake/Modules/CMakeCCompilerId.c.in"
+    search_context:
+      ENV{PATH}:
+        - "C:\\Users\\ZhaiYuanji\\.codex\\tmp\\arg0\\codex-arg0aQURBj"
+        - "C:\\WINDOWS\\system32"
+        - "C:\\WINDOWS"
+        - "C:\\WINDOWS\\System32\\Wbem"
+        - "C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\"
+        - "C:\\WINDOWS\\System32\\OpenSSH\\"
+        - "C:\\Program Files\\Microsoft SQL Server\\170\\Tools\\Binn\\"
+        - "C:\\Program Files\\Microsoft SQL Server\\Client SDK\\ODBC\\170\\Tools\\Binn\\"
+        - "C:\\Program Files\\dotnet\\"
+        - "C:\\Program Files\\Git\\cmd"
+        - "D:\\software\\nvm"
+        - "C:\\nvm4w\\nodejs"
+        - "C:\\Users\\ZhaiYuanji\\AppData\\Local\\codegraph\\current\\bin"
+        - "C:\\Users\\ZhaiYuanji\\AppData\\Local\\Microsoft\\WindowsApps"
+        - "C:\\Users\\ZhaiYuanji\\.dotnet\\tools"
+        - "C:\\Users\\ZhaiYuanji\\AppData\\Local\\Programs\\cursor\\resources\\app\\bin"
+        - "C:\\Users\\ZhaiYuanji\\AppData\\Local\\PowerToys\\DSCModules\\"
+        - "D:\\software\\Microsoft VS Code\\bin"
+        - "D:\\software\\nvm"
+        - "C:\\nvm4w\\nodejs"
+        - "c:\\Users\\ZhaiYuanji\\.vscode\\extensions\\openai.chatgpt-26.602.30954-win32-x64\\bin\\windows-x86_64"
+  -
+    kind: "message-v1"
+    backtrace:
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCompilerId.cmake:17 (message)"
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCompilerId.cmake:64 (__determine_compiler_id_test)"
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCCompiler.cmake:122 (CMAKE_DETERMINE_COMPILER_ID)"
+      - "CMakeLists.txt:24 (project)"
+    message: |
+      Compiling the C compiler identification source file "CMakeCCompilerId.c" failed.
+      Compiler: C:/msys64/mingw64/bin/gcc.exe 
+      Build flags: 
+      Id flags:  
+      
+      The output was:
+      1
+      
+      
+  -
+    kind: "find-v1"
+    backtrace:
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCompilerId.cmake:468 (find_file)"
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCompilerId.cmake:506 (CMAKE_DETERMINE_COMPILER_ID_WRITE)"
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCompilerId.cmake:8 (CMAKE_DETERMINE_COMPILER_ID_BUILD)"
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCompilerId.cmake:64 (__determine_compiler_id_test)"
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCCompiler.cmake:122 (CMAKE_DETERMINE_COMPILER_ID)"
+      - "CMakeLists.txt:24 (project)"
+    mode: "file"
+    variable: "src_in"
+    description: "Path to a file."
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: true
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "CMakeCCompilerId.c.in"
+    candidate_directories:
+      - "C:/msys64/mingw64/share/cmake/Modules/"
+    found: "C:/msys64/mingw64/share/cmake/Modules/CMakeCCompilerId.c.in"
+    search_context:
+      ENV{PATH}:
+        - "C:\\Users\\ZhaiYuanji\\.codex\\tmp\\arg0\\codex-arg0aQURBj"
+        - "C:\\WINDOWS\\system32"
+        - "C:\\WINDOWS"
+        - "C:\\WINDOWS\\System32\\Wbem"
+        - "C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\"
+        - "C:\\WINDOWS\\System32\\OpenSSH\\"
+        - "C:\\Program Files\\Microsoft SQL Server\\170\\Tools\\Binn\\"
+        - "C:\\Program Files\\Microsoft SQL Server\\Client SDK\\ODBC\\170\\Tools\\Binn\\"
+        - "C:\\Program Files\\dotnet\\"
+        - "C:\\Program Files\\Git\\cmd"
+        - "D:\\software\\nvm"
+        - "C:\\nvm4w\\nodejs"
+        - "C:\\Users\\ZhaiYuanji\\AppData\\Local\\codegraph\\current\\bin"
+        - "C:\\Users\\ZhaiYuanji\\AppData\\Local\\Microsoft\\WindowsApps"
+        - "C:\\Users\\ZhaiYuanji\\.dotnet\\tools"
+        - "C:\\Users\\ZhaiYuanji\\AppData\\Local\\Programs\\cursor\\resources\\app\\bin"
+        - "C:\\Users\\ZhaiYuanji\\AppData\\Local\\PowerToys\\DSCModules\\"
+        - "D:\\software\\Microsoft VS Code\\bin"
+        - "D:\\software\\nvm"
+        - "C:\\nvm4w\\nodejs"
+        - "c:\\Users\\ZhaiYuanji\\.vscode\\extensions\\openai.chatgpt-26.602.30954-win32-x64\\bin\\windows-x86_64"
+  -
+    kind: "message-v1"
+    backtrace:
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCompilerId.cmake:17 (message)"
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCompilerId.cmake:64 (__determine_compiler_id_test)"
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCCompiler.cmake:122 (CMAKE_DETERMINE_COMPILER_ID)"
+      - "CMakeLists.txt:24 (project)"
+    message: |
+      Compiling the C compiler identification source file "CMakeCCompilerId.c" failed.
+      Compiler: C:/msys64/mingw64/bin/gcc.exe 
+      Build flags: 
+      Id flags: -c 
+      
+      The output was:
+      1
+      
+      
+  -
+    kind: "find-v1"
+    backtrace:
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCompilerId.cmake:468 (find_file)"
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCompilerId.cmake:506 (CMAKE_DETERMINE_COMPILER_ID_WRITE)"
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCompilerId.cmake:8 (CMAKE_DETERMINE_COMPILER_ID_BUILD)"
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCompilerId.cmake:64 (__determine_compiler_id_test)"
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCCompiler.cmake:122 (CMAKE_DETERMINE_COMPILER_ID)"
+      - "CMakeLists.txt:24 (project)"
+    mode: "file"
+    variable: "src_in"
+    description: "Path to a file."
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: true
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "CMakeCCompilerId.c.in"
+    candidate_directories:
+      - "C:/msys64/mingw64/share/cmake/Modules/"
+    found: "C:/msys64/mingw64/share/cmake/Modules/CMakeCCompilerId.c.in"
+    search_context:
+      ENV{PATH}:
+        - "C:\\Users\\ZhaiYuanji\\.codex\\tmp\\arg0\\codex-arg0aQURBj"
+        - "C:\\WINDOWS\\system32"
+        - "C:\\WINDOWS"
+        - "C:\\WINDOWS\\System32\\Wbem"
+        - "C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\"
+        - "C:\\WINDOWS\\System32\\OpenSSH\\"
+        - "C:\\Program Files\\Microsoft SQL Server\\170\\Tools\\Binn\\"
+        - "C:\\Program Files\\Microsoft SQL Server\\Client SDK\\ODBC\\170\\Tools\\Binn\\"
+        - "C:\\Program Files\\dotnet\\"
+        - "C:\\Program Files\\Git\\cmd"
+        - "D:\\software\\nvm"
+        - "C:\\nvm4w\\nodejs"
+        - "C:\\Users\\ZhaiYuanji\\AppData\\Local\\codegraph\\current\\bin"
+        - "C:\\Users\\ZhaiYuanji\\AppData\\Local\\Microsoft\\WindowsApps"
+        - "C:\\Users\\ZhaiYuanji\\.dotnet\\tools"
+        - "C:\\Users\\ZhaiYuanji\\AppData\\Local\\Programs\\cursor\\resources\\app\\bin"
+        - "C:\\Users\\ZhaiYuanji\\AppData\\Local\\PowerToys\\DSCModules\\"
+        - "D:\\software\\Microsoft VS Code\\bin"
+        - "D:\\software\\nvm"
+        - "C:\\nvm4w\\nodejs"
+        - "c:\\Users\\ZhaiYuanji\\.vscode\\extensions\\openai.chatgpt-26.602.30954-win32-x64\\bin\\windows-x86_64"
+  -
+    kind: "message-v1"
+    backtrace:
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCompilerId.cmake:17 (message)"
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCompilerId.cmake:64 (__determine_compiler_id_test)"
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCCompiler.cmake:122 (CMAKE_DETERMINE_COMPILER_ID)"
+      - "CMakeLists.txt:24 (project)"
+    message: |
+      Compiling the C compiler identification source file "CMakeCCompilerId.c" failed.
+      Compiler: C:/msys64/mingw64/bin/gcc.exe 
+      Build flags: 
+      Id flags: -Aa 
+      
+      The output was:
+      1
+      
+      
+  -
+    kind: "find-v1"
+    backtrace:
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCompilerId.cmake:468 (find_file)"
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCompilerId.cmake:506 (CMAKE_DETERMINE_COMPILER_ID_WRITE)"
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCompilerId.cmake:8 (CMAKE_DETERMINE_COMPILER_ID_BUILD)"
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCompilerId.cmake:64 (__determine_compiler_id_test)"
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCCompiler.cmake:122 (CMAKE_DETERMINE_COMPILER_ID)"
+      - "CMakeLists.txt:24 (project)"
+    mode: "file"
+    variable: "src_in"
+    description: "Path to a file."
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: true
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "CMakeCCompilerId.c.in"
+    candidate_directories:
+      - "C:/msys64/mingw64/share/cmake/Modules/"
+    found: "C:/msys64/mingw64/share/cmake/Modules/CMakeCCompilerId.c.in"
+    search_context:
+      ENV{PATH}:
+        - "C:\\Users\\ZhaiYuanji\\.codex\\tmp\\arg0\\codex-arg0aQURBj"
+        - "C:\\WINDOWS\\system32"
+        - "C:\\WINDOWS"
+        - "C:\\WINDOWS\\System32\\Wbem"
+        - "C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\"
+        - "C:\\WINDOWS\\System32\\OpenSSH\\"
+        - "C:\\Program Files\\Microsoft SQL Server\\170\\Tools\\Binn\\"
+        - "C:\\Program Files\\Microsoft SQL Server\\Client SDK\\ODBC\\170\\Tools\\Binn\\"
+        - "C:\\Program Files\\dotnet\\"
+        - "C:\\Program Files\\Git\\cmd"
+        - "D:\\software\\nvm"
+        - "C:\\nvm4w\\nodejs"
+        - "C:\\Users\\ZhaiYuanji\\AppData\\Local\\codegraph\\current\\bin"
+        - "C:\\Users\\ZhaiYuanji\\AppData\\Local\\Microsoft\\WindowsApps"
+        - "C:\\Users\\ZhaiYuanji\\.dotnet\\tools"
+        - "C:\\Users\\ZhaiYuanji\\AppData\\Local\\Programs\\cursor\\resources\\app\\bin"
+        - "C:\\Users\\ZhaiYuanji\\AppData\\Local\\PowerToys\\DSCModules\\"
+        - "D:\\software\\Microsoft VS Code\\bin"
+        - "D:\\software\\nvm"
+        - "C:\\nvm4w\\nodejs"
+        - "c:\\Users\\ZhaiYuanji\\.vscode\\extensions\\openai.chatgpt-26.602.30954-win32-x64\\bin\\windows-x86_64"
+  -
+    kind: "message-v1"
+    backtrace:
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCompilerId.cmake:17 (message)"
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCompilerId.cmake:64 (__determine_compiler_id_test)"
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCCompiler.cmake:122 (CMAKE_DETERMINE_COMPILER_ID)"
+      - "CMakeLists.txt:24 (project)"
+    message: |
+      Compiling the C compiler identification source file "CMakeCCompilerId.c" failed.
+      Compiler: C:/msys64/mingw64/bin/gcc.exe 
+      Build flags: 
+      Id flags: -D__CLASSIC_C__ 
+      
+      The output was:
+      1
+      
+      
+  -
+    kind: "find-v1"
+    backtrace:
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCompilerId.cmake:468 (find_file)"
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCompilerId.cmake:506 (CMAKE_DETERMINE_COMPILER_ID_WRITE)"
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCompilerId.cmake:8 (CMAKE_DETERMINE_COMPILER_ID_BUILD)"
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCompilerId.cmake:64 (__determine_compiler_id_test)"
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCCompiler.cmake:122 (CMAKE_DETERMINE_COMPILER_ID)"
+      - "CMakeLists.txt:24 (project)"
+    mode: "file"
+    variable: "src_in"
+    description: "Path to a file."
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: true
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "CMakeCCompilerId.c.in"
+    candidate_directories:
+      - "C:/msys64/mingw64/share/cmake/Modules/"
+    found: "C:/msys64/mingw64/share/cmake/Modules/CMakeCCompilerId.c.in"
+    search_context:
+      ENV{PATH}:
+        - "C:\\Users\\ZhaiYuanji\\.codex\\tmp\\arg0\\codex-arg0aQURBj"
+        - "C:\\WINDOWS\\system32"
+        - "C:\\WINDOWS"
+        - "C:\\WINDOWS\\System32\\Wbem"
+        - "C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\"
+        - "C:\\WINDOWS\\System32\\OpenSSH\\"
+        - "C:\\Program Files\\Microsoft SQL Server\\170\\Tools\\Binn\\"
+        - "C:\\Program Files\\Microsoft SQL Server\\Client SDK\\ODBC\\170\\Tools\\Binn\\"
+        - "C:\\Program Files\\dotnet\\"
+        - "C:\\Program Files\\Git\\cmd"
+        - "D:\\software\\nvm"
+        - "C:\\nvm4w\\nodejs"
+        - "C:\\Users\\ZhaiYuanji\\AppData\\Local\\codegraph\\current\\bin"
+        - "C:\\Users\\ZhaiYuanji\\AppData\\Local\\Microsoft\\WindowsApps"
+        - "C:\\Users\\ZhaiYuanji\\.dotnet\\tools"
+        - "C:\\Users\\ZhaiYuanji\\AppData\\Local\\Programs\\cursor\\resources\\app\\bin"
+        - "C:\\Users\\ZhaiYuanji\\AppData\\Local\\PowerToys\\DSCModules\\"
+        - "D:\\software\\Microsoft VS Code\\bin"
+        - "D:\\software\\nvm"
+        - "C:\\nvm4w\\nodejs"
+        - "c:\\Users\\ZhaiYuanji\\.vscode\\extensions\\openai.chatgpt-26.602.30954-win32-x64\\bin\\windows-x86_64"
+  -
+    kind: "message-v1"
+    backtrace:
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCompilerId.cmake:17 (message)"
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCompilerId.cmake:64 (__determine_compiler_id_test)"
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCCompiler.cmake:122 (CMAKE_DETERMINE_COMPILER_ID)"
+      - "CMakeLists.txt:24 (project)"
+    message: |
+      Compiling the C compiler identification source file "CMakeCCompilerId.c" failed.
+      Compiler: C:/msys64/mingw64/bin/gcc.exe 
+      Build flags: 
+      Id flags: --target=arm-arm-none-eabi;-mcpu=cortex-m3 
+      
+      The output was:
+      1
+      gcc.exe: warning: '-mcpu=' is deprecated; use '-mtune=' or '-march=' instead
+      gcc.exe: error: unrecognized command-line option '--target=arm-arm-none-eabi'
+      
+      
+  -
+    kind: "find-v1"
+    backtrace:
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCompilerId.cmake:468 (find_file)"
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCompilerId.cmake:506 (CMAKE_DETERMINE_COMPILER_ID_WRITE)"
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCompilerId.cmake:8 (CMAKE_DETERMINE_COMPILER_ID_BUILD)"
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCompilerId.cmake:64 (__determine_compiler_id_test)"
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCCompiler.cmake:122 (CMAKE_DETERMINE_COMPILER_ID)"
+      - "CMakeLists.txt:24 (project)"
+    mode: "file"
+    variable: "src_in"
+    description: "Path to a file."
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: true
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "CMakeCCompilerId.c.in"
+    candidate_directories:
+      - "C:/msys64/mingw64/share/cmake/Modules/"
+    found: "C:/msys64/mingw64/share/cmake/Modules/CMakeCCompilerId.c.in"
+    search_context:
+      ENV{PATH}:
+        - "C:\\Users\\ZhaiYuanji\\.codex\\tmp\\arg0\\codex-arg0aQURBj"
+        - "C:\\WINDOWS\\system32"
+        - "C:\\WINDOWS"
+        - "C:\\WINDOWS\\System32\\Wbem"
+        - "C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\"
+        - "C:\\WINDOWS\\System32\\OpenSSH\\"
+        - "C:\\Program Files\\Microsoft SQL Server\\170\\Tools\\Binn\\"
+        - "C:\\Program Files\\Microsoft SQL Server\\Client SDK\\ODBC\\170\\Tools\\Binn\\"
+        - "C:\\Program Files\\dotnet\\"
+        - "C:\\Program Files\\Git\\cmd"
+        - "D:\\software\\nvm"
+        - "C:\\nvm4w\\nodejs"
+        - "C:\\Users\\ZhaiYuanji\\AppData\\Local\\codegraph\\current\\bin"
+        - "C:\\Users\\ZhaiYuanji\\AppData\\Local\\Microsoft\\WindowsApps"
+        - "C:\\Users\\ZhaiYuanji\\.dotnet\\tools"
+        - "C:\\Users\\ZhaiYuanji\\AppData\\Local\\Programs\\cursor\\resources\\app\\bin"
+        - "C:\\Users\\ZhaiYuanji\\AppData\\Local\\PowerToys\\DSCModules\\"
+        - "D:\\software\\Microsoft VS Code\\bin"
+        - "D:\\software\\nvm"
+        - "C:\\nvm4w\\nodejs"
+        - "c:\\Users\\ZhaiYuanji\\.vscode\\extensions\\openai.chatgpt-26.602.30954-win32-x64\\bin\\windows-x86_64"
+  -
+    kind: "message-v1"
+    backtrace:
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCompilerId.cmake:17 (message)"
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCompilerId.cmake:64 (__determine_compiler_id_test)"
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCCompiler.cmake:122 (CMAKE_DETERMINE_COMPILER_ID)"
+      - "CMakeLists.txt:24 (project)"
+    message: |
+      Compiling the C compiler identification source file "CMakeCCompilerId.c" failed.
+      Compiler: C:/msys64/mingw64/bin/gcc.exe 
+      Build flags: 
+      Id flags: -c;-I__does_not_exist__ 
+      
+      The output was:
+      1
+      
+      
+  -
+    kind: "find-v1"
+    backtrace:
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCompilerId.cmake:468 (find_file)"
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCompilerId.cmake:506 (CMAKE_DETERMINE_COMPILER_ID_WRITE)"
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCompilerId.cmake:8 (CMAKE_DETERMINE_COMPILER_ID_BUILD)"
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCompilerId.cmake:64 (__determine_compiler_id_test)"
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCCompiler.cmake:122 (CMAKE_DETERMINE_COMPILER_ID)"
+      - "CMakeLists.txt:24 (project)"
+    mode: "file"
+    variable: "src_in"
+    description: "Path to a file."
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: true
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "CMakeCCompilerId.c.in"
+    candidate_directories:
+      - "C:/msys64/mingw64/share/cmake/Modules/"
+    found: "C:/msys64/mingw64/share/cmake/Modules/CMakeCCompilerId.c.in"
+    search_context:
+      ENV{PATH}:
+        - "C:\\Users\\ZhaiYuanji\\.codex\\tmp\\arg0\\codex-arg0aQURBj"
+        - "C:\\WINDOWS\\system32"
+        - "C:\\WINDOWS"
+        - "C:\\WINDOWS\\System32\\Wbem"
+        - "C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\"
+        - "C:\\WINDOWS\\System32\\OpenSSH\\"
+        - "C:\\Program Files\\Microsoft SQL Server\\170\\Tools\\Binn\\"
+        - "C:\\Program Files\\Microsoft SQL Server\\Client SDK\\ODBC\\170\\Tools\\Binn\\"
+        - "C:\\Program Files\\dotnet\\"
+        - "C:\\Program Files\\Git\\cmd"
+        - "D:\\software\\nvm"
+        - "C:\\nvm4w\\nodejs"
+        - "C:\\Users\\ZhaiYuanji\\AppData\\Local\\codegraph\\current\\bin"
+        - "C:\\Users\\ZhaiYuanji\\AppData\\Local\\Microsoft\\WindowsApps"
+        - "C:\\Users\\ZhaiYuanji\\.dotnet\\tools"
+        - "C:\\Users\\ZhaiYuanji\\AppData\\Local\\Programs\\cursor\\resources\\app\\bin"
+        - "C:\\Users\\ZhaiYuanji\\AppData\\Local\\PowerToys\\DSCModules\\"
+        - "D:\\software\\Microsoft VS Code\\bin"
+        - "D:\\software\\nvm"
+        - "C:\\nvm4w\\nodejs"
+        - "c:\\Users\\ZhaiYuanji\\.vscode\\extensions\\openai.chatgpt-26.602.30954-win32-x64\\bin\\windows-x86_64"
+  -
+    kind: "message-v1"
+    backtrace:
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCompilerId.cmake:17 (message)"
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCompilerId.cmake:64 (__determine_compiler_id_test)"
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCCompiler.cmake:122 (CMAKE_DETERMINE_COMPILER_ID)"
+      - "CMakeLists.txt:24 (project)"
+    message: |
+      Compiling the C compiler identification source file "CMakeCCompilerId.c" failed.
+      Compiler: C:/msys64/mingw64/bin/gcc.exe 
+      Build flags: 
+      Id flags:  
+      
+      The output was:
+      1
+      
+      
+  -
+    kind: "find-v1"
+    backtrace:
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCompilerId.cmake:468 (find_file)"
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCompilerId.cmake:506 (CMAKE_DETERMINE_COMPILER_ID_WRITE)"
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCompilerId.cmake:8 (CMAKE_DETERMINE_COMPILER_ID_BUILD)"
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCompilerId.cmake:64 (__determine_compiler_id_test)"
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCCompiler.cmake:122 (CMAKE_DETERMINE_COMPILER_ID)"
+      - "CMakeLists.txt:24 (project)"
+    mode: "file"
+    variable: "src_in"
+    description: "Path to a file."
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: true
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "CMakeCCompilerId.c.in"
+    candidate_directories:
+      - "C:/msys64/mingw64/share/cmake/Modules/"
+    found: "C:/msys64/mingw64/share/cmake/Modules/CMakeCCompilerId.c.in"
+    search_context:
+      ENV{PATH}:
+        - "C:\\Users\\ZhaiYuanji\\.codex\\tmp\\arg0\\codex-arg0aQURBj"
+        - "C:\\WINDOWS\\system32"
+        - "C:\\WINDOWS"
+        - "C:\\WINDOWS\\System32\\Wbem"
+        - "C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\"
+        - "C:\\WINDOWS\\System32\\OpenSSH\\"
+        - "C:\\Program Files\\Microsoft SQL Server\\170\\Tools\\Binn\\"
+        - "C:\\Program Files\\Microsoft SQL Server\\Client SDK\\ODBC\\170\\Tools\\Binn\\"
+        - "C:\\Program Files\\dotnet\\"
+        - "C:\\Program Files\\Git\\cmd"
+        - "D:\\software\\nvm"
+        - "C:\\nvm4w\\nodejs"
+        - "C:\\Users\\ZhaiYuanji\\AppData\\Local\\codegraph\\current\\bin"
+        - "C:\\Users\\ZhaiYuanji\\AppData\\Local\\Microsoft\\WindowsApps"
+        - "C:\\Users\\ZhaiYuanji\\.dotnet\\tools"
+        - "C:\\Users\\ZhaiYuanji\\AppData\\Local\\Programs\\cursor\\resources\\app\\bin"
+        - "C:\\Users\\ZhaiYuanji\\AppData\\Local\\PowerToys\\DSCModules\\"
+        - "D:\\software\\Microsoft VS Code\\bin"
+        - "D:\\software\\nvm"
+        - "C:\\nvm4w\\nodejs"
+        - "c:\\Users\\ZhaiYuanji\\.vscode\\extensions\\openai.chatgpt-26.602.30954-win32-x64\\bin\\windows-x86_64"
+  -
+    kind: "message-v1"
+    backtrace:
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCompilerId.cmake:17 (message)"
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCompilerId.cmake:64 (__determine_compiler_id_test)"
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCCompiler.cmake:122 (CMAKE_DETERMINE_COMPILER_ID)"
+      - "CMakeLists.txt:24 (project)"
+    message: |
+      Compiling the C compiler identification source file "CMakeCCompilerId.c" failed.
+      Compiler: C:/msys64/mingw64/bin/gcc.exe 
+      Build flags: 
+      Id flags: -c 
+      
+      The output was:
+      1
+      
+      
+  -
+    kind: "find-v1"
+    backtrace:
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCompilerId.cmake:468 (find_file)"
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCompilerId.cmake:506 (CMAKE_DETERMINE_COMPILER_ID_WRITE)"
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCompilerId.cmake:8 (CMAKE_DETERMINE_COMPILER_ID_BUILD)"
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCompilerId.cmake:64 (__determine_compiler_id_test)"
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCCompiler.cmake:122 (CMAKE_DETERMINE_COMPILER_ID)"
+      - "CMakeLists.txt:24 (project)"
+    mode: "file"
+    variable: "src_in"
+    description: "Path to a file."
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: true
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "CMakeCCompilerId.c.in"
+    candidate_directories:
+      - "C:/msys64/mingw64/share/cmake/Modules/"
+    found: "C:/msys64/mingw64/share/cmake/Modules/CMakeCCompilerId.c.in"
+    search_context:
+      ENV{PATH}:
+        - "C:\\Users\\ZhaiYuanji\\.codex\\tmp\\arg0\\codex-arg0aQURBj"
+        - "C:\\WINDOWS\\system32"
+        - "C:\\WINDOWS"
+        - "C:\\WINDOWS\\System32\\Wbem"
+        - "C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\"
+        - "C:\\WINDOWS\\System32\\OpenSSH\\"
+        - "C:\\Program Files\\Microsoft SQL Server\\170\\Tools\\Binn\\"
+        - "C:\\Program Files\\Microsoft SQL Server\\Client SDK\\ODBC\\170\\Tools\\Binn\\"
+        - "C:\\Program Files\\dotnet\\"
+        - "C:\\Program Files\\Git\\cmd"
+        - "D:\\software\\nvm"
+        - "C:\\nvm4w\\nodejs"
+        - "C:\\Users\\ZhaiYuanji\\AppData\\Local\\codegraph\\current\\bin"
+        - "C:\\Users\\ZhaiYuanji\\AppData\\Local\\Microsoft\\WindowsApps"
+        - "C:\\Users\\ZhaiYuanji\\.dotnet\\tools"
+        - "C:\\Users\\ZhaiYuanji\\AppData\\Local\\Programs\\cursor\\resources\\app\\bin"
+        - "C:\\Users\\ZhaiYuanji\\AppData\\Local\\PowerToys\\DSCModules\\"
+        - "D:\\software\\Microsoft VS Code\\bin"
+        - "D:\\software\\nvm"
+        - "C:\\nvm4w\\nodejs"
+        - "c:\\Users\\ZhaiYuanji\\.vscode\\extensions\\openai.chatgpt-26.602.30954-win32-x64\\bin\\windows-x86_64"
+  -
+    kind: "message-v1"
+    backtrace:
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCompilerId.cmake:17 (message)"
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCompilerId.cmake:64 (__determine_compiler_id_test)"
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCCompiler.cmake:122 (CMAKE_DETERMINE_COMPILER_ID)"
+      - "CMakeLists.txt:24 (project)"
+    message: |
+      Compiling the C compiler identification source file "CMakeCCompilerId.c" failed.
+      Compiler: C:/msys64/mingw64/bin/gcc.exe 
+      Build flags: 
+      Id flags: -Aa 
+      
+      The output was:
+      1
+      
+      
+  -
+    kind: "find-v1"
+    backtrace:
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCompilerId.cmake:468 (find_file)"
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCompilerId.cmake:506 (CMAKE_DETERMINE_COMPILER_ID_WRITE)"
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCompilerId.cmake:8 (CMAKE_DETERMINE_COMPILER_ID_BUILD)"
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCompilerId.cmake:64 (__determine_compiler_id_test)"
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCCompiler.cmake:122 (CMAKE_DETERMINE_COMPILER_ID)"
+      - "CMakeLists.txt:24 (project)"
+    mode: "file"
+    variable: "src_in"
+    description: "Path to a file."
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: true
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "CMakeCCompilerId.c.in"
+    candidate_directories:
+      - "C:/msys64/mingw64/share/cmake/Modules/"
+    found: "C:/msys64/mingw64/share/cmake/Modules/CMakeCCompilerId.c.in"
+    search_context:
+      ENV{PATH}:
+        - "C:\\Users\\ZhaiYuanji\\.codex\\tmp\\arg0\\codex-arg0aQURBj"
+        - "C:\\WINDOWS\\system32"
+        - "C:\\WINDOWS"
+        - "C:\\WINDOWS\\System32\\Wbem"
+        - "C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\"
+        - "C:\\WINDOWS\\System32\\OpenSSH\\"
+        - "C:\\Program Files\\Microsoft SQL Server\\170\\Tools\\Binn\\"
+        - "C:\\Program Files\\Microsoft SQL Server\\Client SDK\\ODBC\\170\\Tools\\Binn\\"
+        - "C:\\Program Files\\dotnet\\"
+        - "C:\\Program Files\\Git\\cmd"
+        - "D:\\software\\nvm"
+        - "C:\\nvm4w\\nodejs"
+        - "C:\\Users\\ZhaiYuanji\\AppData\\Local\\codegraph\\current\\bin"
+        - "C:\\Users\\ZhaiYuanji\\AppData\\Local\\Microsoft\\WindowsApps"
+        - "C:\\Users\\ZhaiYuanji\\.dotnet\\tools"
+        - "C:\\Users\\ZhaiYuanji\\AppData\\Local\\Programs\\cursor\\resources\\app\\bin"
+        - "C:\\Users\\ZhaiYuanji\\AppData\\Local\\PowerToys\\DSCModules\\"
+        - "D:\\software\\Microsoft VS Code\\bin"
+        - "D:\\software\\nvm"
+        - "C:\\nvm4w\\nodejs"
+        - "c:\\Users\\ZhaiYuanji\\.vscode\\extensions\\openai.chatgpt-26.602.30954-win32-x64\\bin\\windows-x86_64"
+  -
+    kind: "message-v1"
+    backtrace:
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCompilerId.cmake:17 (message)"
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCompilerId.cmake:64 (__determine_compiler_id_test)"
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCCompiler.cmake:122 (CMAKE_DETERMINE_COMPILER_ID)"
+      - "CMakeLists.txt:24 (project)"
+    message: |
+      Compiling the C compiler identification source file "CMakeCCompilerId.c" failed.
+      Compiler: C:/msys64/mingw64/bin/gcc.exe 
+      Build flags: 
+      Id flags: -D__CLASSIC_C__ 
+      
+      The output was:
+      1
+      
+      
+  -
+    kind: "find-v1"
+    backtrace:
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCompilerId.cmake:468 (find_file)"
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCompilerId.cmake:506 (CMAKE_DETERMINE_COMPILER_ID_WRITE)"
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCompilerId.cmake:8 (CMAKE_DETERMINE_COMPILER_ID_BUILD)"
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCompilerId.cmake:64 (__determine_compiler_id_test)"
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCCompiler.cmake:122 (CMAKE_DETERMINE_COMPILER_ID)"
+      - "CMakeLists.txt:24 (project)"
+    mode: "file"
+    variable: "src_in"
+    description: "Path to a file."
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: true
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "CMakeCCompilerId.c.in"
+    candidate_directories:
+      - "C:/msys64/mingw64/share/cmake/Modules/"
+    found: "C:/msys64/mingw64/share/cmake/Modules/CMakeCCompilerId.c.in"
+    search_context:
+      ENV{PATH}:
+        - "C:\\Users\\ZhaiYuanji\\.codex\\tmp\\arg0\\codex-arg0aQURBj"
+        - "C:\\WINDOWS\\system32"
+        - "C:\\WINDOWS"
+        - "C:\\WINDOWS\\System32\\Wbem"
+        - "C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\"
+        - "C:\\WINDOWS\\System32\\OpenSSH\\"
+        - "C:\\Program Files\\Microsoft SQL Server\\170\\Tools\\Binn\\"
+        - "C:\\Program Files\\Microsoft SQL Server\\Client SDK\\ODBC\\170\\Tools\\Binn\\"
+        - "C:\\Program Files\\dotnet\\"
+        - "C:\\Program Files\\Git\\cmd"
+        - "D:\\software\\nvm"
+        - "C:\\nvm4w\\nodejs"
+        - "C:\\Users\\ZhaiYuanji\\AppData\\Local\\codegraph\\current\\bin"
+        - "C:\\Users\\ZhaiYuanji\\AppData\\Local\\Microsoft\\WindowsApps"
+        - "C:\\Users\\ZhaiYuanji\\.dotnet\\tools"
+        - "C:\\Users\\ZhaiYuanji\\AppData\\Local\\Programs\\cursor\\resources\\app\\bin"
+        - "C:\\Users\\ZhaiYuanji\\AppData\\Local\\PowerToys\\DSCModules\\"
+        - "D:\\software\\Microsoft VS Code\\bin"
+        - "D:\\software\\nvm"
+        - "C:\\nvm4w\\nodejs"
+        - "c:\\Users\\ZhaiYuanji\\.vscode\\extensions\\openai.chatgpt-26.602.30954-win32-x64\\bin\\windows-x86_64"
+  -
+    kind: "message-v1"
+    backtrace:
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCompilerId.cmake:17 (message)"
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCompilerId.cmake:64 (__determine_compiler_id_test)"
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCCompiler.cmake:122 (CMAKE_DETERMINE_COMPILER_ID)"
+      - "CMakeLists.txt:24 (project)"
+    message: |
+      Compiling the C compiler identification source file "CMakeCCompilerId.c" failed.
+      Compiler: C:/msys64/mingw64/bin/gcc.exe 
+      Build flags: 
+      Id flags: --target=arm-arm-none-eabi;-mcpu=cortex-m3 
+      
+      The output was:
+      1
+      gcc.exe: warning: '-mcpu=' is deprecated; use '-mtune=' or '-march=' instead
+      gcc.exe: error: unrecognized command-line option '--target=arm-arm-none-eabi'
+      
+      
+  -
+    kind: "find-v1"
+    backtrace:
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCompilerId.cmake:468 (find_file)"
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCompilerId.cmake:506 (CMAKE_DETERMINE_COMPILER_ID_WRITE)"
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCompilerId.cmake:8 (CMAKE_DETERMINE_COMPILER_ID_BUILD)"
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCompilerId.cmake:64 (__determine_compiler_id_test)"
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCCompiler.cmake:122 (CMAKE_DETERMINE_COMPILER_ID)"
+      - "CMakeLists.txt:24 (project)"
+    mode: "file"
+    variable: "src_in"
+    description: "Path to a file."
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: true
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "CMakeCCompilerId.c.in"
+    candidate_directories:
+      - "C:/msys64/mingw64/share/cmake/Modules/"
+    found: "C:/msys64/mingw64/share/cmake/Modules/CMakeCCompilerId.c.in"
+    search_context:
+      ENV{PATH}:
+        - "C:\\Users\\ZhaiYuanji\\.codex\\tmp\\arg0\\codex-arg0aQURBj"
+        - "C:\\WINDOWS\\system32"
+        - "C:\\WINDOWS"
+        - "C:\\WINDOWS\\System32\\Wbem"
+        - "C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\"
+        - "C:\\WINDOWS\\System32\\OpenSSH\\"
+        - "C:\\Program Files\\Microsoft SQL Server\\170\\Tools\\Binn\\"
+        - "C:\\Program Files\\Microsoft SQL Server\\Client SDK\\ODBC\\170\\Tools\\Binn\\"
+        - "C:\\Program Files\\dotnet\\"
+        - "C:\\Program Files\\Git\\cmd"
+        - "D:\\software\\nvm"
+        - "C:\\nvm4w\\nodejs"
+        - "C:\\Users\\ZhaiYuanji\\AppData\\Local\\codegraph\\current\\bin"
+        - "C:\\Users\\ZhaiYuanji\\AppData\\Local\\Microsoft\\WindowsApps"
+        - "C:\\Users\\ZhaiYuanji\\.dotnet\\tools"
+        - "C:\\Users\\ZhaiYuanji\\AppData\\Local\\Programs\\cursor\\resources\\app\\bin"
+        - "C:\\Users\\ZhaiYuanji\\AppData\\Local\\PowerToys\\DSCModules\\"
+        - "D:\\software\\Microsoft VS Code\\bin"
+        - "D:\\software\\nvm"
+        - "C:\\nvm4w\\nodejs"
+        - "c:\\Users\\ZhaiYuanji\\.vscode\\extensions\\openai.chatgpt-26.602.30954-win32-x64\\bin\\windows-x86_64"
+  -
+    kind: "message-v1"
+    backtrace:
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCompilerId.cmake:17 (message)"
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCompilerId.cmake:64 (__determine_compiler_id_test)"
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCCompiler.cmake:122 (CMAKE_DETERMINE_COMPILER_ID)"
+      - "CMakeLists.txt:24 (project)"
+    message: |
+      Compiling the C compiler identification source file "CMakeCCompilerId.c" failed.
+      Compiler: C:/msys64/mingw64/bin/gcc.exe 
+      Build flags: 
+      Id flags: -c;-I__does_not_exist__ 
+      
+      The output was:
+      1
+      
+      
+  -
+    kind: "message-v1"
+    backtrace:
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCompilerId.cmake:1309 (message)"
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCompilerId.cmake:86 (CMAKE_DETERMINE_COMPILER_ID_VENDOR)"
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCCompiler.cmake:122 (CMAKE_DETERMINE_COMPILER_ID)"
+      - "CMakeLists.txt:24 (project)"
+    message: |
+      Checking whether the C compiler is IAR using "" did not match "IAR .+ Compiler":
+      gcc.exe: fatal error: no input files
+      compilation terminated.
+  -
+    kind: "message-v1"
+    backtrace:
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCompilerId.cmake:1309 (message)"
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCompilerId.cmake:86 (CMAKE_DETERMINE_COMPILER_ID_VENDOR)"
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCCompiler.cmake:122 (CMAKE_DETERMINE_COMPILER_ID)"
+      - "CMakeLists.txt:24 (project)"
+    message: |
+      Checking whether the C compiler is IAR using "" did not match "IAR .+ Compiler":
+      gcc.exe: fatal error: no input files
+      compilation terminated.
+  -
+    kind: "find-v1"
+    backtrace:
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeFindBinUtils.cmake:243 (find_program)"
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCCompiler.cmake:200 (include)"
+      - "CMakeLists.txt:24 (project)"
+    mode: "program"
+    variable: "CMAKE_AR"
+    description: "Path to a program."
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: false
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: false
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "ar"
+    candidate_directories:
+      - "C:/msys64/mingw64/bin/"
+      - "C:/Users/ZhaiYuanji/.codex/tmp/arg0/codex-arg0aQURBj/"
+      - "C:/Windows/System32/"
+      - "C:/Windows/"
+      - "C:/Windows/System32/wbem/"
+      - "C:/Windows/System32/WindowsPowerShell/v1.0/"
+      - "C:/Windows/System32/OpenSSH/"
+      - "C:/Program Files/Microsoft SQL Server/170/Tools/Binn/"
+      - "C:/Program Files/Microsoft SQL Server/Client SDK/ODBC/170/Tools/Binn/"
+      - "C:/Program Files/dotnet/"
+      - "C:/Program Files/Git/cmd/"
+      - "D:/software/nvm/"
+      - "C:/nvm4w/nodejs/"
+      - "C:/Users/ZhaiYuanji/AppData/Local/codegraph/current/bin/"
+      - "C:/Users/ZhaiYuanji/AppData/Local/Microsoft/WindowsApps/"
+      - "C:/Users/ZhaiYuanji/.dotnet/tools/"
+      - "C:/Users/ZhaiYuanji/AppData/Local/Programs/cursor/resources/app/bin/"
+      - "C:/Users/ZhaiYuanji/AppData/Local/PowerToys/DSCModules/"
+      - "D:/software/Microsoft VS Code/bin/"
+      - "C:/Users/ZhaiYuanji/.vscode/extensions/openai.chatgpt-26.602.30954-win32-x64/bin/windows-x86_64/"
+    searched_directories:
+      - "C:/msys64/mingw64/bin/ar.com"
+    found: "C:/msys64/mingw64/bin/ar.exe"
+    search_context:
+      ENV{PATH}:
+        - "C:\\Users\\ZhaiYuanji\\.codex\\tmp\\arg0\\codex-arg0aQURBj"
+        - "C:\\WINDOWS\\system32"
+        - "C:\\WINDOWS"
+        - "C:\\WINDOWS\\System32\\Wbem"
+        - "C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\"
+        - "C:\\WINDOWS\\System32\\OpenSSH\\"
+        - "C:\\Program Files\\Microsoft SQL Server\\170\\Tools\\Binn\\"
+        - "C:\\Program Files\\Microsoft SQL Server\\Client SDK\\ODBC\\170\\Tools\\Binn\\"
+        - "C:\\Program Files\\dotnet\\"
+        - "C:\\Program Files\\Git\\cmd"
+        - "D:\\software\\nvm"
+        - "C:\\nvm4w\\nodejs"
+        - "C:\\Users\\ZhaiYuanji\\AppData\\Local\\codegraph\\current\\bin"
+        - "C:\\Users\\ZhaiYuanji\\AppData\\Local\\Microsoft\\WindowsApps"
+        - "C:\\Users\\ZhaiYuanji\\.dotnet\\tools"
+        - "C:\\Users\\ZhaiYuanji\\AppData\\Local\\Programs\\cursor\\resources\\app\\bin"
+        - "C:\\Users\\ZhaiYuanji\\AppData\\Local\\PowerToys\\DSCModules\\"
+        - "D:\\software\\Microsoft VS Code\\bin"
+        - "D:\\software\\nvm"
+        - "C:\\nvm4w\\nodejs"
+        - "c:\\Users\\ZhaiYuanji\\.vscode\\extensions\\openai.chatgpt-26.602.30954-win32-x64\\bin\\windows-x86_64"
+  -
+    kind: "find-v1"
+    backtrace:
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeFindBinUtils.cmake:243 (find_program)"
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCCompiler.cmake:200 (include)"
+      - "CMakeLists.txt:24 (project)"
+    mode: "program"
+    variable: "CMAKE_RANLIB"
+    description: "Path to a program."
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: false
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: false
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "ranlib"
+    candidate_directories:
+      - "C:/msys64/mingw64/bin/"
+      - "C:/Users/ZhaiYuanji/.codex/tmp/arg0/codex-arg0aQURBj/"
+      - "C:/Windows/System32/"
+      - "C:/Windows/"
+      - "C:/Windows/System32/wbem/"
+      - "C:/Windows/System32/WindowsPowerShell/v1.0/"
+      - "C:/Windows/System32/OpenSSH/"
+      - "C:/Program Files/Microsoft SQL Server/170/Tools/Binn/"
+      - "C:/Program Files/Microsoft SQL Server/Client SDK/ODBC/170/Tools/Binn/"
+      - "C:/Program Files/dotnet/"
+      - "C:/Program Files/Git/cmd/"
+      - "D:/software/nvm/"
+      - "C:/nvm4w/nodejs/"
+      - "C:/Users/ZhaiYuanji/AppData/Local/codegraph/current/bin/"
+      - "C:/Users/ZhaiYuanji/AppData/Local/Microsoft/WindowsApps/"
+      - "C:/Users/ZhaiYuanji/.dotnet/tools/"
+      - "C:/Users/ZhaiYuanji/AppData/Local/Programs/cursor/resources/app/bin/"
+      - "C:/Users/ZhaiYuanji/AppData/Local/PowerToys/DSCModules/"
+      - "D:/software/Microsoft VS Code/bin/"
+      - "C:/Users/ZhaiYuanji/.vscode/extensions/openai.chatgpt-26.602.30954-win32-x64/bin/windows-x86_64/"
+    searched_directories:
+      - "C:/msys64/mingw64/bin/ranlib.com"
+    found: "C:/msys64/mingw64/bin/ranlib.exe"
+    search_context:
+      ENV{PATH}:
+        - "C:\\Users\\ZhaiYuanji\\.codex\\tmp\\arg0\\codex-arg0aQURBj"
+        - "C:\\WINDOWS\\system32"
+        - "C:\\WINDOWS"
+        - "C:\\WINDOWS\\System32\\Wbem"
+        - "C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\"
+        - "C:\\WINDOWS\\System32\\OpenSSH\\"
+        - "C:\\Program Files\\Microsoft SQL Server\\170\\Tools\\Binn\\"
+        - "C:\\Program Files\\Microsoft SQL Server\\Client SDK\\ODBC\\170\\Tools\\Binn\\"
+        - "C:\\Program Files\\dotnet\\"
+        - "C:\\Program Files\\Git\\cmd"
+        - "D:\\software\\nvm"
+        - "C:\\nvm4w\\nodejs"
+        - "C:\\Users\\ZhaiYuanji\\AppData\\Local\\codegraph\\current\\bin"
+        - "C:\\Users\\ZhaiYuanji\\AppData\\Local\\Microsoft\\WindowsApps"
+        - "C:\\Users\\ZhaiYuanji\\.dotnet\\tools"
+        - "C:\\Users\\ZhaiYuanji\\AppData\\Local\\Programs\\cursor\\resources\\app\\bin"
+        - "C:\\Users\\ZhaiYuanji\\AppData\\Local\\PowerToys\\DSCModules\\"
+        - "D:\\software\\Microsoft VS Code\\bin"
+        - "D:\\software\\nvm"
+        - "C:\\nvm4w\\nodejs"
+        - "c:\\Users\\ZhaiYuanji\\.vscode\\extensions\\openai.chatgpt-26.602.30954-win32-x64\\bin\\windows-x86_64"
+  -
+    kind: "find-v1"
+    backtrace:
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeFindBinUtils.cmake:243 (find_program)"
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCCompiler.cmake:200 (include)"
+      - "CMakeLists.txt:24 (project)"
+    mode: "program"
+    variable: "CMAKE_STRIP"
+    description: "Path to a program."
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: false
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: false
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "strip"
+    candidate_directories:
+      - "C:/msys64/mingw64/bin/"
+      - "C:/Users/ZhaiYuanji/.codex/tmp/arg0/codex-arg0aQURBj/"
+      - "C:/Windows/System32/"
+      - "C:/Windows/"
+      - "C:/Windows/System32/wbem/"
+      - "C:/Windows/System32/WindowsPowerShell/v1.0/"
+      - "C:/Windows/System32/OpenSSH/"
+      - "C:/Program Files/Microsoft SQL Server/170/Tools/Binn/"
+      - "C:/Program Files/Microsoft SQL Server/Client SDK/ODBC/170/Tools/Binn/"
+      - "C:/Program Files/dotnet/"
+      - "C:/Program Files/Git/cmd/"
+      - "D:/software/nvm/"
+      - "C:/nvm4w/nodejs/"
+      - "C:/Users/ZhaiYuanji/AppData/Local/codegraph/current/bin/"
+      - "C:/Users/ZhaiYuanji/AppData/Local/Microsoft/WindowsApps/"
+      - "C:/Users/ZhaiYuanji/.dotnet/tools/"
+      - "C:/Users/ZhaiYuanji/AppData/Local/Programs/cursor/resources/app/bin/"
+      - "C:/Users/ZhaiYuanji/AppData/Local/PowerToys/DSCModules/"
+      - "D:/software/Microsoft VS Code/bin/"
+      - "C:/Users/ZhaiYuanji/.vscode/extensions/openai.chatgpt-26.602.30954-win32-x64/bin/windows-x86_64/"
+    searched_directories:
+      - "C:/msys64/mingw64/bin/strip.com"
+    found: "C:/msys64/mingw64/bin/strip.exe"
+    search_context:
+      ENV{PATH}:
+        - "C:\\Users\\ZhaiYuanji\\.codex\\tmp\\arg0\\codex-arg0aQURBj"
+        - "C:\\WINDOWS\\system32"
+        - "C:\\WINDOWS"
+        - "C:\\WINDOWS\\System32\\Wbem"
+        - "C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\"
+        - "C:\\WINDOWS\\System32\\OpenSSH\\"
+        - "C:\\Program Files\\Microsoft SQL Server\\170\\Tools\\Binn\\"
+        - "C:\\Program Files\\Microsoft SQL Server\\Client SDK\\ODBC\\170\\Tools\\Binn\\"
+        - "C:\\Program Files\\dotnet\\"
+        - "C:\\Program Files\\Git\\cmd"
+        - "D:\\software\\nvm"
+        - "C:\\nvm4w\\nodejs"
+        - "C:\\Users\\ZhaiYuanji\\AppData\\Local\\codegraph\\current\\bin"
+        - "C:\\Users\\ZhaiYuanji\\AppData\\Local\\Microsoft\\WindowsApps"
+        - "C:\\Users\\ZhaiYuanji\\.dotnet\\tools"
+        - "C:\\Users\\ZhaiYuanji\\AppData\\Local\\Programs\\cursor\\resources\\app\\bin"
+        - "C:\\Users\\ZhaiYuanji\\AppData\\Local\\PowerToys\\DSCModules\\"
+        - "D:\\software\\Microsoft VS Code\\bin"
+        - "D:\\software\\nvm"
+        - "C:\\nvm4w\\nodejs"
+        - "c:\\Users\\ZhaiYuanji\\.vscode\\extensions\\openai.chatgpt-26.602.30954-win32-x64\\bin\\windows-x86_64"
+  -
+    kind: "find-v1"
+    backtrace:
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeFindBinUtils.cmake:243 (find_program)"
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCCompiler.cmake:200 (include)"
+      - "CMakeLists.txt:24 (project)"
+    mode: "program"
+    variable: "CMAKE_LINKER"
+    description: "Path to a program."
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: false
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: false
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "ld"
+    candidate_directories:
+      - "C:/msys64/mingw64/bin/"
+      - "C:/Users/ZhaiYuanji/.codex/tmp/arg0/codex-arg0aQURBj/"
+      - "C:/Windows/System32/"
+      - "C:/Windows/"
+      - "C:/Windows/System32/wbem/"
+      - "C:/Windows/System32/WindowsPowerShell/v1.0/"
+      - "C:/Windows/System32/OpenSSH/"
+      - "C:/Program Files/Microsoft SQL Server/170/Tools/Binn/"
+      - "C:/Program Files/Microsoft SQL Server/Client SDK/ODBC/170/Tools/Binn/"
+      - "C:/Program Files/dotnet/"
+      - "C:/Program Files/Git/cmd/"
+      - "D:/software/nvm/"
+      - "C:/nvm4w/nodejs/"
+      - "C:/Users/ZhaiYuanji/AppData/Local/codegraph/current/bin/"
+      - "C:/Users/ZhaiYuanji/AppData/Local/Microsoft/WindowsApps/"
+      - "C:/Users/ZhaiYuanji/.dotnet/tools/"
+      - "C:/Users/ZhaiYuanji/AppData/Local/Programs/cursor/resources/app/bin/"
+      - "C:/Users/ZhaiYuanji/AppData/Local/PowerToys/DSCModules/"
+      - "D:/software/Microsoft VS Code/bin/"
+      - "C:/Users/ZhaiYuanji/.vscode/extensions/openai.chatgpt-26.602.30954-win32-x64/bin/windows-x86_64/"
+    searched_directories:
+      - "C:/msys64/mingw64/bin/ld.com"
+    found: "C:/msys64/mingw64/bin/ld.exe"
+    search_context:
+      ENV{PATH}:
+        - "C:\\Users\\ZhaiYuanji\\.codex\\tmp\\arg0\\codex-arg0aQURBj"
+        - "C:\\WINDOWS\\system32"
+        - "C:\\WINDOWS"
+        - "C:\\WINDOWS\\System32\\Wbem"
+        - "C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\"
+        - "C:\\WINDOWS\\System32\\OpenSSH\\"
+        - "C:\\Program Files\\Microsoft SQL Server\\170\\Tools\\Binn\\"
+        - "C:\\Program Files\\Microsoft SQL Server\\Client SDK\\ODBC\\170\\Tools\\Binn\\"
+        - "C:\\Program Files\\dotnet\\"
+        - "C:\\Program Files\\Git\\cmd"
+        - "D:\\software\\nvm"
+        - "C:\\nvm4w\\nodejs"
+        - "C:\\Users\\ZhaiYuanji\\AppData\\Local\\codegraph\\current\\bin"
+        - "C:\\Users\\ZhaiYuanji\\AppData\\Local\\Microsoft\\WindowsApps"
+        - "C:\\Users\\ZhaiYuanji\\.dotnet\\tools"
+        - "C:\\Users\\ZhaiYuanji\\AppData\\Local\\Programs\\cursor\\resources\\app\\bin"
+        - "C:\\Users\\ZhaiYuanji\\AppData\\Local\\PowerToys\\DSCModules\\"
+        - "D:\\software\\Microsoft VS Code\\bin"
+        - "D:\\software\\nvm"
+        - "C:\\nvm4w\\nodejs"
+        - "c:\\Users\\ZhaiYuanji\\.vscode\\extensions\\openai.chatgpt-26.602.30954-win32-x64\\bin\\windows-x86_64"
+  -
+    kind: "find-v1"
+    backtrace:
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeFindBinUtils.cmake:243 (find_program)"
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCCompiler.cmake:200 (include)"
+      - "CMakeLists.txt:24 (project)"
+    mode: "program"
+    variable: "CMAKE_NM"
+    description: "Path to a program."
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: false
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: false
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "nm"
+    candidate_directories:
+      - "C:/msys64/mingw64/bin/"
+      - "C:/Users/ZhaiYuanji/.codex/tmp/arg0/codex-arg0aQURBj/"
+      - "C:/Windows/System32/"
+      - "C:/Windows/"
+      - "C:/Windows/System32/wbem/"
+      - "C:/Windows/System32/WindowsPowerShell/v1.0/"
+      - "C:/Windows/System32/OpenSSH/"
+      - "C:/Program Files/Microsoft SQL Server/170/Tools/Binn/"
+      - "C:/Program Files/Microsoft SQL Server/Client SDK/ODBC/170/Tools/Binn/"
+      - "C:/Program Files/dotnet/"
+      - "C:/Program Files/Git/cmd/"
+      - "D:/software/nvm/"
+      - "C:/nvm4w/nodejs/"
+      - "C:/Users/ZhaiYuanji/AppData/Local/codegraph/current/bin/"
+      - "C:/Users/ZhaiYuanji/AppData/Local/Microsoft/WindowsApps/"
+      - "C:/Users/ZhaiYuanji/.dotnet/tools/"
+      - "C:/Users/ZhaiYuanji/AppData/Local/Programs/cursor/resources/app/bin/"
+      - "C:/Users/ZhaiYuanji/AppData/Local/PowerToys/DSCModules/"
+      - "D:/software/Microsoft VS Code/bin/"
+      - "C:/Users/ZhaiYuanji/.vscode/extensions/openai.chatgpt-26.602.30954-win32-x64/bin/windows-x86_64/"
+    searched_directories:
+      - "C:/msys64/mingw64/bin/nm.com"
+    found: "C:/msys64/mingw64/bin/nm.exe"
+    search_context:
+      ENV{PATH}:
+        - "C:\\Users\\ZhaiYuanji\\.codex\\tmp\\arg0\\codex-arg0aQURBj"
+        - "C:\\WINDOWS\\system32"
+        - "C:\\WINDOWS"
+        - "C:\\WINDOWS\\System32\\Wbem"
+        - "C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\"
+        - "C:\\WINDOWS\\System32\\OpenSSH\\"
+        - "C:\\Program Files\\Microsoft SQL Server\\170\\Tools\\Binn\\"
+        - "C:\\Program Files\\Microsoft SQL Server\\Client SDK\\ODBC\\170\\Tools\\Binn\\"
+        - "C:\\Program Files\\dotnet\\"
+        - "C:\\Program Files\\Git\\cmd"
+        - "D:\\software\\nvm"
+        - "C:\\nvm4w\\nodejs"
+        - "C:\\Users\\ZhaiYuanji\\AppData\\Local\\codegraph\\current\\bin"
+        - "C:\\Users\\ZhaiYuanji\\AppData\\Local\\Microsoft\\WindowsApps"
+        - "C:\\Users\\ZhaiYuanji\\.dotnet\\tools"
+        - "C:\\Users\\ZhaiYuanji\\AppData\\Local\\Programs\\cursor\\resources\\app\\bin"
+        - "C:\\Users\\ZhaiYuanji\\AppData\\Local\\PowerToys\\DSCModules\\"
+        - "D:\\software\\Microsoft VS Code\\bin"
+        - "D:\\software\\nvm"
+        - "C:\\nvm4w\\nodejs"
+        - "c:\\Users\\ZhaiYuanji\\.vscode\\extensions\\openai.chatgpt-26.602.30954-win32-x64\\bin\\windows-x86_64"
+  -
+    kind: "find-v1"
+    backtrace:
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeFindBinUtils.cmake:243 (find_program)"
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCCompiler.cmake:200 (include)"
+      - "CMakeLists.txt:24 (project)"
+    mode: "program"
+    variable: "CMAKE_OBJDUMP"
+    description: "Path to a program."
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: false
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: false
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "objdump"
+    candidate_directories:
+      - "C:/msys64/mingw64/bin/"
+      - "C:/Users/ZhaiYuanji/.codex/tmp/arg0/codex-arg0aQURBj/"
+      - "C:/Windows/System32/"
+      - "C:/Windows/"
+      - "C:/Windows/System32/wbem/"
+      - "C:/Windows/System32/WindowsPowerShell/v1.0/"
+      - "C:/Windows/System32/OpenSSH/"
+      - "C:/Program Files/Microsoft SQL Server/170/Tools/Binn/"
+      - "C:/Program Files/Microsoft SQL Server/Client SDK/ODBC/170/Tools/Binn/"
+      - "C:/Program Files/dotnet/"
+      - "C:/Program Files/Git/cmd/"
+      - "D:/software/nvm/"
+      - "C:/nvm4w/nodejs/"
+      - "C:/Users/ZhaiYuanji/AppData/Local/codegraph/current/bin/"
+      - "C:/Users/ZhaiYuanji/AppData/Local/Microsoft/WindowsApps/"
+      - "C:/Users/ZhaiYuanji/.dotnet/tools/"
+      - "C:/Users/ZhaiYuanji/AppData/Local/Programs/cursor/resources/app/bin/"
+      - "C:/Users/ZhaiYuanji/AppData/Local/PowerToys/DSCModules/"
+      - "D:/software/Microsoft VS Code/bin/"
+      - "C:/Users/ZhaiYuanji/.vscode/extensions/openai.chatgpt-26.602.30954-win32-x64/bin/windows-x86_64/"
+    searched_directories:
+      - "C:/msys64/mingw64/bin/objdump.com"
+    found: "C:/msys64/mingw64/bin/objdump.exe"
+    search_context:
+      ENV{PATH}:
+        - "C:\\Users\\ZhaiYuanji\\.codex\\tmp\\arg0\\codex-arg0aQURBj"
+        - "C:\\WINDOWS\\system32"
+        - "C:\\WINDOWS"
+        - "C:\\WINDOWS\\System32\\Wbem"
+        - "C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\"
+        - "C:\\WINDOWS\\System32\\OpenSSH\\"
+        - "C:\\Program Files\\Microsoft SQL Server\\170\\Tools\\Binn\\"
+        - "C:\\Program Files\\Microsoft SQL Server\\Client SDK\\ODBC\\170\\Tools\\Binn\\"
+        - "C:\\Program Files\\dotnet\\"
+        - "C:\\Program Files\\Git\\cmd"
+        - "D:\\software\\nvm"
+        - "C:\\nvm4w\\nodejs"
+        - "C:\\Users\\ZhaiYuanji\\AppData\\Local\\codegraph\\current\\bin"
+        - "C:\\Users\\ZhaiYuanji\\AppData\\Local\\Microsoft\\WindowsApps"
+        - "C:\\Users\\ZhaiYuanji\\.dotnet\\tools"
+        - "C:\\Users\\ZhaiYuanji\\AppData\\Local\\Programs\\cursor\\resources\\app\\bin"
+        - "C:\\Users\\ZhaiYuanji\\AppData\\Local\\PowerToys\\DSCModules\\"
+        - "D:\\software\\Microsoft VS Code\\bin"
+        - "D:\\software\\nvm"
+        - "C:\\nvm4w\\nodejs"
+        - "c:\\Users\\ZhaiYuanji\\.vscode\\extensions\\openai.chatgpt-26.602.30954-win32-x64\\bin\\windows-x86_64"
+  -
+    kind: "find-v1"
+    backtrace:
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeFindBinUtils.cmake:243 (find_program)"
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCCompiler.cmake:200 (include)"
+      - "CMakeLists.txt:24 (project)"
+    mode: "program"
+    variable: "CMAKE_OBJCOPY"
+    description: "Path to a program."
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: false
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: false
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "objcopy"
+    candidate_directories:
+      - "C:/msys64/mingw64/bin/"
+      - "C:/Users/ZhaiYuanji/.codex/tmp/arg0/codex-arg0aQURBj/"
+      - "C:/Windows/System32/"
+      - "C:/Windows/"
+      - "C:/Windows/System32/wbem/"
+      - "C:/Windows/System32/WindowsPowerShell/v1.0/"
+      - "C:/Windows/System32/OpenSSH/"
+      - "C:/Program Files/Microsoft SQL Server/170/Tools/Binn/"
+      - "C:/Program Files/Microsoft SQL Server/Client SDK/ODBC/170/Tools/Binn/"
+      - "C:/Program Files/dotnet/"
+      - "C:/Program Files/Git/cmd/"
+      - "D:/software/nvm/"
+      - "C:/nvm4w/nodejs/"
+      - "C:/Users/ZhaiYuanji/AppData/Local/codegraph/current/bin/"
+      - "C:/Users/ZhaiYuanji/AppData/Local/Microsoft/WindowsApps/"
+      - "C:/Users/ZhaiYuanji/.dotnet/tools/"
+      - "C:/Users/ZhaiYuanji/AppData/Local/Programs/cursor/resources/app/bin/"
+      - "C:/Users/ZhaiYuanji/AppData/Local/PowerToys/DSCModules/"
+      - "D:/software/Microsoft VS Code/bin/"
+      - "C:/Users/ZhaiYuanji/.vscode/extensions/openai.chatgpt-26.602.30954-win32-x64/bin/windows-x86_64/"
+    searched_directories:
+      - "C:/msys64/mingw64/bin/objcopy.com"
+    found: "C:/msys64/mingw64/bin/objcopy.exe"
+    search_context:
+      ENV{PATH}:
+        - "C:\\Users\\ZhaiYuanji\\.codex\\tmp\\arg0\\codex-arg0aQURBj"
+        - "C:\\WINDOWS\\system32"
+        - "C:\\WINDOWS"
+        - "C:\\WINDOWS\\System32\\Wbem"
+        - "C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\"
+        - "C:\\WINDOWS\\System32\\OpenSSH\\"
+        - "C:\\Program Files\\Microsoft SQL Server\\170\\Tools\\Binn\\"
+        - "C:\\Program Files\\Microsoft SQL Server\\Client SDK\\ODBC\\170\\Tools\\Binn\\"
+        - "C:\\Program Files\\dotnet\\"
+        - "C:\\Program Files\\Git\\cmd"
+        - "D:\\software\\nvm"
+        - "C:\\nvm4w\\nodejs"
+        - "C:\\Users\\ZhaiYuanji\\AppData\\Local\\codegraph\\current\\bin"
+        - "C:\\Users\\ZhaiYuanji\\AppData\\Local\\Microsoft\\WindowsApps"
+        - "C:\\Users\\ZhaiYuanji\\.dotnet\\tools"
+        - "C:\\Users\\ZhaiYuanji\\AppData\\Local\\Programs\\cursor\\resources\\app\\bin"
+        - "C:\\Users\\ZhaiYuanji\\AppData\\Local\\PowerToys\\DSCModules\\"
+        - "D:\\software\\Microsoft VS Code\\bin"
+        - "D:\\software\\nvm"
+        - "C:\\nvm4w\\nodejs"
+        - "c:\\Users\\ZhaiYuanji\\.vscode\\extensions\\openai.chatgpt-26.602.30954-win32-x64\\bin\\windows-x86_64"
+  -
+    kind: "find-v1"
+    backtrace:
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeFindBinUtils.cmake:243 (find_program)"
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCCompiler.cmake:200 (include)"
+      - "CMakeLists.txt:24 (project)"
+    mode: "program"
+    variable: "CMAKE_READELF"
+    description: "Path to a program."
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: false
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: false
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "readelf"
+    candidate_directories:
+      - "C:/msys64/mingw64/bin/"
+      - "C:/Users/ZhaiYuanji/.codex/tmp/arg0/codex-arg0aQURBj/"
+      - "C:/Windows/System32/"
+      - "C:/Windows/"
+      - "C:/Windows/System32/wbem/"
+      - "C:/Windows/System32/WindowsPowerShell/v1.0/"
+      - "C:/Windows/System32/OpenSSH/"
+      - "C:/Program Files/Microsoft SQL Server/170/Tools/Binn/"
+      - "C:/Program Files/Microsoft SQL Server/Client SDK/ODBC/170/Tools/Binn/"
+      - "C:/Program Files/dotnet/"
+      - "C:/Program Files/Git/cmd/"
+      - "D:/software/nvm/"
+      - "C:/nvm4w/nodejs/"
+      - "C:/Users/ZhaiYuanji/AppData/Local/codegraph/current/bin/"
+      - "C:/Users/ZhaiYuanji/AppData/Local/Microsoft/WindowsApps/"
+      - "C:/Users/ZhaiYuanji/.dotnet/tools/"
+      - "C:/Users/ZhaiYuanji/AppData/Local/Programs/cursor/resources/app/bin/"
+      - "C:/Users/ZhaiYuanji/AppData/Local/PowerToys/DSCModules/"
+      - "D:/software/Microsoft VS Code/bin/"
+      - "C:/Users/ZhaiYuanji/.vscode/extensions/openai.chatgpt-26.602.30954-win32-x64/bin/windows-x86_64/"
+    searched_directories:
+      - "C:/msys64/mingw64/bin/readelf.com"
+    found: "C:/msys64/mingw64/bin/readelf.exe"
+    search_context:
+      ENV{PATH}:
+        - "C:\\Users\\ZhaiYuanji\\.codex\\tmp\\arg0\\codex-arg0aQURBj"
+        - "C:\\WINDOWS\\system32"
+        - "C:\\WINDOWS"
+        - "C:\\WINDOWS\\System32\\Wbem"
+        - "C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\"
+        - "C:\\WINDOWS\\System32\\OpenSSH\\"
+        - "C:\\Program Files\\Microsoft SQL Server\\170\\Tools\\Binn\\"
+        - "C:\\Program Files\\Microsoft SQL Server\\Client SDK\\ODBC\\170\\Tools\\Binn\\"
+        - "C:\\Program Files\\dotnet\\"
+        - "C:\\Program Files\\Git\\cmd"
+        - "D:\\software\\nvm"
+        - "C:\\nvm4w\\nodejs"
+        - "C:\\Users\\ZhaiYuanji\\AppData\\Local\\codegraph\\current\\bin"
+        - "C:\\Users\\ZhaiYuanji\\AppData\\Local\\Microsoft\\WindowsApps"
+        - "C:\\Users\\ZhaiYuanji\\.dotnet\\tools"
+        - "C:\\Users\\ZhaiYuanji\\AppData\\Local\\Programs\\cursor\\resources\\app\\bin"
+        - "C:\\Users\\ZhaiYuanji\\AppData\\Local\\PowerToys\\DSCModules\\"
+        - "D:\\software\\Microsoft VS Code\\bin"
+        - "D:\\software\\nvm"
+        - "C:\\nvm4w\\nodejs"
+        - "c:\\Users\\ZhaiYuanji\\.vscode\\extensions\\openai.chatgpt-26.602.30954-win32-x64\\bin\\windows-x86_64"
+  -
+    kind: "find-v1"
+    backtrace:
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeFindBinUtils.cmake:243 (find_program)"
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCCompiler.cmake:200 (include)"
+      - "CMakeLists.txt:24 (project)"
+    mode: "program"
+    variable: "CMAKE_DLLTOOL"
+    description: "Path to a program."
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: false
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: false
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "dlltool"
+    candidate_directories:
+      - "C:/msys64/mingw64/bin/"
+      - "C:/Users/ZhaiYuanji/.codex/tmp/arg0/codex-arg0aQURBj/"
+      - "C:/Windows/System32/"
+      - "C:/Windows/"
+      - "C:/Windows/System32/wbem/"
+      - "C:/Windows/System32/WindowsPowerShell/v1.0/"
+      - "C:/Windows/System32/OpenSSH/"
+      - "C:/Program Files/Microsoft SQL Server/170/Tools/Binn/"
+      - "C:/Program Files/Microsoft SQL Server/Client SDK/ODBC/170/Tools/Binn/"
+      - "C:/Program Files/dotnet/"
+      - "C:/Program Files/Git/cmd/"
+      - "D:/software/nvm/"
+      - "C:/nvm4w/nodejs/"
+      - "C:/Users/ZhaiYuanji/AppData/Local/codegraph/current/bin/"
+      - "C:/Users/ZhaiYuanji/AppData/Local/Microsoft/WindowsApps/"
+      - "C:/Users/ZhaiYuanji/.dotnet/tools/"
+      - "C:/Users/ZhaiYuanji/AppData/Local/Programs/cursor/resources/app/bin/"
+      - "C:/Users/ZhaiYuanji/AppData/Local/PowerToys/DSCModules/"
+      - "D:/software/Microsoft VS Code/bin/"
+      - "C:/Users/ZhaiYuanji/.vscode/extensions/openai.chatgpt-26.602.30954-win32-x64/bin/windows-x86_64/"
+    searched_directories:
+      - "C:/msys64/mingw64/bin/dlltool.com"
+    found: "C:/msys64/mingw64/bin/dlltool.exe"
+    search_context:
+      ENV{PATH}:
+        - "C:\\Users\\ZhaiYuanji\\.codex\\tmp\\arg0\\codex-arg0aQURBj"
+        - "C:\\WINDOWS\\system32"
+        - "C:\\WINDOWS"
+        - "C:\\WINDOWS\\System32\\Wbem"
+        - "C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\"
+        - "C:\\WINDOWS\\System32\\OpenSSH\\"
+        - "C:\\Program Files\\Microsoft SQL Server\\170\\Tools\\Binn\\"
+        - "C:\\Program Files\\Microsoft SQL Server\\Client SDK\\ODBC\\170\\Tools\\Binn\\"
+        - "C:\\Program Files\\dotnet\\"
+        - "C:\\Program Files\\Git\\cmd"
+        - "D:\\software\\nvm"
+        - "C:\\nvm4w\\nodejs"
+        - "C:\\Users\\ZhaiYuanji\\AppData\\Local\\codegraph\\current\\bin"
+        - "C:\\Users\\ZhaiYuanji\\AppData\\Local\\Microsoft\\WindowsApps"
+        - "C:\\Users\\ZhaiYuanji\\.dotnet\\tools"
+        - "C:\\Users\\ZhaiYuanji\\AppData\\Local\\Programs\\cursor\\resources\\app\\bin"
+        - "C:\\Users\\ZhaiYuanji\\AppData\\Local\\PowerToys\\DSCModules\\"
+        - "D:\\software\\Microsoft VS Code\\bin"
+        - "D:\\software\\nvm"
+        - "C:\\nvm4w\\nodejs"
+        - "c:\\Users\\ZhaiYuanji\\.vscode\\extensions\\openai.chatgpt-26.602.30954-win32-x64\\bin\\windows-x86_64"
+  -
+    kind: "find-v1"
+    backtrace:
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeFindBinUtils.cmake:243 (find_program)"
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCCompiler.cmake:200 (include)"
+      - "CMakeLists.txt:24 (project)"
+    mode: "program"
+    variable: "CMAKE_ADDR2LINE"
+    description: "Path to a program."
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: false
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: false
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "addr2line"
+    candidate_directories:
+      - "C:/msys64/mingw64/bin/"
+      - "C:/Users/ZhaiYuanji/.codex/tmp/arg0/codex-arg0aQURBj/"
+      - "C:/Windows/System32/"
+      - "C:/Windows/"
+      - "C:/Windows/System32/wbem/"
+      - "C:/Windows/System32/WindowsPowerShell/v1.0/"
+      - "C:/Windows/System32/OpenSSH/"
+      - "C:/Program Files/Microsoft SQL Server/170/Tools/Binn/"
+      - "C:/Program Files/Microsoft SQL Server/Client SDK/ODBC/170/Tools/Binn/"
+      - "C:/Program Files/dotnet/"
+      - "C:/Program Files/Git/cmd/"
+      - "D:/software/nvm/"
+      - "C:/nvm4w/nodejs/"
+      - "C:/Users/ZhaiYuanji/AppData/Local/codegraph/current/bin/"
+      - "C:/Users/ZhaiYuanji/AppData/Local/Microsoft/WindowsApps/"
+      - "C:/Users/ZhaiYuanji/.dotnet/tools/"
+      - "C:/Users/ZhaiYuanji/AppData/Local/Programs/cursor/resources/app/bin/"
+      - "C:/Users/ZhaiYuanji/AppData/Local/PowerToys/DSCModules/"
+      - "D:/software/Microsoft VS Code/bin/"
+      - "C:/Users/ZhaiYuanji/.vscode/extensions/openai.chatgpt-26.602.30954-win32-x64/bin/windows-x86_64/"
+    searched_directories:
+      - "C:/msys64/mingw64/bin/addr2line.com"
+    found: "C:/msys64/mingw64/bin/addr2line.exe"
+    search_context:
+      ENV{PATH}:
+        - "C:\\Users\\ZhaiYuanji\\.codex\\tmp\\arg0\\codex-arg0aQURBj"
+        - "C:\\WINDOWS\\system32"
+        - "C:\\WINDOWS"
+        - "C:\\WINDOWS\\System32\\Wbem"
+        - "C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\"
+        - "C:\\WINDOWS\\System32\\OpenSSH\\"
+        - "C:\\Program Files\\Microsoft SQL Server\\170\\Tools\\Binn\\"
+        - "C:\\Program Files\\Microsoft SQL Server\\Client SDK\\ODBC\\170\\Tools\\Binn\\"
+        - "C:\\Program Files\\dotnet\\"
+        - "C:\\Program Files\\Git\\cmd"
+        - "D:\\software\\nvm"
+        - "C:\\nvm4w\\nodejs"
+        - "C:\\Users\\ZhaiYuanji\\AppData\\Local\\codegraph\\current\\bin"
+        - "C:\\Users\\ZhaiYuanji\\AppData\\Local\\Microsoft\\WindowsApps"
+        - "C:\\Users\\ZhaiYuanji\\.dotnet\\tools"
+        - "C:\\Users\\ZhaiYuanji\\AppData\\Local\\Programs\\cursor\\resources\\app\\bin"
+        - "C:\\Users\\ZhaiYuanji\\AppData\\Local\\PowerToys\\DSCModules\\"
+        - "D:\\software\\Microsoft VS Code\\bin"
+        - "D:\\software\\nvm"
+        - "C:\\nvm4w\\nodejs"
+        - "c:\\Users\\ZhaiYuanji\\.vscode\\extensions\\openai.chatgpt-26.602.30954-win32-x64\\bin\\windows-x86_64"
+  -
+    kind: "find-v1"
+    backtrace:
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeFindBinUtils.cmake:243 (find_program)"
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCCompiler.cmake:200 (include)"
+      - "CMakeLists.txt:24 (project)"
+    mode: "program"
+    variable: "CMAKE_TAPI"
+    description: "Path to a program."
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: false
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: false
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "tapi"
+    candidate_directories:
+      - "C:/msys64/mingw64/bin/"
+      - "C:/Users/ZhaiYuanji/.codex/tmp/arg0/codex-arg0aQURBj/"
+      - "C:/Windows/System32/"
+      - "C:/Windows/"
+      - "C:/Windows/System32/wbem/"
+      - "C:/Windows/System32/WindowsPowerShell/v1.0/"
+      - "C:/Windows/System32/OpenSSH/"
+      - "C:/Program Files/Microsoft SQL Server/170/Tools/Binn/"
+      - "C:/Program Files/Microsoft SQL Server/Client SDK/ODBC/170/Tools/Binn/"
+      - "C:/Program Files/dotnet/"
+      - "C:/Program Files/Git/cmd/"
+      - "D:/software/nvm/"
+      - "C:/nvm4w/nodejs/"
+      - "C:/Users/ZhaiYuanji/AppData/Local/codegraph/current/bin/"
+      - "C:/Users/ZhaiYuanji/AppData/Local/Microsoft/WindowsApps/"
+      - "C:/Users/ZhaiYuanji/.dotnet/tools/"
+      - "C:/Users/ZhaiYuanji/AppData/Local/Programs/cursor/resources/app/bin/"
+      - "C:/Users/ZhaiYuanji/AppData/Local/PowerToys/DSCModules/"
+      - "D:/software/Microsoft VS Code/bin/"
+      - "C:/Users/ZhaiYuanji/.vscode/extensions/openai.chatgpt-26.602.30954-win32-x64/bin/windows-x86_64/"
+    searched_directories:
+      - "C:/msys64/mingw64/bin/tapi.com"
+      - "C:/msys64/mingw64/bin/tapi.exe"
+      - "C:/msys64/mingw64/bin/tapi"
+      - "C:/Users/ZhaiYuanji/.codex/tmp/arg0/codex-arg0aQURBj/tapi.com"
+      - "C:/Users/ZhaiYuanji/.codex/tmp/arg0/codex-arg0aQURBj/tapi.exe"
+      - "C:/Users/ZhaiYuanji/.codex/tmp/arg0/codex-arg0aQURBj/tapi"
+      - "C:/Windows/System32/tapi.com"
+      - "C:/Windows/System32/tapi.exe"
+      - "C:/Windows/System32/tapi"
+      - "C:/Windows/tapi.com"
+      - "C:/Windows/tapi.exe"
+      - "C:/Windows/tapi"
+      - "C:/Windows/System32/wbem/tapi.com"
+      - "C:/Windows/System32/wbem/tapi.exe"
+      - "C:/Windows/System32/wbem/tapi"
+      - "C:/Windows/System32/WindowsPowerShell/v1.0/tapi.com"
+      - "C:/Windows/System32/WindowsPowerShell/v1.0/tapi.exe"
+      - "C:/Windows/System32/WindowsPowerShell/v1.0/tapi"
+      - "C:/Windows/System32/OpenSSH/tapi.com"
+      - "C:/Windows/System32/OpenSSH/tapi.exe"
+      - "C:/Windows/System32/OpenSSH/tapi"
+      - "C:/Program Files/Microsoft SQL Server/170/Tools/Binn/tapi.com"
+      - "C:/Program Files/Microsoft SQL Server/170/Tools/Binn/tapi.exe"
+      - "C:/Program Files/Microsoft SQL Server/170/Tools/Binn/tapi"
+      - "C:/Program Files/Microsoft SQL Server/Client SDK/ODBC/170/Tools/Binn/tapi.com"
+      - "C:/Program Files/Microsoft SQL Server/Client SDK/ODBC/170/Tools/Binn/tapi.exe"
+      - "C:/Program Files/Microsoft SQL Server/Client SDK/ODBC/170/Tools/Binn/tapi"
+      - "C:/Program Files/dotnet/tapi.com"
+      - "C:/Program Files/dotnet/tapi.exe"
+      - "C:/Program Files/dotnet/tapi"
+      - "C:/Program Files/Git/cmd/tapi.com"
+      - "C:/Program Files/Git/cmd/tapi.exe"
+      - "C:/Program Files/Git/cmd/tapi"
+      - "D:/software/nvm/tapi.com"
+      - "D:/software/nvm/tapi.exe"
+      - "D:/software/nvm/tapi"
+      - "C:/nvm4w/nodejs/tapi.com"
+      - "C:/nvm4w/nodejs/tapi.exe"
+      - "C:/nvm4w/nodejs/tapi"
+      - "C:/Users/ZhaiYuanji/AppData/Local/codegraph/current/bin/tapi.com"
+      - "C:/Users/ZhaiYuanji/AppData/Local/codegraph/current/bin/tapi.exe"
+      - "C:/Users/ZhaiYuanji/AppData/Local/codegraph/current/bin/tapi"
+      - "C:/Users/ZhaiYuanji/AppData/Local/Microsoft/WindowsApps/tapi.com"
+      - "C:/Users/ZhaiYuanji/AppData/Local/Microsoft/WindowsApps/tapi.exe"
+      - "C:/Users/ZhaiYuanji/AppData/Local/Microsoft/WindowsApps/tapi"
+      - "C:/Users/ZhaiYuanji/.dotnet/tools/tapi.com"
+      - "C:/Users/ZhaiYuanji/.dotnet/tools/tapi.exe"
+      - "C:/Users/ZhaiYuanji/.dotnet/tools/tapi"
+      - "C:/Users/ZhaiYuanji/AppData/Local/Programs/cursor/resources/app/bin/tapi.com"
+      - "C:/Users/ZhaiYuanji/AppData/Local/Programs/cursor/resources/app/bin/tapi.exe"
+      - "C:/Users/ZhaiYuanji/AppData/Local/Programs/cursor/resources/app/bin/tapi"
+      - "C:/Users/ZhaiYuanji/AppData/Local/PowerToys/DSCModules/tapi.com"
+      - "C:/Users/ZhaiYuanji/AppData/Local/PowerToys/DSCModules/tapi.exe"
+      - "C:/Users/ZhaiYuanji/AppData/Local/PowerToys/DSCModules/tapi"
+      - "D:/software/Microsoft VS Code/bin/tapi.com"
+      - "D:/software/Microsoft VS Code/bin/tapi.exe"
+      - "D:/software/Microsoft VS Code/bin/tapi"
+      - "C:/Users/ZhaiYuanji/.vscode/extensions/openai.chatgpt-26.602.30954-win32-x64/bin/windows-x86_64/tapi.com"
+      - "C:/Users/ZhaiYuanji/.vscode/extensions/openai.chatgpt-26.602.30954-win32-x64/bin/windows-x86_64/tapi.exe"
+      - "C:/Users/ZhaiYuanji/.vscode/extensions/openai.chatgpt-26.602.30954-win32-x64/bin/windows-x86_64/tapi"
+    found: false
+    search_context:
+      ENV{PATH}:
+        - "C:\\Users\\ZhaiYuanji\\.codex\\tmp\\arg0\\codex-arg0aQURBj"
+        - "C:\\WINDOWS\\system32"
+        - "C:\\WINDOWS"
+        - "C:\\WINDOWS\\System32\\Wbem"
+        - "C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\"
+        - "C:\\WINDOWS\\System32\\OpenSSH\\"
+        - "C:\\Program Files\\Microsoft SQL Server\\170\\Tools\\Binn\\"
+        - "C:\\Program Files\\Microsoft SQL Server\\Client SDK\\ODBC\\170\\Tools\\Binn\\"
+        - "C:\\Program Files\\dotnet\\"
+        - "C:\\Program Files\\Git\\cmd"
+        - "D:\\software\\nvm"
+        - "C:\\nvm4w\\nodejs"
+        - "C:\\Users\\ZhaiYuanji\\AppData\\Local\\codegraph\\current\\bin"
+        - "C:\\Users\\ZhaiYuanji\\AppData\\Local\\Microsoft\\WindowsApps"
+        - "C:\\Users\\ZhaiYuanji\\.dotnet\\tools"
+        - "C:\\Users\\ZhaiYuanji\\AppData\\Local\\Programs\\cursor\\resources\\app\\bin"
+        - "C:\\Users\\ZhaiYuanji\\AppData\\Local\\PowerToys\\DSCModules\\"
+        - "D:\\software\\Microsoft VS Code\\bin"
+        - "D:\\software\\nvm"
+        - "C:\\nvm4w\\nodejs"
+        - "c:\\Users\\ZhaiYuanji\\.vscode\\extensions\\openai.chatgpt-26.602.30954-win32-x64\\bin\\windows-x86_64"
+  -
+    kind: "find-v1"
+    backtrace:
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCompilerId.cmake:468 (find_file)"
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCompilerId.cmake:506 (CMAKE_DETERMINE_COMPILER_ID_WRITE)"
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCompilerId.cmake:8 (CMAKE_DETERMINE_COMPILER_ID_BUILD)"
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCompilerId.cmake:64 (__determine_compiler_id_test)"
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCXXCompiler.cmake:125 (CMAKE_DETERMINE_COMPILER_ID)"
+      - "CMakeLists.txt:24 (project)"
+    mode: "file"
+    variable: "src_in"
+    description: "Path to a file."
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: true
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "CMakeCXXCompilerId.cpp.in"
+    candidate_directories:
+      - "C:/msys64/mingw64/share/cmake/Modules/"
+    found: "C:/msys64/mingw64/share/cmake/Modules/CMakeCXXCompilerId.cpp.in"
+    search_context:
+      ENV{PATH}:
+        - "C:\\Users\\ZhaiYuanji\\.codex\\tmp\\arg0\\codex-arg0aQURBj"
+        - "C:\\WINDOWS\\system32"
+        - "C:\\WINDOWS"
+        - "C:\\WINDOWS\\System32\\Wbem"
+        - "C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\"
+        - "C:\\WINDOWS\\System32\\OpenSSH\\"
+        - "C:\\Program Files\\Microsoft SQL Server\\170\\Tools\\Binn\\"
+        - "C:\\Program Files\\Microsoft SQL Server\\Client SDK\\ODBC\\170\\Tools\\Binn\\"
+        - "C:\\Program Files\\dotnet\\"
+        - "C:\\Program Files\\Git\\cmd"
+        - "D:\\software\\nvm"
+        - "C:\\nvm4w\\nodejs"
+        - "C:\\Users\\ZhaiYuanji\\AppData\\Local\\codegraph\\current\\bin"
+        - "C:\\Users\\ZhaiYuanji\\AppData\\Local\\Microsoft\\WindowsApps"
+        - "C:\\Users\\ZhaiYuanji\\.dotnet\\tools"
+        - "C:\\Users\\ZhaiYuanji\\AppData\\Local\\Programs\\cursor\\resources\\app\\bin"
+        - "C:\\Users\\ZhaiYuanji\\AppData\\Local\\PowerToys\\DSCModules\\"
+        - "D:\\software\\Microsoft VS Code\\bin"
+        - "D:\\software\\nvm"
+        - "C:\\nvm4w\\nodejs"
+        - "c:\\Users\\ZhaiYuanji\\.vscode\\extensions\\openai.chatgpt-26.602.30954-win32-x64\\bin\\windows-x86_64"
+  -
+    kind: "message-v1"
+    backtrace:
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCompilerId.cmake:17 (message)"
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCompilerId.cmake:64 (__determine_compiler_id_test)"
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCXXCompiler.cmake:125 (CMAKE_DETERMINE_COMPILER_ID)"
+      - "CMakeLists.txt:24 (project)"
+    message: |
+      Compiling the CXX compiler identification source file "CMakeCXXCompilerId.cpp" failed.
+      Compiler: C:/msys64/mingw64/bin/g++.exe 
+      Build flags: 
+      Id flags:  
+      
+      The output was:
+      1
+      
+      
+  -
+    kind: "find-v1"
+    backtrace:
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCompilerId.cmake:468 (find_file)"
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCompilerId.cmake:506 (CMAKE_DETERMINE_COMPILER_ID_WRITE)"
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCompilerId.cmake:8 (CMAKE_DETERMINE_COMPILER_ID_BUILD)"
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCompilerId.cmake:64 (__determine_compiler_id_test)"
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCXXCompiler.cmake:125 (CMAKE_DETERMINE_COMPILER_ID)"
+      - "CMakeLists.txt:24 (project)"
+    mode: "file"
+    variable: "src_in"
+    description: "Path to a file."
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: true
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "CMakeCXXCompilerId.cpp.in"
+    candidate_directories:
+      - "C:/msys64/mingw64/share/cmake/Modules/"
+    found: "C:/msys64/mingw64/share/cmake/Modules/CMakeCXXCompilerId.cpp.in"
+    search_context:
+      ENV{PATH}:
+        - "C:\\Users\\ZhaiYuanji\\.codex\\tmp\\arg0\\codex-arg0aQURBj"
+        - "C:\\WINDOWS\\system32"
+        - "C:\\WINDOWS"
+        - "C:\\WINDOWS\\System32\\Wbem"
+        - "C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\"
+        - "C:\\WINDOWS\\System32\\OpenSSH\\"
+        - "C:\\Program Files\\Microsoft SQL Server\\170\\Tools\\Binn\\"
+        - "C:\\Program Files\\Microsoft SQL Server\\Client SDK\\ODBC\\170\\Tools\\Binn\\"
+        - "C:\\Program Files\\dotnet\\"
+        - "C:\\Program Files\\Git\\cmd"
+        - "D:\\software\\nvm"
+        - "C:\\nvm4w\\nodejs"
+        - "C:\\Users\\ZhaiYuanji\\AppData\\Local\\codegraph\\current\\bin"
+        - "C:\\Users\\ZhaiYuanji\\AppData\\Local\\Microsoft\\WindowsApps"
+        - "C:\\Users\\ZhaiYuanji\\.dotnet\\tools"
+        - "C:\\Users\\ZhaiYuanji\\AppData\\Local\\Programs\\cursor\\resources\\app\\bin"
+        - "C:\\Users\\ZhaiYuanji\\AppData\\Local\\PowerToys\\DSCModules\\"
+        - "D:\\software\\Microsoft VS Code\\bin"
+        - "D:\\software\\nvm"
+        - "C:\\nvm4w\\nodejs"
+        - "c:\\Users\\ZhaiYuanji\\.vscode\\extensions\\openai.chatgpt-26.602.30954-win32-x64\\bin\\windows-x86_64"
+  -
+    kind: "message-v1"
+    backtrace:
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCompilerId.cmake:17 (message)"
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCompilerId.cmake:64 (__determine_compiler_id_test)"
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCXXCompiler.cmake:125 (CMAKE_DETERMINE_COMPILER_ID)"
+      - "CMakeLists.txt:24 (project)"
+    message: |
+      Compiling the CXX compiler identification source file "CMakeCXXCompilerId.cpp" failed.
+      Compiler: C:/msys64/mingw64/bin/g++.exe 
+      Build flags: 
+      Id flags: -c 
+      
+      The output was:
+      1
+      
+      
+  -
+    kind: "find-v1"
+    backtrace:
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCompilerId.cmake:468 (find_file)"
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCompilerId.cmake:506 (CMAKE_DETERMINE_COMPILER_ID_WRITE)"
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCompilerId.cmake:8 (CMAKE_DETERMINE_COMPILER_ID_BUILD)"
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCompilerId.cmake:64 (__determine_compiler_id_test)"
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCXXCompiler.cmake:125 (CMAKE_DETERMINE_COMPILER_ID)"
+      - "CMakeLists.txt:24 (project)"
+    mode: "file"
+    variable: "src_in"
+    description: "Path to a file."
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: true
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "CMakeCXXCompilerId.cpp.in"
+    candidate_directories:
+      - "C:/msys64/mingw64/share/cmake/Modules/"
+    found: "C:/msys64/mingw64/share/cmake/Modules/CMakeCXXCompilerId.cpp.in"
+    search_context:
+      ENV{PATH}:
+        - "C:\\Users\\ZhaiYuanji\\.codex\\tmp\\arg0\\codex-arg0aQURBj"
+        - "C:\\WINDOWS\\system32"
+        - "C:\\WINDOWS"
+        - "C:\\WINDOWS\\System32\\Wbem"
+        - "C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\"
+        - "C:\\WINDOWS\\System32\\OpenSSH\\"
+        - "C:\\Program Files\\Microsoft SQL Server\\170\\Tools\\Binn\\"
+        - "C:\\Program Files\\Microsoft SQL Server\\Client SDK\\ODBC\\170\\Tools\\Binn\\"
+        - "C:\\Program Files\\dotnet\\"
+        - "C:\\Program Files\\Git\\cmd"
+        - "D:\\software\\nvm"
+        - "C:\\nvm4w\\nodejs"
+        - "C:\\Users\\ZhaiYuanji\\AppData\\Local\\codegraph\\current\\bin"
+        - "C:\\Users\\ZhaiYuanji\\AppData\\Local\\Microsoft\\WindowsApps"
+        - "C:\\Users\\ZhaiYuanji\\.dotnet\\tools"
+        - "C:\\Users\\ZhaiYuanji\\AppData\\Local\\Programs\\cursor\\resources\\app\\bin"
+        - "C:\\Users\\ZhaiYuanji\\AppData\\Local\\PowerToys\\DSCModules\\"
+        - "D:\\software\\Microsoft VS Code\\bin"
+        - "D:\\software\\nvm"
+        - "C:\\nvm4w\\nodejs"
+        - "c:\\Users\\ZhaiYuanji\\.vscode\\extensions\\openai.chatgpt-26.602.30954-win32-x64\\bin\\windows-x86_64"
+  -
+    kind: "message-v1"
+    backtrace:
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCompilerId.cmake:17 (message)"
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCompilerId.cmake:64 (__determine_compiler_id_test)"
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCXXCompiler.cmake:125 (CMAKE_DETERMINE_COMPILER_ID)"
+      - "CMakeLists.txt:24 (project)"
+    message: |
+      Compiling the CXX compiler identification source file "CMakeCXXCompilerId.cpp" failed.
+      Compiler: C:/msys64/mingw64/bin/g++.exe 
+      Build flags: 
+      Id flags: --c++ 
+      
+      The output was:
+      1
+      g++.exe: error: unrecognized command-line option '--c++'
+      
+      
+  -
+    kind: "find-v1"
+    backtrace:
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCompilerId.cmake:468 (find_file)"
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCompilerId.cmake:506 (CMAKE_DETERMINE_COMPILER_ID_WRITE)"
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCompilerId.cmake:8 (CMAKE_DETERMINE_COMPILER_ID_BUILD)"
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCompilerId.cmake:64 (__determine_compiler_id_test)"
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCXXCompiler.cmake:125 (CMAKE_DETERMINE_COMPILER_ID)"
+      - "CMakeLists.txt:24 (project)"
+    mode: "file"
+    variable: "src_in"
+    description: "Path to a file."
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: true
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "CMakeCXXCompilerId.cpp.in"
+    candidate_directories:
+      - "C:/msys64/mingw64/share/cmake/Modules/"
+    found: "C:/msys64/mingw64/share/cmake/Modules/CMakeCXXCompilerId.cpp.in"
+    search_context:
+      ENV{PATH}:
+        - "C:\\Users\\ZhaiYuanji\\.codex\\tmp\\arg0\\codex-arg0aQURBj"
+        - "C:\\WINDOWS\\system32"
+        - "C:\\WINDOWS"
+        - "C:\\WINDOWS\\System32\\Wbem"
+        - "C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\"
+        - "C:\\WINDOWS\\System32\\OpenSSH\\"
+        - "C:\\Program Files\\Microsoft SQL Server\\170\\Tools\\Binn\\"
+        - "C:\\Program Files\\Microsoft SQL Server\\Client SDK\\ODBC\\170\\Tools\\Binn\\"
+        - "C:\\Program Files\\dotnet\\"
+        - "C:\\Program Files\\Git\\cmd"
+        - "D:\\software\\nvm"
+        - "C:\\nvm4w\\nodejs"
+        - "C:\\Users\\ZhaiYuanji\\AppData\\Local\\codegraph\\current\\bin"
+        - "C:\\Users\\ZhaiYuanji\\AppData\\Local\\Microsoft\\WindowsApps"
+        - "C:\\Users\\ZhaiYuanji\\.dotnet\\tools"
+        - "C:\\Users\\ZhaiYuanji\\AppData\\Local\\Programs\\cursor\\resources\\app\\bin"
+        - "C:\\Users\\ZhaiYuanji\\AppData\\Local\\PowerToys\\DSCModules\\"
+        - "D:\\software\\Microsoft VS Code\\bin"
+        - "D:\\software\\nvm"
+        - "C:\\nvm4w\\nodejs"
+        - "c:\\Users\\ZhaiYuanji\\.vscode\\extensions\\openai.chatgpt-26.602.30954-win32-x64\\bin\\windows-x86_64"
+  -
+    kind: "message-v1"
+    backtrace:
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCompilerId.cmake:17 (message)"
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCompilerId.cmake:64 (__determine_compiler_id_test)"
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCXXCompiler.cmake:125 (CMAKE_DETERMINE_COMPILER_ID)"
+      - "CMakeLists.txt:24 (project)"
+    message: |
+      Compiling the CXX compiler identification source file "CMakeCXXCompilerId.cpp" failed.
+      Compiler: C:/msys64/mingw64/bin/g++.exe 
+      Build flags: 
+      Id flags: --ec++ 
+      
+      The output was:
+      1
+      g++.exe: error: unrecognized command-line option '--ec++'; did you mean '-Weffc++'?
+      
+      
+  -
+    kind: "find-v1"
+    backtrace:
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCompilerId.cmake:468 (find_file)"
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCompilerId.cmake:506 (CMAKE_DETERMINE_COMPILER_ID_WRITE)"
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCompilerId.cmake:8 (CMAKE_DETERMINE_COMPILER_ID_BUILD)"
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCompilerId.cmake:64 (__determine_compiler_id_test)"
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCXXCompiler.cmake:125 (CMAKE_DETERMINE_COMPILER_ID)"
+      - "CMakeLists.txt:24 (project)"
+    mode: "file"
+    variable: "src_in"
+    description: "Path to a file."
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: true
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "CMakeCXXCompilerId.cpp.in"
+    candidate_directories:
+      - "C:/msys64/mingw64/share/cmake/Modules/"
+    found: "C:/msys64/mingw64/share/cmake/Modules/CMakeCXXCompilerId.cpp.in"
+    search_context:
+      ENV{PATH}:
+        - "C:\\Users\\ZhaiYuanji\\.codex\\tmp\\arg0\\codex-arg0aQURBj"
+        - "C:\\WINDOWS\\system32"
+        - "C:\\WINDOWS"
+        - "C:\\WINDOWS\\System32\\Wbem"
+        - "C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\"
+        - "C:\\WINDOWS\\System32\\OpenSSH\\"
+        - "C:\\Program Files\\Microsoft SQL Server\\170\\Tools\\Binn\\"
+        - "C:\\Program Files\\Microsoft SQL Server\\Client SDK\\ODBC\\170\\Tools\\Binn\\"
+        - "C:\\Program Files\\dotnet\\"
+        - "C:\\Program Files\\Git\\cmd"
+        - "D:\\software\\nvm"
+        - "C:\\nvm4w\\nodejs"
+        - "C:\\Users\\ZhaiYuanji\\AppData\\Local\\codegraph\\current\\bin"
+        - "C:\\Users\\ZhaiYuanji\\AppData\\Local\\Microsoft\\WindowsApps"
+        - "C:\\Users\\ZhaiYuanji\\.dotnet\\tools"
+        - "C:\\Users\\ZhaiYuanji\\AppData\\Local\\Programs\\cursor\\resources\\app\\bin"
+        - "C:\\Users\\ZhaiYuanji\\AppData\\Local\\PowerToys\\DSCModules\\"
+        - "D:\\software\\Microsoft VS Code\\bin"
+        - "D:\\software\\nvm"
+        - "C:\\nvm4w\\nodejs"
+        - "c:\\Users\\ZhaiYuanji\\.vscode\\extensions\\openai.chatgpt-26.602.30954-win32-x64\\bin\\windows-x86_64"
+  -
+    kind: "message-v1"
+    backtrace:
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCompilerId.cmake:17 (message)"
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCompilerId.cmake:64 (__determine_compiler_id_test)"
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCXXCompiler.cmake:125 (CMAKE_DETERMINE_COMPILER_ID)"
+      - "CMakeLists.txt:24 (project)"
+    message: |
+      Compiling the CXX compiler identification source file "CMakeCXXCompilerId.cpp" failed.
+      Compiler: C:/msys64/mingw64/bin/g++.exe 
+      Build flags: 
+      Id flags: --target=arm-arm-none-eabi;-mcpu=cortex-m3 
+      
+      The output was:
+      1
+      g++.exe: warning: '-mcpu=' is deprecated; use '-mtune=' or '-march=' instead
+      g++.exe: error: unrecognized command-line option '--target=arm-arm-none-eabi'
+      
+      
+  -
+    kind: "find-v1"
+    backtrace:
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCompilerId.cmake:468 (find_file)"
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCompilerId.cmake:506 (CMAKE_DETERMINE_COMPILER_ID_WRITE)"
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCompilerId.cmake:8 (CMAKE_DETERMINE_COMPILER_ID_BUILD)"
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCompilerId.cmake:64 (__determine_compiler_id_test)"
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCXXCompiler.cmake:125 (CMAKE_DETERMINE_COMPILER_ID)"
+      - "CMakeLists.txt:24 (project)"
+    mode: "file"
+    variable: "src_in"
+    description: "Path to a file."
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: true
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "CMakeCXXCompilerId.cpp.in"
+    candidate_directories:
+      - "C:/msys64/mingw64/share/cmake/Modules/"
+    found: "C:/msys64/mingw64/share/cmake/Modules/CMakeCXXCompilerId.cpp.in"
+    search_context:
+      ENV{PATH}:
+        - "C:\\Users\\ZhaiYuanji\\.codex\\tmp\\arg0\\codex-arg0aQURBj"
+        - "C:\\WINDOWS\\system32"
+        - "C:\\WINDOWS"
+        - "C:\\WINDOWS\\System32\\Wbem"
+        - "C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\"
+        - "C:\\WINDOWS\\System32\\OpenSSH\\"
+        - "C:\\Program Files\\Microsoft SQL Server\\170\\Tools\\Binn\\"
+        - "C:\\Program Files\\Microsoft SQL Server\\Client SDK\\ODBC\\170\\Tools\\Binn\\"
+        - "C:\\Program Files\\dotnet\\"
+        - "C:\\Program Files\\Git\\cmd"
+        - "D:\\software\\nvm"
+        - "C:\\nvm4w\\nodejs"
+        - "C:\\Users\\ZhaiYuanji\\AppData\\Local\\codegraph\\current\\bin"
+        - "C:\\Users\\ZhaiYuanji\\AppData\\Local\\Microsoft\\WindowsApps"
+        - "C:\\Users\\ZhaiYuanji\\.dotnet\\tools"
+        - "C:\\Users\\ZhaiYuanji\\AppData\\Local\\Programs\\cursor\\resources\\app\\bin"
+        - "C:\\Users\\ZhaiYuanji\\AppData\\Local\\PowerToys\\DSCModules\\"
+        - "D:\\software\\Microsoft VS Code\\bin"
+        - "D:\\software\\nvm"
+        - "C:\\nvm4w\\nodejs"
+        - "c:\\Users\\ZhaiYuanji\\.vscode\\extensions\\openai.chatgpt-26.602.30954-win32-x64\\bin\\windows-x86_64"
+  -
+    kind: "message-v1"
+    backtrace:
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCompilerId.cmake:17 (message)"
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCompilerId.cmake:64 (__determine_compiler_id_test)"
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCXXCompiler.cmake:125 (CMAKE_DETERMINE_COMPILER_ID)"
+      - "CMakeLists.txt:24 (project)"
+    message: |
+      Compiling the CXX compiler identification source file "CMakeCXXCompilerId.cpp" failed.
+      Compiler: C:/msys64/mingw64/bin/g++.exe 
+      Build flags: 
+      Id flags: -c;-I__does_not_exist__ 
+      
+      The output was:
+      1
+      
+      
+  -
+    kind: "find-v1"
+    backtrace:
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCompilerId.cmake:468 (find_file)"
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCompilerId.cmake:506 (CMAKE_DETERMINE_COMPILER_ID_WRITE)"
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCompilerId.cmake:8 (CMAKE_DETERMINE_COMPILER_ID_BUILD)"
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCompilerId.cmake:64 (__determine_compiler_id_test)"
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCXXCompiler.cmake:125 (CMAKE_DETERMINE_COMPILER_ID)"
+      - "CMakeLists.txt:24 (project)"
+    mode: "file"
+    variable: "src_in"
+    description: "Path to a file."
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: true
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "CMakeCXXCompilerId.cpp.in"
+    candidate_directories:
+      - "C:/msys64/mingw64/share/cmake/Modules/"
+    found: "C:/msys64/mingw64/share/cmake/Modules/CMakeCXXCompilerId.cpp.in"
+    search_context:
+      ENV{PATH}:
+        - "C:\\Users\\ZhaiYuanji\\.codex\\tmp\\arg0\\codex-arg0aQURBj"
+        - "C:\\WINDOWS\\system32"
+        - "C:\\WINDOWS"
+        - "C:\\WINDOWS\\System32\\Wbem"
+        - "C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\"
+        - "C:\\WINDOWS\\System32\\OpenSSH\\"
+        - "C:\\Program Files\\Microsoft SQL Server\\170\\Tools\\Binn\\"
+        - "C:\\Program Files\\Microsoft SQL Server\\Client SDK\\ODBC\\170\\Tools\\Binn\\"
+        - "C:\\Program Files\\dotnet\\"
+        - "C:\\Program Files\\Git\\cmd"
+        - "D:\\software\\nvm"
+        - "C:\\nvm4w\\nodejs"
+        - "C:\\Users\\ZhaiYuanji\\AppData\\Local\\codegraph\\current\\bin"
+        - "C:\\Users\\ZhaiYuanji\\AppData\\Local\\Microsoft\\WindowsApps"
+        - "C:\\Users\\ZhaiYuanji\\.dotnet\\tools"
+        - "C:\\Users\\ZhaiYuanji\\AppData\\Local\\Programs\\cursor\\resources\\app\\bin"
+        - "C:\\Users\\ZhaiYuanji\\AppData\\Local\\PowerToys\\DSCModules\\"
+        - "D:\\software\\Microsoft VS Code\\bin"
+        - "D:\\software\\nvm"
+        - "C:\\nvm4w\\nodejs"
+        - "c:\\Users\\ZhaiYuanji\\.vscode\\extensions\\openai.chatgpt-26.602.30954-win32-x64\\bin\\windows-x86_64"
+  -
+    kind: "message-v1"
+    backtrace:
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCompilerId.cmake:17 (message)"
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCompilerId.cmake:64 (__determine_compiler_id_test)"
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCXXCompiler.cmake:125 (CMAKE_DETERMINE_COMPILER_ID)"
+      - "CMakeLists.txt:24 (project)"
+    message: |
+      Compiling the CXX compiler identification source file "CMakeCXXCompilerId.cpp" failed.
+      Compiler: C:/msys64/mingw64/bin/g++.exe 
+      Build flags: 
+      Id flags:  
+      
+      The output was:
+      1
+      
+      
+  -
+    kind: "find-v1"
+    backtrace:
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCompilerId.cmake:468 (find_file)"
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCompilerId.cmake:506 (CMAKE_DETERMINE_COMPILER_ID_WRITE)"
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCompilerId.cmake:8 (CMAKE_DETERMINE_COMPILER_ID_BUILD)"
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCompilerId.cmake:64 (__determine_compiler_id_test)"
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCXXCompiler.cmake:125 (CMAKE_DETERMINE_COMPILER_ID)"
+      - "CMakeLists.txt:24 (project)"
+    mode: "file"
+    variable: "src_in"
+    description: "Path to a file."
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: true
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "CMakeCXXCompilerId.cpp.in"
+    candidate_directories:
+      - "C:/msys64/mingw64/share/cmake/Modules/"
+    found: "C:/msys64/mingw64/share/cmake/Modules/CMakeCXXCompilerId.cpp.in"
+    search_context:
+      ENV{PATH}:
+        - "C:\\Users\\ZhaiYuanji\\.codex\\tmp\\arg0\\codex-arg0aQURBj"
+        - "C:\\WINDOWS\\system32"
+        - "C:\\WINDOWS"
+        - "C:\\WINDOWS\\System32\\Wbem"
+        - "C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\"
+        - "C:\\WINDOWS\\System32\\OpenSSH\\"
+        - "C:\\Program Files\\Microsoft SQL Server\\170\\Tools\\Binn\\"
+        - "C:\\Program Files\\Microsoft SQL Server\\Client SDK\\ODBC\\170\\Tools\\Binn\\"
+        - "C:\\Program Files\\dotnet\\"
+        - "C:\\Program Files\\Git\\cmd"
+        - "D:\\software\\nvm"
+        - "C:\\nvm4w\\nodejs"
+        - "C:\\Users\\ZhaiYuanji\\AppData\\Local\\codegraph\\current\\bin"
+        - "C:\\Users\\ZhaiYuanji\\AppData\\Local\\Microsoft\\WindowsApps"
+        - "C:\\Users\\ZhaiYuanji\\.dotnet\\tools"
+        - "C:\\Users\\ZhaiYuanji\\AppData\\Local\\Programs\\cursor\\resources\\app\\bin"
+        - "C:\\Users\\ZhaiYuanji\\AppData\\Local\\PowerToys\\DSCModules\\"
+        - "D:\\software\\Microsoft VS Code\\bin"
+        - "D:\\software\\nvm"
+        - "C:\\nvm4w\\nodejs"
+        - "c:\\Users\\ZhaiYuanji\\.vscode\\extensions\\openai.chatgpt-26.602.30954-win32-x64\\bin\\windows-x86_64"
+  -
+    kind: "message-v1"
+    backtrace:
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCompilerId.cmake:17 (message)"
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCompilerId.cmake:64 (__determine_compiler_id_test)"
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCXXCompiler.cmake:125 (CMAKE_DETERMINE_COMPILER_ID)"
+      - "CMakeLists.txt:24 (project)"
+    message: |
+      Compiling the CXX compiler identification source file "CMakeCXXCompilerId.cpp" failed.
+      Compiler: C:/msys64/mingw64/bin/g++.exe 
+      Build flags: 
+      Id flags: -c 
+      
+      The output was:
+      1
+      
+      
+  -
+    kind: "find-v1"
+    backtrace:
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCompilerId.cmake:468 (find_file)"
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCompilerId.cmake:506 (CMAKE_DETERMINE_COMPILER_ID_WRITE)"
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCompilerId.cmake:8 (CMAKE_DETERMINE_COMPILER_ID_BUILD)"
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCompilerId.cmake:64 (__determine_compiler_id_test)"
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCXXCompiler.cmake:125 (CMAKE_DETERMINE_COMPILER_ID)"
+      - "CMakeLists.txt:24 (project)"
+    mode: "file"
+    variable: "src_in"
+    description: "Path to a file."
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: true
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "CMakeCXXCompilerId.cpp.in"
+    candidate_directories:
+      - "C:/msys64/mingw64/share/cmake/Modules/"
+    found: "C:/msys64/mingw64/share/cmake/Modules/CMakeCXXCompilerId.cpp.in"
+    search_context:
+      ENV{PATH}:
+        - "C:\\Users\\ZhaiYuanji\\.codex\\tmp\\arg0\\codex-arg0aQURBj"
+        - "C:\\WINDOWS\\system32"
+        - "C:\\WINDOWS"
+        - "C:\\WINDOWS\\System32\\Wbem"
+        - "C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\"
+        - "C:\\WINDOWS\\System32\\OpenSSH\\"
+        - "C:\\Program Files\\Microsoft SQL Server\\170\\Tools\\Binn\\"
+        - "C:\\Program Files\\Microsoft SQL Server\\Client SDK\\ODBC\\170\\Tools\\Binn\\"
+        - "C:\\Program Files\\dotnet\\"
+        - "C:\\Program Files\\Git\\cmd"
+        - "D:\\software\\nvm"
+        - "C:\\nvm4w\\nodejs"
+        - "C:\\Users\\ZhaiYuanji\\AppData\\Local\\codegraph\\current\\bin"
+        - "C:\\Users\\ZhaiYuanji\\AppData\\Local\\Microsoft\\WindowsApps"
+        - "C:\\Users\\ZhaiYuanji\\.dotnet\\tools"
+        - "C:\\Users\\ZhaiYuanji\\AppData\\Local\\Programs\\cursor\\resources\\app\\bin"
+        - "C:\\Users\\ZhaiYuanji\\AppData\\Local\\PowerToys\\DSCModules\\"
+        - "D:\\software\\Microsoft VS Code\\bin"
+        - "D:\\software\\nvm"
+        - "C:\\nvm4w\\nodejs"
+        - "c:\\Users\\ZhaiYuanji\\.vscode\\extensions\\openai.chatgpt-26.602.30954-win32-x64\\bin\\windows-x86_64"
+  -
+    kind: "message-v1"
+    backtrace:
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCompilerId.cmake:17 (message)"
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCompilerId.cmake:64 (__determine_compiler_id_test)"
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCXXCompiler.cmake:125 (CMAKE_DETERMINE_COMPILER_ID)"
+      - "CMakeLists.txt:24 (project)"
+    message: |
+      Compiling the CXX compiler identification source file "CMakeCXXCompilerId.cpp" failed.
+      Compiler: C:/msys64/mingw64/bin/g++.exe 
+      Build flags: 
+      Id flags: --c++ 
+      
+      The output was:
+      1
+      g++.exe: error: unrecognized command-line option '--c++'
+      
+      
+  -
+    kind: "find-v1"
+    backtrace:
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCompilerId.cmake:468 (find_file)"
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCompilerId.cmake:506 (CMAKE_DETERMINE_COMPILER_ID_WRITE)"
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCompilerId.cmake:8 (CMAKE_DETERMINE_COMPILER_ID_BUILD)"
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCompilerId.cmake:64 (__determine_compiler_id_test)"
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCXXCompiler.cmake:125 (CMAKE_DETERMINE_COMPILER_ID)"
+      - "CMakeLists.txt:24 (project)"
+    mode: "file"
+    variable: "src_in"
+    description: "Path to a file."
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: true
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "CMakeCXXCompilerId.cpp.in"
+    candidate_directories:
+      - "C:/msys64/mingw64/share/cmake/Modules/"
+    found: "C:/msys64/mingw64/share/cmake/Modules/CMakeCXXCompilerId.cpp.in"
+    search_context:
+      ENV{PATH}:
+        - "C:\\Users\\ZhaiYuanji\\.codex\\tmp\\arg0\\codex-arg0aQURBj"
+        - "C:\\WINDOWS\\system32"
+        - "C:\\WINDOWS"
+        - "C:\\WINDOWS\\System32\\Wbem"
+        - "C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\"
+        - "C:\\WINDOWS\\System32\\OpenSSH\\"
+        - "C:\\Program Files\\Microsoft SQL Server\\170\\Tools\\Binn\\"
+        - "C:\\Program Files\\Microsoft SQL Server\\Client SDK\\ODBC\\170\\Tools\\Binn\\"
+        - "C:\\Program Files\\dotnet\\"
+        - "C:\\Program Files\\Git\\cmd"
+        - "D:\\software\\nvm"
+        - "C:\\nvm4w\\nodejs"
+        - "C:\\Users\\ZhaiYuanji\\AppData\\Local\\codegraph\\current\\bin"
+        - "C:\\Users\\ZhaiYuanji\\AppData\\Local\\Microsoft\\WindowsApps"
+        - "C:\\Users\\ZhaiYuanji\\.dotnet\\tools"
+        - "C:\\Users\\ZhaiYuanji\\AppData\\Local\\Programs\\cursor\\resources\\app\\bin"
+        - "C:\\Users\\ZhaiYuanji\\AppData\\Local\\PowerToys\\DSCModules\\"
+        - "D:\\software\\Microsoft VS Code\\bin"
+        - "D:\\software\\nvm"
+        - "C:\\nvm4w\\nodejs"
+        - "c:\\Users\\ZhaiYuanji\\.vscode\\extensions\\openai.chatgpt-26.602.30954-win32-x64\\bin\\windows-x86_64"
+  -
+    kind: "message-v1"
+    backtrace:
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCompilerId.cmake:17 (message)"
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCompilerId.cmake:64 (__determine_compiler_id_test)"
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCXXCompiler.cmake:125 (CMAKE_DETERMINE_COMPILER_ID)"
+      - "CMakeLists.txt:24 (project)"
+    message: |
+      Compiling the CXX compiler identification source file "CMakeCXXCompilerId.cpp" failed.
+      Compiler: C:/msys64/mingw64/bin/g++.exe 
+      Build flags: 
+      Id flags: --ec++ 
+      
+      The output was:
+      1
+      g++.exe: error: unrecognized command-line option '--ec++'; did you mean '-Weffc++'?
+      
+      
+  -
+    kind: "find-v1"
+    backtrace:
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCompilerId.cmake:468 (find_file)"
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCompilerId.cmake:506 (CMAKE_DETERMINE_COMPILER_ID_WRITE)"
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCompilerId.cmake:8 (CMAKE_DETERMINE_COMPILER_ID_BUILD)"
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCompilerId.cmake:64 (__determine_compiler_id_test)"
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCXXCompiler.cmake:125 (CMAKE_DETERMINE_COMPILER_ID)"
+      - "CMakeLists.txt:24 (project)"
+    mode: "file"
+    variable: "src_in"
+    description: "Path to a file."
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: true
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "CMakeCXXCompilerId.cpp.in"
+    candidate_directories:
+      - "C:/msys64/mingw64/share/cmake/Modules/"
+    found: "C:/msys64/mingw64/share/cmake/Modules/CMakeCXXCompilerId.cpp.in"
+    search_context:
+      ENV{PATH}:
+        - "C:\\Users\\ZhaiYuanji\\.codex\\tmp\\arg0\\codex-arg0aQURBj"
+        - "C:\\WINDOWS\\system32"
+        - "C:\\WINDOWS"
+        - "C:\\WINDOWS\\System32\\Wbem"
+        - "C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\"
+        - "C:\\WINDOWS\\System32\\OpenSSH\\"
+        - "C:\\Program Files\\Microsoft SQL Server\\170\\Tools\\Binn\\"
+        - "C:\\Program Files\\Microsoft SQL Server\\Client SDK\\ODBC\\170\\Tools\\Binn\\"
+        - "C:\\Program Files\\dotnet\\"
+        - "C:\\Program Files\\Git\\cmd"
+        - "D:\\software\\nvm"
+        - "C:\\nvm4w\\nodejs"
+        - "C:\\Users\\ZhaiYuanji\\AppData\\Local\\codegraph\\current\\bin"
+        - "C:\\Users\\ZhaiYuanji\\AppData\\Local\\Microsoft\\WindowsApps"
+        - "C:\\Users\\ZhaiYuanji\\.dotnet\\tools"
+        - "C:\\Users\\ZhaiYuanji\\AppData\\Local\\Programs\\cursor\\resources\\app\\bin"
+        - "C:\\Users\\ZhaiYuanji\\AppData\\Local\\PowerToys\\DSCModules\\"
+        - "D:\\software\\Microsoft VS Code\\bin"
+        - "D:\\software\\nvm"
+        - "C:\\nvm4w\\nodejs"
+        - "c:\\Users\\ZhaiYuanji\\.vscode\\extensions\\openai.chatgpt-26.602.30954-win32-x64\\bin\\windows-x86_64"
+  -
+    kind: "message-v1"
+    backtrace:
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCompilerId.cmake:17 (message)"
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCompilerId.cmake:64 (__determine_compiler_id_test)"
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCXXCompiler.cmake:125 (CMAKE_DETERMINE_COMPILER_ID)"
+      - "CMakeLists.txt:24 (project)"
+    message: |
+      Compiling the CXX compiler identification source file "CMakeCXXCompilerId.cpp" failed.
+      Compiler: C:/msys64/mingw64/bin/g++.exe 
+      Build flags: 
+      Id flags: --target=arm-arm-none-eabi;-mcpu=cortex-m3 
+      
+      The output was:
+      1
+      g++.exe: warning: '-mcpu=' is deprecated; use '-mtune=' or '-march=' instead
+      g++.exe: error: unrecognized command-line option '--target=arm-arm-none-eabi'
+      
+      
+  -
+    kind: "find-v1"
+    backtrace:
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCompilerId.cmake:468 (find_file)"
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCompilerId.cmake:506 (CMAKE_DETERMINE_COMPILER_ID_WRITE)"
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCompilerId.cmake:8 (CMAKE_DETERMINE_COMPILER_ID_BUILD)"
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCompilerId.cmake:64 (__determine_compiler_id_test)"
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCXXCompiler.cmake:125 (CMAKE_DETERMINE_COMPILER_ID)"
+      - "CMakeLists.txt:24 (project)"
+    mode: "file"
+    variable: "src_in"
+    description: "Path to a file."
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: true
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "CMakeCXXCompilerId.cpp.in"
+    candidate_directories:
+      - "C:/msys64/mingw64/share/cmake/Modules/"
+    found: "C:/msys64/mingw64/share/cmake/Modules/CMakeCXXCompilerId.cpp.in"
+    search_context:
+      ENV{PATH}:
+        - "C:\\Users\\ZhaiYuanji\\.codex\\tmp\\arg0\\codex-arg0aQURBj"
+        - "C:\\WINDOWS\\system32"
+        - "C:\\WINDOWS"
+        - "C:\\WINDOWS\\System32\\Wbem"
+        - "C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\"
+        - "C:\\WINDOWS\\System32\\OpenSSH\\"
+        - "C:\\Program Files\\Microsoft SQL Server\\170\\Tools\\Binn\\"
+        - "C:\\Program Files\\Microsoft SQL Server\\Client SDK\\ODBC\\170\\Tools\\Binn\\"
+        - "C:\\Program Files\\dotnet\\"
+        - "C:\\Program Files\\Git\\cmd"
+        - "D:\\software\\nvm"
+        - "C:\\nvm4w\\nodejs"
+        - "C:\\Users\\ZhaiYuanji\\AppData\\Local\\codegraph\\current\\bin"
+        - "C:\\Users\\ZhaiYuanji\\AppData\\Local\\Microsoft\\WindowsApps"
+        - "C:\\Users\\ZhaiYuanji\\.dotnet\\tools"
+        - "C:\\Users\\ZhaiYuanji\\AppData\\Local\\Programs\\cursor\\resources\\app\\bin"
+        - "C:\\Users\\ZhaiYuanji\\AppData\\Local\\PowerToys\\DSCModules\\"
+        - "D:\\software\\Microsoft VS Code\\bin"
+        - "D:\\software\\nvm"
+        - "C:\\nvm4w\\nodejs"
+        - "c:\\Users\\ZhaiYuanji\\.vscode\\extensions\\openai.chatgpt-26.602.30954-win32-x64\\bin\\windows-x86_64"
+  -
+    kind: "message-v1"
+    backtrace:
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCompilerId.cmake:17 (message)"
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCompilerId.cmake:64 (__determine_compiler_id_test)"
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCXXCompiler.cmake:125 (CMAKE_DETERMINE_COMPILER_ID)"
+      - "CMakeLists.txt:24 (project)"
+    message: |
+      Compiling the CXX compiler identification source file "CMakeCXXCompilerId.cpp" failed.
+      Compiler: C:/msys64/mingw64/bin/g++.exe 
+      Build flags: 
+      Id flags: -c;-I__does_not_exist__ 
+      
+      The output was:
+      1
+      
+      
+  -
+    kind: "message-v1"
+    backtrace:
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCompilerId.cmake:1309 (message)"
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCompilerId.cmake:86 (CMAKE_DETERMINE_COMPILER_ID_VENDOR)"
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCXXCompiler.cmake:125 (CMAKE_DETERMINE_COMPILER_ID)"
+      - "CMakeLists.txt:24 (project)"
+    message: |
+      Checking whether the CXX compiler is IAR using "" did not match "IAR .+ Compiler":
+      g++.exe: fatal error: no input files
+      compilation terminated.
+  -
+    kind: "message-v1"
+    backtrace:
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCompilerId.cmake:1309 (message)"
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCompilerId.cmake:86 (CMAKE_DETERMINE_COMPILER_ID_VENDOR)"
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCXXCompiler.cmake:125 (CMAKE_DETERMINE_COMPILER_ID)"
+      - "CMakeLists.txt:24 (project)"
+    message: |
+      Checking whether the CXX compiler is IAR using "" did not match "IAR .+ Compiler":
+      g++.exe: fatal error: no input files
+      compilation terminated.
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeDetermineCompilerABI.cmake:83 (try_compile)"
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeTestCCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
+      - "CMakeLists.txt:24 (project)"
+    checks:
+      - "Detecting C compiler ABI info"
+    directories:
+      source: "D:/ap/DSView/build.rename-check/CMakeFiles/CMakeScratch/TryCompile-h6fqop"
+      binary: "D:/ap/DSView/build.rename-check/CMakeFiles/CMakeScratch/TryCompile-h6fqop"
+    cmakeVariables:
+      CMAKE_CXX_STDLIB_MODULES_JSON: ""
+      CMAKE_C_FLAGS: ""
+      CMAKE_C_FLAGS_DEBUG: ""
+      CMAKE_EXE_LINKER_FLAGS: ""
+    buildResult:
+      variable: "CMAKE_C_ABI_COMPILED"
+      cached: true
+      stdout: |
+        Change Dir: 'D:/ap/DSView/build.rename-check/CMakeFiles/CMakeScratch/TryCompile-h6fqop'
+        
+        Run Build Command(s): C:/msys64/mingw64/bin/cmake.exe -E env VERBOSE=1 C:/msys64/mingw64/bin/mingw32-make.exe -f Makefile cmTC_04467/fast
+        C:/msys64/mingw64/bin/mingw32-make.exe  -f CMakeFiles\\cmTC_04467.dir\\build.make CMakeFiles/cmTC_04467.dir/build
+        mingw32-make[1]: Entering directory 'D:/ap/DSView/build.rename-check/CMakeFiles/CMakeScratch/TryCompile-h6fqop'
+        Building C object CMakeFiles/cmTC_04467.dir/CMakeCCompilerABI.c.obj
+        C:\\msys64\\mingw64\\bin\\gcc.exe    -o CMakeFiles\\cmTC_04467.dir\\CMakeCCompilerABI.c.obj -c C:\\msys64\\mingw64\\share\\cmake\\Modules\\CMakeCCompilerABI.c
+        mingw32-make[1]: *** [CMakeFiles\\cmTC_04467.dir\\build.make:80: CMakeFiles/cmTC_04467.dir/CMakeCCompilerABI.c.obj] Error 1
+        mingw32-make[1]: Leaving directory 'D:/ap/DSView/build.rename-check/CMakeFiles/CMakeScratch/TryCompile-h6fqop'
+        mingw32-make: *** [Makefile:133: cmTC_04467/fast] Error 2
+        
+      exitCode: 2
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "C:/msys64/mingw64/share/cmake/Modules/CMakeTestCCompiler.cmake:56 (try_compile)"
+      - "CMakeLists.txt:24 (project)"
+    checks:
+      - "Check for working C compiler: C:/msys64/mingw64/bin/gcc.exe"
+    directories:
+      source: "D:/ap/DSView/build.rename-check/CMakeFiles/CMakeScratch/TryCompile-kjh1e4"
+      binary: "D:/ap/DSView/build.rename-check/CMakeFiles/CMakeScratch/TryCompile-kjh1e4"
+    cmakeVariables:
+      CMAKE_CXX_STDLIB_MODULES_JSON: ""
+      CMAKE_C_FLAGS: ""
+      CMAKE_C_FLAGS_DEBUG: ""
+      CMAKE_EXE_LINKER_FLAGS: ""
+    buildResult:
+      variable: "CMAKE_C_COMPILER_WORKS"
+      cached: true
+      stdout: |
+        Change Dir: 'D:/ap/DSView/build.rename-check/CMakeFiles/CMakeScratch/TryCompile-kjh1e4'
+        
+        Run Build Command(s): C:/msys64/mingw64/bin/cmake.exe -E env VERBOSE=1 C:/msys64/mingw64/bin/mingw32-make.exe -f Makefile cmTC_93b68/fast
+        C:/msys64/mingw64/bin/mingw32-make.exe  -f CMakeFiles\\cmTC_93b68.dir\\build.make CMakeFiles/cmTC_93b68.dir/build
+        mingw32-make[1]: Entering directory 'D:/ap/DSView/build.rename-check/CMakeFiles/CMakeScratch/TryCompile-kjh1e4'
+        Building C object CMakeFiles/cmTC_93b68.dir/testCCompiler.c.obj
+        C:\\msys64\\mingw64\\bin\\gcc.exe    -o CMakeFiles\\cmTC_93b68.dir\\testCCompiler.c.obj -c D:\\ap\\DSView\\build.rename-check\\CMakeFiles\\CMakeScratch\\TryCompile-kjh1e4\\testCCompiler.c
+        mingw32-make[1]: *** [CMakeFiles\\cmTC_93b68.dir\\build.make:80: CMakeFiles/cmTC_93b68.dir/testCCompiler.c.obj] Error 1
+        mingw32-make[1]: Leaving directory 'D:/ap/DSView/build.rename-check/CMakeFiles/CMakeScratch/TryCompile-kjh1e4'
+        mingw32-make: *** [Makefile:133: cmTC_93b68/fast] Error 2
+        
+      exitCode: 2
+...
