@@ -24,10 +24,12 @@
 /ChangeLog
 /Makefile
 /config.*
+!/config.h
 /libsigrokdecode4DSL4DSL4DSL4DSL-*.tar.*
 /libsigrokdecode4DSL.pc
 /libtool
 /version.h
+!/version.h
 __pycache__/
 *.pyc
 stamp-h?

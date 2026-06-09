@@ -832,6 +832,9 @@ if(APPLE)
         COMMENT "Stage resources (icon, Python decoders, res/, demo/, lang/, cdecoders/) into app bundle"
     )
 elseif(NOT WIN32)
+    set_target_properties(${PROJECT_NAME} PROPERTIES
+        OUTPUT_NAME ${DS_TITLE}
+    )
     # For Linux and other non-macOS builds, stage runtime resources used by the
     # in-tree executable. GetAppDataDir() resolves build.linux/PXTOOL to
     # ../share/PXTOOL, so C decoders must be copied under share/PXTOOL.

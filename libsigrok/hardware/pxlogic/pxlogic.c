@@ -630,7 +630,7 @@ static const GSList *hw_dev_mode_list(const struct sr_dev_inst *sdi)
 SR_PRIV int firmware_config(struct libusb_device_handle *usbdevh, const char *filename,unsigned int mode)
 {
     FILE *fw;
-    int chunksize, ret;
+    int chunksize, ret = SR_ERR;
     unsigned char *buf;
     int transferred;
     uint64_t filesize;
@@ -772,7 +772,8 @@ static int hw_usb_open(struct sr_dev_driver *di, struct sr_dev_inst *sdi, gboole
 
     sr_info("Open usb device instance, handle: %p", dev_handel);
 
-    if (libusb_open(dev_handel, &usb->devhdl) != 0){
+    ret = libusb_open(dev_handel, &usb->devhdl);
+    if (ret != 0){
         sr_err("Failed to open device: %s, handle:%p",
                 libusb_error_name(ret), dev_handel);
         return SR_ERR;
