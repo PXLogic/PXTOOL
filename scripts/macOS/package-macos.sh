@@ -183,7 +183,7 @@ if [ $NO_DMG -eq 0 ]; then
 
   create-dmg \
     --volname "PXTOOL ${VERSION}" \
-    --volicon "$DIST_APP/Contents/Resources/DSView.icns" \
+    --volicon "$DIST_APP/Contents/Resources/PXTOOL.icns" \
     --window-pos 200 120 \
     --window-size 600 400 \
     --icon-size 100 \

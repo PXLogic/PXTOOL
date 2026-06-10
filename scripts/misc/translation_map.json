@@ -28,7 +28,7 @@
   "Save captured data?": "保存采集到的数据?",
   "Current loading file has an old format. \\nThis will lead to a slow loading speed. \\nPlease resave it after loaded.": "此文件为旧格式 . \n加载速度较慢. \n可在加载后重新保存.",
   "To switch the new device?": "是否切换到新设备?",
-  "DSView does not currently support\\nfile saving for multiple data types.": "DSView当前不支持\n多数据类型的文件保存.",
+  "PXTOOL does not currently support\\nfile saving for multiple data types.": "PXTOOL当前不支持\n多数据类型的文件保存.",
   "No data to save.": "没有要保存的数据.",
   "No file name.": "没有文件名.",
   "Generate temp file data failed.": "生成临时文件数据失败.",

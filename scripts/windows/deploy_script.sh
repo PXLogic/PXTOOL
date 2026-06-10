@@ -1,6 +1,6 @@
 #!/bin/bash
 # =============================================================================
-# DSView Deploy Script
+# PXTOOL Deploy Script
 # Copies all runtime dependencies to build.windows after compilation.
 # Run this once after BUILD, or when dependencies change.
 # =============================================================================
@@ -30,7 +30,7 @@ fi
 
 echo ""
 echo "======================================"
-echo "DSView Deploy - Runtime Dependencies"
+echo "PXTOOL Deploy - Runtime Dependencies"
 echo "======================================"
 echo ""
 
@@ -207,6 +207,6 @@ fi
 echo ""
 echo "======================================"
 echo "Deployment complete!"
-echo "Run DSView: $BUILD_DIR/PXTOOL.exe"
+echo "Run PXTOOL: $BUILD_DIR/PXTOOL.exe"
 echo "======================================"
 echo ""

@@ -1,6 +1,6 @@
 /*
- * This file is part of the DSView project.
- * DSView is based on PulseView.
+ * This file is part of the PXTOOL project.
+ * PXTOOL is based on PulseView.
  * 
  * Copyright (C) 2023 DreamSourceLab <support@dreamsourcelab.com>
  *

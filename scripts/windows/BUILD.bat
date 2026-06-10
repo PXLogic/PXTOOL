@@ -1,10 +1,10 @@
 @echo off
-title DSView Build
+title PXTOOL Build
 cd /d "%~dp0\..\.."
 
 echo.
 echo ======================================
-echo  DSView Incremental Build
+echo  PXTOOL Incremental Build
 echo ======================================
 echo.
 

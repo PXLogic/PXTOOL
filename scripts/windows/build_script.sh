@@ -1,6 +1,6 @@
 #!/bin/bash
 # =============================================================================
-# DSView Build Script (compile only)
+# PXTOOL Build Script (compile only)
 # Runs CMake configuration + make compilation inside MinGW64 environment.
 # After this, run deploy_script.sh to copy runtime dependencies.
 # =============================================================================
@@ -15,7 +15,7 @@ BUILD_DIR="$SOURCE_DIR/build.windows"
 
 echo ""
 echo "======================================"
-echo "DSView Build Script (MSYS2 MinGW64)"
+echo "PXTOOL Build Script (MSYS2 MinGW64)"
 echo "======================================"
 echo ""
 
@@ -145,7 +145,7 @@ fi
 # Use -j1 to avoid parallel moc file conflicts on Windows.
 # Capture make's real exit code via PIPESTATUS.
 # --------------------------------------------------------------------------
-echo "[Step 2/2] Compiling DSView..."
+echo "[Step 2/2] Compiling PXTOOL..."
 echo ""
 
 # applogo.rc.obj is not always rebuilt when only win-app-logo.ico changes; force it.
@@ -156,9 +156,9 @@ if [ -f "$ICO_SRC" ]; then
         echo "  -> Icon or applogo.rc changed; removing stale applogo.rc.obj"
         rm -f "$RC_OBJ"
     fi
-    if [ "$ICO_SRC" -nt "$SOURCE_DIR/PXTOOL/DSView.qrc" ]; then
-        touch "$SOURCE_DIR/PXTOOL/DSView.qrc"
-        echo "  -> win-app-logo.ico changed; touching DSView.qrc for rcc rebuild"
+    if [ "$ICO_SRC" -nt "$SOURCE_DIR/PXTOOL/PXTOOL.qrc" ]; then
+        touch "$SOURCE_DIR/PXTOOL/PXTOOL.qrc"
+        echo "  -> win-app-logo.ico changed; touching PXTOOL.qrc for rcc rebuild"
     fi
 fi
 
