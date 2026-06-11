@@ -15,6 +15,11 @@ Python decoders under `libsigrokdecode/`.
 - Protocol decoding based on the bundled sigrok decoder stack
 - Packaging support for Windows, Linux, and macOS
 
+## Documentation
+
+- [PXTOOL User Manual (English)](PXTOOL_User_Manual_en.md)
+- [PXTOOL 用户手册（中文）](PXTOOL_User_Manual_zh.md)
+
 ## Build Notes
 
 On macOS, the local app bundle is generated at:

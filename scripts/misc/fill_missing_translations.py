@@ -40,10 +40,10 @@ TRANSLATIONS = {
     "USB bandwidth can not support current sample rate! \nPlease reduce the sample rate!":
         "USB带宽不支持当前采样率！\n请降低采样率！",
     # StoreSession
-    "DSView does not currently support\nfile export for multiple data types.":
-        "DSView 暂不支持\n多数据类型的文件导出。",
-    "DSView does not currently support\nfile saving for multiple data types.":
-        "DSView 暂不支持\n多数据类型的文件保存。",
+    "PXTOOL does not currently support\nfile export for multiple data types.":
+        "PXTOOL 暂不支持\n多数据类型的文件导出。",
+    "PXTOOL does not currently support\nfile saving for multiple data types.":
+        "PXTOOL 暂不支持\n多数据类型的文件保存。",
     "Failed to create zip file. Malloc error.": "创建zip文件失败，内存分配错误。",
     "Failed to create zip file. Please check write permission of this path.":
         "创建zip文件失败，请检查该路径的写入权限。",

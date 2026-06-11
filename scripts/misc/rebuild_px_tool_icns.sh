@@ -3,7 +3,7 @@
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 PNG="$ROOT/PXTOOL/icons/dock_app_icon.png"
-OUT="$ROOT/DSView.icns"
+OUT="$ROOT/PXTOOL.icns"
 TMP=$(mktemp -d)
 IST="$TMP/icon.iconset"
 

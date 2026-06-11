@@ -1,6 +1,6 @@
 /*
- * This file is part of the DSView project.
- * DSView is based on PulseView.
+ * This file is part of the PXTOOL project.
+ * PXTOOL is based on PulseView.
  *
  * Copyright (C) 2012 Joel Holdsworth <joel@airwebreathe.org.uk>
  * Copyright (C) 2013 DreamSourceLab <dreamsourcelab@dreamsourcelab.com>
@@ -30,7 +30,7 @@
 #include <QStyle>
 #include <QGuiApplication>
 #include <QScreen>
-#include "dsapplication.h"
+#include "application.h"
 #include "mystyle.h" 
 #include "pv/mainframe.h"
 #include "pv/config/appconfig.h"

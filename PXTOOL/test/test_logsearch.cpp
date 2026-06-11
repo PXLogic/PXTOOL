@@ -1,5 +1,5 @@
 /*
- * This file is part of the DSView project.
+ * This file is part of the PXTOOL project.
  *
  * Copyright (C) 2026 DreamSourceLab <support@dreamsourcelab.com>
  *

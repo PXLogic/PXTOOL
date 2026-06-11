@@ -1,6 +1,6 @@
 /*
- * This file is part of the DSView project.
- * DSView is based on PulseView.
+ * This file is part of the PXTOOL project.
+ * PXTOOL is based on PulseView.
  *
  * Copyright (C) 2016 DreamSourceLab <support@dreamsourcelab.com>
  *
@@ -19,7 +19,7 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
  */
 
-#include "dsapplication.h"
+#include "application.h"
 
 #include <QMessageBox>
 

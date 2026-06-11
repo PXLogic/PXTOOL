@@ -1,5 +1,5 @@
 ##
-## This file is part of the DSView project.
+## This file is part of the PXTOOL project.
 ##
 ## Copyright (C) 2012 Joel Holdsworth <joel@airwebreathe.org.uk>
 ## Copyright (C) 2012-2013 Alexandru Gagniuc <mr.nuke.me@gmail.com>
@@ -258,7 +258,7 @@ find_package(Threads)
 
 set(DSView_SOURCES
     PXTOOL/main.cpp
-    PXTOOL/dsapplication.cpp
+    PXTOOL/application.cpp
     PXTOOL/pv/log.cpp
     PXTOOL/pv/sigsession.cpp
     PXTOOL/pv/mainwindow.cpp
@@ -606,7 +606,7 @@ set(DSView_FORMS
 )
 
 set(DSView_RESOURCES
-    PXTOOL/DSView.qrc
+    PXTOOL/PXTOOL.qrc
     PXTOOL/themes/breeze.qrc
     PXTOOL/languages/language.qrc
 )
@@ -786,12 +786,12 @@ if(APPLE)
         BUNDLE TRUE
         MACOSX_BUNDLE TRUE
         OUTPUT_NAME ${DS_TITLE}
-        MACOSX_BUNDLE_GUI_IDENTIFIER com.pxlogic.${PROJECT_NAME}
+        MACOSX_BUNDLE_GUI_IDENTIFIER com.pxlogic.PXTOOL
         MACOSX_BUNDLE_BUNDLE_NAME ${DS_TITLE}
         MACOSX_BUNDLE_BUNDLE_VERSION ${DS_VERSION_STRING}
         MACOSX_BUNDLE_SHORT_VERSION_STRING ${DS_VERSION_STRING}
         MACOSX_BUNDLE_INFO_PLIST ${CMAKE_SOURCE_DIR}/mac_appbundle_template.plist.in
-        MACOSX_BUNDLE_ICON_FILE DSView.icns
+        MACOSX_BUNDLE_ICON_FILE PXTOOL.icns
         RUNTIME_OUTPUT_DIRECTORY "${MACOS_BUILD_OUTPUT_DIR}"
     )
     # `make` does not run `install`; without these POST_BUILD copies the
@@ -803,8 +803,8 @@ if(APPLE)
         # icon
         COMMAND ${CMAKE_COMMAND} -E make_directory "${_BUNDLE_RES_DIR}"
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            "${CMAKE_CURRENT_SOURCE_DIR}/DSView.icns"
-            "${_BUNDLE_RES_DIR}/DSView.icns"
+            "${CMAKE_CURRENT_SOURCE_DIR}/PXTOOL.icns"
+            "${_BUNDLE_RES_DIR}/PXTOOL.icns"
         # Python decoders (the protocol picker reads this dir at startup)
         COMMAND ${CMAKE_COMMAND} -E make_directory
             "${_BUNDLE_RES_DIR}/share/libsigrokdecode"
@@ -879,18 +879,18 @@ if(APPLE)
     set(MAC_RES_PREFIX ${CMAKE_INSTALL_PREFIX}/${DS_TITLE}.app/Contents/Resources/)
 
     # Adding icon via add_executable / target_sources does not work, hack around this
-    install(FILES DSView.icns DESTINATION ${MAC_RES_PREFIX})
+    install(FILES PXTOOL.icns DESTINATION ${MAC_RES_PREFIX})
 else()
     install(TARGETS ${PROJECT_NAME} DESTINATION bin)
 endif()
 install(DIRECTORY PXTOOL/res DESTINATION ${MAC_RES_PREFIX}share/PXTOOL)
 install(DIRECTORY PXTOOL/demo DESTINATION ${MAC_RES_PREFIX}share/PXTOOL)
 install(FILES PXTOOL/icons/logo.svg DESTINATION ${MAC_RES_PREFIX}share/PXTOOL RENAME logo.svg)
-install(FILES PXTOOL/icons/logo.svg DESTINATION ${MAC_RES_PREFIX}share/icons/hicolor/scalable/apps RENAME dsview.svg)
-install(FILES PXTOOL/icons/logo.svg DESTINATION ${MAC_RES_PREFIX}share/pixmaps RENAME dsview.svg)
+install(FILES PXTOOL/icons/logo.svg DESTINATION ${MAC_RES_PREFIX}share/icons/hicolor/scalable/apps RENAME pxtool.svg)
+install(FILES PXTOOL/icons/logo.svg DESTINATION ${MAC_RES_PREFIX}share/pixmaps RENAME pxtool.svg)
 
 if(CMAKE_SYSTEM_NAME MATCHES "Linux")	
-	install(FILES PXTOOL/DSView.desktop DESTINATION /usr/share/applications RENAME dsview.desktop)
+	install(FILES PXTOOL/PXTOOL.desktop DESTINATION /usr/share/applications RENAME pxtool.desktop)
 	
 	#add_compile_definitions(_DEFAULT_SOURCE)
 

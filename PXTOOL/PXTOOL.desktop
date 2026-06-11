@@ -5,6 +5,6 @@ Name=PXTOOL
 Comment=GUI Program for DreamSourceLab USB-based Instruments
 TryExec=PXTOOL
 Exec=PXTOOL
-Icon=dsview
+Icon=pxtool
 Terminal=false
 Categories=Development;Electronics;Qt;
