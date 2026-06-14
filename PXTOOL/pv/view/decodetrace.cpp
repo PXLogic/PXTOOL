@@ -60,6 +60,82 @@ using namespace std;
 namespace pv {
 namespace view {
 
+namespace {
+
+QString decoder_base_name(const srd_decoder *decoder)
+{
+    QString name = QString::fromUtf8((decoder && decoder->name) ? decoder->name : "");
+    name = name.trimmed();
+
+    if (name.endsWith("(C)", Qt::CaseInsensitive))
+        name.chop(3);
+    else if (name.endsWith(" [C]", Qt::CaseInsensitive))
+        name.chop(4);
+
+    return name.trimmed();
+}
+
+bool has_native_c_decoder_counterpart(const srd_decoder *decoder)
+{
+    if (!decoder || decoder->is_c_decoder)
+        return false;
+
+    const QString base_name = decoder_base_name(decoder);
+    if (base_name.isEmpty())
+        return false;
+
+    for (const GSList *l = srd_decoder_list(); l; l = l->next) {
+        const srd_decoder *candidate = static_cast<const srd_decoder *>(l->data);
+        if (!candidate || !candidate->is_c_decoder)
+            continue;
+
+        if (decoder_base_name(candidate).compare(base_name, Qt::CaseInsensitive) == 0)
+            return true;
+    }
+
+    return false;
+}
+
+QString decoder_display_name(const srd_decoder *decoder, bool use_c_decoder)
+{
+    QString name = QString::fromUtf8((decoder && decoder->name) ? decoder->name : "");
+    if (!decoder)
+        return name;
+
+    if (decoder->is_c_decoder)
+        return name;
+
+    if (pv::cdecoders::CDecoderRegistry::instance().has_c_decoder_for_id(decoder->id))
+        return name + (use_c_decoder ? "(C)" : "(Py)");
+
+    if (has_native_c_decoder_counterpart(decoder))
+        return name + "(Py)";
+
+    return name;
+}
+
+QString row_display_title(const pv::data::decode::Row &row, bool use_c_decoder)
+{
+    const srd_decoder *decoder = row.decoder();
+    const srd_decoder_annotation_row *ann_row = row.row();
+    const QString decoder_name = decoder_display_name(decoder, use_c_decoder);
+
+    if (!decoder_name.isEmpty() && ann_row && ann_row->desc)
+        return QString("%1: %2")
+            .arg(decoder_name)
+            .arg(QString::fromUtf8(ann_row->desc));
+
+    if (!decoder_name.isEmpty())
+        return decoder_name;
+
+    if (ann_row && ann_row->desc)
+        return QString::fromUtf8(ann_row->desc);
+
+    return QString();
+}
+
+} // namespace
+
 const QColor DecodeTrace::DecodeColours[4] = {
 	QColor(0xEF, 0x29, 0x29),	// Red
 	QColor(0xFC, 0xE9, 0x4F),	// Yellow
@@ -155,16 +231,14 @@ int DecodeTrace::get_name_width()
 {
     if (!_decoder_stack->stack().empty()) {
         const srd_decoder *root = _decoder_stack->stack().front()->decoder();
-        if (root && pv::cdecoders::CDecoderRegistry::instance().has_c_decoder_for_id(root->id)) {
+        const QString display_name =
+            decoder_display_name(root, _decoder_stack->use_c_decoder());
+        if (display_name != _name) {
             QFont font;
             float fSize = AppConfig::Instance().appOptions.fontSize;
             font.setPixelSize(qRound(fSize <= 10 ? fSize : 10));
             QFontMetrics fm(font);
-            // Measure the full displayed string to avoid font-metric addition
-            // errors (kerning etc.).  Always reserve space for " [Py]" (the
-            // wider tag) so the header never needs to shrink when the engine
-            // switches between C and Py variants.
-            return fm.boundingRect(_name + " [Py]").width();
+            return fm.boundingRect(display_name).width();
         }
     }
     return Trace::get_name_width();
@@ -176,12 +250,11 @@ void DecodeTrace::paint_label(QPainter &p, int right, const QPoint pt, QColor fo
     if (!_decoder_stack->stack().empty())
         root_srd = _decoder_stack->stack().front()->decoder();
 
-    bool has_c_version = root_srd &&
-        pv::cdecoders::CDecoderRegistry::instance().has_c_decoder_for_id(root_srd->id);
-
-    if (has_c_version) {
+    const QString display_name =
+        decoder_display_name(root_srd, _decoder_stack->use_c_decoder());
+    if (!_name.isEmpty() && display_name != _name) {
         const QString orig_name = _name;
-        _name = orig_name + (_decoder_stack->use_c_decoder() ? " [C]" : " [Py]");
+        _name = display_name;
         Trace::paint_label(p, right, pt, fore);
         _name = orig_name;
     } else {
@@ -351,14 +424,16 @@ void DecodeTrace::paint_mid(QPainter &p, int left, int right, QColor fore, QColo
                         }
 
                         y += annotation_height;
-                        _cur_row_headings.push_back(row.title());
+                        _cur_row_headings.push_back(
+                            row_display_title(row, _decoder_stack->use_c_decoder()));
                     }
                 }
             }
         } else {
             draw_unshown_row(p, y, annotation_height, left, right, tr("Unshown"), fore, back);
             y += annotation_height;
-            _cur_row_headings.push_back(dec->decoder()->name);
+            _cur_row_headings.push_back(
+                decoder_display_name(dec->decoder(), _decoder_stack->use_c_decoder()));
         }
     }
 }

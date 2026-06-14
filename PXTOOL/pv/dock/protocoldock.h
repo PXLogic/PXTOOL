@@ -54,7 +54,7 @@ struct DecoderInfoItem{
 
     /* Display name shown in the protocol picker. For protocols that have
      * both a Python and a C implementation we expand the list into two
-     * entries with " [C]" / " [Py]" suffixes so the user picks the engine
+     * entries with "(C)" / "(Py)" suffixes so the user picks the engine
      * directly from the list; for protocols without a C implementation this
      * is just the decoder's plain name. */
     QString _display_name;
@@ -62,7 +62,8 @@ struct DecoderInfoItem{
     /* Which engine to force on the resulting decoder stack:
      *   0 = automatic (current default: use C if a C decoder exists for the
      *       protocol's id, otherwise Python),
-     *   1 = always use the C decoder,
+     *   1 = C entry (native libsigrokdecode C decoder, or force the
+     *       pv/cdecoders implementation for a Python decoder),
      *   2 = always use the Python decoder.
      * The C/Py forced entries are only emitted for protocols that actually
      * have both implementations available. */
