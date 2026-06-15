@@ -276,6 +276,7 @@ set(DSView_SOURCES
     PXTOOL/pv/api/mcp_transport.cpp
     PXTOOL/pv/api/app_service.cpp
     PXTOOL/pv/api/session_service.cpp
+    PXTOOL/pv/api/rpc_dispatcher.cpp
     PXTOOL/pv/sigsession.cpp
     PXTOOL/pv/mainwindow.cpp
     PXTOOL/pv/data/snapshot.cpp
@@ -422,6 +423,7 @@ set(DSView_HEADERS
     PXTOOL/pv/api/isession_service.h
     PXTOOL/pv/api/app_service.h
     PXTOOL/pv/api/session_service.h
+    PXTOOL/pv/api/rpc_dispatcher.h
     PXTOOL/pv/sigsession.h
     PXTOOL/pv/mainwindow.h
     PXTOOL/pv/dialogs/deviceoptions.h

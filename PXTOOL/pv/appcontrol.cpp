@@ -32,12 +32,7 @@
 #include "api/iapp_service.h"
 #include "api/app_service.h"
 #include "api/mcp_transport.h"
-#if __has_include("api/rpc_dispatcher.h")
 #include "api/rpc_dispatcher.h"
-#define PXTOOL_HAS_RPC_DISPATCHER 1
-#else
-#define PXTOOL_HAS_RPC_DISPATCHER 0
-#endif
 #include "dsvdef.h"
 #include "config/appconfig.h"
 #include "log.h"
@@ -177,13 +172,9 @@ bool AppControl::Start()
     _session->Open();
     _app_service = new pv::api::AppService(this);
     _app_service->initialize();
-#if PXTOOL_HAS_RPC_DISPATCHER
     _rpc_dispatcher = new pv::api::RpcDispatcher(_app_service);
     _mcp_transport = new pv::api::McpTransport(_rpc_dispatcher, 10110);
     _mcp_transport->start();
-#else
-    dsv_warn("MCP RpcDispatcher is not available; transport start deferred until Task 3.");
-#endif
     return true;
 }
 
@@ -194,9 +185,7 @@ bool AppControl::Start()
         delete _mcp_transport;
         _mcp_transport = nullptr;
     }
-#if PXTOOL_HAS_RPC_DISPATCHER
     delete _rpc_dispatcher;
-#endif
     _rpc_dispatcher = nullptr;
     if (_app_service) {
         _app_service->shutdown();
