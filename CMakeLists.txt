@@ -193,18 +193,19 @@ if(NOT QT_VERSION_FORCE OR "${QT_VERSION_FORCE}" STREQUAL "5")
 		find_package(Qt5Widgets REQUIRED)
 		find_package(Qt5Gui REQUIRED)
 		find_package(Qt5Svg REQUIRED)
+		find_package(Qt5Network REQUIRED)
 		# win32
 		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${Qt5Widgets_EXECUTABLE_COMPILE_FLAGS}")
 		if (WIN32)
 			find_package(Qt5WinExtras REQUIRED)
 			message(STATUS "	 libraries:" ${Qt5WinExtras_LIBRARIES})
-			set(QT_INCLUDE_DIRS ${Qt5Gui_INCLUDE_DIRS} ${Qt5Widgets_INCLUDE_DIRS} ${Qt5WinExtras_INCLUDE_DIRS} ${Qt5Svg_INCLUDE_DIRS})
-			set(QT_LIBRARIES Qt5::Gui Qt5::Widgets Qt5::WinExtras Qt5::Svg)
-			add_definitions(${Qt5Gui_DEFINITIONS} ${Qt5Widgets_DEFINITIONS} ${Qt5WinExtras_DEFINITIONS}  ${Qt5Svg_DEFINITIONS} )
+			set(QT_INCLUDE_DIRS ${Qt5Gui_INCLUDE_DIRS} ${Qt5Widgets_INCLUDE_DIRS} ${Qt5WinExtras_INCLUDE_DIRS} ${Qt5Svg_INCLUDE_DIRS} ${Qt5Network_INCLUDE_DIRS})
+			set(QT_LIBRARIES Qt5::Gui Qt5::Widgets Qt5::WinExtras Qt5::Svg Qt5::Network)
+			add_definitions(${Qt5Gui_DEFINITIONS} ${Qt5Widgets_DEFINITIONS} ${Qt5WinExtras_DEFINITIONS} ${Qt5Svg_DEFINITIONS} ${Qt5Network_DEFINITIONS})
 		else()
-			set(QT_INCLUDE_DIRS ${Qt5Gui_INCLUDE_DIRS} ${Qt5Widgets_INCLUDE_DIRS})
-			set(QT_LIBRARIES Qt5::Gui Qt5::Widgets)
-			add_definitions(${Qt5Gui_DEFINITIONS} ${Qt5Widgets_DEFINITIONS})
+			set(QT_INCLUDE_DIRS ${Qt5Gui_INCLUDE_DIRS} ${Qt5Widgets_INCLUDE_DIRS} ${Qt5Network_INCLUDE_DIRS})
+			set(QT_LIBRARIES Qt5::Gui Qt5::Widgets Qt5::Network)
+			add_definitions(${Qt5Gui_DEFINITIONS} ${Qt5Widgets_DEFINITIONS} ${Qt5Network_DEFINITIONS})
 		endif()
 	endif()
 endif()
@@ -216,10 +217,11 @@ if(NOT Qt5Core_FOUND OR "${QT_VERSION_FORCE}" STREQUAL "6")
         find_package(Qt6Widgets REQUIRED)
         find_package(Qt6Gui REQUIRED)
         find_package(Qt6Svg REQUIRED)
+        find_package(Qt6Network REQUIRED)
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${Qt6Widgets_EXECUTABLE_COMPILE_FLAGS}")
-	set(QT_INCLUDE_DIRS ${Qt6Gui_INCLUDE_DIRS} ${Qt6Widgets_INCLUDE_DIRS})
-        set(QT_LIBRARIES Qt6::Gui Qt6::Widgets Qt6::Svg)
-	add_definitions(${Qt6Gui_DEFINITIONS} ${Qt6Widgets_DEFINITIONS})
+	set(QT_INCLUDE_DIRS ${Qt6Gui_INCLUDE_DIRS} ${Qt6Widgets_INCLUDE_DIRS} ${Qt6Network_INCLUDE_DIRS})
+        set(QT_LIBRARIES Qt6::Gui Qt6::Widgets Qt6::Svg Qt6::Network)
+	add_definitions(${Qt6Gui_DEFINITIONS} ${Qt6Widgets_DEFINITIONS} ${Qt6Network_DEFINITIONS})
 
 	if(APPLE)
 		find_package(Qt6DBus REQUIRED)
@@ -231,6 +233,17 @@ if(NOT Qt5Core_FOUND AND NOT Qt6Core_FOUND)
 	message("Error!The qt5 or qt6 can't find, if them has been installed, please append the install path to CMAKE_PREFIX_PATH, the command as:")
 	message("list(APPEND CMAKE_PREFIX_PATH \"xxx install path\")" )
 	message(FATAL_ERROR  "Can't find Qt5 or Qt6!")
+endif()
+
+find_package(nlohmann_json 3.2.0 QUIET)
+if(NOT nlohmann_json_FOUND)
+    include(FetchContent)
+    FetchContent_Declare(
+        nlohmann_json
+        GIT_REPOSITORY https://github.com/nlohmann/json.git
+        GIT_TAG v3.11.3
+    )
+    FetchContent_MakeAvailable(nlohmann_json)
 endif()
 
 #===============================================================================
@@ -260,6 +273,7 @@ set(DSView_SOURCES
     PXTOOL/main.cpp
     PXTOOL/application.cpp
     PXTOOL/pv/log.cpp
+    PXTOOL/pv/api/mcp_transport.cpp
     PXTOOL/pv/sigsession.cpp
     PXTOOL/pv/mainwindow.cpp
     PXTOOL/pv/data/snapshot.cpp
@@ -399,6 +413,9 @@ endif ()
 set(DSView_HEADERS
     PXTOOL/mystyle.h
     PXTOOL/pv/log.h
+    PXTOOL/pv/api/types.h
+    PXTOOL/pv/api/transport.h
+    PXTOOL/pv/api/mcp_transport.h
     PXTOOL/pv/sigsession.h
     PXTOOL/pv/mainwindow.h
     PXTOOL/pv/dialogs/deviceoptions.h
@@ -665,7 +682,7 @@ if(NOT DISABLE_WERROR)
         add_definitions(-Werror)
 endif()
 
-set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14")
+set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17")
 set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99")
 
 
@@ -734,7 +751,7 @@ add_executable(${PROJECT_NAME}
 	${libsigrokdecode_SOURCES}
 )
 
-target_link_libraries(${PROJECT_NAME} ${DSVIEW_LINK_LIBS})
+target_link_libraries(${PROJECT_NAME} ${DSVIEW_LINK_LIBS} nlohmann_json::nlohmann_json)
 
 if(WIN32)
 # Pass -mwindows so that no "DOS box" will open when PulseView is started.
