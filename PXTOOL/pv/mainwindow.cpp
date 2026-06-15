@@ -104,8 +104,8 @@
 #include "ui/msgbox.h"
 #include "config/appconfig.h"
 #include "appcontrol.h"
+#include "api/app_service.h"
 #include "dsvdef.h"
-#include "appcontrol.h"
 #include "utility/encoding.h"
 #include "utility/diskcachesettings.h"
 #include "utility/path.h"
@@ -259,6 +259,11 @@ namespace pv
         _sidebar_dock->setWidget(_sidebar_widget);
 
         _session->set_decoder_pannel(_sidebar_widget->protocol_widget());
+
+        auto *app_svc = AppControl::Instance()->GetAppService();
+        if (auto *concrete = dynamic_cast<pv::api::AppService*>(app_svc)) {
+            concrete->set_active_view(_view);
+        }
 
         addDockWidget(Qt::RightDockWidgetArea, _sidebar_dock);
 
