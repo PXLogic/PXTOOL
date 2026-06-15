@@ -51,6 +51,7 @@ class SearchDock;
 class DeviceOptionsDock;
 class LogDock;
 class GlitchFilterDock;
+class McpControlDock;
 
 class SideBar : public QWidget, public IUiWindow
 {
@@ -64,8 +65,9 @@ public:
         TabSearch   = 3,
         TabOptions  = 4,
         TabFilter   = 5,
-        TabLogs     = 6,
-        TabCount    = 7
+        TabMcp      = 6,
+        TabLogs     = 7,
+        TabCount    = 8
     };
 
     SideBar(QWidget *parent, view::View &view, SigSession *session);
@@ -79,6 +81,7 @@ public:
     DeviceOptionsDock *device_options_widget() { return _device_options_widget; }
     LogDock           *log_widget()            { return _log_widget; }
     GlitchFilterDock *glitch_filter_widget() { return _glitch_filter_widget; }
+    McpControlDock   *mcp_widget()            { return _mcp_widget; }
 
     // 64 px gives ~56 px of usable text width (4 px side padding × 2),
     // enough for the longest 7-character English label ("MEASURE") at 12 px.
@@ -129,6 +132,7 @@ private:
     DeviceOptionsDock *_device_options_widget;
     LogDock           *_log_widget;
     GlitchFilterDock *_glitch_filter_widget = nullptr;
+    McpControlDock   *_mcp_widget = nullptr;
 
     QLabel *_title_trigger  = nullptr;
     QLabel *_title_decode   = nullptr;
@@ -136,6 +140,7 @@ private:
     QLabel *_title_search   = nullptr;
     QLabel *_title_options  = nullptr;
     QLabel *_title_filter  = nullptr;
+    QLabel *_title_mcp     = nullptr;
 
     SigSession     *_session;
 

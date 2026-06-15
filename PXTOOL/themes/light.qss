@@ -2616,6 +2616,64 @@ QWidget#filter_header_bar QLabel#filter_panel_title {
     font-weight: 600;
 }
 
+/* ── MCP Panel header bar (light) ──────────────────────────────── */
+QWidget#mcp_header_bar {
+    background: #f5f5f5;
+    border-bottom: 1px solid #dddddd;
+}
+QWidget#mcp_header_bar QLabel#mcp_panel_title {
+    color: #222222;
+    font-weight: 600;
+}
+
+/* ── MCP Panel content (light) ─────────────────────────────────── */
+QWidget#mcpControlWidget QGroupBox {
+    background: transparent;
+    border: 1px solid #cccccc;
+    border-radius: 4px;
+    margin-top: 10px;
+    padding: 8px 6px 6px 6px;
+    color: #222222;
+    font-weight: normal;
+}
+QWidget#mcpControlWidget QGroupBox::title {
+    subcontrol-origin: margin;
+    subcontrol-position: top left;
+    left: 8px;
+    padding: 0 4px;
+    color: #222222;
+    font-weight: normal;
+}
+QWidget#mcpControlWidget QLabel {
+    color: #555555;
+}
+QWidget#mcpControlWidget QLabel[state="running"] {
+    color: #047857;
+}
+QWidget#mcpControlWidget QLabel[state="stopped"] {
+    color: #dc2626;
+}
+QFrame#mcpCmdFrame {
+    background-color: #eeeeee;
+    border: 1px solid #cccccc;
+    border-radius: 4px;
+}
+QFrame#mcpCmdFrame QLabel#mcpCommandLabel {
+    color: #333333;
+    font-family: Consolas, monospace;
+}
+QFrame#mcpCmdFrame QPushButton#mcpCopyButton {
+    background-color: transparent;
+    border: 1px solid #cccccc;
+    border-radius: 3px;
+    color: #555555;
+    padding: 2px 8px;
+}
+QFrame#mcpCmdFrame QPushButton#mcpCopyButton:hover {
+    border-color: #7c3aed;
+    background-color: rgba(124, 58, 237, 0.08);
+}
+
 /* ── Glitch Filter Panel content (light) ────────────────────────── */
 QWidget#glitchFilterWidget QGroupBox {
     background: transparent;

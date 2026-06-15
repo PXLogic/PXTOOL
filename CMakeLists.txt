@@ -312,6 +312,7 @@ set(DSView_SOURCES
     PXTOOL/pv/dock/searchdock.cpp
     PXTOOL/pv/dock/sidebar.cpp
     PXTOOL/pv/dock/glitchfilterdock.cpp
+    PXTOOL/pv/dock/mcpcontroldock.cpp
     PXTOOL/pv/dock/deviceoptionsdock.cpp
     PXTOOL/pv/toolbars/logobar.cpp
     PXTOOL/pv/dialogs/about.cpp
@@ -451,6 +452,7 @@ set(DSView_HEADERS
     PXTOOL/pv/dock/searchdock.h
     PXTOOL/pv/dock/sidebar.h
     PXTOOL/pv/dock/glitchfilterdock.h
+    PXTOOL/pv/dock/mcpcontroldock.h
     PXTOOL/pv/data/glitchfilter.h
     PXTOOL/pv/dock/deviceoptionsdock.h
     PXTOOL/pv/toolbars/logobar.h
