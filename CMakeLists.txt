@@ -764,6 +764,19 @@ add_executable(${PROJECT_NAME}
 
 target_link_libraries(${PROJECT_NAME} ${DSVIEW_LINK_LIBS} nlohmann_json::nlohmann_json)
 
+find_program(NPM_EXECUTABLE npm)
+if(NPM_EXECUTABLE)
+    add_custom_command(
+        OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/web/dist/index.html
+        COMMAND ${NPM_EXECUTABLE} install
+        COMMAND ${NPM_EXECUTABLE} run build
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/web
+        COMMENT "Building Vite MCP web client..."
+        DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/web/package.json
+    )
+    add_custom_target(webui DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/web/dist/index.html)
+endif()
+
 if(WIN32)
 # Pass -mwindows so that no "DOS box" will open when PulseView is started.
 set_target_properties(${PROJECT_NAME} PROPERTIES
@@ -777,6 +790,10 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
             "${CMAKE_CURRENT_SOURCE_DIR}/build.windows/lang"
         COMMAND ${CMAKE_COMMAND} -E make_directory
             "${CMAKE_CURRENT_SOURCE_DIR}/build.windows/decoders/c_decoders"
+        COMMAND ${CMAKE_COMMAND}
+            -DSRC="${CMAKE_CURRENT_SOURCE_DIR}/web/dist"
+            -DDST="$<TARGET_FILE_DIR:${PROJECT_NAME}>/webui"
+            -P "${CMAKE_CURRENT_SOURCE_DIR}/CMake/CopyOptionalDir.cmake"
         COMMENT "Stage lang/ resources into build output"
     )
 endif()
