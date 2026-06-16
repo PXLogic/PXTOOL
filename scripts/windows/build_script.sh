@@ -177,6 +177,10 @@ fi
 echo "[Step 2/3] Compiling PXTOOL..."
 echo ""
 
+# CMake links libsigrokdecode C decoder modules directly into this directory.
+# If a user cleaned only this runtime subtree, MinGW ld will not recreate it.
+mkdir -p "$BUILD_DIR/decoders/c_decoders"
+
 # applogo.rc.obj is not always rebuilt when only win-app-logo.ico changes; force it.
 RC_OBJ="$BUILD_DIR/CMakeFiles/DSView.dir/applogo.rc.obj"
 ICO_SRC="$SOURCE_DIR/win-app-logo.ico"

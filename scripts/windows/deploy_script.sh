@@ -107,6 +107,15 @@ sync_dir() {
         echo "  -> WARNING: $label source not found at $src, skipping."
         return
     fi
+    local src_real dst_real
+    src_real=$(cd "$src" && pwd -P)
+    if [ -d "$dst" ]; then
+        dst_real=$(cd "$dst" && pwd -P)
+        if [ "$src_real" = "$dst_real" ]; then
+            echo "  -> $label already in place, skipping."
+            return
+        fi
+    fi
     if command -v rsync &>/dev/null; then
         rsync -a --delete "$src/" "$dst/"
         echo "  -> $label synced via rsync"
