@@ -1016,7 +1016,7 @@ install(FILES ug31.pdf DESTINATION ${MAC_RES_PREFIX}share/PXTOOL RENAME ug31.pdf
 install(DIRECTORY libsigrokdecode/decoders DESTINATION ${MAC_RES_PREFIX}share/libsigrokdecode)
 foreach(dec ${C_DECODERS})
     install(TARGETS decoder_${dec}
-        DESTINATION ${MAC_RES_PREFIX}share/libsigrokdecode/c_decoders
+        DESTINATION ${MAC_RES_PREFIX}share/libsigrokdecode/decoders/c_decoders
     )
 endforeach()
 install(DIRECTORY lang DESTINATION ${MAC_RES_PREFIX}share/PXTOOL)

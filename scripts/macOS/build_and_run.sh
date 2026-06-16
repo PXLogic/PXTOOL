@@ -7,6 +7,8 @@ APP_PATH="${ROOT_DIR}/build.macOS/${APP_NAME}.app"
 APP_WEBUI_PATH="${APP_PATH}/Contents/MacOS/webui/index.html"
 APP_CDECODER_DIR="${APP_PATH}/Contents/Resources/share/PXTOOL/cdecoders"
 SPI_MODULE_PATH="${ROOT_DIR}/build.macOS/spi.dylib"
+SRD_C_DECODER_BUILD_DIR="${ROOT_DIR}/build.macOS/decoders/c_decoders"
+SRD_C_DECODER_APP_DIR="${APP_PATH}/Contents/Resources/share/libsigrokdecode/decoders/c_decoders"
 
 # C decoder runtime directory must match GetUserDataDir()+"/cdecoders" in
 # pv/config/appconfig.cpp (Qt QStandardPaths::AppDataLocation +
@@ -32,6 +34,14 @@ if [ ! -f "${SPI_MODULE_PATH}" ] && [ ! -f "${APP_CDECODER_DIR}/spi.dylib" ]; th
 fi
 
 echo "[3/4] Deploy bundled C decoder dylib to runtime cdecoders dir"
+if [ ! -d "${SRD_C_DECODER_BUILD_DIR}" ]; then
+    echo "ERROR: built libsigrokdecode C decoder directory not found: ${SRD_C_DECODER_BUILD_DIR}"
+    exit 1
+fi
+rm -rf "${SRD_C_DECODER_APP_DIR}"
+mkdir -p "${SRD_C_DECODER_APP_DIR}"
+cp -R "${SRD_C_DECODER_BUILD_DIR}/." "${SRD_C_DECODER_APP_DIR}/"
+
 mkdir -p "${CDECODER_RUNTIME_DIR}"
 if [ -f "${SPI_MODULE_PATH}" ]; then
     cp -v "${SPI_MODULE_PATH}" "${CDECODER_RUNTIME_DIR}/spi.dylib"

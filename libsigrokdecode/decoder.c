@@ -1142,6 +1142,9 @@ static void srd_decoder_load_all_path(char* path)
      * want to continue anyway.
      */
     while ((direntry = g_dir_read_name(dir)) != NULL) {
+        if (g_strcmp0(direntry, "c_decoders") == 0)
+            continue;
+
         /* Only attempt to load if it's a directory (standard for PDs) */
         gchar *full_path = g_build_filename(path, direntry, NULL);
         if (g_file_test(full_path, G_FILE_TEST_IS_DIR)) {

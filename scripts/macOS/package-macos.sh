@@ -162,6 +162,13 @@ for dylib in spi.dylib; do
     echo "  WARNING: cdecoders/$dylib missing - did 'make install' populate package-root?"
   fi
 done
+SRD_CDECODERS_DIR="$DIST_APP/Contents/Resources/share/libsigrokdecode/decoders/c_decoders"
+if [ -d "$SRD_CDECODERS_DIR" ]; then
+  SRD_CDECODER_COUNT=$(find "$SRD_CDECODERS_DIR" -type f -name "*.dylib" -o -name "*.so" | wc -l | tr -d ' ')
+  echo "  OK: libsigrokdecode C decoders ($SRD_CDECODER_COUNT modules)"
+else
+  echo "  WARNING: libsigrokdecode C decoders missing at $SRD_CDECODERS_DIR"
+fi
 
 # Step 5: Verify dependencies and sign
 echo "[5/6] Verifying dependencies and signing..."

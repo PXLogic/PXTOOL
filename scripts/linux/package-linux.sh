@@ -77,6 +77,10 @@ if [ ! -f "${STAGE_DIR}/usr/bin/webui/index.html" ]; then
     echo "ERROR: MCP browser Web Console missing from package root at /usr/bin/webui/index.html"
     exit 1
 fi
+if [ ! -d "${STAGE_DIR}/usr/share/libsigrokdecode/decoders/c_decoders" ]; then
+    echo "ERROR: C decoder modules missing from package root at /usr/share/libsigrokdecode/decoders/c_decoders"
+    exit 1
+fi
 
 echo "[4/4] Create Debian package"
 rm -rf "${DIST_DIR}"

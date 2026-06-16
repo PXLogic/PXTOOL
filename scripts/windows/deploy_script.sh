@@ -142,6 +142,11 @@ if [ ! -d decoders ]; then
 else
     echo "  -> decoders/ already present, skipping."
 fi
+if [ -d "$BUILD_DIR/decoders/c_decoders" ]; then
+    sync_dir "$BUILD_DIR/decoders/c_decoders" ./decoders/c_decoders "C decoders/"
+else
+    echo "  -> WARNING: built C decoder directory not found at $BUILD_DIR/decoders/c_decoders"
+fi
 
 # --------------------------------------------------------------------------
 # Step 6: Bundle Python standard library
@@ -212,7 +217,8 @@ fi
 # --------------------------------------------------------------------------
 echo "[8/8] Setting up C decoders..."
 mkdir -p cdecoders
-# Copy spi.dll built by CMake (lives in build.windows root after build)
+# Copy the example CDecoderRegistry SPI engine. This uses the pv/cdecoders ABI,
+# which is separate from libsigrokdecode's decoders/c_decoders modules above.
 if [ -f spi.dll ]; then
     cp -f spi.dll cdecoders/spi.dll
     echo "  -> spi.dll -> cdecoders/spi.dll"
