@@ -25,6 +25,7 @@
 #include <QLabel>
 #include <QPushButton>
 #include <QStyle>
+#include <QTimer>
 #include <QUrl>
 #include <QVBoxLayout>
 
@@ -60,42 +61,38 @@ void McpControlDock::setup_ui()
     outer->setContentsMargins(12, 8, 12, 8);
     outer->setSpacing(8);
 
-    auto *web_box = new QGroupBox(tr("Web Console"), _inner);
-    auto *web_layout = new QVBoxLayout(web_box);
+    _web_box = new QGroupBox(_inner);
+    auto *web_layout = new QVBoxLayout(_web_box);
     web_layout->setContentsMargins(8, 18, 8, 8);
     web_layout->setSpacing(6);
 
-    auto *web_desc = new QLabel(
-        tr("Open the local MCP console for PXTOOL capture and decoder control."),
-        web_box);
-    web_desc->setWordWrap(true);
-    web_layout->addWidget(web_desc);
+    _web_desc_label = new QLabel(_web_box);
+    _web_desc_label->setWordWrap(true);
+    web_layout->addWidget(_web_desc_label);
 
-    _btn_open_web = new QPushButton(tr("Open Web Console"), web_box);
+    _btn_open_web = new QPushButton(_web_box);
     _btn_open_web->setMinimumHeight(28);
     connect(_btn_open_web, &QPushButton::clicked,
             this, &McpControlDock::on_open_web_console);
     web_layout->addWidget(_btn_open_web);
-    outer->addWidget(web_box);
+    outer->addWidget(_web_box);
 
-    auto *connect_box = new QGroupBox(tr("Connect AI Tool"), _inner);
-    auto *connect_layout = new QVBoxLayout(connect_box);
+    _connect_box = new QGroupBox(_inner);
+    auto *connect_layout = new QVBoxLayout(_connect_box);
     connect_layout->setContentsMargins(8, 18, 8, 8);
     connect_layout->setSpacing(6);
 
     auto *status_row = new QHBoxLayout();
-    _status_label = new QLabel(connect_box);
+    _status_label = new QLabel(_connect_box);
     status_row->addWidget(_status_label);
     status_row->addStretch();
-    _address_label = new QLabel(connect_box);
+    _address_label = new QLabel(_connect_box);
     status_row->addWidget(_address_label);
     connect_layout->addLayout(status_row);
 
-    auto *desc = new QLabel(
-        tr("Run one of these commands in your AI tool environment."),
-        connect_box);
-    desc->setWordWrap(true);
-    connect_layout->addWidget(desc);
+    _connect_desc_label = new QLabel(_connect_box);
+    _connect_desc_label->setWordWrap(true);
+    connect_layout->addWidget(_connect_desc_label);
 
     const QString port = QString::number(MCP_PORT);
     add_command_row(connect_layout, QStringLiteral("Claude Code"),
@@ -105,14 +102,15 @@ void McpControlDock::setup_ui()
     add_command_row(connect_layout, QStringLiteral("OpenCode"),
                     QString("opencode --mcp http://127.0.0.1:%1").arg(port));
 
-    _btn_restart = new QPushButton(tr("Restart MCP Service"), connect_box);
+    _btn_restart = new QPushButton(_connect_box);
     _btn_restart->setMinimumHeight(28);
     connect(_btn_restart, &QPushButton::clicked,
             this, &McpControlDock::on_restart_mcp);
     connect_layout->addWidget(_btn_restart);
-    outer->addWidget(connect_box);
+    outer->addWidget(_connect_box);
 
     outer->addStretch(1);
+    retranslateUi();
     apply_font();
 }
 
@@ -140,11 +138,41 @@ void McpControlDock::add_command_row(QVBoxLayout *layout,
     copy->setObjectName("mcpCopyButton");
     copy->setMinimumHeight(24);
     copy->setProperty("cmd_text", command);
+    copy->setProperty("default_text", copy->text());
     copy->setToolTip(tr("Copy command"));
     connect(copy, &QPushButton::clicked, this, &McpControlDock::on_copy_command);
     row->addWidget(copy);
+    _copy_buttons.append(copy);
 
     layout->addWidget(frame);
+}
+
+void McpControlDock::retranslateUi()
+{
+    if (_web_box)
+        _web_box->setTitle(tr("Web Console"));
+    if (_web_desc_label)
+        _web_desc_label->setText(tr("Open the local MCP console for PXTOOL capture and decoder control."));
+    if (_btn_open_web)
+        _btn_open_web->setText(tr("Open Web Console"));
+
+    if (_connect_box)
+        _connect_box->setTitle(tr("Connect AI Tool"));
+    if (_connect_desc_label)
+        _connect_desc_label->setText(tr("Run one of these commands in your AI tool environment."));
+    if (_btn_restart)
+        _btn_restart->setText(tr("Restart MCP Service"));
+
+    for (auto *copy : _copy_buttons) {
+        if (!copy)
+            continue;
+        copy->setProperty("copy_token", copy->property("copy_token").toInt() + 1);
+        copy->setText(tr("Copy"));
+        copy->setProperty("default_text", copy->text());
+        copy->setToolTip(tr("Copy command"));
+    }
+
+    refresh_status();
 }
 
 void McpControlDock::refresh_status()
@@ -190,10 +218,21 @@ void McpControlDock::on_copy_command()
     const QString cmd = button->property("cmd_text").toString();
     if (!cmd.isEmpty())
         QGuiApplication::clipboard()->setText(cmd);
+
+    const int copy_token = button->property("copy_token").toInt() + 1;
+    button->setProperty("copy_token", copy_token);
+    button->setText(tr("Copied"));
+    QTimer::singleShot(800, button, [button, copy_token]() {
+        if (button->property("copy_token").toInt() != copy_token)
+            return;
+        const QString default_text = button->property("default_text").toString();
+        button->setText(default_text.isEmpty() ? QStringLiteral("Copy") : default_text);
+    });
 }
 
 void McpControlDock::UpdateLanguage()
 {
+    retranslateUi();
 }
 
 void McpControlDock::UpdateTheme()

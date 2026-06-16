@@ -100,6 +100,7 @@ private slots:
 private:
     //ISearchItemClick
     void OnItemClick(void *sender, void *data_handle);
+    void update_popup_size();
 
 private: 
     bool    _bShow;
@@ -107,9 +108,14 @@ private:
     std::vector<SearchDataItem*> _items;
     ISearchItemClick *_item_click;
     QScrollArea *_scroll;
+    QWidget *_scroll_panel;
+    QWidget *_list_panel;
     QLineEdit *_search_edit;
     QPushButton *_clear_btn;
     std::function<bool(void*)> _engine_filter;
+    int _popup_width;
+    int _popup_max_height;
+    int _search_row_height;
 };
 
 #endif // SEARCHCOMBOBOX_H

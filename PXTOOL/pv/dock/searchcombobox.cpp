@@ -57,9 +57,14 @@ SearchComboBox::SearchComboBox(QWidget *parent)
     _bShow = false;
     _item_click = NULL;
     _scroll = NULL;
+    _scroll_panel = NULL;
+    _list_panel = NULL;
     _search_edit = NULL;
     _clear_btn = NULL;
     _ignore_activation = false;
+    _popup_width = 350;
+    _popup_max_height = 550;
+    _search_row_height = 28;
     setObjectName("decode_protocol_picker");
 #ifdef Q_OS_LINUX
     setWindowFlags(Qt::Popup | Qt::FramelessWindowHint);
@@ -83,8 +88,8 @@ void SearchComboBox::ShowDlg(QWidget *editline)
 
     _bShow = true;
     
-    int w = 350; 
-    int h = 550;
+    int w = _popup_width;
+    int h = _popup_max_height;
     const int toolbar_btn_h = 28;
     int eh = toolbar_btn_h;
 
@@ -92,6 +97,9 @@ void SearchComboBox::ShowDlg(QWidget *editline)
        w = editline->width();
     }
 
+    _popup_width = w;
+    _popup_max_height = h;
+    _search_row_height = eh;
     this->setFixedSize(w, h);
 
     QVBoxLayout *grid = new QVBoxLayout(this);
@@ -123,12 +131,13 @@ void SearchComboBox::ShowDlg(QWidget *editline)
     search_lay->addWidget(_clear_btn);
     grid->addWidget(search_row);
 
-    QWidget *panel= new QWidget(this);
-    panel->setContentsMargins(0,0,0,0);
-    panel->setFixedSize(w, h - eh);
-    grid->addWidget(panel);   
+    _scroll_panel = new QWidget(this);
+    _scroll_panel->setContentsMargins(0,0,0,0);
+    _scroll_panel->setFixedSize(w, h - eh);
+    grid->addWidget(_scroll_panel);
 
-    QWidget *listPanel = new QWidget(panel);
+    QWidget *listPanel = new QWidget(_scroll_panel);
+    _list_panel = listPanel;
     listPanel->setObjectName("decode_protocol_list");
     QVBoxLayout *listLay = new QVBoxLayout(listPanel);
     listLay->setContentsMargins(2, 2, 20, 2);
@@ -151,11 +160,13 @@ void SearchComboBox::ShowDlg(QWidget *editline)
         listLay->addWidget(bt);        
     } 
  
-    _scroll = new QScrollArea(panel);
+    _scroll = new QScrollArea(_scroll_panel);
     _scroll->setWidget(listPanel);
+    _scroll->setWidgetResizable(false);
     _scroll->setStyleSheet("QScrollArea{border:none;}");
     _scroll->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     _scroll->setFixedSize(w, h - eh);
+    update_popup_size();
 
     connect(_search_edit, SIGNAL(textChanged(const QString &)),
             this, SLOT(on_search_text_changed(const QString &)));
@@ -176,6 +187,21 @@ void SearchComboBox::ShowDlg(QWidget *editline)
 
     _search_edit->setFocus();
     _ignore_activation = false;
+}
+
+void SearchComboBox::update_popup_size()
+{
+    if (_scroll == NULL || _scroll_panel == NULL || _list_panel == NULL)
+        return;
+
+    _list_panel->layout()->activate();
+    const int content_h = _list_panel->layout()->sizeHint().height();
+    const int list_h = qMax(1, qMin(content_h, _popup_max_height - _search_row_height));
+
+    _list_panel->setFixedSize(_popup_width, qMax(1, content_h));
+    _scroll_panel->setFixedSize(_popup_width, list_h);
+    _scroll->setFixedSize(_popup_width, list_h);
+    setFixedSize(_popup_width, _search_row_height + list_h + layout()->spacing());
 }
 
 void SearchComboBox::AddDataItem(QString id, QString name, void *data_handle)
@@ -263,8 +289,10 @@ void SearchComboBox::AddDataItem(QString id, QString name, void *data_handle)
          }
      }
      
-    if (_scroll != NULL && _scroll->verticalScrollBar() != NULL)
+     if (_scroll != NULL && _scroll->verticalScrollBar() != NULL)
         _scroll->verticalScrollBar()->setValue(0);
+
+     update_popup_size();
  }
 
 void SearchComboBox::SetEngineFilter(std::function<bool(void*)> fn)
