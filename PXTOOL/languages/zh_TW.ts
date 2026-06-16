@@ -2129,6 +2129,64 @@ C: 上升/下降沿</translation>
     </message>
 </context>
 <context>
+    <name>pv::dock::McpControlDock</name>
+    <message>
+        <location filename="../pv/dock/mcpcontroldock.cpp" line="64" />
+        <source>Web Console</source>
+        <translation>網頁控制台</translation>
+    </message>
+    <message>
+        <location filename="../pv/dock/mcpcontroldock.cpp" line="66" />
+        <source>Open the local MCP console for PXTOOL capture and decoder control.</source>
+        <translation>打開本地 MCP 控制台，用於 PXTOOL 採集和解碼控制。</translation>
+    </message>
+    <message>
+        <location filename="../pv/dock/mcpcontroldock.cpp" line="68" />
+        <source>Open Web Console</source>
+        <translation>打開網頁控制台</translation>
+    </message>
+    <message>
+        <location filename="../pv/dock/mcpcontroldock.cpp" line="73" />
+        <source>Connect AI Tool</source>
+        <translation>連接 AI 工具</translation>
+    </message>
+    <message>
+        <location filename="../pv/dock/mcpcontroldock.cpp" line="78" />
+        <source>Run one of these commands in your AI tool environment.</source>
+        <translation>在你的 AI 工具環境中運行以下任一命令。</translation>
+    </message>
+    <message>
+        <location filename="../pv/dock/mcpcontroldock.cpp" line="97" />
+        <source>Restart MCP Service</source>
+        <translation>重啓 MCP 服務</translation>
+    </message>
+    <message>
+        <location filename="../pv/dock/mcpcontroldock.cpp" line="136" />
+        <source>Copy</source>
+        <translation>複製</translation>
+    </message>
+    <message>
+        <location filename="../pv/dock/mcpcontroldock.cpp" line="141" />
+        <source>Copy command</source>
+        <translation>複製命令</translation>
+    </message>
+    <message>
+        <location filename="../pv/dock/mcpcontroldock.cpp" line="164" />
+        <source>Running</source>
+        <translation>運行中</translation>
+    </message>
+    <message>
+        <location filename="../pv/dock/mcpcontroldock.cpp" line="168" />
+        <source>Stopped</source>
+        <translation>已停止</translation>
+    </message>
+    <message>
+        <location filename="../pv/dock/mcpcontroldock.cpp" line="199" />
+        <source>Copied</source>
+        <translation>已複製</translation>
+    </message>
+</context>
+<context>
     <name>pv::dock::SideBar</name>
     <message>
         <location filename="../pv/dock/sidebar.cpp" line="72" />
@@ -2203,6 +2261,17 @@ C: 上升/下降沿</translation>
         <location filename="../pv/dock/sidebar.cpp" line="451" />
         <source>Filter</source>
         <translation>濾波</translation>
+    </message>
+    <message>
+        <location filename="../pv/dock/sidebar.cpp" line="197" />
+        <location filename="../pv/dock/sidebar.cpp" line="494" />
+        <source>MCP Server</source>
+        <translation>MCP 服務</translation>
+    </message>
+    <message>
+        <location filename="../pv/dock/sidebar.cpp" line="450" />
+        <source>MCP</source>
+        <translation>MCP</translation>
     </message>
 </context>
 <context>

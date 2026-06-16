@@ -608,7 +608,7 @@ void Header::contextMenuEvent(QContextMenuEvent *event)
 
     /* "Decode Engine" submenu intentionally removed: the C / Python choice
      * is now made up-front when the user picks the protocol from the
-     * protocol-list (entries appear as e.g. "SPI [C]" and "SPI [Py]").
+     * protocol-list (entries appear as e.g. "SPI(C)" and "SPI(Py)").
      * Per-trace switching here was confusing because the engine choice is
      * really a property of the trace itself, not a runtime toggle. */
 

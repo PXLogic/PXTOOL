@@ -28,9 +28,16 @@
 struct sr_context;
 class QWidget;
 
-namespace pv{ 
+namespace pv{
     class SigSession;
 }
+
+namespace pv { namespace api {
+class IAppService;
+class AppService;
+class RpcDispatcher;
+class McpTransport;
+} }
 
 class AppControl
 {
@@ -54,7 +61,10 @@ public:
 
     inline pv::SigSession*  GetSession(){
         return _session;
-    } 
+    }
+
+    pv::api::IAppService* GetAppService();
+    pv::api::McpTransport* get_mcp_transport() { return _mcp_transport; }
 
     inline void SetTopWindow(QWidget *w){
         _topWindow = w;
@@ -70,7 +80,10 @@ public:
     std::string        _open_file_name; 
     QRect              _screenRect;
 
-private: 
+private:
     pv::SigSession      *_session;
-    QWidget             *_topWindow; 
+    QWidget             *_topWindow;
+    pv::api::AppService *_app_service = nullptr;
+    pv::api::RpcDispatcher *_rpc_dispatcher = nullptr;
+    pv::api::McpTransport *_mcp_transport = nullptr;
 };

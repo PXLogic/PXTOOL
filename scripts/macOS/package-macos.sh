@@ -35,9 +35,15 @@ if [ $SKIP_BUILD -eq 0 ]; then
   cd "$ROOT"
   cmake -DCMAKE_POLICY_VERSION_MINIMUM=3.5 -DCMAKE_INSTALL_PREFIX="$INSTALL_PREFIX" .
   make -j"$(sysctl -n hw.ncpu 2>/dev/null || echo 8)"
+  cmake --build "$ROOT" --target webui --parallel 1
   cmake --install .
 else
   echo "[1/6] Skipping build/install (--skip-build)"
+  if [ ! -f "$ROOT/web/dist/index.html" ]; then
+    echo "ERROR: --skip-build was used but web/dist/index.html is missing."
+    echo "       Run without --skip-build, or run: cmake --build $ROOT --target webui"
+    exit 1
+  fi
 fi
 
 # Step 2: Assemble bundle
@@ -58,6 +64,11 @@ find "$DIST_APP/Contents/Resources" -type l -delete
 
 # Copy data resources from package-root (res/, decoders, lang, demo, etc.)
 cp -R "$PKG_ROOT/Contents/Resources/" "$DIST_APP/Contents/Resources/"
+
+if [ ! -f "$DIST_APP/Contents/MacOS/webui/index.html" ]; then
+  echo "ERROR: MCP browser Web Console missing from app bundle at Contents/MacOS/webui/index.html"
+  exit 1
+fi
 
 # Bundle Python before macdeployqt scans dependencies. Homebrew's Python
 # framework exposes compatibility paths that macdeployqt may not resolve, so
@@ -151,6 +162,13 @@ for dylib in spi.dylib; do
     echo "  WARNING: cdecoders/$dylib missing - did 'make install' populate package-root?"
   fi
 done
+SRD_CDECODERS_DIR="$DIST_APP/Contents/Resources/share/libsigrokdecode/decoders/c_decoders"
+if [ -d "$SRD_CDECODERS_DIR" ]; then
+  SRD_CDECODER_COUNT=$(find "$SRD_CDECODERS_DIR" -type f -name "*.dylib" -o -name "*.so" | wc -l | tr -d ' ')
+  echo "  OK: libsigrokdecode C decoders ($SRD_CDECODER_COUNT modules)"
+else
+  echo "  WARNING: libsigrokdecode C decoders missing at $SRD_CDECODERS_DIR"
+fi
 
 # Step 5: Verify dependencies and sign
 echo "[5/6] Verifying dependencies and signing..."

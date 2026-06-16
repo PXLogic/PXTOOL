@@ -193,18 +193,19 @@ if(NOT QT_VERSION_FORCE OR "${QT_VERSION_FORCE}" STREQUAL "5")
 		find_package(Qt5Widgets REQUIRED)
 		find_package(Qt5Gui REQUIRED)
 		find_package(Qt5Svg REQUIRED)
+		find_package(Qt5Network REQUIRED)
 		# win32
 		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${Qt5Widgets_EXECUTABLE_COMPILE_FLAGS}")
 		if (WIN32)
 			find_package(Qt5WinExtras REQUIRED)
 			message(STATUS "	 libraries:" ${Qt5WinExtras_LIBRARIES})
-			set(QT_INCLUDE_DIRS ${Qt5Gui_INCLUDE_DIRS} ${Qt5Widgets_INCLUDE_DIRS} ${Qt5WinExtras_INCLUDE_DIRS} ${Qt5Svg_INCLUDE_DIRS})
-			set(QT_LIBRARIES Qt5::Gui Qt5::Widgets Qt5::WinExtras Qt5::Svg)
-			add_definitions(${Qt5Gui_DEFINITIONS} ${Qt5Widgets_DEFINITIONS} ${Qt5WinExtras_DEFINITIONS}  ${Qt5Svg_DEFINITIONS} )
+			set(QT_INCLUDE_DIRS ${Qt5Gui_INCLUDE_DIRS} ${Qt5Widgets_INCLUDE_DIRS} ${Qt5WinExtras_INCLUDE_DIRS} ${Qt5Svg_INCLUDE_DIRS} ${Qt5Network_INCLUDE_DIRS})
+			set(QT_LIBRARIES Qt5::Gui Qt5::Widgets Qt5::WinExtras Qt5::Svg Qt5::Network)
+			add_definitions(${Qt5Gui_DEFINITIONS} ${Qt5Widgets_DEFINITIONS} ${Qt5WinExtras_DEFINITIONS} ${Qt5Svg_DEFINITIONS} ${Qt5Network_DEFINITIONS})
 		else()
-			set(QT_INCLUDE_DIRS ${Qt5Gui_INCLUDE_DIRS} ${Qt5Widgets_INCLUDE_DIRS})
-			set(QT_LIBRARIES Qt5::Gui Qt5::Widgets)
-			add_definitions(${Qt5Gui_DEFINITIONS} ${Qt5Widgets_DEFINITIONS})
+			set(QT_INCLUDE_DIRS ${Qt5Gui_INCLUDE_DIRS} ${Qt5Widgets_INCLUDE_DIRS} ${Qt5Network_INCLUDE_DIRS})
+			set(QT_LIBRARIES Qt5::Gui Qt5::Widgets Qt5::Network)
+			add_definitions(${Qt5Gui_DEFINITIONS} ${Qt5Widgets_DEFINITIONS} ${Qt5Network_DEFINITIONS})
 		endif()
 	endif()
 endif()
@@ -216,10 +217,11 @@ if(NOT Qt5Core_FOUND OR "${QT_VERSION_FORCE}" STREQUAL "6")
         find_package(Qt6Widgets REQUIRED)
         find_package(Qt6Gui REQUIRED)
         find_package(Qt6Svg REQUIRED)
+        find_package(Qt6Network REQUIRED)
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${Qt6Widgets_EXECUTABLE_COMPILE_FLAGS}")
-	set(QT_INCLUDE_DIRS ${Qt6Gui_INCLUDE_DIRS} ${Qt6Widgets_INCLUDE_DIRS})
-        set(QT_LIBRARIES Qt6::Gui Qt6::Widgets Qt6::Svg)
-	add_definitions(${Qt6Gui_DEFINITIONS} ${Qt6Widgets_DEFINITIONS})
+	set(QT_INCLUDE_DIRS ${Qt6Gui_INCLUDE_DIRS} ${Qt6Widgets_INCLUDE_DIRS} ${Qt6Network_INCLUDE_DIRS})
+        set(QT_LIBRARIES Qt6::Gui Qt6::Widgets Qt6::Svg Qt6::Network)
+	add_definitions(${Qt6Gui_DEFINITIONS} ${Qt6Widgets_DEFINITIONS} ${Qt6Network_DEFINITIONS})
 
 	if(APPLE)
 		find_package(Qt6DBus REQUIRED)
@@ -231,6 +233,17 @@ if(NOT Qt5Core_FOUND AND NOT Qt6Core_FOUND)
 	message("Error!The qt5 or qt6 can't find, if them has been installed, please append the install path to CMAKE_PREFIX_PATH, the command as:")
 	message("list(APPEND CMAKE_PREFIX_PATH \"xxx install path\")" )
 	message(FATAL_ERROR  "Can't find Qt5 or Qt6!")
+endif()
+
+find_package(nlohmann_json 3.2.0 QUIET)
+if(NOT nlohmann_json_FOUND)
+    include(FetchContent)
+    FetchContent_Declare(
+        nlohmann_json
+        GIT_REPOSITORY https://github.com/nlohmann/json.git
+        GIT_TAG v3.11.3
+    )
+    FetchContent_MakeAvailable(nlohmann_json)
 endif()
 
 #===============================================================================
@@ -260,6 +273,10 @@ set(DSView_SOURCES
     PXTOOL/main.cpp
     PXTOOL/application.cpp
     PXTOOL/pv/log.cpp
+    PXTOOL/pv/api/mcp_transport.cpp
+    PXTOOL/pv/api/app_service.cpp
+    PXTOOL/pv/api/session_service.cpp
+    PXTOOL/pv/api/rpc_dispatcher.cpp
     PXTOOL/pv/sigsession.cpp
     PXTOOL/pv/mainwindow.cpp
     PXTOOL/pv/data/snapshot.cpp
@@ -295,6 +312,7 @@ set(DSView_SOURCES
     PXTOOL/pv/dock/searchdock.cpp
     PXTOOL/pv/dock/sidebar.cpp
     PXTOOL/pv/dock/glitchfilterdock.cpp
+    PXTOOL/pv/dock/mcpcontroldock.cpp
     PXTOOL/pv/dock/deviceoptionsdock.cpp
     PXTOOL/pv/toolbars/logobar.cpp
     PXTOOL/pv/dialogs/about.cpp
@@ -399,6 +417,14 @@ endif ()
 set(DSView_HEADERS
     PXTOOL/mystyle.h
     PXTOOL/pv/log.h
+    PXTOOL/pv/api/types.h
+    PXTOOL/pv/api/transport.h
+    PXTOOL/pv/api/mcp_transport.h
+    PXTOOL/pv/api/iapp_service.h
+    PXTOOL/pv/api/isession_service.h
+    PXTOOL/pv/api/app_service.h
+    PXTOOL/pv/api/session_service.h
+    PXTOOL/pv/api/rpc_dispatcher.h
     PXTOOL/pv/sigsession.h
     PXTOOL/pv/mainwindow.h
     PXTOOL/pv/dialogs/deviceoptions.h
@@ -426,6 +452,7 @@ set(DSView_HEADERS
     PXTOOL/pv/dock/searchdock.h
     PXTOOL/pv/dock/sidebar.h
     PXTOOL/pv/dock/glitchfilterdock.h
+    PXTOOL/pv/dock/mcpcontroldock.h
     PXTOOL/pv/data/glitchfilter.h
     PXTOOL/pv/dock/deviceoptionsdock.h
     PXTOOL/pv/toolbars/logobar.h
@@ -564,6 +591,8 @@ set(libsigrokdecode_SOURCES
     libsigrokdecode/srd.c
     libsigrokdecode/module_sigrokdecode.c
     libsigrokdecode/decoder.c
+    libsigrokdecode/c_decoder_api.c
+    libsigrokdecode/dll_registry.c
     libsigrokdecode/error.c
     libsigrokdecode/exception.c
     libsigrokdecode/instance.c
@@ -576,6 +605,7 @@ set(libsigrokdecode_SOURCES
 set(libsigrokdecode_HEADERS
     libsigrokdecode/libsigrokdecode-internal.h
     libsigrokdecode/libsigrokdecode.h
+    libsigrokdecode/dll_registry.h
     libsigrokdecode/config.h
     libsigrokdecode/version.h
 )
@@ -662,7 +692,8 @@ if(NOT DISABLE_WERROR)
         add_definitions(-Werror)
 endif()
 
-set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14")
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99")
 
 
@@ -731,7 +762,37 @@ add_executable(${PROJECT_NAME}
 	${libsigrokdecode_SOURCES}
 )
 
-target_link_libraries(${PROJECT_NAME} ${DSVIEW_LINK_LIBS})
+target_link_libraries(${PROJECT_NAME} ${DSVIEW_LINK_LIBS} nlohmann_json::nlohmann_json)
+
+set(MACOS_BUILD_OUTPUT_DIR "${CMAKE_CURRENT_SOURCE_DIR}/build.macOS")
+
+if(WIN32)
+    set(PXTOOL_WEBUI_RUNTIME_DIR "${CMAKE_CURRENT_SOURCE_DIR}/build.windows/webui")
+elseif(APPLE)
+    set(PXTOOL_WEBUI_RUNTIME_DIR "${MACOS_BUILD_OUTPUT_DIR}/${DS_TITLE}.app/Contents/MacOS/webui")
+else()
+    set(PXTOOL_WEBUI_RUNTIME_DIR "${CMAKE_CURRENT_SOURCE_DIR}/build.linux/webui")
+endif()
+
+find_program(NPM_EXECUTABLE npm)
+if(NPM_EXECUTABLE)
+    add_custom_target(webui
+        COMMAND ${NPM_EXECUTABLE} install
+        COMMAND ${NPM_EXECUTABLE} run build
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/web
+        COMMENT "Building Vite MCP web client..."
+    )
+    add_custom_target(stage_webui
+        COMMAND ${CMAKE_COMMAND}
+            -DSRC="${CMAKE_CURRENT_SOURCE_DIR}/web/dist"
+            -DDST="${PXTOOL_WEBUI_RUNTIME_DIR}"
+            -P "${CMAKE_CURRENT_SOURCE_DIR}/CMake/CopyOptionalDir.cmake"
+        COMMENT "Stage MCP web client into runtime webui directory"
+        DEPENDS webui
+    )
+else()
+    message(WARNING "npm was not found. MCP JSON-RPC server will build, but the browser Web Console cannot be bundled.")
+endif()
 
 if(WIN32)
 # Pass -mwindows so that no "DOS box" will open when PulseView is started.
@@ -744,11 +805,11 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
         COMMAND ${CMAKE_COMMAND} -E copy_directory
             "${CMAKE_CURRENT_SOURCE_DIR}/lang"
             "${CMAKE_CURRENT_SOURCE_DIR}/build.windows/lang"
+        COMMAND ${CMAKE_COMMAND} -E make_directory
+            "${CMAKE_CURRENT_SOURCE_DIR}/build.windows/decoders/c_decoders"
         COMMENT "Stage lang/ resources into build output"
     )
 endif()
-
-set(MACOS_BUILD_OUTPUT_DIR "${CMAKE_CURRENT_SOURCE_DIR}/build.macOS")
 
 #===============================================================================
 #= Bundled C decoders (shipped inside the app bundle)
@@ -780,6 +841,44 @@ else()
         LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/build.linux"
     )
 endif()
+
+if(WIN32)
+    set(C_DECODER_OUTPUT_DIR "${CMAKE_CURRENT_SOURCE_DIR}/build.windows/decoders/c_decoders")
+elseif(APPLE)
+    set(C_DECODER_OUTPUT_DIR "${MACOS_BUILD_OUTPUT_DIR}/decoders/c_decoders")
+else()
+    set(C_DECODER_OUTPUT_DIR "${CMAKE_CURRENT_SOURCE_DIR}/build.linux/decoders/c_decoders")
+endif()
+
+set(C_DECODERS spi_c i2c_c uart_c can_c jtag_c swd_c onewire_c i2s_c lin_c hdlc_c microwire_c mdio_c ps2_c dmx512_c nrzi_c ir_nec_c ir_rc5_c dcf77_c cec_c spdif_c usb_signalling_c 4b5b_c can_fd_c iso7816_c lpc_c dali_c c2_c graycode_c counter_c lm75_c ds1307_c ds3231_c numbers_and_state_c seven_segment_c pwm_c wiegand_c ir_sirc_c edid_c i2c_packet_c i2cdemux_c i2cfilter_c ltc26x7_c ad5593r_c adxl345_c atsha204a_c bh1750_c eeprom24xx_c flexray_c mipi_rffe_c usb_power_delivery_c iebus_c spacewire_c qspi_c sdio_c spi_dual_quad_c uart_fast_c cjtag_c mlx90614_c mpu6050_c mxc6225xu_c nunchuk_c pca9571_c rtc8564_c ssd1306_c st25dv_c tcs3472x_c tpm_tis_i2c_c tmc_c sent_c sle44xx_c pjdl_c onewire_link_c ac97_c sdcard_sd_c emmc_sd_c swim_c rvswd_c a7105_c ad5626_c ad79x0_c ade77xx_c adf435x_c adb_c afsk_c am230x_c caliper_c carrera_c xfp_c hdcp_c hdmi_scdc_c tca6408a_c tmp102_c dcc_c delta_sigma_c dsi_c em4100_c em4305_c enc28j60_c ltc242x_c max6954_c max7219_c mrf24j40_c ieee488_c ir_irmp_c ir_ltto_c ir_rc6_c ir_recoil_c eth_an_c fsi_c gpib_c guess_bitrate_c iec_c adns5020_c as5047_c avr_isp_c cc1101_c cyrf6936_c mvb_c mcs48_c one_single_wire_c ook_c opentherm_c jitter_c lfast_c maple_bus_c miller_c morse_c nes_gamepad_c nrf24l01_c nrf905_c rfm12_c ssi32_c st25r39xx_spi_c sdcard_spi_c spiflash_c spi_tpm_c tpm_tis_spi_c x2444m_c rgb_led_spi_c sda2506_c signature_c sony_md_c st7735_c st7789_c parallel_c pcfx_ctrlr_c rinnai_control_panel_c rpm_c sae_j1850_vpw_c arm_itm_c arm_tpiu_c bluetooth_h4_c boost_c crsf_c bean_c ccd_c cjtag_oscan0_c rgb_led_ws281x_c stepper_motor_c j1708_c midi_c modbus_c pan1321_c pn532_c sbus_futaba_c scs_c ufcs_c amulet_ascii_c streletz_c z80_c adat_c arm_etmv3_c aud_c avr_pdi_c jtag_avr_c jtag_ejtag_c jtag_stm32_c mipi_dsi_c pxx1_c qi_c rc_encode_c sdq_c onewire_network_c ds2408_c ds243x_c ds28ea00_c eeprom93xx_c spi_fast_c swi_c t55xx_c tdm_audio_c timing_c tlc5620_c xy2_100_c cfp_c ps2_keyboard_c ps2_mouse_c usb_packet_c usb_request_c avclan_c ethernet_c arp_c ipv4_c udp_c ook_oregon_c ook_vis_c ltar_smartdevice_c ir_ltto_decode_c sony_md_decode_c sipi_c pjon_c tpm_fifo_tis_c tm1637_c tm1638_c ltar_smartdevice_decode_c)
+
+foreach(dec ${C_DECODERS})
+    add_library(decoder_${dec} MODULE
+        ${CMAKE_CURRENT_SOURCE_DIR}/libsigrokdecode/c_decoders/${dec}.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/libsigrokdecode/c_decoder_api.c
+    )
+
+    target_include_directories(decoder_${dec} PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/libsigrokdecode
+        ${CMAKE_CURRENT_SOURCE_DIR}/common
+        ${GLIB_INCLUDE_DIRS}
+        ${Python3_INCLUDE_DIRS}
+    )
+
+    target_compile_definitions(decoder_${dec} PRIVATE
+        SRD_C_DECODER_DLL
+    )
+
+    target_link_libraries(decoder_${dec}
+        -lglib-2.0
+    )
+
+    set_target_properties(decoder_${dec} PROPERTIES
+        OUTPUT_NAME ${dec}
+        LIBRARY_OUTPUT_DIRECTORY ${C_DECODER_OUTPUT_DIR}
+        RUNTIME_OUTPUT_DIRECTORY ${C_DECODER_OUTPUT_DIR}
+    )
+endforeach()
 
 if(APPLE)
     set_target_properties(${PROJECT_NAME} PROPERTIES
@@ -885,6 +984,11 @@ else()
 endif()
 install(DIRECTORY PXTOOL/res DESTINATION ${MAC_RES_PREFIX}share/PXTOOL)
 install(DIRECTORY PXTOOL/demo DESTINATION ${MAC_RES_PREFIX}share/PXTOOL)
+if(APPLE)
+    install(DIRECTORY web/dist/ DESTINATION ${DS_TITLE}.app/Contents/MacOS/webui OPTIONAL)
+else()
+    install(DIRECTORY web/dist/ DESTINATION bin/webui OPTIONAL)
+endif()
 install(FILES PXTOOL/icons/logo.svg DESTINATION ${MAC_RES_PREFIX}share/PXTOOL RENAME logo.svg)
 install(FILES PXTOOL/icons/logo.svg DESTINATION ${MAC_RES_PREFIX}share/icons/hicolor/scalable/apps RENAME pxtool.svg)
 install(FILES PXTOOL/icons/logo.svg DESTINATION ${MAC_RES_PREFIX}share/pixmaps RENAME pxtool.svg)
@@ -910,6 +1014,11 @@ install(FILES ug25.pdf DESTINATION ${MAC_RES_PREFIX}share/PXTOOL RENAME ug25.pdf
 install(FILES ug31.pdf DESTINATION ${MAC_RES_PREFIX}share/PXTOOL RENAME ug31.pdf)
 
 install(DIRECTORY libsigrokdecode/decoders DESTINATION ${MAC_RES_PREFIX}share/libsigrokdecode)
+foreach(dec ${C_DECODERS})
+    install(TARGETS decoder_${dec}
+        DESTINATION ${MAC_RES_PREFIX}share/libsigrokdecode/decoders/c_decoders
+    )
+endforeach()
 install(DIRECTORY lang DESTINATION ${MAC_RES_PREFIX}share/PXTOOL)
 
 # Bundled C decoders go alongside res/, demo/, lang/ under share/PXTOOL.

@@ -8,6 +8,8 @@ APP_PATH="${OUTPUT_DIR}/PXTOOL"
 SHARE_DIR="${ROOT_DIR}/share"
 SPI_OUTPUT_PATH="${OUTPUT_DIR}/spi.so"
 SPI_MODULE_PATH="${BUILD_DIR}/spi.so"
+C_DECODER_BUILD_DIR="${OUTPUT_DIR}/decoders/c_decoders"
+C_DECODER_RUNTIME_DIR="${SHARE_DIR}/libsigrokdecode/decoders/c_decoders"
 UDEV_RULES_PATH="/etc/udev/rules.d/60-dreamsourcelab.rules"
 
 cd "${ROOT_DIR}"
@@ -21,9 +23,15 @@ cmake "${CMAKE_ARGS[@]}"
 
 echo "[2/4] Build"
 cmake --build "${BUILD_DIR}" --parallel "$(nproc 2>/dev/null || echo 4)"
+cmake --build "${BUILD_DIR}" --target stage_webui --parallel 1
 
 if [ ! -x "${APP_PATH}" ]; then
     echo "ERROR: App not found: ${APP_PATH}"
+    exit 1
+fi
+
+if [ ! -f "${OUTPUT_DIR}/webui/index.html" ]; then
+    echo "ERROR: MCP browser Web Console not found at ${OUTPUT_DIR}/webui/index.html"
     exit 1
 fi
 
@@ -33,6 +41,13 @@ cmake -E copy_directory "${ROOT_DIR}/PXTOOL/res" "${SHARE_DIR}/PXTOOL/res"
 cmake -E copy_directory "${ROOT_DIR}/PXTOOL/demo" "${SHARE_DIR}/PXTOOL/demo"
 cmake -E copy_directory "${ROOT_DIR}/lang" "${SHARE_DIR}/PXTOOL/lang"
 cmake -E copy_directory "${ROOT_DIR}/libsigrokdecode/decoders" "${SHARE_DIR}/libsigrokdecode/decoders"
+if [ ! -d "${C_DECODER_BUILD_DIR}" ]; then
+    echo "ERROR: Built C decoder directory not found: ${C_DECODER_BUILD_DIR}"
+    exit 1
+fi
+rm -rf "${C_DECODER_RUNTIME_DIR}"
+mkdir -p "${C_DECODER_RUNTIME_DIR}"
+cmake -E copy_directory "${C_DECODER_BUILD_DIR}" "${C_DECODER_RUNTIME_DIR}"
 if [ -f "${SPI_OUTPUT_PATH}" ]; then
     mkdir -p "${SHARE_DIR}/PXTOOL/cdecoders"
     cmake -E copy_if_different "${SPI_OUTPUT_PATH}" "${SHARE_DIR}/PXTOOL/cdecoders/spi.so"

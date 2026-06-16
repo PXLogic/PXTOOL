@@ -59,13 +59,28 @@ if [ "${SKIP_BUILD}" -eq 0 ]; then
 
     echo "[2/4] Build"
     cmake --build "${BUILD_DIR}" --parallel "$(nproc 2>/dev/null || echo 4)"
+    cmake --build "${BUILD_DIR}" --target webui --parallel 1
 else
     echo "[1/4] Configure/build skipped"
+    if [ ! -f "${ROOT_DIR}/web/dist/index.html" ]; then
+        echo "ERROR: --skip-build was used but web/dist/index.html is missing."
+        echo "       Run without --skip-build, or run: cmake --build ${BUILD_DIR} --target webui"
+        exit 1
+    fi
 fi
 
 echo "[3/4] Install into staging root"
 rm -rf "${STAGE_DIR}"
 DESTDIR="${STAGE_DIR}" cmake --install "${BUILD_DIR}" --prefix /usr --strip
+
+if [ ! -f "${STAGE_DIR}/usr/bin/webui/index.html" ]; then
+    echo "ERROR: MCP browser Web Console missing from package root at /usr/bin/webui/index.html"
+    exit 1
+fi
+if [ ! -d "${STAGE_DIR}/usr/share/libsigrokdecode/decoders/c_decoders" ]; then
+    echo "ERROR: C decoder modules missing from package root at /usr/share/libsigrokdecode/decoders/c_decoders"
+    exit 1
+fi
 
 echo "[4/4] Create Debian package"
 rm -rf "${DIST_DIR}"

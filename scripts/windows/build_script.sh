@@ -9,6 +9,29 @@ export MSYS2_PATH_TYPE=inherit
 export MINGW_PREFIX=/mingw64
 export PATH="$MINGW_PREFIX/bin:/usr/bin:/bin:$PATH"
 
+# BUILD.bat sets MSYS2_PATH_TYPE=inherit before launching bash so Windows
+# Node/npm installations are visible here.  Keep a fallback for direct MSYS2
+# invocations where that environment variable was not set early enough.
+ensure_windows_node_on_path() {
+    if command -v npm &>/dev/null || [ -f "$MINGW_PREFIX/bin/npm.exe" ]; then
+        return
+    fi
+
+    local candidate
+    for candidate in \
+            "/c/nvm4w/nodejs" \
+            "/c/Program Files/nodejs" \
+            "/d/software/nvm" \
+            "/d/software/nodejs"; do
+        if [ -f "$candidate/npm" ] || [ -f "$candidate/npm.cmd" ] || [ -f "$candidate/npm.exe" ]; then
+            export PATH="$candidate:$PATH"
+            return
+        fi
+    done
+}
+
+ensure_windows_node_on_path
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SOURCE_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
 BUILD_DIR="$SOURCE_DIR/build.windows"
@@ -30,6 +53,12 @@ for TOOL in gcc g++ cmake mingw32-make; do
         MISSING=1
     fi
 done
+
+if ! command -v npm &>/dev/null && ! [ -f "$MINGW_PREFIX/bin/npm.exe" ]; then
+    echo "ERROR: Required tool not found: npm"
+    echo "       npm is required to build the MCP browser Web Console."
+    MISSING=1
+fi
 
 if [ $MISSING -eq 1 ]; then
     echo ""
@@ -145,8 +174,12 @@ fi
 # Use -j1 to avoid parallel moc file conflicts on Windows.
 # Capture make's real exit code via PIPESTATUS.
 # --------------------------------------------------------------------------
-echo "[Step 2/2] Compiling PXTOOL..."
+echo "[Step 2/3] Compiling PXTOOL..."
 echo ""
+
+# CMake links libsigrokdecode C decoder modules directly into this directory.
+# If a user cleaned only this runtime subtree, MinGW ld will not recreate it.
+mkdir -p "$BUILD_DIR/decoders/c_decoders"
 
 # applogo.rc.obj is not always rebuilt when only win-app-logo.ico changes; force it.
 RC_OBJ="$BUILD_DIR/CMakeFiles/DSView.dir/applogo.rc.obj"
@@ -170,6 +203,19 @@ MAKE_LOG="$BUILD_DIR/make_output.log"
 
 "$MINGW_PREFIX/bin/mingw32-make.exe" -j1 2>&1 | tee "$MAKE_LOG"
 MAKE_EXIT=${PIPESTATUS[0]}
+
+if [ $MAKE_EXIT -eq 0 ]; then
+    echo ""
+    echo "[Step 3/3] Building and staging MCP browser Web Console..."
+    "$MINGW_PREFIX/bin/cmake.exe" --build "$BUILD_DIR" --target stage_webui -j1 2>&1 | tee -a "$MAKE_LOG"
+    WEBUI_EXIT=${PIPESTATUS[0]}
+    if [ $WEBUI_EXIT -ne 0 ]; then
+        MAKE_EXIT=$WEBUI_EXIT
+    elif [ ! -f "$BUILD_DIR/webui/index.html" ]; then
+        echo "ERROR: MCP Web Console was not staged to $BUILD_DIR/webui/index.html"
+        MAKE_EXIT=1
+    fi
+fi
 
 BUILD_END=$(date +%s)
 BUILD_TIME=$((BUILD_END - BUILD_START))

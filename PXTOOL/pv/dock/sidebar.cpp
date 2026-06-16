@@ -31,6 +31,7 @@
 #include "deviceoptionsdock.h"
 #include "logdock.h"
 #include "glitchfilterdock.h"
+#include "mcpcontroldock.h"
 #include "../view/view.h"
 #include <QLabel>
 #include <QIcon>
@@ -182,6 +183,24 @@ SideBar::SideBar(QWidget *parent, view::View &view, SigSession *session)
     fw_layout->addWidget(fw_header);
     fw_layout->addWidget(_glitch_filter_widget, 1);
 
+    // MCP tab: "MCP Server" header + MCP control dock
+    _mcp_widget = new McpControlDock(this);
+    auto *mcp_wrap = new QWidget(this);
+    mcp_wrap->setObjectName("mcp_wrap");
+    auto *mcp_layout = new QVBoxLayout(mcp_wrap);
+    mcp_layout->setContentsMargins(0, 0, 0, 0);
+    mcp_layout->setSpacing(0);
+    auto *mcp_header = new QWidget(mcp_wrap);
+    mcp_header->setObjectName("mcp_header_bar");
+    auto *mcp_hlay = new QHBoxLayout(mcp_header);
+    mcp_hlay->setContentsMargins(12, 8, 12, 8);
+    _title_mcp = new QLabel(tr("MCP Server"), mcp_header);
+    _title_mcp->setObjectName("mcp_panel_title");
+    mcp_hlay->addWidget(_title_mcp);
+    mcp_hlay->addStretch();
+    mcp_layout->addWidget(mcp_header);
+    mcp_layout->addWidget(_mcp_widget, 1);
+
     // Outer content stack: one page per tab
     _stack = new QStackedWidget(this);
     _stack->addWidget(trigger_wrap);      // page 0: trigger (header + inner stack)
@@ -190,7 +209,8 @@ SideBar::SideBar(QWidget *parent, view::View &view, SigSession *session)
     _stack->addWidget(search_wrap);       // page 3: search (header + search dock)
     _stack->addWidget(options_wrap);      // page 4: device options panel
     _stack->addWidget(filter_wrap);       // page 5: glitch filter
-    _stack->addWidget(log_wrap);          // page 6: log panel
+    _stack->addWidget(mcp_wrap);          // page 6: MCP server
+    _stack->addWidget(log_wrap);          // page 7: log panel
     _stack->setVisible(false);
     _stack->setMinimumWidth(kStackMinWidth);
 
@@ -210,12 +230,14 @@ SideBar::SideBar(QWidget *parent, view::View &view, SigSession *session)
         ":/icons/sidebar/search.svg",
         ":/icons/sidebar/settings-2.svg",
         ":/icons/sidebar/filter.svg",
+        ":/icons/sidebar/workflow.svg",
         ":/icons/sidebar/log.svg"
     };
     static const char *labels[TabCount] = {
         QT_TR_NOOP("Trigger"), QT_TR_NOOP("Decode"),
         QT_TR_NOOP("Measure"), QT_TR_NOOP("Search"),
         QT_TR_NOOP("Options"), QT_TR_NOOP("Filter"),
+        QT_TR_NOOP("MCP"),
         QT_TR_NOOP("Log")
     };
 
@@ -382,6 +404,8 @@ void SideBar::onButtonClicked(int tab)
 
         if (tab == TabOptions)
             _device_options_widget->panel_shown();
+        if (tab == TabMcp && _mcp_widget)
+            _mcp_widget->refresh_status();
     }
 }
 
@@ -455,6 +479,7 @@ void SideBar::retranslateUi()
         QT_TR_NOOP("Trigger"), QT_TR_NOOP("Decode"),
         QT_TR_NOOP("Measure"), QT_TR_NOOP("Search"),
         QT_TR_NOOP("Options"), QT_TR_NOOP("Filter"),
+        QT_TR_NOOP("MCP"),
         QT_TR_NOOP("Log")
     };
     for (int i = 0; i < TabCount; i++)
@@ -466,6 +491,7 @@ void SideBar::retranslateUi()
     if (_title_search)  _title_search->setText(tr("Search"));
     if (_title_options) _title_options->setText(tr("Device Options"));
     if (_title_filter)  _title_filter->setText(tr("Glitch Filter"));
+    if (_title_mcp)     _title_mcp->setText(tr("MCP Server"));
 }
 
 void SideBar::UpdateLanguage() { retranslateUi(); }
@@ -495,7 +521,7 @@ void SideBar::UpdateFont()
     panelTitleFont.setWeight(QFont::DemiBold);
     QLabel *titles[] = {
         _title_trigger, _title_decode, _title_measure,
-        _title_search, _title_options, _title_filter
+        _title_search, _title_options, _title_filter, _title_mcp
     };
     for (QLabel *lbl : titles) {
         if (lbl)
@@ -517,6 +543,7 @@ void SideBar::applyTitleStyle()
     if (_title_search)  _title_search->setStyleSheet(style);
     if (_title_options) _title_options->setStyleSheet(style);
     if (_title_filter)  _title_filter->setStyleSheet(style);
+    if (_title_mcp)     _title_mcp->setStyleSheet(style);
 }
 
 } // namespace dock

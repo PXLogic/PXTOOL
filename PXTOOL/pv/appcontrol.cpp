@@ -29,6 +29,10 @@
 #include <string>
 #include <assert.h>
 #include "sigsession.h"
+#include "api/iapp_service.h"
+#include "api/app_service.h"
+#include "api/mcp_transport.h"
+#include "api/rpc_dispatcher.h"
 #include "dsvdef.h"
 #include "config/appconfig.h"
 #include "log.h"
@@ -165,12 +169,29 @@ bool AppControl::Init()
 
 bool AppControl::Start()
 {  
-    _session->Open(); 
+    _session->Open();
+    _app_service = new pv::api::AppService(this);
+    _app_service->initialize();
+    _rpc_dispatcher = new pv::api::RpcDispatcher(_app_service);
+    _mcp_transport = new pv::api::McpTransport(_rpc_dispatcher, 10110);
+    _mcp_transport->start();
     return true;
 }
 
  void AppControl::Stop()
  {
+    if (_mcp_transport) {
+        _mcp_transport->stop();
+        delete _mcp_transport;
+        _mcp_transport = nullptr;
+    }
+    delete _rpc_dispatcher;
+    _rpc_dispatcher = nullptr;
+    if (_app_service) {
+        _app_service->shutdown();
+        delete _app_service;
+        _app_service = nullptr;
+    }
     _session->Close();  
  }
 
@@ -190,4 +211,9 @@ bool AppControl::TopWindowIsMaximized()
         return _topWindow->isMaximized();
     }
     return false;
+}
+
+pv::api::IAppService* AppControl::GetAppService()
+{
+    return _app_service;
 }

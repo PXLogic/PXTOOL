@@ -23,10 +23,61 @@
 
 #include <libsigrokdecode.h>
 #include <assert.h>
+#include "c_decoder_registry.h"
 
 namespace pv {
 namespace data {
 namespace decode {
+
+namespace {
+
+QString decoder_base_name(const srd_decoder *decoder)
+{
+    QString name = QString::fromUtf8((decoder && decoder->name) ? decoder->name : "");
+    name = name.trimmed();
+
+    if (name.endsWith("(C)", Qt::CaseInsensitive))
+        name.chop(3);
+    else if (name.endsWith(" [C]", Qt::CaseInsensitive))
+        name.chop(4);
+
+    return name.trimmed();
+}
+
+bool has_native_c_decoder_counterpart(const srd_decoder *decoder)
+{
+    if (!decoder || decoder->is_c_decoder)
+        return false;
+
+    const QString base_name = decoder_base_name(decoder);
+    if (base_name.isEmpty())
+        return false;
+
+    for (const GSList *l = srd_decoder_list(); l; l = l->next) {
+        const srd_decoder *candidate = static_cast<const srd_decoder *>(l->data);
+        if (!candidate || !candidate->is_c_decoder)
+            continue;
+
+        if (decoder_base_name(candidate).compare(base_name, Qt::CaseInsensitive) == 0)
+            return true;
+    }
+
+    return false;
+}
+
+QString decoder_display_name(const srd_decoder *decoder)
+{
+    QString name = QString::fromUtf8((decoder && decoder->name) ? decoder->name : "");
+    if (decoder && pv::cdecoders::CDecoderRegistry::instance().has_c_decoder_for_id(decoder->id))
+        return name;
+
+    if (decoder && !decoder->is_c_decoder && has_native_c_decoder_counterpart(decoder))
+        return name + "(Py)";
+
+    return name;
+}
+
+} // namespace
 
 Row::Row() :
 	_decoder(NULL),
@@ -61,11 +112,11 @@ QString Row::title() const
 {
 	if (_decoder && _decoder->name && _row && _row->desc)
 		return QString("%1: %2")
-			.arg(QString::fromUtf8(_decoder->name))
+			.arg(decoder_display_name(_decoder))
 			.arg(QString::fromUtf8(_row->desc));
 
 	if (_decoder && _decoder->name)
-		return QString::fromUtf8(_decoder->name);
+		return decoder_display_name(_decoder);
 
 	if (_row && _row->desc)
 		return QString::fromUtf8(_row->desc);
