@@ -22,6 +22,7 @@ del /f /q build.windows\PXTOOL.exe 2>nul
 echo Done.
 echo.
 
+set "MSYS2_PATH_TYPE=inherit"
 C:\msys64\usr\bin\bash.exe --login -c "cd \"$(cygpath -u '%CD%')\" && bash scripts/windows/build_script.sh"
 
 if %ERRORLEVEL% NEQ 0 (
@@ -39,6 +40,14 @@ echo.
 echo [Deploy] Copying runtime dependencies...
 C:\msys64\usr\bin\bash.exe --login -c "cd \"$(cygpath -u '%CD%')\" && bash scripts/windows/deploy_script.sh"
 
+if %ERRORLEVEL% NEQ 0 (
+    echo.
+    echo [ERROR] Deploy failed. See output above.
+    echo.
+    pause
+    exit /b 1
+)
+
 echo.
 echo [Package] Creating release zip...
 powershell -NoProfile -ExecutionPolicy Bypass -Command ^
@@ -55,6 +64,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -Command ^
   "Get-ChildItem \"$root\" -Filter 'PXTOOL-*-win64.zip' | ForEach-Object { Remove-Item $_.FullName -Force; Write-Host \"  Deleted : $($_.Name)\" }; " ^
   "$buildDir = \"$root\build.windows\"; " ^
   "if (-not (Test-Path $buildDir)) { Write-Host 'ERROR: build.windows not found'; exit 1 }; " ^
+  "if (-not (Test-Path \"$buildDir\webui\index.html\")) { Write-Host 'ERROR: build.windows\webui\index.html missing'; exit 1 }; " ^
   "Compress-Archive -Path \"$buildDir\*\" -DestinationPath $zipPath -CompressionLevel Optimal; " ^
   "Write-Host \"  Done: $zipName ($([math]::Round((Get-Item $zipPath).Length/1MB,1)) MB)\""
 

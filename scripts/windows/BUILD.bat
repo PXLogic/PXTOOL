@@ -14,6 +14,7 @@ if %ERRORLEVEL% EQU 0 (
     timeout /t 1 /nobreak >nul
 )
 
+set "MSYS2_PATH_TYPE=inherit"
 C:\msys64\usr\bin\bash.exe --login -c "cd \"$(cygpath -u '%CD%')\" && bash scripts/windows/build_script.sh"
 
 if %ERRORLEVEL% NEQ 0 (

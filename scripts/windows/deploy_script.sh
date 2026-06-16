@@ -39,7 +39,7 @@ echo ""
 # Use ldd to find exact dependencies; fall back to copying all MinGW64 DLLs
 # if ldd is not available in the current shell environment.
 # --------------------------------------------------------------------------
-echo "[1/6] Copying runtime DLL dependencies..."
+echo "[1/8] Copying runtime DLL dependencies..."
 COPIED=0
 SKIPPED=0
 
@@ -74,7 +74,7 @@ fi
 # --------------------------------------------------------------------------
 # Step 2: Qt5 platform plugins
 # --------------------------------------------------------------------------
-echo "[2/6] Copying Qt5 plugins..."
+echo "[2/8] Copying Qt5 plugins..."
 if [ ! -d plugins ]; then
     cp -r "$MINGW_PREFIX/share/qt5/plugins" ./plugins
     echo "  -> Qt plugins copied from $MINGW_PREFIX/share/qt5/plugins"
@@ -85,7 +85,7 @@ fi
 # --------------------------------------------------------------------------
 # Step 3: qt.conf (tells Qt where to find plugins relative to exe)
 # --------------------------------------------------------------------------
-echo "[3/6] Writing qt.conf..."
+echo "[3/8] Writing qt.conf..."
 cat > qt.conf << 'EOF'
 [Paths]
 Prefix = .
@@ -98,7 +98,7 @@ echo "  -> qt.conf written."
 # Always sync with rsync (or cp -r --update as fallback) so that changes
 # in the source tree are reflected in build.windows without a full clean.
 # --------------------------------------------------------------------------
-echo "[4/6] Syncing resource directories..."
+echo "[4/8] Syncing resource directories..."
 
 # Helper: sync a source dir to a destination dir, always propagating updates.
 sync_dir() {
@@ -132,7 +132,7 @@ fi
 # --------------------------------------------------------------------------
 # Step 5: Python protocol decoders (libsigrokdecode)
 # --------------------------------------------------------------------------
-echo "[5/6] Copying Python decoders..."
+echo "[5/8] Copying Python decoders..."
 if [ ! -d decoders ]; then
     cp -r "$SOURCE_DIR/libsigrokdecode/decoders" ./decoders
     # Remove non-Python files that cause "Failed to load decoder" errors
@@ -150,7 +150,7 @@ fi
 # The app's PYTHONHOME is set to <app_dir> so Python looks for stdlib at
 # <app_dir>/lib/pythonX.Y/
 # --------------------------------------------------------------------------
-echo "[6/7] Bundling Python standard library..."
+echo "[6/8] Bundling Python standard library..."
 
 # Detect the Python version from the DLL already in build.windows
 PY_VER=$(ls libpython3.*.dll 2>/dev/null | grep -oP '3\.\d+' | head -1)
@@ -189,9 +189,28 @@ if [ -f "$SOURCE_DIR/win-app-logo.ico" ]; then
 fi
 
 # --------------------------------------------------------------------------
-# Step 7: C decoders (compiled .dll files)
+# Step 7: MCP browser Web Console
 # --------------------------------------------------------------------------
-echo "[7/7] Setting up C decoders..."
+echo "[7/8] Syncing MCP browser Web Console..."
+if [ -d "$SOURCE_DIR/web/dist" ]; then
+    sync_dir "$SOURCE_DIR/web/dist" ./webui "webui/ (MCP browser Web Console)"
+elif [ -f "./webui/index.html" ]; then
+    echo "  -> webui/ already present from CMake staging."
+else
+    echo "ERROR: web/dist not found and build.windows/webui is missing."
+    echo "       Run: cmake --build build.windows --target stage_webui"
+    exit 1
+fi
+
+if [ ! -f "./webui/index.html" ]; then
+    echo "ERROR: MCP browser Web Console missing at build.windows/webui/index.html"
+    exit 1
+fi
+
+# --------------------------------------------------------------------------
+# Step 8: C decoders (compiled .dll files)
+# --------------------------------------------------------------------------
+echo "[8/8] Setting up C decoders..."
 mkdir -p cdecoders
 # Copy spi.dll built by CMake (lives in build.windows root after build)
 if [ -f spi.dll ]; then

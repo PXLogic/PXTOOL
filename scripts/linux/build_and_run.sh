@@ -21,9 +21,15 @@ cmake "${CMAKE_ARGS[@]}"
 
 echo "[2/4] Build"
 cmake --build "${BUILD_DIR}" --parallel "$(nproc 2>/dev/null || echo 4)"
+cmake --build "${BUILD_DIR}" --target stage_webui --parallel 1
 
 if [ ! -x "${APP_PATH}" ]; then
     echo "ERROR: App not found: ${APP_PATH}"
+    exit 1
+fi
+
+if [ ! -f "${OUTPUT_DIR}/webui/index.html" ]; then
+    echo "ERROR: MCP browser Web Console not found at ${OUTPUT_DIR}/webui/index.html"
     exit 1
 fi
 

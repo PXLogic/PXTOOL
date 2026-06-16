@@ -764,17 +764,34 @@ add_executable(${PROJECT_NAME}
 
 target_link_libraries(${PROJECT_NAME} ${DSVIEW_LINK_LIBS} nlohmann_json::nlohmann_json)
 
+set(MACOS_BUILD_OUTPUT_DIR "${CMAKE_CURRENT_SOURCE_DIR}/build.macOS")
+
+if(WIN32)
+    set(PXTOOL_WEBUI_RUNTIME_DIR "${CMAKE_CURRENT_SOURCE_DIR}/build.windows/webui")
+elseif(APPLE)
+    set(PXTOOL_WEBUI_RUNTIME_DIR "${MACOS_BUILD_OUTPUT_DIR}/${DS_TITLE}.app/Contents/MacOS/webui")
+else()
+    set(PXTOOL_WEBUI_RUNTIME_DIR "${CMAKE_CURRENT_SOURCE_DIR}/build.linux/webui")
+endif()
+
 find_program(NPM_EXECUTABLE npm)
 if(NPM_EXECUTABLE)
-    add_custom_command(
-        OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/web/dist/index.html
+    add_custom_target(webui
         COMMAND ${NPM_EXECUTABLE} install
         COMMAND ${NPM_EXECUTABLE} run build
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/web
         COMMENT "Building Vite MCP web client..."
-        DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/web/package.json
     )
-    add_custom_target(webui DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/web/dist/index.html)
+    add_custom_target(stage_webui
+        COMMAND ${CMAKE_COMMAND}
+            -DSRC="${CMAKE_CURRENT_SOURCE_DIR}/web/dist"
+            -DDST="${PXTOOL_WEBUI_RUNTIME_DIR}"
+            -P "${CMAKE_CURRENT_SOURCE_DIR}/CMake/CopyOptionalDir.cmake"
+        COMMENT "Stage MCP web client into runtime webui directory"
+        DEPENDS webui
+    )
+else()
+    message(WARNING "npm was not found. MCP JSON-RPC server will build, but the browser Web Console cannot be bundled.")
 endif()
 
 if(WIN32)
@@ -790,15 +807,9 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
             "${CMAKE_CURRENT_SOURCE_DIR}/build.windows/lang"
         COMMAND ${CMAKE_COMMAND} -E make_directory
             "${CMAKE_CURRENT_SOURCE_DIR}/build.windows/decoders/c_decoders"
-        COMMAND ${CMAKE_COMMAND}
-            -DSRC="${CMAKE_CURRENT_SOURCE_DIR}/web/dist"
-            -DDST="$<TARGET_FILE_DIR:${PROJECT_NAME}>/webui"
-            -P "${CMAKE_CURRENT_SOURCE_DIR}/CMake/CopyOptionalDir.cmake"
         COMMENT "Stage lang/ resources into build output"
     )
 endif()
-
-set(MACOS_BUILD_OUTPUT_DIR "${CMAKE_CURRENT_SOURCE_DIR}/build.macOS")
 
 #===============================================================================
 #= Bundled C decoders (shipped inside the app bundle)
@@ -973,6 +984,11 @@ else()
 endif()
 install(DIRECTORY PXTOOL/res DESTINATION ${MAC_RES_PREFIX}share/PXTOOL)
 install(DIRECTORY PXTOOL/demo DESTINATION ${MAC_RES_PREFIX}share/PXTOOL)
+if(APPLE)
+    install(DIRECTORY web/dist/ DESTINATION ${DS_TITLE}.app/Contents/MacOS/webui OPTIONAL)
+else()
+    install(DIRECTORY web/dist/ DESTINATION bin/webui OPTIONAL)
+endif()
 install(FILES PXTOOL/icons/logo.svg DESTINATION ${MAC_RES_PREFIX}share/PXTOOL RENAME logo.svg)
 install(FILES PXTOOL/icons/logo.svg DESTINATION ${MAC_RES_PREFIX}share/icons/hicolor/scalable/apps RENAME pxtool.svg)
 install(FILES PXTOOL/icons/logo.svg DESTINATION ${MAC_RES_PREFIX}share/pixmaps RENAME pxtool.svg)

@@ -4,6 +4,7 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 APP_NAME="PXTOOL"
 APP_PATH="${ROOT_DIR}/build.macOS/${APP_NAME}.app"
+APP_WEBUI_PATH="${APP_PATH}/Contents/MacOS/webui/index.html"
 APP_CDECODER_DIR="${APP_PATH}/Contents/Resources/share/PXTOOL/cdecoders"
 SPI_MODULE_PATH="${ROOT_DIR}/build.macOS/spi.dylib"
 
@@ -17,6 +18,12 @@ cd "${ROOT_DIR}"
 echo "[1/4] Build (make)"
 CPU_COUNT="$(sysctl -n hw.ncpu 2>/dev/null || echo 8)"
 make -j"${CPU_COUNT}"
+cmake --build "${ROOT_DIR}" --target stage_webui --parallel 1
+
+if [ ! -f "${APP_WEBUI_PATH}" ]; then
+    echo "ERROR: MCP browser Web Console not found at ${APP_WEBUI_PATH}"
+    exit 1
+fi
 
 echo "[2/4] Verify bundled C decoder"
 if [ ! -f "${SPI_MODULE_PATH}" ] && [ ! -f "${APP_CDECODER_DIR}/spi.dylib" ]; then
