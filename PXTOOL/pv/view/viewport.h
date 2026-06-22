@@ -37,6 +37,7 @@
 #include "../dsvdef.h"
 #include "../interface/icallbacks.h"
 #include "../ui/uimanager.h"
+#include "edge_nav_button.h"
 
 class QPainter;
 class QPaintEvent;
@@ -58,6 +59,7 @@ enum UpdateEventType
 };
 
 class Signal;
+class LogicSignal;
 class View;
 class Trace;
 
@@ -149,6 +151,9 @@ private:
     void paintMeasure(QPainter &p, QColor fore, QColor back);
     void paintCursors(QPainter &p);
     Trace* get_divider_trace(const QPoint &pt);
+    void update_edge_nav_buttons();
+    void navigate_to_edge(EdgeNavButton::Direction dir);
+    LogicSignal* get_hovered_logic_signal(const QPoint &pos);
 
     void start_trigger_timer(int msec);
     void get_captured_progress(double &progress, int &progress100);
@@ -243,6 +248,9 @@ private:
     bool            _dso_trig_moved;
     bool            _curs_moved;
     bool            _xcurs_moved;
+    EdgeNavButton   *_prev_edge_btn;
+    EdgeNavButton   *_next_edge_btn;
+    LogicSignal     *_hover_logic_signal;
 
     high_resolution_clock::time_point _lst_wait_tigger_time;
     int             _tigger_wait_times;

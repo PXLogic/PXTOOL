@@ -78,7 +78,10 @@ Viewport::Viewport(View &parent, View_type type) :
     _xcurs_moved(false),
     _divider_resize_trace(nullptr),
     _divider_resize_start_y(0),
-    _divider_resize_start_total(0)
+    _divider_resize_start_total(0),
+    _prev_edge_btn(nullptr),
+    _next_edge_btn(nullptr),
+    _hover_logic_signal(nullptr)
 {
 	setMouseTracking(true);
 	setAutoFillBackground(true);
@@ -117,6 +120,15 @@ Viewport::Viewport(View &parent, View_type type) :
     connect(yAction, SIGNAL(triggered(bool)), this, SLOT(add_cursor_y()));
     connect(xAction, SIGNAL(triggered(bool)), this, SLOT(add_cursor_x()));
     connect(this, SIGNAL(customContextMenuRequested(const QPoint&)),this, SLOT(show_contextmenu(const QPoint&)));
+
+    _prev_edge_btn = new EdgeNavButton(EdgeNavButton::Previous, this);
+    _next_edge_btn = new EdgeNavButton(EdgeNavButton::Next, this);
+    _prev_edge_btn->hide();
+    _next_edge_btn->hide();
+    connect(_prev_edge_btn, &EdgeNavButton::clicked, this,
+            [this]() { navigate_to_edge(EdgeNavButton::Previous); });
+    connect(_next_edge_btn, &EdgeNavButton::clicked, this,
+            [this]() { navigate_to_edge(EdgeNavButton::Next); });
 
     ADD_UI(this);
 }
@@ -964,6 +976,7 @@ void Viewport:: mouseMoveEvent(QMouseEvent *event)
     _mouse_point = event->pos();
 
     measure();
+    update_edge_nav_buttons();
    
     update(UpdateEventType::UPDATE_EV_MS_MOVE);
 }
@@ -1509,6 +1522,11 @@ void Viewport::leaveEvent(QEvent *)
 {
     _mouse_point = QPoint(-1, -1);
     _view.set_hovered_divider(nullptr);
+    _hover_logic_signal = nullptr;
+    if (_prev_edge_btn)
+        _prev_edge_btn->hide();
+    if (_next_edge_btn)
+        _next_edge_btn->hide();
 
     if (_action_type == LOGIC_EDGE) {
         _edge_rising = 0;
@@ -1538,7 +1556,7 @@ void Viewport::leaveEvent(QEvent *)
 
 void Viewport::resizeEvent(QResizeEvent*)
 {
-
+    update_edge_nav_buttons();
 }
 
 void Viewport::set_receive_len(quint64 length)
@@ -2166,6 +2184,139 @@ bool Viewport::get_dso_trig_moved()
     return _dso_trig_moved;
 }
 
+LogicSignal* Viewport::get_hovered_logic_signal(const QPoint &pos)
+{
+    if (_type != TIME_VIEW)
+        return nullptr;
+    if (_view.session().get_device()->get_work_mode() != LOGIC)
+        return nullptr;
+    if (!_view.session().is_stopped_status())
+        return nullptr;
+
+    const int mouseY = pos.y() + _view.v_scroll_offset();
+    const auto &sigs = _view.session().get_signals();
+    for (auto s : sigs) {
+        if (s->signal_type() == SR_CHANNEL_LOGIC && s->enabled()) {
+            LogicSignal *logicSig = static_cast<LogicSignal*>(s);
+            const int sigY = logicSig->get_v_offset();
+            const int halfH = logicSig->get_totalHeight() / 2 + View::SignalMargin;
+            if (abs(mouseY - sigY) < halfH)
+                return logicSig;
+        }
+    }
+    return nullptr;
+}
+
+void Viewport::update_edge_nav_buttons()
+{
+    if (!_prev_edge_btn || !_next_edge_btn)
+        return;
+
+    if (!rect().contains(_mouse_point)) {
+        _prev_edge_btn->hide();
+        _next_edge_btn->hide();
+        _hover_logic_signal = nullptr;
+        return;
+    }
+
+    if (_type != TIME_VIEW ||
+        _view.session().get_device()->get_work_mode() != LOGIC ||
+        !_view.session().is_stopped_status()) {
+        _prev_edge_btn->hide();
+        _next_edge_btn->hide();
+        _hover_logic_signal = nullptr;
+        return;
+    }
+
+    LogicSignal *sig = get_hovered_logic_signal(_mouse_point);
+    if (!sig || !sig->data() || sig->data()->empty()) {
+        _prev_edge_btn->hide();
+        _next_edge_btn->hide();
+        _hover_logic_signal = nullptr;
+        return;
+    }
+
+    _hover_logic_signal = sig;
+
+    const int sigY = sig->get_v_offset() - _view.v_scroll_offset();
+    const int halfH = sig->get_totalHeight() / 2;
+    const int btnY = sigY - halfH +
+        (sig->get_totalHeight() - _prev_edge_btn->height()) / 2;
+    const int hOffset = 5;
+
+    _prev_edge_btn->move(hOffset, btnY);
+    _next_edge_btn->move(width() - _next_edge_btn->width() - hOffset, btnY);
+
+    auto *snapshot = sig->data();
+    const int sigIndex = sig->get_index();
+    const uint64_t end = snapshot->get_ring_sample_count() - 1;
+    const uint64_t leftIndex = _view.pixel2index(0);
+    const uint64_t rightIndex = _view.pixel2index(_view.get_view_width());
+
+    bool hasPrev = false;
+    if (leftIndex > 0 && leftIndex <= end) {
+        uint64_t searchIdx = leftIndex;
+        const bool sample = snapshot->get_sample(searchIdx, sigIndex);
+        hasPrev = snapshot->get_pre_edge(searchIdx, sample, 1, sigIndex);
+    }
+
+    bool hasNext = false;
+    if (rightIndex < end) {
+        uint64_t searchIdx = rightIndex;
+        const bool sample = snapshot->get_sample(searchIdx, sigIndex);
+        hasNext = snapshot->get_nxt_edge(searchIdx, sample, end, 1, sigIndex);
+    }
+
+    _prev_edge_btn->setEnabled(hasPrev);
+    _next_edge_btn->setEnabled(hasNext);
+    _prev_edge_btn->setVisible(true);
+    _next_edge_btn->setVisible(true);
+}
+
+void Viewport::navigate_to_edge(EdgeNavButton::Direction dir)
+{
+    if (!_hover_logic_signal)
+        return;
+
+    auto *snapshot = _hover_logic_signal->data();
+    if (!snapshot || snapshot->empty())
+        return;
+
+    const int sigIndex = _hover_logic_signal->get_index();
+    const uint64_t end = snapshot->get_ring_sample_count() - 1;
+    uint64_t searchIdx = (dir == EdgeNavButton::Next)
+        ? _view.pixel2index(_view.get_view_width())
+        : _view.pixel2index(0);
+
+    if (searchIdx > end)
+        return;
+
+    const bool sample = snapshot->get_sample(searchIdx, sigIndex);
+    const bool found = (dir == EdgeNavButton::Next)
+        ? snapshot->get_nxt_edge(searchIdx, sample, end, 1, sigIndex)
+        : snapshot->get_pre_edge(searchIdx, sample, 1, sigIndex);
+
+    if (!found)
+        return;
+
+    const uint64_t sampleRate = _view.session().cur_snap_samplerate();
+    if (sampleRate == 0)
+        return;
+
+    _view.show_search_cursor(true);
+    _view.get_search_cursor()->set_index(searchIdx);
+
+    const double time = searchIdx * 1.0 / sampleRate;
+    const int viewWidth = _view.get_view_width();
+    const double scale = _view.scale();
+    const int64_t newOffset = (dir == EdgeNavButton::Next)
+        ? (int64_t)(time / scale - viewWidth * 0.25)
+        : (int64_t)(time / scale - viewWidth * 0.75);
+
+    _view.set_scale_offset(scale, newOffset);
+    update_edge_nav_buttons();
+}
+
 void Viewport::show_contextmenu(const QPoint& pos)
 {
     if(_cmenu &&
@@ -2201,6 +2352,10 @@ void Viewport::UpdateLanguage()
 
 void Viewport::UpdateTheme()
 {
+    if (_prev_edge_btn)
+        _prev_edge_btn->UpdateTheme();
+    if (_next_edge_btn)
+        _next_edge_btn->UpdateTheme();
 }
 
 void Viewport::UpdateFont()
