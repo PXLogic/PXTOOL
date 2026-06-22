@@ -297,6 +297,7 @@ set(DSView_SOURCES
     PXTOOL/pv/view/timemarker.cpp
     PXTOOL/pv/view/signal.cpp
     PXTOOL/pv/view/ruler.cpp
+    PXTOOL/pv/view/edge_nav_button.cpp
     PXTOOL/pv/view/waveformscrollbar.cpp
     PXTOOL/pv/view/verticalscrollbar.cpp
     PXTOOL/pv/view/logicsignal.cpp
@@ -440,6 +441,7 @@ set(DSView_HEADERS
     PXTOOL/pv/view/view.h
     PXTOOL/pv/view/timemarker.h
     PXTOOL/pv/view/ruler.h
+    PXTOOL/pv/view/edge_nav_button.h
     PXTOOL/pv/view/waveformscrollbar.h
     PXTOOL/pv/view/verticalscrollbar.h
     PXTOOL/pv/view/header.h
