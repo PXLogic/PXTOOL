@@ -2252,17 +2252,27 @@ void Viewport::update_edge_nav_buttons()
     const uint64_t end = snapshot->get_ring_sample_count() - 1;
     const uint64_t leftIndex = _view.pixel2index(0);
     const uint64_t rightIndex = _view.pixel2index(_view.get_view_width());
+    const bool hasAnchor = _view.search_cursor_shown() &&
+        _view.get_search_cursor()->index() <= end;
 
     bool hasPrev = false;
-    if (leftIndex > 0 && leftIndex <= end) {
-        uint64_t searchIdx = leftIndex;
+    uint64_t searchIdx = hasAnchor
+        ? (_view.get_search_cursor()->index() > 0
+            ? _view.get_search_cursor()->index() - 1
+            : 0)
+        : leftIndex;
+    if (searchIdx <= end && searchIdx > 0) {
         const bool sample = snapshot->get_sample(searchIdx, sigIndex);
         hasPrev = snapshot->get_pre_edge(searchIdx, sample, 1, sigIndex);
     }
 
     bool hasNext = false;
-    if (rightIndex < end) {
-        uint64_t searchIdx = rightIndex;
+    searchIdx = hasAnchor
+        ? (_view.get_search_cursor()->index() < end
+            ? _view.get_search_cursor()->index() + 1
+            : end + 1)
+        : rightIndex;
+    if (searchIdx <= end && searchIdx < end) {
         const bool sample = snapshot->get_sample(searchIdx, sigIndex);
         hasNext = snapshot->get_nxt_edge(searchIdx, sample, end, 1, sigIndex);
     }
@@ -2284,9 +2294,16 @@ void Viewport::navigate_to_edge(EdgeNavButton::Direction dir)
 
     const int sigIndex = _hover_logic_signal->get_index();
     const uint64_t end = snapshot->get_ring_sample_count() - 1;
+    const bool hasAnchor = _view.search_cursor_shown() &&
+        _view.get_search_cursor()->index() <= end;
+    const uint64_t searchIdxAnchor = _view.get_search_cursor()->index();
     uint64_t searchIdx = (dir == EdgeNavButton::Next)
-        ? _view.pixel2index(_view.get_view_width())
-        : _view.pixel2index(0);
+        ? (hasAnchor
+            ? (searchIdxAnchor < end ? searchIdxAnchor + 1 : end + 1)
+            : _view.pixel2index(_view.get_view_width()))
+        : (hasAnchor
+            ? (searchIdxAnchor > 0 ? searchIdxAnchor - 1 : 0)
+            : _view.pixel2index(0));
 
     if (searchIdx > end)
         return;
