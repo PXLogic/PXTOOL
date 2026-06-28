@@ -26,10 +26,10 @@ QList<ThemeInfo> ThemeManager::builtInThemes()
     return {
         {ThemeId::Dark, "Dark", QString(), true, true},
         {ThemeId::Light, "Light", QString(), true, false},
-        {ThemeId::Atom, "Atom One Dark", ":/themes/atom.json", false, true},
-        {ThemeId::Ayu, "Ayu Light", ":/themes/ayu.json", false, false},
-        {ThemeId::DarkCards, "Dark Colored Cards", ":/themes/dark_cards.json", false, true},
-        {ThemeId::LightCards, "Light Colored Cards", ":/themes/light_cards.json", false, false},
+        {ThemeId::Atom, "Atom One Dark", ":/atom.json", false, true},
+        {ThemeId::Ayu, "Ayu Light", ":/ayu.json", false, false},
+        {ThemeId::DarkCards, "Dark Colored Cards", ":/dark_cards.json", false, true},
+        {ThemeId::LightCards, "Light Colored Cards", ":/light_cards.json", false, false},
     };
 }
 

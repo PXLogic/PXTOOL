@@ -7,6 +7,49 @@ using pv::theme::ThemeManager;
 
 BOOST_AUTO_TEST_SUITE(ThemeManagerTest)
 
+BOOST_AUTO_TEST_CASE(provides_built_in_theme_metadata_in_menu_order)
+{
+    const QList<pv::theme::ThemeInfo> themes = ThemeManager::builtInThemes();
+
+    BOOST_REQUIRE_EQUAL(themes.size(), 6);
+
+    BOOST_CHECK_EQUAL(themes[0].id.toStdString(), ThemeId::Dark);
+    BOOST_CHECK_EQUAL(themes[0].label.toStdString(), "Dark");
+    BOOST_CHECK(themes[0].jsonResource.isEmpty());
+    BOOST_CHECK(themes[0].legacy);
+    BOOST_CHECK(themes[0].darkLike);
+
+    BOOST_CHECK_EQUAL(themes[1].id.toStdString(), ThemeId::Light);
+    BOOST_CHECK_EQUAL(themes[1].label.toStdString(), "Light");
+    BOOST_CHECK(themes[1].jsonResource.isEmpty());
+    BOOST_CHECK(themes[1].legacy);
+    BOOST_CHECK(!themes[1].darkLike);
+
+    BOOST_CHECK_EQUAL(themes[2].id.toStdString(), ThemeId::Atom);
+    BOOST_CHECK_EQUAL(themes[2].label.toStdString(), "Atom One Dark");
+    BOOST_CHECK_EQUAL(themes[2].jsonResource.toStdString(), ":/atom.json");
+    BOOST_CHECK(!themes[2].legacy);
+    BOOST_CHECK(themes[2].darkLike);
+
+    BOOST_CHECK_EQUAL(themes[3].id.toStdString(), ThemeId::Ayu);
+    BOOST_CHECK_EQUAL(themes[3].label.toStdString(), "Ayu Light");
+    BOOST_CHECK_EQUAL(themes[3].jsonResource.toStdString(), ":/ayu.json");
+    BOOST_CHECK(!themes[3].legacy);
+    BOOST_CHECK(!themes[3].darkLike);
+
+    BOOST_CHECK_EQUAL(themes[4].id.toStdString(), ThemeId::DarkCards);
+    BOOST_CHECK_EQUAL(themes[4].label.toStdString(), "Dark Colored Cards");
+    BOOST_CHECK_EQUAL(themes[4].jsonResource.toStdString(), ":/dark_cards.json");
+    BOOST_CHECK(!themes[4].legacy);
+    BOOST_CHECK(themes[4].darkLike);
+
+    BOOST_CHECK_EQUAL(themes[5].id.toStdString(), ThemeId::LightCards);
+    BOOST_CHECK_EQUAL(themes[5].label.toStdString(), "Light Colored Cards");
+    BOOST_CHECK_EQUAL(themes[5].jsonResource.toStdString(), ":/light_cards.json");
+    BOOST_CHECK(!themes[5].legacy);
+    BOOST_CHECK(!themes[5].darkLike);
+}
+
 BOOST_AUTO_TEST_CASE(normalizes_empty_and_unknown_to_dark)
 {
     BOOST_CHECK_EQUAL(ThemeManager::normalizeId("").toStdString(), ThemeId::Dark);
