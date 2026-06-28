@@ -11,15 +11,71 @@
 
 #include "thememanager.h"
 
+#include <QCryptographicHash>
 #include <QFile>
+#include <QDir>
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QJsonParseError>
+#include <QRegularExpression>
+#include <QStandardPaths>
 
 #include <algorithm>
 
 namespace pv {
 namespace theme {
+
+namespace {
+
+void writeThemedSvgResources(QString &styleSheet, const QHash<QString, QString> &tokens)
+{
+    QRegularExpression imageExpression(QStringLiteral(R"(image:\s*url\((:[^)]+\.svg)\))"));
+    QRegularExpressionMatchIterator matches = imageExpression.globalMatch(styleSheet);
+
+    QHash<QString, QString> themedPaths;
+    const QString tempRoot = QStandardPaths::writableLocation(QStandardPaths::TempLocation)
+                             + QStringLiteral("/DSView-theme-svg");
+
+    while (matches.hasNext()) {
+        const QRegularExpressionMatch match = matches.next();
+        const QString resourcePath = match.captured(1);
+        if (themedPaths.contains(resourcePath))
+            continue;
+
+        QFile svgFile(resourcePath);
+        if (!svgFile.open(QFile::ReadOnly | QFile::Text))
+            continue;
+
+        QString svg = QString::fromUtf8(svgFile.readAll());
+        ThemeManager::replaceTokens(svg, tokens);
+
+        QDir dir(tempRoot);
+        if (!dir.exists() && !dir.mkpath(QStringLiteral(".")))
+            continue;
+
+        const QByteArray svgBytes = svg.toUtf8();
+        QString fileName = resourcePath;
+        fileName.remove(0, 2);
+        fileName.replace(QLatin1Char('/'), QLatin1Char('_'));
+        fileName.replace(QStringLiteral(".svg"),
+                         QStringLiteral("_%1.svg").arg(QString::fromLatin1(
+                             QCryptographicHash::hash(svgBytes, QCryptographicHash::Sha1).toHex().left(12))));
+
+        const QString themedPath = dir.absoluteFilePath(fileName);
+        QFile themedFile(themedPath);
+        if (!themedFile.open(QFile::WriteOnly | QFile::Text | QFile::Truncate))
+            continue;
+
+        themedFile.write(svgBytes);
+        themedPaths.insert(resourcePath, themedPath);
+    }
+
+    for (auto it = themedPaths.constBegin(); it != themedPaths.constEnd(); ++it)
+        styleSheet.replace(QStringLiteral("url(%1)").arg(it.key()),
+                           QStringLiteral("url(%1)").arg(it.value()));
+}
+
+} // namespace
 
 QList<ThemeInfo> ThemeManager::builtInThemes()
 {
@@ -178,6 +234,7 @@ bool ThemeManager::buildStyleSheet(const QString &id, QHash<QString, QString> &t
         return false;
 
     replaceTokens(styleSheet, tokens);
+    writeThemedSvgResources(styleSheet, tokens);
     return true;
 }
 

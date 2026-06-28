@@ -17,6 +17,12 @@
 ## along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ##
 
+set(DSVIEW_TEST_QRC
+    ../themes/breeze.qrc
+)
+
+qt5_add_resources(DSVIEW_TEST_RESOURCES ${DSVIEW_TEST_QRC})
+
 add_executable(DSView-test
     test.cpp
     test_diskcachesettings.cpp
@@ -24,6 +30,7 @@ add_executable(DSView-test
     test_theme.cpp
     ../pv/dock/logsearch.cpp
     ../pv/theme/thememanager.cpp
+    ${DSVIEW_TEST_RESOURCES}
 )
 
 target_include_directories(DSView-test PRIVATE

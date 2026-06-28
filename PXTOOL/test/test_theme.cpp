@@ -2,6 +2,8 @@
 
 #include "../pv/theme/thememanager.h"
 
+#include <QStringList>
+
 using pv::theme::ThemeId;
 using pv::theme::ThemeManager;
 
@@ -102,28 +104,55 @@ BOOST_AUTO_TEST_CASE(provides_legacy_compatibility_tokens)
     BOOST_CHECK_EQUAL(light.value("@group-card-colored").toStdString(), "false");
 }
 
-BOOST_AUTO_TEST_CASE(clears_tokens_when_non_legacy_preset_load_fails)
+BOOST_AUTO_TEST_CASE(loads_unknown_id_as_dark_legacy_tokens)
 {
     QHash<QString, QString> tokens;
     tokens["@stale"] = "#123456";
 
     QString error;
-    BOOST_CHECK(!ThemeManager::loadTokenPreset(ThemeId::Atom, tokens, &error));
+    BOOST_CHECK(ThemeManager::loadTokenPreset("missing", tokens, &error));
 
-    BOOST_CHECK(tokens.isEmpty());
-    BOOST_CHECK(!error.isEmpty());
+    BOOST_CHECK_EQUAL(tokens.value("@bg-base").toStdString(), "#262626");
+    BOOST_CHECK(!tokens.contains("@stale"));
+    BOOST_CHECK(error.isEmpty());
 }
 
-BOOST_AUTO_TEST_CASE(build_stylesheet_uses_shared_theme_qss_contract)
+BOOST_AUTO_TEST_CASE(loads_all_token_presets)
+{
+    const QStringList ids = {
+        ThemeId::Atom,
+        ThemeId::Ayu,
+        ThemeId::DarkCards,
+        ThemeId::LightCards,
+    };
+
+    for (const QString &id : ids) {
+        QHash<QString, QString> tokens;
+        QString error;
+        BOOST_CHECK_MESSAGE(ThemeManager::loadTokenPreset(id, tokens, &error),
+                            error.toStdString());
+        BOOST_CHECK(tokens.contains("@bg-base"));
+        BOOST_CHECK(tokens.contains("@fg-base"));
+        BOOST_CHECK(tokens.contains("@icon-dir"));
+    }
+}
+
+BOOST_AUTO_TEST_CASE(build_stylesheet_loads_tokens_and_replaces_placeholders)
 {
     QHash<QString, QString> tokens;
     QString styleSheet;
     QString error;
 
-    BOOST_CHECK(!ThemeManager::buildStyleSheet(ThemeId::Atom, tokens, styleSheet, &error));
+    BOOST_CHECK_MESSAGE(ThemeManager::buildStyleSheet(ThemeId::Atom, tokens, styleSheet, &error),
+                        error.toStdString());
 
-    BOOST_CHECK_EQUAL(error.toStdString(), "Unable to open :/theme.qss");
-    BOOST_CHECK(styleSheet.isEmpty());
+    BOOST_CHECK(tokens.contains("@bg-base"));
+    BOOST_CHECK(tokens.contains("@fg-base"));
+    BOOST_CHECK(tokens.contains("@icon-dir"));
+    BOOST_CHECK(!styleSheet.isEmpty());
+    BOOST_CHECK(!styleSheet.contains("@bg-base"));
+    BOOST_CHECK(!styleSheet.contains("@fg-base"));
+    BOOST_CHECK(!styleSheet.contains("@icon-dir"));
 }
 
 BOOST_AUTO_TEST_SUITE_END()
