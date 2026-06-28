@@ -529,7 +529,7 @@ namespace pv
 
         const SigSession::DiskCacheStatus st = _session->disk_cache_status();
         AppConfig &app = AppConfig::Instance();
-        const bool isDark = (app.frameOptions.style == "dark");
+        const bool isDark = app.IsDarkStyle();
         const QString border = isDark ? QStringLiteral("#333333") : QStringLiteral("#BBBBBB");
         if (_disk_cache_footer_line)
             _disk_cache_footer_line->setStyleSheet(QStringLiteral(
