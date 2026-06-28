@@ -549,11 +549,9 @@ void SideBar::applyTitleStyle()
             dark ? QColor(QStringLiteral("#202020")) : QColor(QStringLiteral("#F8F8F8")));
         const QColor textColor = themeColor(QStringLiteral("@fg-base"),
             dark ? QColor(QStringLiteral("#EFF0F1")) : QColor(QStringLiteral("#2A2A2A")));
-        const QColor accentColor = themeColor(QStringLiteral("@sidebar-accent"), QColor(QStringLiteral("#528BFF")));
-        style = QStringLiteral("color: %1; background: %2; border-left: 3px solid %3;")
+        style = QStringLiteral("color: %1; background: %2;")
             .arg(textColor.name())
-            .arg(bgColor.name())
-            .arg(accentColor.name());
+            .arg(bgColor.name());
     }
 
     if (_title_trigger) _title_trigger->setStyleSheet(style);

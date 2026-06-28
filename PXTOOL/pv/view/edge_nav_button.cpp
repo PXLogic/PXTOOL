@@ -59,6 +59,7 @@ void EdgeNavButton::UpdateTheme()
     _disabledColor = isDark ? QColor("#555555") : QColor("#9ca3af");
     if (!pv::theme::ThemeManager::isLegacyTheme(AppConfig::Instance().frameOptions.style)) {
         _bgColor = themeColor("@panel-bg", _bgColor);
+        _hoverBgColor = themeColor("@bg-overlay", _hoverBgColor);
         _borderColor = themeColor("@border-strong", _borderColor);
         _arrowColor = themeColor("@panel-text", _arrowColor);
     }

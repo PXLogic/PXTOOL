@@ -912,11 +912,21 @@ namespace pv
         QString selBg     = isDark ? "#2D2D2D" : "#FFFFFF";
         QString textColor = isDark ? "#CCCCCC" : "#333333";
         QString selText   = isDark ? "#FFFFFF" : "#000000";
+        QString addBg     = isDark ? "#2A2A2A" : "#E0E0E0";
+        QString addText   = isDark ? "#AAAAAA" : "#444444";
+        QString addHover  = isDark ? "#3A3A3A" : "#D0D0D0";
+        QString tabBarBg  = isDark ? "#1A1A1A" : "#D8D8D8";
+        QString tabBorder = isDark ? "#333333" : "#BBBBBB";
         if (!isLegacy) {
             bgColor = themeColor(QStringLiteral("@tabview-bg"), QColor(bgColor)).name();
             selBg = themeColor(QStringLiteral("@bg-overlay"), QColor(selBg)).name();
             textColor = themeColor(QStringLiteral("@fg-base"), QColor(textColor)).name();
             selText = themeColor(QStringLiteral("@fg-bright"), QColor(selText)).name();
+            addBg = themeColor(QStringLiteral("@tabview-bg"), QColor(addBg)).name();
+            addText = themeColor(QStringLiteral("@fg-base"), QColor(addText)).name();
+            addHover = themeColor(QStringLiteral("@bg-overlay"), QColor(addHover)).name();
+            tabBarBg = themeColor(QStringLiteral("@tabview-bg"), QColor(tabBarBg)).name();
+            tabBorder = themeColor(QStringLiteral("@border-strong"), QColor(tabBorder)).name();
         }
         QString closeBtnStyle = isDark
             ? QString("QPushButton{background:transparent;color:#888;border:none;font-size:%1px;padding:0px;max-width:14px;min-width:14px;}"
@@ -991,17 +1001,17 @@ namespace pv
         addBtn->setStyleSheet(QString(
             "QPushButton{background:%1;color:%2;border-radius:4px;font-size:%3px;font-weight:bold;border:none;}"
             "QPushButton:hover{background:%4;}")
-            .arg(isDark ? "#2A2A2A" : "#E0E0E0")
-            .arg(isDark ? "#AAAAAA" : "#444444")
+            .arg(addBg)
+            .arg(addText)
             .arg(fsz + 2)
-            .arg(isDark ? "#3A3A3A" : "#D0D0D0"));
+            .arg(addHover));
         connect(addBtn, &QPushButton::clicked, this, &MainWindow::on_session_tab_add);
         _tab_bar_layout->addWidget(addBtn);
 
         _session_tab_bar->setStyleSheet(QString(
             "QWidget#session_tab_bar{background:%1;border-top:1px solid %2;}")
-            .arg(isDark ? "#1A1A1A" : "#D8D8D8")
-            .arg(isDark ? "#333333" : "#BBBBBB"));
+            .arg(tabBarBg)
+            .arg(tabBorder));
     }
 
     void MainWindow::update_tab_bar_style()
