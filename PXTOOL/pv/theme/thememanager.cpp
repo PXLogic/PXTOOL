@@ -112,6 +112,11 @@ QString ThemeManager::normalizeId(const QString &id)
     return ThemeId::Dark;
 }
 
+QString ThemeManager::displayLabel(const QString &id)
+{
+    return themeInfo(id).label;
+}
+
 bool ThemeManager::isKnownTheme(const QString &id)
 {
     const QList<ThemeInfo> themes = builtInThemes();

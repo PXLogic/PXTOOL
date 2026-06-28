@@ -43,6 +43,7 @@
 #include "sessioncallback.h"
 
 class QAction;
+class QActionGroup;
 class QMenuBar;
 class QMenu;
 class QVBoxLayout;
@@ -191,6 +192,7 @@ private:
     void update_disk_cache_footer();
     QString format_disk_cache_bytes(uint64_t bytes) const;
     QString format_disk_cache_speed(uint64_t bytes_per_sec) const;
+    void syncThemeActions();
 
     //json operation
 private:
@@ -286,8 +288,13 @@ private:
 
     // Window menu
     QMenu   *_menu_themes        = nullptr;
+    QActionGroup *_theme_action_group = nullptr;
     QAction *_action_dark        = nullptr;
     QAction *_action_light       = nullptr;
+    QAction *_action_atom        = nullptr;
+    QAction *_action_ayu         = nullptr;
+    QAction *_action_dark_cards  = nullptr;
+    QAction *_action_light_cards = nullptr;
     QAction *_action_display_opts = nullptr;
     QAction *_action_shortcuts   = nullptr;
 

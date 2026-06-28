@@ -58,6 +58,17 @@ BOOST_AUTO_TEST_CASE(normalizes_empty_and_unknown_to_dark)
     BOOST_CHECK_EQUAL(ThemeManager::normalizeId("missing").toStdString(), ThemeId::Dark);
 }
 
+BOOST_AUTO_TEST_CASE(provides_display_labels_for_menu_actions)
+{
+    BOOST_CHECK_EQUAL(ThemeManager::displayLabel(ThemeId::Dark).toStdString(), "Dark");
+    BOOST_CHECK_EQUAL(ThemeManager::displayLabel(ThemeId::Light).toStdString(), "Light");
+    BOOST_CHECK_EQUAL(ThemeManager::displayLabel(ThemeId::Atom).toStdString(), "Atom One Dark");
+    BOOST_CHECK_EQUAL(ThemeManager::displayLabel(ThemeId::Ayu).toStdString(), "Ayu Light");
+    BOOST_CHECK_EQUAL(ThemeManager::displayLabel(ThemeId::DarkCards).toStdString(), "Dark Colored Cards");
+    BOOST_CHECK_EQUAL(ThemeManager::displayLabel(ThemeId::LightCards).toStdString(), "Light Colored Cards");
+    BOOST_CHECK_EQUAL(ThemeManager::displayLabel("missing").toStdString(), "Dark");
+}
+
 BOOST_AUTO_TEST_CASE(classifies_legacy_and_token_presets)
 {
     BOOST_CHECK(ThemeManager::isLegacyTheme(ThemeId::Dark));

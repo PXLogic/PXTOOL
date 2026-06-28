@@ -41,6 +41,7 @@ public:
     static QList<ThemeInfo> builtInThemes();
     static ThemeInfo themeInfo(const QString &id);
     static QString normalizeId(const QString &id);
+    static QString displayLabel(const QString &id);
     static bool isKnownTheme(const QString &id);
     static bool isLegacyTheme(const QString &id);
     static bool isDarkTheme(const QString &id);

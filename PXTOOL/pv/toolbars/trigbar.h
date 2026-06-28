@@ -23,8 +23,9 @@
 #ifndef DSVIEW_PV_TOOLBARS_TRIGBAR_H
 #define DSVIEW_PV_TOOLBARS_TRIGBAR_H
 
-#include <QToolBar> 
+#include <QToolBar>
 #include <QAction>
+#include <QActionGroup>
 #include <QMenu>
 #include "../interface/icallbacks.h"
 #include "../ui/xtoolbutton.h"
@@ -72,6 +73,7 @@ signals:
 private slots:
     void on_actionDark_triggered();
     void on_actionLight_triggered();
+    void on_theme_action_triggered();
     void on_actionLissajous_triggered();
     void on_actionFft_triggered();
     void on_actionMath_triggered();
@@ -105,9 +107,14 @@ private:
 
     QMenu       *_display_menu;
     QMenu       *_themes;
+    QActionGroup *_theme_group;
     QAction     *_action_dispalyOptions;
     QAction     *_dark_style;
     QAction     *_light_style;
+    QAction     *_atom_style;
+    QAction     *_ayu_style;
+    QAction     *_dark_cards_style;
+    QAction     *_light_cards_style;
     QAction     *_action_lissajous;
 };
 
