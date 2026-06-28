@@ -143,8 +143,15 @@ bool ThemeManager::loadTokenPreset(const QString &id, QHash<QString, QString> &t
     }
 
     for (auto it = tokenObject.constBegin(); it != tokenObject.constEnd(); ++it) {
-        if (it.value().isString())
-            tokens.insert(it.key(), it.value().toString());
+        if (!it.value().isString()) {
+            tokens.clear();
+            if (errorMessage)
+                *errorMessage = QString("Theme preset %1 has non-string token: %2")
+                                    .arg(theme.jsonResource)
+                                    .arg(it.key());
+            return false;
+        }
+        tokens.insert(it.key(), it.value().toString());
     }
 
     if (tokens.isEmpty()) {
