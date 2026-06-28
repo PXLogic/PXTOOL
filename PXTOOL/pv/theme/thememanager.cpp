@@ -19,6 +19,7 @@
 #include <QJsonParseError>
 #include <QRegularExpression>
 #include <QStandardPaths>
+#include <QUrl>
 
 #include <algorithm>
 
@@ -67,7 +68,7 @@ void writeThemedSvgResources(QString &styleSheet, const QHash<QString, QString> 
             continue;
 
         themedFile.write(svgBytes);
-        themedPaths.insert(resourcePath, themedPath);
+        themedPaths.insert(resourcePath, QUrl::fromLocalFile(themedPath).toString());
     }
 
     for (auto it = themedPaths.constBegin(); it != themedPaths.constEnd(); ++it)

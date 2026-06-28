@@ -153,6 +153,8 @@ BOOST_AUTO_TEST_CASE(build_stylesheet_loads_tokens_and_replaces_placeholders)
     BOOST_CHECK(!styleSheet.contains("@bg-base"));
     BOOST_CHECK(!styleSheet.contains("@fg-base"));
     BOOST_CHECK(!styleSheet.contains("@icon-dir"));
+    BOOST_CHECK(!styleSheet.contains("url(:/"));
+    BOOST_CHECK(styleSheet.contains("url(file:///"));
 }
 
 BOOST_AUTO_TEST_SUITE_END()
