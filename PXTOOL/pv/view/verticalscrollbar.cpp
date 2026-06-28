@@ -89,7 +89,9 @@ void VerticalScrollBar::paintEvent(QPaintEvent *)
     QColor arrowFg     = isDark ? QColor(160, 160, 160) : QColor(80, 80, 80);
     if (!pv::theme::ThemeManager::isLegacyTheme(app.frameOptions.style)) {
         QColor track = themeColor("@bg-base", isDark ? QColor("#202020") : QColor("#F8F8F8"));
-        QColor thumb = themeColor("@bg-overlay", isDark ? QColor("#3A3A3A") : QColor("#D0D0D0"));
+        QColor thumb = _hover_thumb
+            ? themeColor("@fg-muted", isDark ? QColor(140, 140, 140) : QColor(100, 100, 100))
+            : themeColor("@bg-overlay", isDark ? QColor("#3A3A3A") : QColor("#D0D0D0"));
         QColor border = themeColor("@border-strong", isDark ? QColor("#37373B") : QColor("#D5D5D5"));
         bgColor = border;
         trackColor = track;

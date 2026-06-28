@@ -50,7 +50,7 @@ EdgeNavButton::EdgeNavButton(Direction dir, QWidget *parent) :
 
 void EdgeNavButton::UpdateTheme()
 {
-    const bool isDark = (AppConfig::Instance().frameOptions.style == "dark");
+    const bool isDark = AppConfig::Instance().IsDarkStyle();
     _bgColor = isDark ? QColor("#1f1f1f") : QColor("#ffffff");
     _hoverBgColor = isDark ? QColor("#2a2a2a") : QColor("#f3f4f6");
     _borderColor = isDark ? QColor("#444444") : QColor("#d4d4d4");
