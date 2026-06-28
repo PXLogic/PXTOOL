@@ -495,7 +495,7 @@ namespace pv
         {
             // Apply combo box styles directly so they remain correct regardless of
             // whether measureSize() has overwritten the widget stylesheet.
-            bool isDark = (AppConfig::Instance().frameOptions.style != "light");
+            bool isDark = AppConfig::Instance().IsDarkStyle();
             QString comboBg     = isDark ? "#1a1a1a" : "#ffffff";
             QString comboBorder = isDark ? "#444444" : "#6b7280";
             QString comboFg     = isDark ? "#d1d5db" : "#374151";
