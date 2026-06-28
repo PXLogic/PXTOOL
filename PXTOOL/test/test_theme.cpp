@@ -95,7 +95,35 @@ BOOST_AUTO_TEST_CASE(provides_legacy_compatibility_tokens)
     const QHash<QString, QString> light = ThemeManager::legacyTokens(ThemeId::Light);
 
     BOOST_CHECK_EQUAL(dark.value("@bg-base").toStdString(), "#262626");
+    BOOST_CHECK_EQUAL(dark.value("@fg-base").toStdString(), "#EFF0F1");
+    BOOST_CHECK_EQUAL(dark.value("@group-card-colored").toStdString(), "false");
     BOOST_CHECK_EQUAL(light.value("@bg-base").toStdString(), "#F8F8F8");
+    BOOST_CHECK_EQUAL(light.value("@fg-base").toStdString(), "#2A2A2A");
+    BOOST_CHECK_EQUAL(light.value("@group-card-colored").toStdString(), "false");
+}
+
+BOOST_AUTO_TEST_CASE(clears_tokens_when_non_legacy_preset_load_fails)
+{
+    QHash<QString, QString> tokens;
+    tokens["@stale"] = "#123456";
+
+    QString error;
+    BOOST_CHECK(!ThemeManager::loadTokenPreset(ThemeId::Atom, tokens, &error));
+
+    BOOST_CHECK(tokens.isEmpty());
+    BOOST_CHECK(!error.isEmpty());
+}
+
+BOOST_AUTO_TEST_CASE(build_stylesheet_uses_shared_theme_qss_contract)
+{
+    QHash<QString, QString> tokens;
+    QString styleSheet;
+    QString error;
+
+    BOOST_CHECK(!ThemeManager::buildStyleSheet(ThemeId::Atom, tokens, styleSheet, &error));
+
+    BOOST_CHECK_EQUAL(error.toStdString(), "Unable to open :/theme.qss");
+    BOOST_CHECK(styleSheet.isEmpty());
 }
 
 BOOST_AUTO_TEST_SUITE_END()

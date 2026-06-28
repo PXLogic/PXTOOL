@@ -80,11 +80,33 @@ QHash<QString, QString> ThemeManager::legacyTokens(const QString &id)
     if (normalizeId(id) == ThemeId::Light) {
         return {
             {"@bg-base", "#F8F8F8"},
+            {"@bg-overlay", "#E8E8E8"},
+            {"@panel-bg", "#F8F8F8"},
+            {"@panel-text", "#2A2A2A"},
+            {"@fg-base", "#2A2A2A"},
+            {"@fg-bright", "#000000"},
+            {"@fg-muted", "#8A8A8A"},
+            {"@border-strong", "#D5D5D5"},
+            {"@accent", "#528BFF"},
+            {"@sidebar-accent", "#528BFF"},
+            {"@group-card-bg", "#FFFFFF"},
+            {"@group-card-colored", "false"},
         };
     }
 
     return {
         {"@bg-base", "#262626"},
+        {"@bg-overlay", "#2D2D2D"},
+        {"@panel-bg", "#262626"},
+        {"@panel-text", "#EFF0F1"},
+        {"@fg-base", "#EFF0F1"},
+        {"@fg-bright", "#FFFFFF"},
+        {"@fg-muted", "#7A7A7A"},
+        {"@border-strong", "#37373B"},
+        {"@accent", "#528BFF"},
+        {"@sidebar-accent", "#528BFF"},
+        {"@group-card-bg", "#2D2D2D"},
+        {"@group-card-colored", "false"},
     };
 }
 
@@ -95,6 +117,8 @@ bool ThemeManager::loadTokenPreset(const QString &id, QHash<QString, QString> &t
         tokens = legacyTokens(theme.id);
         return true;
     }
+
+    tokens.clear();
 
     QFile file(theme.jsonResource);
     if (!file.open(QFile::ReadOnly | QFile::Text)) {
@@ -111,32 +135,41 @@ bool ThemeManager::loadTokenPreset(const QString &id, QHash<QString, QString> &t
         return false;
     }
 
-    tokens.clear();
-    const QJsonObject root = doc.object();
-    QJsonObject tokenObject = root;
-    if (root.value("tokens").isObject())
-        tokenObject = root.value("tokens").toObject();
-    for (auto it = tokenObject.constBegin(); it != tokenObject.constEnd(); ++it)
-        tokens.insert(it.key(), it.value().toString());
+    const QJsonObject tokenObject = doc.object().value("tokens").toObject();
+    if (tokenObject.isEmpty()) {
+        if (errorMessage)
+            *errorMessage = QString("Theme preset %1 has no tokens").arg(theme.jsonResource);
+        return false;
+    }
+
+    for (auto it = tokenObject.constBegin(); it != tokenObject.constEnd(); ++it) {
+        if (it.value().isString())
+            tokens.insert(it.key(), it.value().toString());
+    }
+
+    if (tokens.isEmpty()) {
+        if (errorMessage)
+            *errorMessage = QString("Theme preset %1 has no string tokens").arg(theme.jsonResource);
+        return false;
+    }
 
     return true;
 }
 
 bool ThemeManager::buildStyleSheet(const QString &id, QHash<QString, QString> &tokens, QString &styleSheet, QString *errorMessage)
 {
-    const ThemeInfo theme = themeInfo(id);
-    if (!loadTokenPreset(theme.id, tokens, errorMessage))
-        return false;
-
-    const QString qssResource = theme.darkLike ? ":/dark.qss" : ":/light.qss";
-    QFile file(qssResource);
+    QFile file(":/theme.qss");
     if (!file.open(QFile::ReadOnly | QFile::Text)) {
         if (errorMessage)
-            *errorMessage = QString("Unable to open stylesheet: %1").arg(qssResource);
+            *errorMessage = "Unable to open :/theme.qss";
         return false;
     }
 
     styleSheet = QString::fromUtf8(file.readAll());
+
+    if (!loadTokenPreset(id, tokens, errorMessage))
+        return false;
+
     replaceTokens(styleSheet, tokens);
     return true;
 }
