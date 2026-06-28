@@ -11,6 +11,9 @@
 # Local Qt user cache
 /.qt/
 
+# Local isolated worktrees
+/.worktrees/
+
 # CMake and build artifacts (in-source build)
 /CMakeCache.txt
 /CMakeFiles/
