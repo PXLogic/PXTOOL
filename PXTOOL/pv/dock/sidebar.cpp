@@ -23,6 +23,7 @@
 #include <QTimer>
 #include <QPointer>
 #include "../config/appconfig.h"
+#include "../theme/thememanager.h"
 #include "triggerdock.h"
 #include "dsotriggerdock.h"
 #include "protocoldock.h"
@@ -44,6 +45,12 @@
 
 namespace pv {
 namespace dock {
+
+static QColor themeColor(const QString &token, const QColor &fallback)
+{
+    QColor color = AppConfig::Instance().GetThemeColor(token);
+    return color.isValid() ? color : fallback;
+}
 
 SideBar::SideBar(QWidget *parent, view::View &view, SigSession *session)
     : QWidget(parent)
@@ -533,9 +540,21 @@ void SideBar::applyTitleStyle()
 {
     // Only set theme-dependent color inline; size/weight come from UpdateFont().
     // Do not set font-size here — it overrides QSS and blocks Display font scaling.
-    bool dark = AppConfig::Instance().IsDarkStyle();
+    AppConfig &app = AppConfig::Instance();
+    bool dark = app.IsDarkStyle();
     QString color = dark ? QStringLiteral("#e0e0e0") : QStringLiteral("#222222");
     QString style = QStringLiteral("color: %1; background: transparent;").arg(color);
+    if (!pv::theme::ThemeManager::isLegacyTheme(app.frameOptions.style)) {
+        const QColor bgColor = themeColor(QStringLiteral("@sidebar-bg"),
+            dark ? QColor(QStringLiteral("#202020")) : QColor(QStringLiteral("#F8F8F8")));
+        const QColor textColor = themeColor(QStringLiteral("@fg-base"),
+            dark ? QColor(QStringLiteral("#EFF0F1")) : QColor(QStringLiteral("#2A2A2A")));
+        const QColor accentColor = themeColor(QStringLiteral("@sidebar-accent"), QColor(QStringLiteral("#528BFF")));
+        style = QStringLiteral("color: %1; background: %2; border-left: 3px solid %3;")
+            .arg(textColor.name())
+            .arg(bgColor.name())
+            .arg(accentColor.name());
+    }
 
     if (_title_trigger) _title_trigger->setStyleSheet(style);
     if (_title_decode)  _title_decode->setStyleSheet(style);

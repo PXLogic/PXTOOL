@@ -129,6 +129,12 @@ namespace pv
         QString tmp_file;
     }
 
+    static QColor themeColor(const QString &token, const QColor &fallback)
+    {
+        QColor color = AppConfig::Instance().GetThemeColor(token);
+        return color.isValid() ? color : fallback;
+    }
+
     MainWindow::MainWindow(toolbars::TitleBar *title_bar, QWidget *parent)
         : QMainWindow(parent)
     {
@@ -530,7 +536,10 @@ namespace pv
         const SigSession::DiskCacheStatus st = _session->disk_cache_status();
         AppConfig &app = AppConfig::Instance();
         const bool isDark = app.IsDarkStyle();
-        const QString border = isDark ? QStringLiteral("#333333") : QStringLiteral("#BBBBBB");
+        const bool isLegacy = pv::theme::ThemeManager::isLegacyTheme(app.frameOptions.style);
+        QString border = isDark ? QStringLiteral("#333333") : QStringLiteral("#BBBBBB");
+        if (!isLegacy)
+            border = themeColor(QStringLiteral("@border-strong"), QColor(border)).name();
         if (_disk_cache_footer_line)
             _disk_cache_footer_line->setStyleSheet(QStringLiteral(
                 "QWidget#disk_cache_footer_line{background:%1;}").arg(border));
@@ -895,12 +904,20 @@ namespace pv
             return;
         }
 
-        bool isDark = AppConfig::Instance().IsDarkStyle();
-        int fsz = qRound(AppConfig::Instance().appOptions.fontSize);
+        AppConfig &app = AppConfig::Instance();
+        bool isDark = app.IsDarkStyle();
+        const bool isLegacy = pv::theme::ThemeManager::isLegacyTheme(app.frameOptions.style);
+        int fsz = qRound(app.appOptions.fontSize);
         QString bgColor   = isDark ? "#1E1E1E" : "#E8E8E8";
         QString selBg     = isDark ? "#2D2D2D" : "#FFFFFF";
         QString textColor = isDark ? "#CCCCCC" : "#333333";
         QString selText   = isDark ? "#FFFFFF" : "#000000";
+        if (!isLegacy) {
+            bgColor = themeColor(QStringLiteral("@tabview-bg"), QColor(bgColor)).name();
+            selBg = themeColor(QStringLiteral("@bg-overlay"), QColor(selBg)).name();
+            textColor = themeColor(QStringLiteral("@fg-base"), QColor(textColor)).name();
+            selText = themeColor(QStringLiteral("@fg-bright"), QColor(selText)).name();
+        }
         QString closeBtnStyle = isDark
             ? QString("QPushButton{background:transparent;color:#888;border:none;font-size:%1px;padding:0px;max-width:14px;min-width:14px;}"
                       "QPushButton:hover{color:#FF6060;}").arg(fsz)

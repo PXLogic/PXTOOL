@@ -2,6 +2,7 @@
 #include "view.h"
 
 #include "../config/appconfig.h"
+#include "../theme/thememanager.h"
 #include <QPainter>
 #include <QMouseEvent>
 #include <QTimerEvent>
@@ -9,6 +10,12 @@
 #include <cmath>
 
 using namespace pv::view;
+
+static QColor themeColor(const QString &token, const QColor &fallback)
+{
+    QColor color = AppConfig::Instance().GetThemeColor(token);
+    return color.isValid() ? color : fallback;
+}
 
 const int WaveformScrollBar::MinThumbWidth;
 
@@ -74,15 +81,24 @@ void WaveformScrollBar::paintEvent(QPaintEvent *)
     QPainter p(this);
     p.setRenderHint(QPainter::Antialiasing, false);
 
-    const bool isDark = (AppConfig::Instance().frameOptions.style == "dark");
-    const QColor bgColor    = isDark ? QColor(30, 30, 30)   : QColor(220, 220, 220);
-    const QColor trackColor = isDark ? QColor(50, 50, 50)   : QColor(200, 200, 200);
-    const QColor thumbColor = (_hover_thumb)
+    AppConfig &app = AppConfig::Instance();
+    const bool isDark = app.IsDarkStyle();
+    QColor bgColor    = isDark ? QColor(30, 30, 30)   : QColor(220, 220, 220);
+    QColor trackColor = isDark ? QColor(50, 50, 50)   : QColor(200, 200, 200);
+    QColor thumbColor = (_hover_thumb)
         ? (isDark ? QColor(140, 140, 140) : QColor(100, 100, 100))
         : (isDark ? QColor(90,  90,  90)  : QColor(140, 140, 140));
+    QColor arrowFg = isDark ? QColor(160, 160, 160) : QColor(80, 80, 80);
+    if (!pv::theme::ThemeManager::isLegacyTheme(app.frameOptions.style)) {
+        QColor track = themeColor("@bg-base", isDark ? QColor("#202020") : QColor("#F8F8F8"));
+        QColor thumb = themeColor("@bg-overlay", isDark ? QColor("#3A3A3A") : QColor("#D0D0D0"));
+        QColor border = themeColor("@border-strong", isDark ? QColor("#37373B") : QColor("#D5D5D5"));
+        bgColor = border;
+        trackColor = track;
+        thumbColor = thumb;
+    }
     const QColor arrowBgLeft  = _hover_left  ? (isDark ? QColor(70,70,70) : QColor(180,180,180)) : bgColor;
     const QColor arrowBgRight = _hover_right ? (isDark ? QColor(70,70,70) : QColor(180,180,180)) : bgColor;
-    const QColor arrowFg = isDark ? QColor(160, 160, 160) : QColor(80, 80, 80);
 
     // Background
     p.fillRect(rect(), bgColor);
