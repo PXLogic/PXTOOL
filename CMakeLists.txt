@@ -378,6 +378,7 @@ set(DSView_SOURCES
     PXTOOL/pv/widgets/decodergroupbox.cpp
     PXTOOL/pv/widgets/decodermenu.cpp
     PXTOOL/pv/config/appconfig.cpp
+    PXTOOL/pv/theme/thememanager.cpp
     PXTOOL/pv/appcontrol.cpp
     PXTOOL/pv/dstimer.cpp
     PXTOOL/pv/eventobject.cpp
@@ -507,6 +508,7 @@ set(DSView_HEADERS
     PXTOOL/pv/widgets/decodergroupbox.h
     PXTOOL/pv/widgets/decodermenu.h
     PXTOOL/pv/config/appconfig.h
+    PXTOOL/pv/theme/thememanager.h
     PXTOOL/pv/appcontrol.h
     PXTOOL/pv/dstimer.h
     PXTOOL/pv/eventobject.h

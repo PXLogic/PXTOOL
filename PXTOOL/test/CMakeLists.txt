@@ -21,7 +21,9 @@ add_executable(DSView-test
     test.cpp
     test_diskcachesettings.cpp
     test_logsearch.cpp
+    test_theme.cpp
     ../pv/dock/logsearch.cpp
+    ../pv/theme/thememanager.cpp
 )
 
 target_include_directories(DSView-test PRIVATE

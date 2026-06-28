@@ -26,6 +26,7 @@
 #include <QString>
 #include <QByteArray>
 #include <QColor>
+#include <QHash>
 
 #define LAN_CN  25
 #define LAN_TW  26
@@ -33,6 +34,10 @@
 
 #define THEME_STYLE_DARK   "dark"
 #define THEME_STYLE_LIGHT  "light"
+#define THEME_STYLE_ATOM   "atom"
+#define THEME_STYLE_AYU    "ayu"
+#define THEME_STYLE_DARK_CARDS   "dark_cards"
+#define THEME_STYLE_LIGHT_CARDS  "light_cards"
 
 #define APP_NAME  "PXTOOL"
   
@@ -195,9 +200,16 @@ public:
 
   QColor GetStyleColor();
 
+  void SetThemeTokens(const QHash<QString, QString> &tokens);
+  QString GetThemeTokenValue(const QString &tokenName) const;
+  QColor GetThemeColor(const QString &tokenName, const QColor &fallback = QColor()) const;
+
 public:
   AppOptions      appOptions;
   UserHistory     userHistory;
   FrameOptions    frameOptions;
   ShortcutOptions shortcutOptions;
+
+private:
+  QHash<QString, QString> _themeTokens;
 };
