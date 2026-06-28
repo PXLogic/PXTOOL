@@ -599,7 +599,7 @@ Capture saves a screenshot of the current interface. PNG and JPEG are supported.
 
 ### 8.1 Themes
 
-PXTOOL supports dark and light themes. Switch themes from the Window menu or Display / Themes.
+PXTOOL supports Dark, Light, Atom One Dark, Ayu Light, Dark Colored Cards, and Light Colored Cards themes. Switch themes from the Window menu or Display / Themes.
 
 ### 8.2 Language
 
@@ -748,4 +748,3 @@ PXTOOL can be started from the application icon or by opening one data file at s
 | CSV | Exports data or protocol lists for spreadsheet and script tools |
 | TXT | Exports protocol decoding text results |
 | PNG / JPEG | Saves interface screenshots |
-
