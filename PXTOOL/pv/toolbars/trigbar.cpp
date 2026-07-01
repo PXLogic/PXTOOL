@@ -21,6 +21,7 @@
 
 #include "trigbar.h"
 
+#include <QActionGroup>
 #include <QBitmap>
 #include <QPainter>
 #include <QEvent>
@@ -71,9 +72,16 @@ TrigBar::TrigBar(SigSession *session, QWidget *parent) :
    
     _dark_style = new QAction(this);
     _dark_style->setObjectName(QString::fromUtf8("actionDark"));
+    _dark_style->setCheckable(true);
     
     _light_style = new QAction(this);
     _light_style->setObjectName(QString::fromUtf8("actionLight"));
+    _light_style->setCheckable(true);
+
+    QActionGroup *theme_actions = new QActionGroup(this);
+    theme_actions->setExclusive(true);
+    theme_actions->addAction(_light_style);
+    theme_actions->addAction(_dark_style);
      
     _themes = new QMenu(this);
     _themes->setObjectName(QString::fromUtf8("menuThemes"));
@@ -164,14 +172,15 @@ void TrigBar::reStyle()
     _action_fft->setIcon(QIcon(iconPath+"/fft.svg"));
     _action_math->setIcon(QIcon(iconPath+"/math.svg"));
     _action_lissajous->setIcon(QIcon(iconPath+"/lissajous.svg"));
-    _dark_style->setIcon(QIcon(iconPath+"/dark.svg"));
-    _light_style->setIcon(QIcon(iconPath+"/light.svg"));
+    _dark_style->setIcon(QIcon());
+    _light_style->setIcon(QIcon());
 
     _action_dispalyOptions->setIcon(QIcon(iconPath+"/gear.svg"));
 
      AppConfig &app = AppConfig::Instance();
      QString icon_fname = iconPath +"/"+ app.frameOptions.style +".svg";  
     _themes->setIcon(QIcon(icon_fname));
+    update_theme_actions();
 }
 
 void TrigBar::protocol_clicked()
@@ -292,6 +301,7 @@ void TrigBar::on_actionMath_triggered()
 
 void TrigBar::on_actionDark_triggered()
 {
+    _dark_style->setChecked(true);
     sig_setTheme(THEME_STYLE_DARK);
     QString icon = GetIconPath() + "/" + THEME_STYLE_DARK + ".svg";
     _themes->setIcon(QIcon(icon));
@@ -299,6 +309,7 @@ void TrigBar::on_actionDark_triggered()
 
 void TrigBar::on_actionLight_triggered()
 {
+    _light_style->setChecked(true);
     sig_setTheme(THEME_STYLE_LIGHT);
     QString icon = GetIconPath() + "/" + THEME_STYLE_LIGHT +".svg";
     _themes->setIcon(QIcon(icon));
@@ -364,6 +375,13 @@ void TrigBar::update_checked_status()
     _protocol_button.setChecked(opt->decodeDock);
     _measure_button.setChecked(opt->measureDock);
     _search_button.setChecked(opt->searchDock);
+}
+
+void TrigBar::update_theme_actions()
+{
+    const QString style = AppConfig::Instance().frameOptions.style;
+    _dark_style->setChecked(style == THEME_STYLE_DARK);
+    _light_style->setChecked(style == THEME_STYLE_LIGHT);
 }
 
 void TrigBar::UpdateLanguage()

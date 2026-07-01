@@ -21,6 +21,7 @@
  */
 
 #include <QAction>
+#include <QActionGroup>
 #include <QButtonGroup>
 #include <QFileDialog>
 #include <QMessageBox>
@@ -301,8 +302,15 @@ namespace pv
         // Window menu
         _menu_view = _menu_bar->addMenu(tr("Window"));
         _menu_themes = _menu_view->addMenu(tr("Themes"));
+        _menu_themes->setObjectName(QString::fromUtf8("menuThemes"));
         _action_dark  = _menu_themes->addAction(tr("Dark"));
         _action_light = _menu_themes->addAction(tr("Light"));
+        _action_dark->setCheckable(true);
+        _action_light->setCheckable(true);
+        QActionGroup *theme_actions = new QActionGroup(_menu_themes);
+        theme_actions->setExclusive(true);
+        theme_actions->addAction(_action_dark);
+        theme_actions->addAction(_action_light);
         connect(_action_dark,  SIGNAL(triggered()), _trig_bar, SLOT(on_actionDark_triggered()));
         connect(_action_light, SIGNAL(triggered()), _trig_bar, SLOT(on_actionLight_triggered()));
         _action_display_opts  = _menu_view->addAction(tr("Display Options..."));
@@ -2600,6 +2608,11 @@ namespace pv
         qss.open(QFile::ReadOnly | QFile::Text);
         qApp->setStyleSheet(qss.readAll());
         qss.close();
+
+        if (_action_dark)
+            _action_dark->setChecked(style == THEME_STYLE_DARK);
+        if (_action_light)
+            _action_light->setChecked(style == THEME_STYLE_LIGHT);
 
         UiManager::Instance()->Update(UI_UPDATE_ACTION_THEME);
         UiManager::Instance()->Update(UI_UPDATE_ACTION_FONT);

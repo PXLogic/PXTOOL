@@ -22,12 +22,15 @@
 #include "protocolexp.h"
   
 #include <QFormLayout>
+#include <QHBoxLayout>
 #include <QListWidget>
 #include <QFile>
 #include <QFileDialog>
 #include <QTextStream>
 #include <QProgressDialog>
 #include <QFuture>
+#include <QPushButton>
+#include <QWidget>
 #include <QtConcurrent/QtConcurrent>
 #include <algorithm>
 
@@ -58,6 +61,14 @@ ProtocolExp::ProtocolExp(QWidget *parent, SigSession *session) :
         Qt::Horizontal, this),
     _export_cancel(false)
 {
+    setObjectName("protocolExportDialog");
+    setTitle(tr("Protocol Export"));
+    setTitleTextAlignment(Qt::AlignHCenter | Qt::AlignVCenter);
+    SetTitleSpace(8);
+    layout()->setSpacing(0);
+    layout()->setAlignment(Qt::AlignTop);
+    layout()->setContentsMargins(0, 5, 0, 0);
+
     _format_combobox = new DsComboBox(this);
     //tr
     _format_combobox->addItem("Comma-Separated Values (*.csv)");
@@ -94,12 +105,32 @@ ProtocolExp::ProtocolExp(QWidget *parent, SigSession *session) :
         }
     }
 
+    auto *top_sep = new QWidget(this);
+    top_sep->setObjectName("device_options_divider");
+    top_sep->setFixedHeight(1);
+    layout()->addWidget(top_sep);
+
     _layout = new QVBoxLayout();
+    _layout->setContentsMargins(16, 12, 16, 20);
+    _layout->setSpacing(0);
     _layout->addLayout(_flayout);
-    _layout->addWidget(&_button_box);
 
     layout()->addLayout(_layout);
-    setTitle(tr("Protocol Export"));
+
+    auto *bot_sep = new QWidget(this);
+    bot_sep->setObjectName("device_options_divider");
+    bot_sep->setFixedHeight(1);
+    layout()->addWidget(bot_sep);
+
+    if (QPushButton *ok = _button_box.button(QDialogButtonBox::Ok))
+        ok->setObjectName("device_ok_btn");
+    if (QPushButton *cancel = _button_box.button(QDialogButtonBox::Cancel))
+        cancel->setObjectName("device_cancel_btn");
+    auto *footer_lay = new QHBoxLayout();
+    footer_lay->setContentsMargins(12, 10, 12, 10);
+    footer_lay->addStretch();
+    footer_lay->addWidget(&_button_box);
+    layout()->addLayout(footer_lay);
 
     connect(&_button_box, SIGNAL(accepted()), this, SLOT(accept()));
     connect(&_button_box, SIGNAL(rejected()), this, SLOT(reject()));
