@@ -90,7 +90,7 @@ namespace ui
             "padding: 6px 0; }"
             "QMenu::item { color: %2; font-family: \"%3\"; font-size: %1px; font-weight: normal; "
             "padding: 4px 12px; min-height: %4px; border: 1px solid transparent; }"
-            "QMenu::item:selected { background-color: #1185D1; color: #ffffff; }")
+            "QMenu::item:selected { background-color: #7c3aed; color: #ffffff; }")
             .arg(px)
             .arg(fg)
             .arg(family)

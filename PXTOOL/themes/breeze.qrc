@@ -93,6 +93,8 @@
         <file>light/radio_unchecked_disabled.svg</file>
         <file>light/radio_unchecked-hover.svg</file>
         <file>light/mode_down_arrow.svg</file>
+        <file>light/menu_check.svg</file>
         <file>dark/mode_down_arrow.svg</file>
+        <file>dark/menu_check.svg</file>
     </qresource>
 </RCC>

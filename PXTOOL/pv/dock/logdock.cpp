@@ -120,8 +120,8 @@ QString logDockComboStyle(const QFont &font)
         " font-size: %6px; font-weight: normal; }"
         "QAbstractItemView::item { min-height: %5px; padding: 4px 12px;"
         " border: 1px solid transparent; }"
-        "QAbstractItemView::item:selected { background-color: #1185D1; color: #ffffff; }"
-        "QAbstractItemView::item:hover { background-color: #1185D1; color: #ffffff; }")
+        "QAbstractItemView::item:selected { background-color: #7c3aed; color: #ffffff; }"
+        "QAbstractItemView::item:hover { background-color: #7c3aed; color: #ffffff; }")
         .arg(bg)
         .arg(border)
         .arg(fg)

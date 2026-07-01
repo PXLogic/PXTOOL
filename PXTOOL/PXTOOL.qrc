@@ -19,6 +19,8 @@
         <file>icons/sidebar/chevron-down.svg</file>
         <file>icons/sidebar/checkbox-unchecked.svg</file>
         <file>icons/sidebar/checkbox-checked.svg</file>
+        <file>icons/sidebar/checkbox-unchecked-hover.svg</file>
+        <file>icons/sidebar/checkbox-checked-hover.svg</file>
         <file>icons/Blackman.png</file>
         <file>icons/Flat_top.png</file>
         <file>icons/Hamming.png</file>

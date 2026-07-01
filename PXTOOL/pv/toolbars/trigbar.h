@@ -55,6 +55,7 @@ private:
     void reStyle();
     DockOptions* getDockOptions();
     void update_checked_status();
+    void update_theme_actions();
 
      //IUiWindow
     void UpdateLanguage() override;

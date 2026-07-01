@@ -23,7 +23,10 @@
  
 
 #include <QFormLayout>
+#include <QHBoxLayout>
 #include <QListWidget>
+#include <QPushButton>
+#include <QWidget>
 
 #include "../sigsession.h"
 #include "../data/decoderstack.h"
@@ -44,6 +47,14 @@ ProtocolList::ProtocolList(QWidget *parent, SigSession *session) :
     _button_box(QDialogButtonBox::Ok,
         Qt::Horizontal, this)
 {
+    setObjectName("protocolListDialog");
+    setTitle(tr("Protocol List Viewer"));
+    setTitleTextAlignment(Qt::AlignHCenter | Qt::AlignVCenter);
+    SetTitleSpace(8);
+    layout()->setSpacing(0);
+    layout()->setAlignment(Qt::AlignTop);
+    layout()->setContentsMargins(0, 5, 0, 0);
+
     pv::data::DecoderModel* decoder_model = _session->get_decoder_model();
 
     _map_zoom_combobox = new DsComboBox(this);
@@ -80,13 +91,31 @@ ProtocolList::ProtocolList(QWidget *parent, SigSession *session) :
     _flayout->addRow(new QLabel(tr("Map Zoom: "), this), _map_zoom_combobox);
     _flayout->addRow(new QLabel(tr("Decoded Protocols: "), this), _protocol_combobox);
 
+    auto *top_sep = new QWidget(this);
+    top_sep->setObjectName("device_options_divider");
+    top_sep->setFixedHeight(1);
+    layout()->addWidget(top_sep);
+
     _layout = new QVBoxLayout();
+    _layout->setContentsMargins(16, 12, 16, 20);
+    _layout->setSpacing(0);
     _layout->addLayout(_flayout);
-    _layout->addWidget(&_button_box);
 
     setMinimumWidth(300);
     layout()->addLayout(_layout);
-    setTitle(tr("Protocol List Viewer"));
+
+    auto *bot_sep = new QWidget(this);
+    bot_sep->setObjectName("device_options_divider");
+    bot_sep->setFixedHeight(1);
+    layout()->addWidget(bot_sep);
+
+    if (QPushButton *ok = _button_box.button(QDialogButtonBox::Ok))
+        ok->setObjectName("device_ok_btn");
+    auto *footer_lay = new QHBoxLayout();
+    footer_lay->setContentsMargins(12, 10, 12, 10);
+    footer_lay->addStretch();
+    footer_lay->addWidget(&_button_box);
+    layout()->addLayout(footer_lay);
 
     connect(&_button_box, SIGNAL(accepted()), this, SLOT(accept()));
     connect(_protocol_combobox, SIGNAL(currentIndexChanged(int)), this, SLOT(set_protocol(int)));
