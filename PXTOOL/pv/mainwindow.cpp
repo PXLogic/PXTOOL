@@ -314,26 +314,14 @@ namespace pv
 
         _action_dark        = _menu_themes->addAction(tr("Dark"));
         _action_light       = _menu_themes->addAction(tr("Light"));
-        _action_atom        = _menu_themes->addAction(tr("Atom One Dark"));
-        _action_ayu         = _menu_themes->addAction(tr("Ayu Light"));
-        _action_dark_cards  = _menu_themes->addAction(tr("Dark Colored Cards"));
-        _action_light_cards = _menu_themes->addAction(tr("Light Colored Cards"));
 
         const QList<QAction*> themeActions = {
             _action_dark,
             _action_light,
-            _action_atom,
-            _action_ayu,
-            _action_dark_cards,
-            _action_light_cards,
         };
         const QList<QString> themeIds = {
             THEME_STYLE_DARK,
             THEME_STYLE_LIGHT,
-            THEME_STYLE_ATOM,
-            THEME_STYLE_AYU,
-            THEME_STYLE_DARK_CARDS,
-            THEME_STYLE_LIGHT_CARDS,
         };
         for (int i = 0; i < themeActions.size(); ++i) {
             QAction *action = themeActions[i];
@@ -616,10 +604,6 @@ namespace pv
         if (_menu_themes)         _menu_themes->setTitle(tr("Themes"));
         if (_action_dark)         _action_dark->setText(tr("Dark"));
         if (_action_light)        _action_light->setText(tr("Light"));
-        if (_action_atom)         _action_atom->setText(tr("Atom One Dark"));
-        if (_action_ayu)          _action_ayu->setText(tr("Ayu Light"));
-        if (_action_dark_cards)   _action_dark_cards->setText(tr("Dark Colored Cards"));
-        if (_action_light_cards)  _action_light_cards->setText(tr("Light Colored Cards"));
         if (_action_display_opts) _action_display_opts->setText(tr("Display Options..."));
         if (_action_shortcuts)    _action_shortcuts->setText(tr("Keyboard Shortcuts..."));
 

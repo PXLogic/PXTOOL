@@ -291,10 +291,10 @@ private:
     QActionGroup *_theme_action_group = nullptr;
     QAction *_action_dark        = nullptr;
     QAction *_action_light       = nullptr;
-    QAction *_action_atom        = nullptr;
-    QAction *_action_ayu         = nullptr;
-    QAction *_action_dark_cards  = nullptr;
-    QAction *_action_light_cards = nullptr;
+    // QAction *_action_atom        = nullptr;
+    // QAction *_action_ayu         = nullptr;
+    // QAction *_action_dark_cards  = nullptr;
+    // QAction *_action_light_cards = nullptr;
     QAction *_action_display_opts = nullptr;
     QAction *_action_shortcuts   = nullptr;
 

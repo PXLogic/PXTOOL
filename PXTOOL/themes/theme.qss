@@ -226,6 +226,12 @@ QGroupBox::indicator
     margin-left: 2px;
 }
 
+QCheckBox::indicator
+{
+    width: 18px;
+    height: 18px;
+}
+
 QCheckBox::indicator:unchecked,
 QCheckBox::indicator:unchecked:focus
 {
@@ -245,6 +251,7 @@ QGroupBox::indicator:unchecked:pressed
 QCheckBox::indicator:checked
 {
     image: url(:/@icon-dir/checkbox_checked.svg);
+    padding: 2px;
 }
 
 QCheckBox::indicator:checked:hover,
@@ -256,6 +263,7 @@ QGroupBox::indicator:checked:pressed
 {
     border: none;
     image: url(:/@icon-dir/checkbox_checked-hover.svg);
+    padding: 2px;
 }
 
 QCheckBox::indicator:indeterminate
@@ -384,7 +392,7 @@ QMenu
 
 QMenu::item
 {
-    padding: 5px 30px 5px 30px;
+    padding: 2px 24px 2px 24px;
     margin-left: 2px;
     border: 1px solid transparent; /* reserve space for selection border */
 }
@@ -398,49 +406,51 @@ QMenu::item:selected
 QMenu::indicator {
     width: 16px;
     height: 16px;
+    margin-right: 6px;
 }
 
-/* non-exclusive indicator = check box style indicator
-   (see QActionGroup::setExclusive) */
-QMenu::indicator:non-exclusive:unchecked
-{
-    image: url(:/@icon-dir/checkbox_unchecked_disabled.svg);
+/* non-exclusive indicator = check box style indicator */
+QMenu::indicator:non-exclusive:unchecked {
+    background-color: @bg-base;
+    border: 1px solid @input-border;
+    border-radius: 2px;
+    image: none;
 }
 
-QMenu::indicator:non-exclusive:unchecked:selected
-{
-    image: url(:/@icon-dir/checkbox_unchecked_disabled.svg);
-}
-
-QMenu::indicator:non-exclusive:checked
-{
-    image: url(:/@icon-dir/checkbox_checked.svg);
-}
-
-QMenu::indicator:non-exclusive:checked:selected
-{
-    image: url(:/@icon-dir/checkbox_checked.svg);
+QMenu::indicator:non-exclusive:checked {
+    background-color: @sidebar-accent;
+    border: 1px solid @sidebar-accent;
+    border-radius: 2px;
+    image: none;
 }
 
 /* exclusive indicator = radio button style indicator (see QActionGroup::setExclusive) */
-QMenu::indicator:exclusive:unchecked
-{
-    image: url(:/@icon-dir/radio_unchecked_disabled.svg);
+QMenu::indicator:exclusive:unchecked {
+    background-color: @bg-base;
+    border: 1px solid @input-border;
+    border-radius: 8px;
+    image: none;
 }
 
-QMenu::indicator:exclusive:unchecked:selected
-{
-    image: url(:/@icon-dir/radio_unchecked_disabled.svg);
+QMenu::indicator:exclusive:unchecked:selected {
+    background-color: @combo-highlight;
+    border: 1px solid @input-border;
+    border-radius: 8px;
+    image: none;
 }
 
-QMenu::indicator:exclusive:checked
-{
-    image: url(:/@icon-dir/radio_checked.svg);
+QMenu::indicator:exclusive:checked {
+    background-color: @sidebar-accent;
+    border: 1px solid @sidebar-accent;
+    border-radius: 8px;
+    image: none;
 }
 
-QMenu::indicator:exclusive:checked:selected
-{
-    image: url(:/@icon-dir/radio_checked.svg);
+QMenu::indicator:exclusive:checked:selected {
+    background-color: @sidebar-accent;
+    border: 1px solid @sidebar-accent;
+    border-radius: 8px;
+    image: none;
 }
 
 QMenu::right-arrow
@@ -487,6 +497,34 @@ QGroupBox
 {
     border: none;
     margin-top: 0px;
+}
+
+/* Sidebar panel widgets — bordered box style */
+QWidget#glitchFilterWidget QGroupBox,
+QWidget#measureWidget QGroupBox,
+QWidget#mcpControlWidget QGroupBox,
+QWidget#triggerWidget QGroupBox,
+QWidget#deviceOptionsWidget QGroupBox {
+    background: transparent;
+    border: 1px solid @border-strong;
+    border-radius: 4px;
+    margin-top: 12px;
+    padding: 6px;
+    min-width: 300px;
+}
+
+QWidget#glitchFilterWidget QGroupBox::title,
+QWidget#measureWidget QGroupBox::title,
+QWidget#mcpControlWidget QGroupBox::title,
+QWidget#triggerWidget QGroupBox::title,
+QWidget#deviceOptionsWidget QGroupBox::title {
+    subcontrol-origin: margin;
+    subcontrol-position: top left;
+    left: 8px;
+    padding: 0 6px;
+    color: @dock-section-title-fg;
+    font-weight: normal;
+    font-size: @dock-font-section-title;
 }
 
 #dock_section_title {
@@ -649,6 +687,117 @@ QToolBar#sidebar {
     background-color: @sidebar-bg;
     padding: 0px;
     spacing: 0px;
+}
+
+QWidget#icon_strip {
+    background-color: @sidebar-bg;
+    border-left: 1px solid @border-strong;
+}
+
+QToolButton#sidebar_tab_btn {
+    background: transparent;
+    border: none;
+    border-left: 2px solid transparent;
+    color: @sidebar-text-color;
+    font-size: @sidebar-font-size;
+    font-weight: normal;
+    text-transform: uppercase;
+    padding: 4px 0px 2px 0px;
+    margin: 0px;
+    text-align: center;
+}
+
+QToolButton#sidebar_tab_btn:hover:!checked {
+    background-color: @toolbtn-hover;
+    color: @fg-base;
+    border-left: 2px solid transparent;
+}
+
+QToolButton#sidebar_tab_btn:checked {
+    background-color: @toolbtn-hover;
+    border-left: 2px solid @sidebar-accent;
+    color: @fg-bright;
+}
+
+/* Radio button indicators in sidebar panels — CSS-drawn circles (reliable across all contexts) */
+QRadioButton#decode_engine_both_cb::indicator,
+QRadioButton#decode_engine_c_cb::indicator,
+QRadioButton#decode_engine_py_cb::indicator {
+    width: 13px;
+    height: 13px;
+    border: 1px solid @input-border;
+    border-radius: 7px;
+    background-color: @bg-base;
+    image: none;
+}
+
+QRadioButton#decode_engine_both_cb::indicator:checked,
+QRadioButton#decode_engine_c_cb::indicator:checked,
+QRadioButton#decode_engine_py_cb::indicator:checked {
+    border: 2px solid @sidebar-accent;
+    background-color: @sidebar-accent;
+    image: none;
+}
+
+QRadioButton#decode_engine_both_cb::indicator:hover,
+QRadioButton#decode_engine_c_cb::indicator:hover,
+QRadioButton#decode_engine_py_cb::indicator:hover {
+    border-color: @sidebar-accent;
+    image: none;
+}
+
+/* All radio buttons inside sidebar panels — CSS-drawn circles */
+QWidget#sidebar QRadioButton {
+    color: @fg-base;
+    spacing: 6px;
+    background: transparent;
+}
+
+QWidget#sidebar QRadioButton::indicator {
+    width: 13px;
+    height: 13px;
+    border: 1px solid @input-border;
+    border-radius: 7px;
+    background-color: @bg-base;
+    image: none;
+}
+
+QWidget#sidebar QRadioButton::indicator:checked {
+    background-color: @sidebar-accent;
+    border: 2px solid @sidebar-accent;
+    image: none;
+}
+
+QWidget#sidebar QRadioButton::indicator:hover {
+    border-color: @sidebar-accent;
+    image: none;
+}
+
+/* All checkboxes inside sidebar panels */
+QWidget#sidebar QCheckBox {
+    color: @fg-base;
+    spacing: 6px;
+    background: transparent;
+}
+
+QWidget#sidebar QCheckBox::indicator {
+    width: 13px;
+    height: 13px;
+    border: 1px solid @input-border;
+    border-radius: 2px;
+    background-color: @bg-base;
+    image: none;
+}
+
+QWidget#sidebar QCheckBox::indicator:checked {
+    background-color: @sidebar-accent;
+    border: 2px solid @sidebar-accent;
+    border-radius: 2px;
+    image: none;
+}
+
+QWidget#sidebar QCheckBox::indicator:hover {
+    border-color: @sidebar-accent;
 }
 
 QStackedWidget
@@ -1927,7 +2076,8 @@ QFrame#mcpCmdFrame
     border-radius: 4px;
 }
 
-QPlainTextEdit#log_view
+QPlainTextEdit#log_view,
+QPlainTextEdit#log_text
 {
     background-color: @input-bg;
     color: @fg-base;
