@@ -19,6 +19,7 @@
 #define DSVIEW_PV_VIEW_EDGE_NAV_BUTTON_H
 
 #include <QColor>
+#include <QEnterEvent>
 #include <QWidget>
 
 namespace pv {
@@ -43,7 +44,7 @@ signals:
 
 protected:
     void paintEvent(QPaintEvent *event) override;
-    void enterEvent(QEvent *event) override;
+    void enterEvent(QEnterEvent *event) override;
     void leaveEvent(QEvent *event) override;
     void mousePressEvent(QMouseEvent *event) override;
 
