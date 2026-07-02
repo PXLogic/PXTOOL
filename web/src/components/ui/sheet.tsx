@@ -6,6 +6,8 @@ import { cn } from '../../lib/utils';
 import { Button } from './button';
 
 export interface SheetProps extends HTMLAttributes<HTMLDivElement> {
+  'aria-label'?: string;
+  'aria-labelledby'?: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   side?: 'left' | 'right';
@@ -72,6 +74,12 @@ export function Sheet({
     const first = focusable[0];
     const last = focusable[focusable.length - 1];
 
+    if (document.activeElement === panel) {
+      event.preventDefault();
+      (event.shiftKey ? last : first).focus();
+      return;
+    }
+
     if (event.shiftKey && document.activeElement === first) {
       event.preventDefault();
       last.focus();
@@ -89,8 +97,10 @@ export function Sheet({
       <div className="absolute inset-0 bg-foreground/40" onClick={() => onOpenChange(false)} />
       <div
         ref={panelRef}
+        {...props}
         role="dialog"
         aria-modal="true"
+        aria-label={props['aria-label'] ?? (props['aria-labelledby'] ? undefined : 'Panel')}
         tabIndex={-1}
         className={cn(
           'fixed top-0 z-50 flex h-full w-full max-w-md flex-col border-border bg-card text-card-foreground shadow-lg outline-none',
@@ -98,7 +108,6 @@ export function Sheet({
           className,
         )}
         onKeyDown={handleKeyDown}
-        {...props}
       >
         <Button
           aria-label="Close"

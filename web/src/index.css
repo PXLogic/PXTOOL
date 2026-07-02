@@ -11,14 +11,14 @@
   --color-primary-foreground: #f8fafc;
   --color-secondary: #f1f5f9;
   --color-secondary-foreground: #0f172a;
-  --color-accent: #e2e8f0;
-  --color-accent-foreground: #0f172a;
+  --color-accent: #2563eb;
+  --color-accent-foreground: #ffffff;
   --color-destructive: #dc2626;
   --color-destructive-foreground: #ffffff;
   --color-success: #16a34a;
   --color-warning: #d97706;
   --color-error: #dc2626;
-  --color-border: #e2e8f0;
+  --color-border: #0f172a;
   --color-input: #e2e8f0;
   --color-ring: #0f172a;
 
