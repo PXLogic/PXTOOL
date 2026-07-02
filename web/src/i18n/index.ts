@@ -3,6 +3,7 @@ import { initReactI18next } from 'react-i18next';
 
 import enTranslation from './locales/en.json';
 import zhTranslation from './locales/zh.json';
+import zhTwTranslation from './locales/zh-TW.json';
 
 i18n
   .use(initReactI18next)
@@ -10,6 +11,7 @@ i18n
     resources: {
       en: { ...enTranslation },
       zh: { ...zhTranslation },
+      'zh-TW': { ...zhTwTranslation },
     },
     lng: 'zh', // default language
     fallbackLng: 'en',

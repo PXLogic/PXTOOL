@@ -2,6 +2,10 @@ import { useState, useEffect } from 'react';
 import type { ToolCallStatus } from '../hooks/useAppStore';
 import DecoderResultTable from './DecoderResultTable';
 import { useTranslation } from 'react-i18next';
+import { ChevronDown, ChevronRight, Clock } from 'lucide-react';
+import { Badge } from './ui/badge';
+import { Button } from './ui/button';
+import { Card } from './ui/card';
 
 function getFriendlyLabel(name: string, args: Record<string, unknown>): string | null {
   if (name === 'get_devices') return 'FETCHING_DEVICES';
@@ -14,12 +18,26 @@ function getFriendlyLabel(name: string, args: Record<string, unknown>): string |
   return null;
 }
 
+function statusVariant(status: ToolCallStatus['status']) {
+  if (status === 'success') return 'success';
+  if (status === 'running') return 'warning';
+  if (status === 'error') return 'destructive';
+  return 'secondary';
+}
+
 const StatusLabel = ({ status, t }: { status: ToolCallStatus['status'], t: any }) => {
-  if (status === 'pending') return <span className="text-text-casing-muted animate-pulse">{t('TOOL_PENDING')}</span>;
-  if (status === 'running') return <span className="text-warning animate-pulse">{t('TOOL_RUNNING')}</span>;
-  if (status === 'success') return <span className="text-text-casing font-bold">{t('TOOL_SUCCESS')}</span>;
-  if (status === 'cancelled') return <span className="text-text-casing-muted">{t('TOOL_CANCELLED')}</span>;
-  return <span className="text-error">{t('TOOL_ERROR')}</span>;
+  const label =
+    status === 'pending' ? t('TOOL_PENDING') :
+    status === 'running' ? t('TOOL_RUNNING') :
+    status === 'success' ? t('TOOL_SUCCESS') :
+    status === 'cancelled' ? t('TOOL_CANCELLED') :
+    t('TOOL_ERROR');
+
+  return (
+    <Badge variant={statusVariant(status)} className={status === 'running' || status === 'pending' ? 'animate-pulse' : ''}>
+      {label}
+    </Badge>
+  );
 };
 
 function DeviceCards({ data, t }: { data: string, t: any }) {
@@ -27,18 +45,18 @@ function DeviceCards({ data, t }: { data: string, t: any }) {
     const devices = JSON.parse(data);
     if (!Array.isArray(devices)) return <pre className="text-sm p-2 overflow-x-auto">{data}</pre>;
     return (
-      <div className="space-y-1">
+      <div className="space-y-2">
         {devices.map((d: any, i: number) => (
-          <div key={i} className="flex gap-4">
-            <span className="w-4">{i}</span>
-            <span className="font-bold">
+          <div key={i} className="flex flex-wrap items-center gap-x-4 gap-y-1 rounded-md bg-muted/60 px-3 py-2 text-sm">
+            <span className="w-4 text-muted-foreground">{i}</span>
+            <span className="font-medium">
               {d.display_name || d.name || d.modelName || t('UNKNOWN_DEVICE')}
-              {d.is_active && <span className="ml-2 text-warning animate-pulse">[{t('ACTIVE')}]</span>}
+              {d.is_active && <Badge variant="warning" className="ml-2">{t('ACTIVE')}</Badge>}
             </span>
-            <span>
+            <span className="text-muted-foreground">
               {d.usb_speed === 4 ? 'USB 3.0' : d.usb_speed === 3 ? 'USB 2.0' : d.usb_speed === 2 ? 'USB 1.1' : d.is_virtual ? 'Virtual' : '---'}
             </span>
-            <span>
+            <span className="text-muted-foreground">
               {d.is_hardware_dso ? 'DSO' : d.is_hardware_logic ? 'Logic' : d.is_file ? 'File' : '---'}
             </span>
           </div>
@@ -82,46 +100,54 @@ export default function ToolCallCard({ toolCall }: { toolCall: ToolCallStatus })
   const displayResult = truncated ? resultText.slice(0, 500) : resultText;
 
   return (
-    <div className="border border-text-casing-muted border-dashed p-2 my-2 bg-bg-casing-dark shadow-[inset_0_2px_4px_rgba(0,0,0,0.1)]">
-      <button
+    <Card className="my-2 overflow-hidden border-dashed bg-muted/30 shadow-none">
+      <Button
+        variant="ghost"
         onClick={() => setExpanded(!expanded)}
-        className="w-full flex items-center gap-2 text-left hover:bg-bg-casing cursor-pointer"
+        className="h-auto w-full justify-start rounded-none px-3 py-2 text-left"
+        aria-expanded={expanded}
       >
-        <span className="font-bold shrink-0">{expanded ? `[${t('COLLAPSE')}]` : `[${t('EXPAND')}]`}</span>
+        {expanded ? <ChevronDown className="h-4 w-4 shrink-0" /> : <ChevronRight className="h-4 w-4 shrink-0" />}
         <StatusLabel status={toolCall.status} t={t} />
-        <span className="font-bold uppercase">{toolCall.name}</span>
-        {friendly && <span className="opacity-70 text-sm hidden md:inline"> {friendly}</span>}
-        
+        <span className="min-w-0 truncate font-mono text-sm font-semibold">{toolCall.name}</span>
+        {friendly && <span className="hidden truncate text-sm text-muted-foreground md:inline">{t(friendly)}</span>}
+
         {toolCall.status === 'running' && liveElapsed != null && (
-          <span className="ml-auto text-sm text-warning animate-pulse">{liveElapsed}s</span>
+          <span className="ml-auto inline-flex items-center gap-1 text-sm text-warning">
+            <Clock className="h-3.5 w-3.5" />
+            {liveElapsed}s
+          </span>
         )}
         {toolCall.status !== 'running' && toolCall.status !== 'pending' && toolCall.elapsed != null && (
-          <span className="ml-auto text-sm opacity-50">{toolCall.elapsed}{t('ELAPSED')}</span>
+          <span className="ml-auto inline-flex items-center gap-1 text-sm text-muted-foreground">
+            <Clock className="h-3.5 w-3.5" />
+            {toolCall.elapsed}{t('ELAPSED')}
+          </span>
         )}
-      </button>
+      </Button>
 
       {expanded && (
-        <div className="mt-2 border-t border-text-casing-muted border-dashed pt-2 space-y-2">
+        <div className="space-y-3 border-t border-border p-3">
           {Object.keys(args).length > 0 && (
-            <pre className="text-sm opacity-80 overflow-x-auto">
+            <pre className="overflow-x-auto rounded-md bg-background p-3 text-xs text-muted-foreground">
               {JSON.stringify(args, null, 2)}
             </pre>
           )}
           {resultText && (
-            <div className="mt-2 border-t border-text-casing-muted border-dashed pt-2">
+            <div className="border-t border-border pt-3">
               {toolCall.name === 'get_analyzer_results' ? (
                 <DecoderResultTable data={resultText} />
               ) : toolCall.name === 'get_devices' ? (
                 <DeviceCards data={resultText} t={t} />
               ) : (
                 <>
-                  <pre className="text-sm overflow-x-auto whitespace-pre-wrap">
+                  <pre className="overflow-x-auto whitespace-pre-wrap rounded-md bg-background p-3 text-xs">
                     {displayResult}
                   </pre>
                   {truncated && (
-                    <button onClick={() => setShowFull(true)} className="text-sm underline mt-1 opacity-70 hover:opacity-100">
-                      [{t('SHOW_MORE')}]
-                    </button>
+                    <Button onClick={() => setShowFull(true)} variant="ghost" size="sm" className="mt-2">
+                      {t('SHOW_MORE')}
+                    </Button>
                   )}
                 </>
               )}
@@ -129,6 +155,6 @@ export default function ToolCallCard({ toolCall }: { toolCall: ToolCallStatus })
           )}
         </div>
       )}
-    </div>
+    </Card>
   );
 }
