@@ -52,7 +52,7 @@ export default function ChatMessage({ message }: { message: ConversationMessage 
           </div>
 
           {/* Action buttons (Copy, Regenerate) shown on hover */}
-          <div className="flex gap-1 opacity-100 transition-opacity sm:opacity-0 sm:group-hover:opacity-100 sm:focus-within:opacity-100">
+          <div className="flex gap-1 opacity-100 transition-opacity sm:opacity-0 sm:group-hover:opacity-100 sm:focus-within:opacity-100 [@media(pointer:coarse)]:opacity-100">
             {message.content && (
               <Button
                 onClick={handleCopy}
