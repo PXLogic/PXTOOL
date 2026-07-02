@@ -46,7 +46,7 @@ export default function ChatInput() {
           onKeyDown={handleKeyDown}
           placeholder={t('INPUT_PLACEHOLDER')}
           rows={1}
-          className="min-h-10 flex-1 resize-none border-0 px-2 py-2 shadow-none focus-visible:ring-0 focus-visible:ring-offset-0"
+          className="!min-h-10 flex-1 resize-none border-0 px-2 py-2 shadow-none focus-visible:ring-0 focus-visible:ring-offset-0"
           spellCheck="false"
         />
         {isProcessing ? (
