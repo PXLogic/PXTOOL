@@ -1,5 +1,8 @@
 import { useState } from 'react';
 import { Copy } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import { Button } from './ui/button';
+import { Card } from './ui/card';
 
 interface Row {
   [key: string]: string | number;
@@ -51,11 +54,12 @@ function genericColumns(columns: string[]): string[] {
 
 export default function DecoderResultTable({ data }: { data: string }) {
   const [showAll, setShowAll] = useState(false);
+  const { t } = useTranslation();
   const result = parseData(data);
 
   if (!result) {
     return (
-      <div className="text-xs text-text-secondary bg-bg-card rounded p-2 whitespace-pre-wrap font-mono">
+      <div className="whitespace-pre-wrap rounded-md bg-muted p-3 font-mono text-xs text-muted-foreground">
         {data}
       </div>
     );
@@ -67,6 +71,9 @@ export default function DecoderResultTable({ data }: { data: string }) {
   const maxRows = 100;
   const display = showAll ? rows : rows.slice(0, maxRows);
   const truncated = rows.length > maxRows && !showAll;
+  const rowSummary = truncated
+    ? t('SHOWING_ROWS', { shown: maxRows, total: rows.length })
+    : `${rows.length} ${t('ROWS')}`;
 
   const copyCsv = () => {
     const header = headers.join(',');
@@ -75,31 +82,30 @@ export default function DecoderResultTable({ data }: { data: string }) {
   };
 
   return (
-    <div className="bg-bg-card rounded-lg border border-border overflow-hidden">
-      <div className="flex items-center justify-between px-3 py-1.5 border-b border-border">
-        <span className="text-xs text-text-secondary">
-          {truncated ? `Showing ${maxRows} of ${rows.length}` : `${rows.length} rows`}
-        </span>
-        <button onClick={copyCsv} className="text-xs text-accent hover:underline flex items-center gap-1">
-          <Copy className="w-3 h-3" /> Copy CSV
-        </button>
+    <Card className="overflow-hidden shadow-none">
+      <div className="flex items-center justify-between gap-3 border-b border-border px-3 py-2">
+        <span className="text-xs text-muted-foreground">{rowSummary}</span>
+        <Button onClick={copyCsv} variant="ghost" size="sm">
+          <Copy className="h-3.5 w-3.5" />
+          {t('COPY_CSV')}
+        </Button>
       </div>
-      <div className="overflow-x-auto max-h-64">
+      <div className="max-h-64 overflow-x-auto">
         <table className="w-full text-xs">
-          <thead>
+          <thead className="bg-muted/70">
             <tr className="border-b border-border">
-              <th className="px-2 py-1 text-left text-text-secondary font-medium">#</th>
+              <th className="px-2 py-2 text-left font-medium text-muted-foreground">#</th>
               {headers.map((h) => (
-                <th key={h} className="px-2 py-1 text-left text-text-secondary font-medium">{h}</th>
+                <th key={h} className="px-2 py-2 text-left font-medium text-muted-foreground">{h}</th>
               ))}
             </tr>
           </thead>
           <tbody>
             {display.map((row, i) => (
-              <tr key={i} className="border-b border-border/50 hover:bg-bg-primary/50">
-                <td className="px-2 py-1 text-text-secondary">{i + 1}</td>
+              <tr key={i} className="border-b border-border/60 hover:bg-muted/50">
+                <td className="px-2 py-1.5 text-muted-foreground">{i + 1}</td>
                 {columns.map((c) => (
-                  <td key={c} className="px-2 py-1 text-text-primary">{row[c] ?? ''}</td>
+                  <td key={c} className="px-2 py-1.5 text-foreground">{row[c] ?? ''}</td>
                 ))}
               </tr>
             ))}
@@ -107,10 +113,10 @@ export default function DecoderResultTable({ data }: { data: string }) {
         </table>
       </div>
       {truncated && (
-        <button onClick={() => setShowAll(true)} className="w-full text-xs text-accent py-1.5 hover:bg-bg-primary/50">
-          Show all {rows.length} rows
-        </button>
+        <Button onClick={() => setShowAll(true)} variant="ghost" size="sm" className="w-full rounded-none">
+          {t('SHOW_ALL_ROWS', { total: rows.length })}
+        </Button>
       )}
-    </div>
+    </Card>
   );
 }
