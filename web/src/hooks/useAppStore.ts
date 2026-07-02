@@ -59,7 +59,7 @@ interface AppSettings {
   llmApiKey: string;
   llmModel: string;
   systemPrompt: string;
-  language: 'en' | 'zh';
+  language: 'en' | 'zh' | 'zh-TW';
 }
 
 interface AppState {
@@ -138,12 +138,17 @@ function debouncedSaveSessions(sessions: Record<string, ChatSession>, currentId:
   }, 500);
 }
 
+function normalizeLanguage(value: unknown): AppSettings['language'] {
+  return value === 'en' || value === 'zh' || value === 'zh-TW' ? value : 'zh';
+}
+
 function loadSettings(): AppSettings {
   try {
     const saved = localStorage.getItem('pxtool-mcp-settings');
     if (saved) {
         const parsed = JSON.parse(saved);
         if (!parsed.systemPrompt) parsed.systemPrompt = DEFAULT_SYSTEM_PROMPT;
+        parsed.language = normalizeLanguage(parsed.language);
         return parsed;
     }
   } catch {}

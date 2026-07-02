@@ -65,6 +65,25 @@
     "COLLAPSE": "Collapse",
     "EXPAND": "Expand",
     "LANG_TOGGLE": "Language",
-    "HW_CONTROL_DECK": "Hardware Control"
+    "HW_CONTROL_DECK": "Hardware Control",
+    "LANGUAGE_LABEL": "Language",
+    "LANG_ZH": "Simplified Chinese",
+    "LANG_ZH_TW": "Traditional Chinese",
+    "LANG_EN": "English",
+    "NEW_CHAT": "New Chat",
+    "OPEN_DEVICE_PANEL": "Open device panel",
+    "CLOSE_PANEL": "Close panel",
+    "CHAT_HEADER": "Assistant Console",
+    "DEVICE_PANEL_DESC": "Live MCP connection and capture state",
+    "SESSION_COUNT": "sessions",
+    "COPY_CSV": "Copy CSV",
+    "ROWS": "rows",
+    "SHOWING_ROWS": "Showing {{shown}} of {{total}}",
+    "SHOW_ALL_ROWS": "Show all {{total}} rows",
+    "USER_INPUT": "User",
+    "SYS_OUTPUT": "Tool Output",
+    "RESPONSE_DECK": "Assistant",
+    "RESET_CHAT": "Reset chat",
+    "ACTIVE": "Active"
   }
 }

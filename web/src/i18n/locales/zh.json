@@ -65,6 +65,25 @@
     "COLLAPSE": "收起",
     "EXPAND": "展开",
     "LANG_TOGGLE": "切换语言",
-    "HW_CONTROL_DECK": "硬件控制面板"
+    "HW_CONTROL_DECK": "硬件控制面板",
+    "LANGUAGE_LABEL": "语言",
+    "LANG_ZH": "简体中文",
+    "LANG_ZH_TW": "繁體中文",
+    "LANG_EN": "English",
+    "NEW_CHAT": "新建对话",
+    "OPEN_DEVICE_PANEL": "打开设备面板",
+    "CLOSE_PANEL": "关闭面板",
+    "CHAT_HEADER": "助手控制台",
+    "DEVICE_PANEL_DESC": "实时 MCP 连接与采集状态",
+    "SESSION_COUNT": "个会话",
+    "COPY_CSV": "复制 CSV",
+    "ROWS": "行",
+    "SHOWING_ROWS": "显示 {{shown}} / {{total}}",
+    "SHOW_ALL_ROWS": "显示全部 {{total}} 行",
+    "USER_INPUT": "用户",
+    "SYS_OUTPUT": "工具输出",
+    "RESPONSE_DECK": "助手",
+    "RESET_CHAT": "重置对话",
+    "ACTIVE": "使用中"
   }
 }
