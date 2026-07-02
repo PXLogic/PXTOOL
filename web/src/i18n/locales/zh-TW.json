@@ -84,6 +84,7 @@
     "USER_INPUT": "使用者",
     "SYS_OUTPUT": "工具輸出",
     "RESPONSE_DECK": "助手",
-    "RESET_CHAT": "重置對話"
+    "RESET_CHAT": "重置對話",
+    "TOGGLE_THEME": "切換主題"
   }
 }

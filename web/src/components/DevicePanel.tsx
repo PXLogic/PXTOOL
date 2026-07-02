@@ -27,6 +27,9 @@ export default function DevicePanel() {
         ? t('ONLINE')
         : t('OFFLINE');
   const ConnectionIcon = mcpConnected ? Wifi : WifiOff;
+  const connectionBadgeClass = mcpConnected
+    ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-600 ring-0 dark:text-emerald-400'
+    : 'text-muted-foreground';
   const primaryAction = reconnectStatus === 'failed'
     ? { label: t('RESET_LINK'), onClick: attemptReconnect, icon: RefreshCcw, variant: 'default' as const }
     : mcpConnected
@@ -35,9 +38,9 @@ export default function DevicePanel() {
   const PrimaryActionIcon = primaryAction.icon;
 
   return (
-    <div className="w-full h-full flex flex-col gap-4 p-4 overflow-y-auto bg-slate-50/60">
-      <div className="flex items-center gap-2 text-slate-900">
-        <Cpu className="h-5 w-5 text-blue-600" aria-hidden="true" />
+    <div className="flex h-full w-full flex-col gap-4 overflow-y-auto bg-sidebar p-4 text-sidebar-foreground">
+      <div className="flex items-center gap-2 pt-1">
+        <Cpu className="h-4 w-4 text-primary" aria-hidden="true" />
         <h2 className="truncate text-sm font-semibold uppercase tracking-wide">{t('HW_DIAG_MOD')}</h2>
       </div>
 
@@ -48,7 +51,7 @@ export default function DevicePanel() {
               <CardTitle className="text-sm">{t('MASTER_LINK')}</CardTitle>
               <CardDescription>{connectionLabel}</CardDescription>
             </div>
-            <Badge variant={connectionVariant} className="gap-1">
+            <Badge variant={connectionVariant} className={`gap-1.5 ${connectionBadgeClass}`}>
               <ConnectionIcon className="h-3 w-3" aria-hidden="true" />
               {connectionLabel}
             </Badge>
@@ -59,7 +62,7 @@ export default function DevicePanel() {
             onClick={primaryAction.onClick}
             disabled={isReconnecting}
             variant={primaryAction.variant}
-            className="w-full justify-start"
+            className="w-full justify-center"
           >
             <PrimaryActionIcon className="h-4 w-4" aria-hidden="true" />
             {primaryAction.label}
@@ -70,7 +73,7 @@ export default function DevicePanel() {
       <Card className="shadow-none">
         <CardHeader className="p-4 pb-3">
           <div className="flex items-center gap-2">
-            <Usb className="h-4 w-4 text-slate-500" aria-hidden="true" />
+            <Usb className="h-4 w-4 text-primary" aria-hidden="true" />
             <CardTitle className="text-sm">{t('HARDWARE_ID')}</CardTitle>
           </div>
         </CardHeader>
@@ -78,22 +81,22 @@ export default function DevicePanel() {
           {deviceInfo ? (
             <div className="flex flex-col">
               <div className="flex items-start justify-between gap-4 py-2">
-                <span className="text-xs font-medium uppercase tracking-wide text-slate-500">{t('UNIT')}</span>
-                <span className="min-w-0 text-right text-sm font-medium text-slate-900 break-words">{deviceInfo.name}</span>
+                <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{t('UNIT')}</span>
+                <span className="min-w-0 break-words text-right text-sm font-medium text-foreground">{deviceInfo.name}</span>
               </div>
               <Separator />
               <div className="flex items-start justify-between gap-4 py-2">
-                <span className="text-xs font-medium uppercase tracking-wide text-slate-500">{t('BUS')}</span>
-                <span className="text-right text-sm font-medium text-slate-900">{deviceInfo.usbType}</span>
+                <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{t('BUS')}</span>
+                <span className="text-right text-sm font-medium text-foreground">{deviceInfo.usbType}</span>
               </div>
               <Separator />
               <div className="flex items-start justify-between gap-4 py-2">
-                <span className="text-xs font-medium uppercase tracking-wide text-slate-500">{t('MODE')}</span>
-                <span className="text-right text-sm font-medium uppercase text-slate-900">{deviceInfo.mode}</span>
+                <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{t('MODE')}</span>
+                <span className="text-right text-sm font-medium uppercase text-foreground">{deviceInfo.mode}</span>
               </div>
             </div>
           ) : (
-            <div className="rounded-md border border-dashed border-slate-200 py-6 text-center text-sm font-medium uppercase tracking-wide text-slate-400">
+            <div className="rounded-lg border border-dashed border-border bg-muted/40 px-4 py-8 text-center text-xs font-medium uppercase tracking-wide text-muted-foreground">
               {t('AWAITING_SIGNAL')}
             </div>
           )}
@@ -107,7 +110,7 @@ export default function DevicePanel() {
               <CardTitle className="text-sm">{t('CAPTURE_STATE')}</CardTitle>
               <CardDescription>{captureStatus.toUpperCase()}</CardDescription>
             </div>
-            <Badge variant={isCapturing ? 'warning' : 'secondary'} className="gap-1">
+            <Badge variant={isCapturing ? 'warning' : 'secondary'} className="gap-1.5">
               <Activity className={`h-3 w-3 ${isCapturing ? 'animate-pulse' : ''}`} aria-hidden="true" />
               {captureStatus.toUpperCase()}
             </Badge>

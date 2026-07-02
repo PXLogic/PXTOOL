@@ -84,6 +84,7 @@
     "SYS_OUTPUT": "工具输出",
     "RESPONSE_DECK": "助手",
     "RESET_CHAT": "重置对话",
-    "ACTIVE": "使用中"
+    "ACTIVE": "使用中",
+    "TOGGLE_THEME": "切换主题"
   }
 }

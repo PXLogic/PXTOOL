@@ -3,8 +3,21 @@ import { useAppStore } from '../hooks/useAppStore';
 import { useTranslation } from 'react-i18next';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
-import { Card } from './ui/card';
-import { Separator } from './ui/separator';
+
+function formatSessionDate(timestamp: number, language: string) {
+  const date = new Date(timestamp);
+  if (language.startsWith('zh')) {
+    return {
+      date: `${date.getMonth() + 1}月${date.getDate()}日`,
+      time: `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`,
+    };
+  }
+
+  return {
+    date: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+    time: `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`,
+  };
+}
 
 export default function HistoryPanel() {
   const sessions = useAppStore((s) => s.sessions);
@@ -13,47 +26,45 @@ export default function HistoryPanel() {
   const switchSession = useAppStore((s) => s.switchSession);
   const deleteSession = useAppStore((s) => s.deleteSession);
   const isProcessing = useAppStore((s) => s.isProcessing);
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
 
   // Sort sessions by updatedAt descending
   const sortedSessions = Object.values(sessions).sort((a, b) => b.updatedAt - a.updatedAt);
 
   return (
-    <div className="w-full h-full flex flex-col gap-4 p-4 overflow-y-auto bg-slate-50/60">
-      <div className="flex items-center justify-between gap-3">
-        <div className="min-w-0">
-          <div className="flex items-center gap-2 text-slate-900">
-            <MessagesSquare className="h-5 w-5 text-blue-600" aria-hidden="true" />
-            <h2 className="truncate text-sm font-semibold uppercase tracking-wide">{t('TAPE_ARCHIVE')}</h2>
-          </div>
+    <div className="flex h-full w-full flex-col bg-sidebar text-sidebar-foreground">
+      <div className="flex items-center justify-between gap-2 px-4 py-4">
+        <div className="flex min-w-0 items-center gap-2">
+          <MessagesSquare className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
+          <h2 className="truncate text-sm font-semibold uppercase tracking-wide">{t('TAPE_ARCHIVE')}</h2>
         </div>
-        <Badge variant="secondary">{sortedSessions.length}</Badge>
+        <Badge variant="secondary" className="rounded-full">{sortedSessions.length}</Badge>
       </div>
 
-      <Button
-        onClick={createNewSession}
-        disabled={isProcessing}
-        className="w-full justify-start"
-      >
-        <Plus className="h-4 w-4" aria-hidden="true" />
-        {t('INSERT_TAPE')}
-      </Button>
+      <div className="px-4 pb-3">
+        <Button
+          onClick={createNewSession}
+          disabled={isProcessing}
+          className="w-full justify-center"
+        >
+          <Plus className="h-4 w-4" aria-hidden="true" />
+          {t('INSERT_TAPE')}
+        </Button>
+      </div>
 
-      <Separator />
-
-      <Card className="flex-1 overflow-hidden p-1 shadow-none">
-        <div className="flex h-full flex-col gap-1 overflow-y-auto">
+      <div className="min-h-0 flex-1 overflow-y-auto px-3">
+        <ul className="flex flex-col gap-2 pb-4">
           {sortedSessions.map((session) => {
             const isActive = session.id === currentSessionId;
-            const dateStr = new Date(session.updatedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+            const { date, time } = formatSessionDate(session.updatedAt, i18n.language);
 
             return (
-              <div
+              <li
                 key={session.id}
-                className={`cursor-pointer rounded-md border p-3 transition-colors ${
+                className={`group cursor-pointer rounded-lg border p-3 text-left transition-colors ${
                   isActive
-                    ? 'border-blue-200 bg-blue-50 text-blue-950'
-                    : 'border-transparent bg-transparent text-slate-700 hover:bg-slate-100'
+                    ? 'border-primary/40 bg-primary/5'
+                    : 'border-border bg-card hover:bg-accent'
                 }`}
                 onClick={() => !isProcessing && switchSession(session.id)}
               >
@@ -62,10 +73,13 @@ export default function HistoryPanel() {
                     <div className="truncate text-sm font-medium">
                       {session.title || t('UNTITLED')}
                     </div>
-                    <div className="mt-1 flex items-center gap-2 text-xs text-slate-500">
-                      <span>{dateStr}</span>
+                    <div className="mt-3 flex items-center gap-2 text-xs text-muted-foreground">
+                      <span className="flex flex-col leading-tight">
+                        <span>{date}</span>
+                        <span>{time}</span>
+                      </span>
                       <span aria-hidden="true">/</span>
-                      <Badge variant="outline" className="px-1.5 py-0 text-[10px]">
+                      <Badge variant="outline" className="rounded-full px-2 py-0 text-[11px] font-normal">
                         {t('MSGS')}: {session.messages.length}
                       </Badge>
                     </div>
@@ -78,18 +92,18 @@ export default function HistoryPanel() {
                       if (!isProcessing) deleteSession(session.id);
                     }}
                     disabled={isProcessing}
-                    className="h-8 w-8 shrink-0 text-slate-400 hover:text-red-600"
+                    className="h-8 w-8 shrink-0 text-muted-foreground opacity-100 hover:text-destructive sm:opacity-0 sm:group-hover:opacity-100"
                     aria-label={t('ERASE_TAPE')}
                     title={t('ERASE_TAPE')}
                   >
                     <Trash2 className="h-4 w-4" aria-hidden="true" />
                   </Button>
                 </div>
-              </div>
+              </li>
             );
           })}
-        </div>
-      </Card>
+        </ul>
+      </div>
     </div>
   );
 }

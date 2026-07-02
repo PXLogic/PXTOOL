@@ -2,8 +2,15 @@ import { useState, useEffect } from 'react';
 import { useAppStore } from '../hooks/useAppStore';
 import { useTranslation } from 'react-i18next';
 import { Button } from './ui/button';
+import {
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+} from './ui/drawer';
 import { Input } from './ui/input';
-import { Sheet, SheetBody, SheetFooter, SheetHeader } from './ui/sheet';
 import { Textarea } from './ui/textarea';
 
 interface Settings {
@@ -78,34 +85,37 @@ export default function SettingsDrawer({ open, onClose }: { open: boolean; onClo
   );
 
   return (
-    <Sheet
+    <Drawer
       open={open}
       onOpenChange={(nextOpen) => {
         if (!nextOpen) onClose();
       }}
-      side="right"
-      aria-label={t('MAINTENANCE_PNL')}
+      direction="right"
     >
-      <SheetHeader>
-        <h2 className="text-lg font-semibold text-foreground">{t('MAINTENANCE_PNL')}</h2>
-      </SheetHeader>
+      <DrawerContent aria-label={t('MAINTENANCE_PNL')}>
+        <DrawerHeader>
+          <DrawerTitle>{t('MAINTENANCE_PNL')}</DrawerTitle>
+        </DrawerHeader>
 
-      <SheetBody className="space-y-5">
-        {field(t('SYS_CONN'), 'mcpServerUrl')}
-        {field(t('AI_CORE'), 'llmBaseUrl')}
-        {field(t('AI_AUTH'), 'llmApiKey', 'password')}
-        {field(t('AI_MDL'), 'llmModel')}
-        {field(t('SYS_PROMPT'), 'systemPrompt', 'textarea')}
-      </SheetBody>
+        <div className="min-h-0 flex-1 space-y-5 overflow-y-auto p-4">
+          {field(t('SYS_CONN'), 'mcpServerUrl')}
+          {field(t('AI_CORE'), 'llmBaseUrl')}
+          {field(t('AI_AUTH'), 'llmApiKey', 'password')}
+          {field(t('AI_MDL'), 'llmModel')}
+          {field(t('SYS_PROMPT'), 'systemPrompt', 'textarea')}
+        </div>
 
-      <SheetFooter>
-        <Button onClick={onClose} variant="outline">
-          {t('CANCEL')}
-        </Button>
-        <Button onClick={handleSave}>
-          {t('WRITE_ROM')}
-        </Button>
-      </SheetFooter>
-    </Sheet>
+        <DrawerFooter>
+          <DrawerClose asChild>
+            <Button onClick={onClose} variant="outline">
+              {t('CANCEL')}
+            </Button>
+          </DrawerClose>
+          <Button onClick={handleSave}>
+            {t('WRITE_ROM')}
+          </Button>
+        </DrawerFooter>
+      </DrawerContent>
+    </Drawer>
   );
 }

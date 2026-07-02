@@ -84,6 +84,7 @@
     "SYS_OUTPUT": "Tool Output",
     "RESPONSE_DECK": "Assistant",
     "RESET_CHAT": "Reset chat",
-    "ACTIVE": "Active"
+    "ACTIVE": "Active",
+    "TOGGLE_THEME": "Toggle theme"
   }
 }

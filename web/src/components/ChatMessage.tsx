@@ -38,16 +38,25 @@ export default function ChatMessage({ message }: { message: ConversationMessage 
   };
 
   const alignClass = isUser ? 'items-end' : 'items-start';
-  const cardColor = isUser ? 'border-blue-200 bg-blue-50 text-blue-950' : 'bg-card text-card-foreground';
+  const cardColor = isUser
+    ? 'border-primary bg-primary text-primary-foreground'
+    : message.role === 'tool'
+      ? 'bg-card text-card-foreground'
+      : 'border-transparent bg-muted text-foreground';
   const headerText = isUser ? t('USER_INPUT') : message.role === 'tool' ? t('SYS_OUTPUT') : t('RESPONSE_DECK');
 
   return (
     <div className={`flex w-full flex-col ${alignClass} group`}>
-      <Card className={`flex max-w-[min(85%,52rem)] flex-col gap-3 p-4 ${cardColor}`}>
+      <Card className={`flex max-w-[min(80%,52rem)] flex-col gap-3 rounded-xl p-4 shadow-none ${cardColor}`}>
         {/* Card Header */}
-        <div className="flex items-center justify-between gap-3 border-b border-border/70 pb-2">
+        <div className={`flex items-center justify-between gap-3 border-b pb-2 ${isUser ? 'border-primary-foreground/20' : 'border-border/70'}`}>
           <div className="flex items-center gap-2">
-            <Badge variant={isUser ? 'outline' : message.role === 'tool' ? 'secondary' : 'default'}>{headerText}</Badge>
+            <Badge
+              variant={isUser ? 'secondary' : message.role === 'tool' ? 'outline' : 'secondary'}
+              className={isUser ? 'bg-primary-foreground/15 text-primary-foreground' : ''}
+            >
+              {headerText}
+            </Badge>
             {isStreaming && <Badge variant="warning">{t('PROCESSING')}</Badge>}
           </div>
 
@@ -58,6 +67,7 @@ export default function ChatMessage({ message }: { message: ConversationMessage 
                 onClick={handleCopy}
                 variant="ghost"
                 size="icon"
+                className={isUser ? 'text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground' : ''}
                 aria-label={copied ? t('COPIED') : t('COPY')}
                 title={copied ? t('COPIED') : t('COPY')}
               >
@@ -69,6 +79,7 @@ export default function ChatMessage({ message }: { message: ConversationMessage 
                 onClick={handleRegenerate}
                 variant="ghost"
                 size="icon"
+                className={isUser ? 'text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground' : ''}
                 aria-label={t('REGENERATE')}
                 title={`${t('REGENERATE')} - discard everything after this response`}
               >

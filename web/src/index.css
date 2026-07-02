@@ -1,38 +1,64 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:is(.dark *));
+
 @theme {
-  --color-background: #f8fafc;
-  --color-foreground: #0f172a;
+  --color-background: #ffffff;
+  --color-foreground: #171717;
   --color-card: #ffffff;
-  --color-card-foreground: #0f172a;
-  --color-muted: #f1f5f9;
-  --color-muted-foreground: #64748b;
-  --color-primary: #0f172a;
-  --color-primary-foreground: #f8fafc;
-  --color-secondary: #f1f5f9;
-  --color-secondary-foreground: #0f172a;
-  --color-accent: #2563eb;
-  --color-accent-foreground: #ffffff;
+  --color-card-foreground: #171717;
+  --color-muted: #f5f5f5;
+  --color-muted-foreground: #737373;
+  --color-primary: #171717;
+  --color-primary-foreground: #fafafa;
+  --color-secondary: #f5f5f5;
+  --color-secondary-foreground: #171717;
+  --color-accent: #f5f5f5;
+  --color-accent-foreground: #171717;
   --color-destructive: #dc2626;
   --color-destructive-foreground: #ffffff;
   --color-success: #16a34a;
   --color-warning: #d97706;
   --color-error: #dc2626;
-  --color-border: #0f172a;
-  --color-input: #e2e8f0;
-  --color-ring: #0f172a;
+  --color-border: #e5e5e5;
+  --color-input: #e5e5e5;
+  --color-ring: #a3a3a3;
+  --color-sidebar: #fafafa;
+  --color-sidebar-foreground: #171717;
 
-  --color-bg-casing: #f8fafc;
-  --color-bg-casing-dark: #f1f5f9;
+  --color-bg-casing: #ffffff;
+  --color-bg-casing-dark: #fafafa;
   --color-bg-screen: #ffffff;
-  --color-bg-screen-light: #f8fafc;
-  --color-text-casing: #0f172a;
-  --color-text-casing-muted: #64748b;
-  --color-text-screen: #0f172a;
-  --color-text-screen-alt: #334155;
+  --color-bg-screen-light: #fafafa;
+  --color-text-casing: #171717;
+  --color-text-casing-muted: #737373;
+  --color-text-screen: #171717;
+  --color-text-screen-alt: #525252;
 
   --font-sans: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --font-mono: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+}
+
+.dark {
+  --color-background: #171717;
+  --color-foreground: #fafafa;
+  --color-card: #262626;
+  --color-card-foreground: #fafafa;
+  --color-muted: #262626;
+  --color-muted-foreground: #a3a3a3;
+  --color-primary: #fafafa;
+  --color-primary-foreground: #171717;
+  --color-secondary: #262626;
+  --color-secondary-foreground: #fafafa;
+  --color-accent: #262626;
+  --color-accent-foreground: #fafafa;
+  --color-destructive: #ef4444;
+  --color-destructive-foreground: #ffffff;
+  --color-border: rgba(255, 255, 255, 0.1);
+  --color-input: rgba(255, 255, 255, 0.15);
+  --color-ring: #737373;
+  --color-sidebar: #202020;
+  --color-sidebar-foreground: #fafafa;
 }
 
 body {
@@ -149,9 +175,9 @@ body {
 }
 
 .markdown-body pre {
-  background: #0f172a;
+  background: #171717;
   border-radius: 0.5rem;
-  color: #e2e8f0;
+  color: #f5f5f5;
   margin: 1rem 0;
   overflow-x: auto;
   padding: 1rem;
