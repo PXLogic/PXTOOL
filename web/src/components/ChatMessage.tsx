@@ -50,12 +50,12 @@ export default function ChatMessage({ message }: { message: ConversationMessage 
             <Badge variant={isUser ? 'outline' : message.role === 'tool' ? 'secondary' : 'default'}>{headerText}</Badge>
             {isStreaming && <Badge variant="warning">{t('PROCESSING')}</Badge>}
           </div>
-          
+
           {/* Action buttons (Copy, Regenerate) shown on hover */}
-          <div className="flex gap-1 opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100">
+          <div className="flex gap-1 opacity-100 transition-opacity sm:opacity-0 sm:group-hover:opacity-100 sm:focus-within:opacity-100">
             {message.content && (
               <Button
-                onClick={handleCopy} 
+                onClick={handleCopy}
                 variant="ghost"
                 size="icon"
                 aria-label={copied ? t('COPIED') : t('COPY')}
@@ -70,7 +70,7 @@ export default function ChatMessage({ message }: { message: ConversationMessage 
                 variant="ghost"
                 size="icon"
                 aria-label={t('REGENERATE')}
-                title={t('REGENERATE')}
+                title={`${t('REGENERATE')} - discard everything after this response`}
               >
                 <RefreshCw className="h-4 w-4" />
               </Button>
