@@ -176,6 +176,11 @@ function updateMessage(messages: ConversationMessage[], id: string, patch: Parti
 }
 
 export const useAppStore = create<AppState>((set, get) => {
+  const initialSettings = loadSettings();
+  if (i18n.language !== initialSettings.language) {
+    i18n.changeLanguage(initialSettings.language);
+  }
+
   const initialSessions = loadSessions();
   let sessions = initialSessions.sessions;
   let currentSessionId = initialSessions.current;
@@ -191,7 +196,7 @@ export const useAppStore = create<AppState>((set, get) => {
   return {
     mcpConnected: false,
     mcpTools: [],
-    settings: loadSettings(),
+    settings: initialSettings,
     sessions,
     currentSessionId,
     messages: sessions[currentSessionId].messages,
