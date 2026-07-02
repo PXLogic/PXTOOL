@@ -5,6 +5,10 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { useAppStore } from '../hooks/useAppStore';
 import { useTranslation } from 'react-i18next';
+import { Copy, RefreshCw } from 'lucide-react';
+import { Badge } from './ui/badge';
+import { Button } from './ui/button';
+import { Card } from './ui/card';
 
 export default function ChatMessage({ message }: { message: ConversationMessage }) {
   const isUser = message.role === 'user';
@@ -33,59 +37,67 @@ export default function ChatMessage({ message }: { message: ConversationMessage 
     }
   };
 
-  const alignClass = isUser ? 'self-end' : 'self-start';
-  const cardColor = isUser ? 'bg-white' : 'bg-bg-casing';
-  const headerText = isUser ? 'USER INPUT' : message.role === 'tool' ? 'SYS OUTPUT' : 'RESPONSE DECK';
+  const alignClass = isUser ? 'items-end' : 'items-start';
+  const cardColor = isUser ? 'border-blue-200 bg-blue-50 text-blue-950' : 'bg-card text-card-foreground';
+  const headerText = isUser ? t('USER_INPUT') : message.role === 'tool' ? t('SYS_OUTPUT') : t('RESPONSE_DECK');
 
   return (
-    <div className={`mb-6 flex flex-col ${alignClass} max-w-[85%] group`}>
-      <div className={`relative border-2 border-border ${cardColor} text-text-casing shadow-[4px_4px_0_0_#000] p-4 flex flex-col gap-2`}>
+    <div className={`flex w-full flex-col ${alignClass} group`}>
+      <Card className={`flex max-w-[min(85%,52rem)] flex-col gap-3 p-4 ${cardColor}`}>
         {/* Card Header */}
-        <div className="flex justify-between items-center border-b-2 border-border pb-2 mb-2 font-bold text-xs uppercase tracking-widest opacity-60">
-          <span>{headerText}</span>
+        <div className="flex items-center justify-between gap-3 border-b border-border/70 pb-2">
+          <div className="flex items-center gap-2">
+            <Badge variant={isUser ? 'outline' : message.role === 'tool' ? 'secondary' : 'default'}>{headerText}</Badge>
+            {isStreaming && <Badge variant="warning">{t('PROCESSING')}</Badge>}
+          </div>
           
           {/* Action buttons (Copy, Regenerate) shown on hover */}
-          <div className="opacity-0 group-hover:opacity-100 transition-opacity flex gap-2">
+          <div className="flex gap-1 opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100">
             {message.content && (
-              <button 
+              <Button
                 onClick={handleCopy} 
-                className="bg-bg-casing-dark border border-border px-2 py-0.5 text-text-casing hover:bg-border hover:text-bg-casing transition-colors"
+                variant="ghost"
+                size="icon"
+                aria-label={copied ? t('COPIED') : t('COPY')}
+                title={copied ? t('COPIED') : t('COPY')}
               >
-                {copied ? t('COPIED') : t('COPY')}
-              </button>
+                <Copy className="h-4 w-4" />
+              </Button>
             )}
             {isAssistant && !isProcessing && (
-              <button 
+              <Button
                 onClick={handleRegenerate}
-                className="bg-bg-casing-dark border border-border px-2 py-0.5 text-warning hover:bg-warning hover:text-bg-casing transition-colors"
-                title="Regenerate this response and discard everything after it"
+                variant="ghost"
+                size="icon"
+                aria-label={t('REGENERATE')}
+                title={t('REGENERATE')}
               >
-                {t('REGENERATE')}
-              </button>
+                <RefreshCw className="h-4 w-4" />
+              </Button>
             )}
           </div>
         </div>
 
         {/* Thinking indicator */}
         {showThinking && (
-          <div className="animate-pulse font-bold">{t('PROCESSING')}</div>
+          <div className="animate-pulse text-sm font-medium text-muted-foreground">{t('PROCESSING')}</div>
         )}
 
         {/* Text content with Markdown support */}
         {message.content && (
-          <div className="markdown-body leading-relaxed max-w-full overflow-hidden">
+          <div className="markdown-body max-w-full overflow-hidden text-sm leading-relaxed">
             <ReactMarkdown remarkPlugins={[remarkGfm]}>
               {message.content}
             </ReactMarkdown>
             {isStreaming && (
-              <span className="inline-block w-2 h-4 bg-text-casing animate-pulse ml-1 align-text-bottom" />
+              <span className="ml-1 inline-block h-4 w-2 animate-pulse bg-foreground align-text-bottom" />
             )}
           </div>
         )}
 
         {/* Stopped indicator */}
         {isStopped && (
-          <div className="text-error font-bold uppercase mt-2">{t('HALTED_USER')}</div>
+          <Badge variant="destructive" className="w-fit">{t('HALTED_USER')}</Badge>
         )}
 
         {/* Tool calls */}
@@ -99,11 +111,11 @@ export default function ChatMessage({ message }: { message: ConversationMessage 
 
         {/* Tool running indicator */}
         {isToolRunning && hasToolCalls && message.toolCallStatuses!.some(tc => tc.status === 'running') && (
-          <div className="mt-2 animate-pulse text-warning font-bold">
+          <div className="mt-2 animate-pulse text-sm font-medium text-warning">
             {t('EXECUTING_SUBROUTINE')}
           </div>
         )}
-      </div>
+      </Card>
     </div>
   );
 }
