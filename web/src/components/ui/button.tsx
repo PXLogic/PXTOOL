@@ -9,11 +9,11 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const variants: Record<NonNullable<ButtonProps['variant']>, string> = {
-  default: 'bg-slate-900 text-slate-50 hover:bg-slate-800',
-  secondary: 'bg-slate-100 text-slate-900 hover:bg-slate-200',
-  outline: 'border border-slate-200 bg-white text-slate-900 hover:bg-slate-100',
-  ghost: 'text-slate-900 hover:bg-slate-100',
-  destructive: 'bg-red-600 text-white hover:bg-red-700',
+  default: 'bg-primary text-primary-foreground hover:bg-primary/90',
+  secondary: 'bg-secondary text-secondary-foreground hover:bg-secondary/80',
+  outline: 'border border-input bg-background text-foreground hover:bg-accent hover:text-accent-foreground',
+  ghost: 'text-foreground hover:bg-accent hover:text-accent-foreground',
+  destructive: 'bg-destructive text-destructive-foreground hover:bg-destructive/90',
 };
 
 const sizes: Record<NonNullable<ButtonProps['size']>, string> = {
@@ -29,7 +29,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       ref={ref}
       type={type}
       className={cn(
-        'inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50',
+        'inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ring-offset-background disabled:pointer-events-none disabled:opacity-50',
         variants[variant],
         sizes[size],
         className,

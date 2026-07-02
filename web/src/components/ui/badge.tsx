@@ -1,3 +1,4 @@
+import { forwardRef } from 'react';
 import type { HTMLAttributes } from 'react';
 
 import { cn } from '../../lib/utils';
@@ -7,23 +8,23 @@ export interface BadgeProps extends HTMLAttributes<HTMLDivElement> {
 }
 
 const variants: Record<NonNullable<BadgeProps['variant']>, string> = {
-  default: 'bg-slate-900 text-slate-50',
-  secondary: 'bg-slate-100 text-slate-900',
-  success: 'bg-emerald-100 text-emerald-800',
-  warning: 'bg-amber-100 text-amber-800',
-  destructive: 'bg-red-100 text-red-800',
-  outline: 'border border-slate-200 text-slate-950',
+  default: 'bg-primary text-primary-foreground',
+  secondary: 'bg-secondary text-secondary-foreground',
+  success: 'bg-success/10 text-success ring-1 ring-success/20',
+  warning: 'bg-warning/10 text-warning ring-1 ring-warning/20',
+  destructive: 'bg-destructive/10 text-destructive ring-1 ring-destructive/20',
+  outline: 'border border-border text-foreground',
 };
 
-export function Badge({ className, variant = 'default', ...props }: BadgeProps) {
-  return (
-    <div
-      className={cn(
-        'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold transition-colors',
-        variants[variant],
-        className,
-      )}
-      {...props}
-    />
-  );
-}
+export const Badge = forwardRef<HTMLDivElement, BadgeProps>(({ className, variant = 'default', ...props }, ref) => (
+  <div
+    ref={ref}
+    className={cn(
+      'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold transition-colors',
+      variants[variant],
+      className,
+    )}
+    {...props}
+  />
+));
+Badge.displayName = 'Badge';
