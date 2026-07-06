@@ -21,6 +21,7 @@
  */
 
 #include "viewport.h"
+#include "channeltint.h"
 #include "ruler.h"
 
 #include "signal.h"
@@ -218,6 +219,7 @@ void Viewport::doPaint()
     _view.get_traces(_type, traces);
 
     for(auto t : traces){
+        paintChannelTint(p, t, back);
         t->paint_back(p, 0, _view.get_view_width(), fore, back);
         if (_view.back_ready())
             break;
@@ -328,6 +330,27 @@ void Viewport::paintCursors(QPainter &p)
                 cursor->paint(p, xrect, 0, _view.session().is_stopped_status());
         }
     }
+}
+
+void Viewport::paintChannelTint(QPainter &p, Trace *trace, QColor back)
+{
+    if (_type != TIME_VIEW || trace == NULL)
+        return;
+
+    if (!channel_tint_accepts_signal_type(trace->signal_type()))
+        return;
+
+    const QColor tint = channel_tint_color(
+        trace->get_colour(), back, trace->enabled(), trace->rows_size());
+    if (!tint.isValid())
+        return;
+
+    const QRect rect = channel_tint_rect(width(), height(), trace->get_y(),
+                                        trace->get_totalHeight(), View::SignalMargin);
+    if (rect.isEmpty())
+        return;
+
+    p.fillRect(rect, tint);
 }
 
 void Viewport::paintSignals(QPainter &p, QColor fore, QColor back)

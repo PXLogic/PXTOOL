@@ -19,14 +19,19 @@
 
 add_executable(DSView-test
     test.cpp
+    test_channeltint.cpp
     test_diskcachesettings.cpp
     test_logsearch.cpp
+    test_theme_qss.cpp
+    ../pv/view/channeltint.cpp
     ../pv/dock/logsearch.cpp
 )
 
 target_include_directories(DSView-test PRIVATE
     ..
     ../..
+    ../../common
+    ../../libsigrok
     ${QT_INCLUDE_DIRS}
     ${Boost_INCLUDE_DIRS}
 )
