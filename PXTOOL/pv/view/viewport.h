@@ -150,6 +150,7 @@ private:
     void paintProgress(QPainter& p, QColor fore, QColor back);
     void paintMeasure(QPainter &p, QColor fore, QColor back);
     void paintCursors(QPainter &p);
+    void paintChannelTint(QPainter &p, Trace *trace, QColor back);
     Trace* get_divider_trace(const QPoint &pt);
     void update_edge_nav_buttons();
     void navigate_to_edge(EdgeNavButton::Direction dir);
