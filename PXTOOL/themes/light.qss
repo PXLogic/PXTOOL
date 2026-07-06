@@ -106,17 +106,35 @@ QCheckBox:disabled
     color: #b4b4b4;
 }
 
+QCheckBox::indicator
+{
+    width: 14px;
+    height: 14px;
+    border: 1px solid #b8bec8;
+    border-radius: 3px;
+    background-color: #ffffff;
+    image: none;
+}
+
 QGroupBox::indicator
 {
     width: 18px;
     height: 18px;
     margin-left: 2px;
+    border: 1px solid #b8bec8;
+    border-radius: 3px;
+    background-color: #ffffff;
+    image: none;
 }
 
 QCheckBox::indicator:unchecked,
-QCheckBox::indicator:unchecked:focus
+QCheckBox::indicator:unchecked:focus,
+QGroupBox::indicator:unchecked,
+QGroupBox::indicator:unchecked:focus
 {
-    image: url(:/icons/sidebar/checkbox-unchecked.svg);
+    border: 1px solid #b8bec8;
+    background-color: #ffffff;
+    image: none;
 }
 
 QCheckBox::indicator:unchecked:hover,
@@ -125,13 +143,17 @@ QGroupBox::indicator:unchecked:hover,
 QGroupBox::indicator:unchecked:focus,
 QGroupBox::indicator:unchecked:pressed
 {
-    border: none;
-    image: url(:/icons/sidebar/checkbox-unchecked-hover.svg);
+    border: 1px solid #7c3aed;
+    background-color: #f5f0ff;
+    image: none;
 }
 
-QCheckBox::indicator:checked
+QCheckBox::indicator:checked,
+QGroupBox::indicator:checked
 {
-    image: url(:/icons/sidebar/checkbox-checked.svg);
+    border: 1px solid #7c3aed;
+    background-color: #7c3aed;
+    image: none;
 }
 
 QCheckBox::indicator:checked:hover,
@@ -141,37 +163,57 @@ QGroupBox::indicator:checked:hover,
 QGroupBox::indicator:checked:focus,
 QGroupBox::indicator:checked:pressed
 {
-    border: none;
-    image: url(:/icons/sidebar/checkbox-checked-hover.svg);
+    border: 1px solid #8b5cf6;
+    background-color: #8b5cf6;
+    image: none;
 }
 
 QCheckBox::indicator:indeterminate
 {
-    image: url(:/light/checkbox_indeterminate.svg);
+    border: 1px solid #7c3aed;
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                                stop:0 #7c3aed, stop:0.38 #7c3aed,
+                                stop:0.39 #ffffff, stop:0.61 #ffffff,
+                                stop:0.62 #7c3aed, stop:1 #7c3aed);
+    image: none;
 }
 
 QCheckBox::indicator:indeterminate:focus,
-QCheckBox::indicator:indeterminate:hover
+QCheckBox::indicator:indeterminate:hover,
 QCheckBox::indicator:indeterminate:pressed
 {
-    image: url(:/light/checkbox_indeterminate-hover.svg);
+    border: 1px solid #8b5cf6;
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                                stop:0 #8b5cf6, stop:0.38 #8b5cf6,
+                                stop:0.39 #ffffff, stop:0.61 #ffffff,
+                                stop:0.62 #8b5cf6, stop:1 #8b5cf6);
+    image: none;
 }
 
 QCheckBox::indicator:indeterminate:disabled
 {
-    image: url(:/light/checkbox_indeterminate_disabled.svg);
+    border: 1px solid #cfcfcf;
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                                stop:0 #b4b4b4, stop:0.38 #b4b4b4,
+                                stop:0.39 #f2f2f2, stop:0.61 #f2f2f2,
+                                stop:0.62 #b4b4b4, stop:1 #b4b4b4);
+    image: none;
 }
 
 QCheckBox::indicator:checked:disabled,
 QGroupBox::indicator:checked:disabled
 {
-    image: url(:/light/checkbox_checked_disabled.svg);
+    border: 1px solid #b4b4b4;
+    background-color: #b4b4b4;
+    image: none;
 }
 
 QCheckBox::indicator:unchecked:disabled,
 QGroupBox::indicator:unchecked:disabled
 {
-    image: url(:/light/checkbox_unchecked_disabled.svg);
+    border: 1px solid #cfcfcf;
+    background-color: #f2f2f2;
+    image: none;
 }
 
 QRadioButton
@@ -371,22 +413,34 @@ QMenu::indicator {
    (see QActionGroup::setExclusive) */
 QMenu::indicator:non-exclusive:unchecked
 {
-    image: url(:/light/checkbox_unchecked_disabled.svg);
+    border: 1px solid #b8bec8;
+    border-radius: 3px;
+    background-color: #ffffff;
+    image: none;
 }
 
 QMenu::indicator:non-exclusive:unchecked:selected
 {
-    image: url(:/light/checkbox_unchecked_disabled.svg);
+    border: 1px solid #ffffff;
+    border-radius: 3px;
+    background-color: transparent;
+    image: none;
 }
 
 QMenu::indicator:non-exclusive:checked
 {
-    image: url(:/light/checkbox_checked.svg);
+    border: 1px solid #7c3aed;
+    border-radius: 3px;
+    background-color: #7c3aed;
+    image: none;
 }
 
 QMenu::indicator:non-exclusive:checked:selected
 {
-    image: url(:/light/checkbox_checked.svg);
+    border: 1px solid #ffffff;
+    border-radius: 3px;
+    background-color: #7c3aed;
+    image: none;
 }
 
 /* exclusive indicator = radio button style indicator (see QActionGroup::setExclusive) */
@@ -2576,16 +2630,25 @@ QWidget#sidebar QCheckBox#measure_fen_checkbox {
 QWidget#sidebar QCheckBox#measure_fen_checkbox::indicator {
     width: 14px;
     height: 14px;
-    image: url(:/icons/sidebar/checkbox-unchecked.svg);
+    border: 1px solid #b8bec8;
+    border-radius: 3px;
+    background-color: #ffffff;
+    image: none;
 }
 QWidget#sidebar QCheckBox#measure_fen_checkbox::indicator:checked {
-    image: url(:/icons/sidebar/checkbox-checked.svg);
+    border: 1px solid #7c3aed;
+    background-color: #7c3aed;
+    image: none;
 }
 QWidget#sidebar QCheckBox#measure_fen_checkbox::indicator:unchecked:hover {
-    image: url(:/icons/sidebar/checkbox-unchecked-hover.svg);
+    border: 1px solid #7c3aed;
+    background-color: #f5f0ff;
+    image: none;
 }
 QWidget#sidebar QCheckBox#measure_fen_checkbox::indicator:checked:hover {
-    image: url(:/icons/sidebar/checkbox-checked-hover.svg);
+    border: 1px solid #8b5cf6;
+    background-color: #8b5cf6;
+    image: none;
 }
 
 QWidget#log_dock QCheckBox#log_search_exact {
@@ -2595,16 +2658,25 @@ QWidget#log_dock QCheckBox#log_search_exact {
 QWidget#log_dock QCheckBox#log_search_exact::indicator {
     width: 14px;
     height: 14px;
-    image: url(:/icons/sidebar/checkbox-unchecked.svg);
+    border: 1px solid #b8bec8;
+    border-radius: 3px;
+    background-color: #ffffff;
+    image: none;
 }
 QWidget#log_dock QCheckBox#log_search_exact::indicator:checked {
-    image: url(:/icons/sidebar/checkbox-checked.svg);
+    border: 1px solid #7c3aed;
+    background-color: #7c3aed;
+    image: none;
 }
 QWidget#log_dock QCheckBox#log_search_exact::indicator:unchecked:hover {
-    image: url(:/icons/sidebar/checkbox-unchecked-hover.svg);
+    border: 1px solid #7c3aed;
+    background-color: #f5f0ff;
+    image: none;
 }
 QWidget#log_dock QCheckBox#log_search_exact::indicator:checked:hover {
-    image: url(:/icons/sidebar/checkbox-checked-hover.svg);
+    border: 1px solid #8b5cf6;
+    background-color: #8b5cf6;
+    image: none;
 }
 
 /* ── Measure Panel GroupBox fieldset style (light) ──────────────── */
@@ -2746,16 +2818,25 @@ QWidget#glitchFilterWidget QCheckBox {
 QWidget#glitchFilterWidget QCheckBox::indicator {
     width: 14px;
     height: 14px;
-    image: url(:/icons/sidebar/checkbox-unchecked.svg);
+    border: 1px solid #b8bec8;
+    border-radius: 3px;
+    background-color: #ffffff;
+    image: none;
 }
 QWidget#glitchFilterWidget QCheckBox::indicator:checked {
-    image: url(:/icons/sidebar/checkbox-checked.svg);
+    border: 1px solid #7c3aed;
+    background-color: #7c3aed;
+    image: none;
 }
 QWidget#glitchFilterWidget QCheckBox::indicator:unchecked:hover {
-    image: url(:/icons/sidebar/checkbox-unchecked-hover.svg);
+    border: 1px solid #7c3aed;
+    background-color: #f5f0ff;
+    image: none;
 }
 QWidget#glitchFilterWidget QCheckBox::indicator:checked:hover {
-    image: url(:/icons/sidebar/checkbox-checked-hover.svg);
+    border: 1px solid #8b5cf6;
+    background-color: #8b5cf6;
+    image: none;
 }
 
 /* ── Device Options Panel header bar (light) ────────────────────── */
@@ -3083,25 +3164,34 @@ QDialog#protocolListDialog QCheckBox::indicator,
 QDialog#protocolExportDialog QCheckBox::indicator {
     width: 16px;
     height: 16px;
-    image: url(:/icons/sidebar/checkbox-unchecked.svg);
+    border: 1px solid #b8bec8;
+    border-radius: 3px;
+    background-color: #ffffff;
+    image: none;
 }
 QDialog#deviceOptionsDialog QCheckBox::indicator:checked,
 QDialog#logOptionsDialog QCheckBox::indicator:checked,
 QDialog#protocolListDialog QCheckBox::indicator:checked,
 QDialog#protocolExportDialog QCheckBox::indicator:checked {
-    image: url(:/icons/sidebar/checkbox-checked.svg);
+    border: 1px solid #7c3aed;
+    background-color: #7c3aed;
+    image: none;
 }
 QDialog#deviceOptionsDialog QCheckBox::indicator:unchecked:hover,
 QDialog#logOptionsDialog QCheckBox::indicator:unchecked:hover,
 QDialog#protocolListDialog QCheckBox::indicator:unchecked:hover,
 QDialog#protocolExportDialog QCheckBox::indicator:unchecked:hover {
-    image: url(:/icons/sidebar/checkbox-unchecked-hover.svg);
+    border: 1px solid #7c3aed;
+    background-color: #f5f0ff;
+    image: none;
 }
 QDialog#deviceOptionsDialog QCheckBox::indicator:checked:hover,
 QDialog#logOptionsDialog QCheckBox::indicator:checked:hover,
 QDialog#protocolListDialog QCheckBox::indicator:checked:hover,
 QDialog#protocolExportDialog QCheckBox::indicator:checked:hover {
-    image: url(:/icons/sidebar/checkbox-checked-hover.svg);
+    border: 1px solid #8b5cf6;
+    background-color: #8b5cf6;
+    image: none;
 }
 /* ΓöÇΓöÇ Decoder Options Dialog (light) ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ */
 QDialog#decoderOptionsDialog QGroupBox {
@@ -3152,16 +3242,25 @@ QDialog#decoderOptionsDialog QCheckBox {
 QDialog#decoderOptionsDialog QCheckBox::indicator {
     width: 16px;
     height: 16px;
-    image: url(:/icons/sidebar/checkbox-unchecked.svg);
+    border: 1px solid #b8bec8;
+    border-radius: 3px;
+    background-color: #ffffff;
+    image: none;
 }
 QDialog#decoderOptionsDialog QCheckBox::indicator:checked {
-    image: url(:/icons/sidebar/checkbox-checked.svg);
+    border: 1px solid #7c3aed;
+    background-color: #7c3aed;
+    image: none;
 }
 QDialog#decoderOptionsDialog QCheckBox::indicator:unchecked:hover {
-    image: url(:/icons/sidebar/checkbox-unchecked-hover.svg);
+    border: 1px solid #7c3aed;
+    background-color: #f5f0ff;
+    image: none;
 }
 QDialog#decoderOptionsDialog QCheckBox::indicator:checked:hover {
-    image: url(:/icons/sidebar/checkbox-checked-hover.svg);
+    border: 1px solid #8b5cf6;
+    background-color: #8b5cf6;
+    image: none;
 }
 QDialog#decoderOptionsDialog QLineEdit,
 QDialog#decoderOptionsDialog QSpinBox {
