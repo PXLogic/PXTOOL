@@ -58,6 +58,29 @@ bool checked_checkbox_uses_checkmark(const std::string &qss)
     return block.find(":/icons/sidebar/checkbox-check.png") != std::string::npos;
 }
 
+bool measure_cursor_buttons_have_light_empty_state(const std::string &source)
+{
+    return source.find("#ffffff") != std::string::npos &&
+        source.find("#d0d5dd") != std::string::npos &&
+        source.find("#f5f0ff") != std::string::npos &&
+        source.find("#7c3aed") != std::string::npos;
+}
+
+bool measure_restyle_refreshes_all_cursor_button_rows(const std::string &source)
+{
+    const std::string start_marker = "void MeasureDock::reStyle()";
+    const std::string end_marker = "void MeasureDock::reload()";
+    const std::string::size_type start = source.find(start_marker);
+    const std::string::size_type end = source.find(end_marker);
+    if (start == std::string::npos || end == std::string::npos || end <= start)
+        return false;
+
+    const std::string block = source.substr(start, end - start);
+    return block.find("update_dist();") != std::string::npos &&
+        block.find("update_edge();") != std::string::npos &&
+        block.find("update_cursor_info();") != std::string::npos;
+}
+
 } // namespace
 
 BOOST_AUTO_TEST_SUITE(theme_qss)
@@ -98,6 +121,20 @@ BOOST_AUTO_TEST_CASE(checked_checkbox_indicators_show_checkmark)
 
     BOOST_TEST(checked_checkbox_uses_checkmark(light));
     BOOST_TEST(checked_checkbox_uses_checkmark(dark));
+}
+
+BOOST_AUTO_TEST_CASE(measure_cursor_buttons_define_light_empty_state)
+{
+    const std::string source = read_file("PXTOOL/pv/dock/measuredock.cpp");
+
+    BOOST_TEST(measure_cursor_buttons_have_light_empty_state(source));
+}
+
+BOOST_AUTO_TEST_CASE(measure_restyle_refreshes_cursor_button_rows)
+{
+    const std::string source = read_file("PXTOOL/pv/dock/measuredock.cpp");
+
+    BOOST_TEST(measure_restyle_refreshes_all_cursor_button_rows(source));
 }
 
 BOOST_AUTO_TEST_SUITE_END()
