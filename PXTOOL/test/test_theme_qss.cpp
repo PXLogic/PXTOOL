@@ -39,6 +39,26 @@ bool has_nonwhite_bottom_border(const std::string &qss, const char *selector)
     return color != "#ffffff" && color != "#FFFFFF";
 }
 
+std::string qss_text_color(const std::string &qss, const char *selector)
+{
+    const std::string block = qss_block(qss, selector);
+    if (block.empty())
+        return std::string();
+
+    std::smatch match;
+    if (!std::regex_search(block, match,
+            std::regex(R"((^|[;\s])color\s*:\s*(#[0-9A-Fa-f]{6}))")))
+        return std::string();
+
+    return match[2].str();
+}
+
+bool has_nonwhite_text_color(const std::string &qss, const char *selector)
+{
+    const std::string color = qss_text_color(qss, selector);
+    return !color.empty() && color != "#ffffff" && color != "#FFFFFF";
+}
+
 bool has_checkbox_svg_url(const std::string &qss)
 {
     return std::regex_search(qss,
@@ -94,6 +114,14 @@ BOOST_AUTO_TEST_CASE(main_title_surfaces_define_theme_bottom_border)
     BOOST_TEST(has_nonwhite_bottom_border(light, "QWidget#main_window_title_bar"));
     BOOST_TEST(has_nonwhite_bottom_border(dark, "QMenuBar#main_menu_bar"));
     BOOST_TEST(has_nonwhite_bottom_border(dark, "QWidget#main_window_title_bar"));
+}
+
+BOOST_AUTO_TEST_CASE(light_device_bar_labels_use_readable_text_color)
+{
+    const std::string light = read_file("PXTOOL/themes/light.qss");
+
+    BOOST_TEST(has_nonwhite_text_color(light, "QToolBar#device_bar QLabel#device_bar_label"));
+    BOOST_TEST(qss_text_color(light, "QToolBar#device_bar QLabel#device_bar_label") == "#6b7280");
 }
 
 BOOST_AUTO_TEST_CASE(checkbox_indicators_do_not_use_svg_assets)

@@ -805,7 +805,7 @@ QToolBar#device_bar QWidget#device_bar_inner > QWidget
 /* Section labels */
 QToolBar#device_bar QLabel#device_bar_label
 {
-    color: #ffffff;
+    color: #6b7280;
     background-color: #f5f5f5;
     font-weight: normal;
     text-transform: uppercase;
