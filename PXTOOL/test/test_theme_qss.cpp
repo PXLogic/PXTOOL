@@ -52,6 +52,12 @@ bool checked_checkbox_uses_accent(const std::string &qss)
     return block.find("#7c3aed") != std::string::npos;
 }
 
+bool checked_checkbox_uses_checkmark(const std::string &qss)
+{
+    const std::string block = qss_block(qss, "QCheckBox::indicator:checked");
+    return block.find(":/icons/sidebar/checkbox-check.png") != std::string::npos;
+}
+
 } // namespace
 
 BOOST_AUTO_TEST_SUITE(theme_qss)
@@ -83,6 +89,15 @@ BOOST_AUTO_TEST_CASE(checked_checkbox_indicators_use_purple_accent)
 
     BOOST_TEST(checked_checkbox_uses_accent(light));
     BOOST_TEST(checked_checkbox_uses_accent(dark));
+}
+
+BOOST_AUTO_TEST_CASE(checked_checkbox_indicators_show_checkmark)
+{
+    const std::string light = read_file("PXTOOL/themes/light.qss");
+    const std::string dark = read_file("PXTOOL/themes/dark.qss");
+
+    BOOST_TEST(checked_checkbox_uses_checkmark(light));
+    BOOST_TEST(checked_checkbox_uses_checkmark(dark));
 }
 
 BOOST_AUTO_TEST_SUITE_END()
