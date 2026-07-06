@@ -22,6 +22,7 @@ add_executable(DSView-test
     test_channeltint.cpp
     test_diskcachesettings.cpp
     test_logsearch.cpp
+    test_theme_qss.cpp
     ../pv/view/channeltint.cpp
     ../pv/dock/logsearch.cpp
 )

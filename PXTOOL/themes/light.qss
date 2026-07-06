@@ -254,12 +254,14 @@ QMenuBar#main_menu_bar
     background-color: #F8F8F8;
     color: #111111;
     font-weight: 600;
+    border-bottom: 1px solid #d4d4d4;
 }
 
 /* Main window frameless title bar — same surface as main_menu_bar */
 QWidget#main_window_title_bar
 {
     background-color: #F8F8F8;
+    border-bottom: 1px solid #d4d4d4;
     color: #111111;
 }
 
