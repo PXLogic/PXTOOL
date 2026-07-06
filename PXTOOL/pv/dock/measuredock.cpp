@@ -234,6 +234,8 @@ void MeasureDock::reStyle()
     }
 
     update_dist();
+    update_edge();
+    update_cursor_info();
 }
 
 void MeasureDock::reload()
@@ -789,6 +791,13 @@ void MeasureDock::set_cursor_btn_color(QPushButton *btn, QColor cursorColor, QCo
         style = "QPushButton{background-color:" + cursorColor.name() +
                 "; color:black; border:none; border-radius:3px;}"
                 "QPushButton:hover{background-color:" + hoverColor + "; color:black; border:none; border-radius:3px;}";
+    } else if (!AppConfig::Instance().IsDarkStyle()) {
+        style = "QPushButton{background-color:#ffffff; color:#4b5563;"
+                " border:1px solid #d0d5dd; border-radius:3px;}"
+                "QPushButton:hover{background-color:#f5f0ff; color:#2A2A2A;"
+                " border:1px solid #7c3aed; border-radius:3px;}"
+                "QPushButton:focus{background-color:#ffffff; color:#2A2A2A;"
+                " border:1px solid #7c3aed; border-radius:3px;}";
     } else {
         style = "QPushButton{background-color:#2a2a2a; color:#666666;"
                 " border:1px solid #444444; border-radius:3px;}"
