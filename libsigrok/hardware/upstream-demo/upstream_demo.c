@@ -73,7 +73,7 @@ static GSList *hw_scan(GSList *options)
 	devc->limit_samples = SR_KHZ(1);
 	sdi->priv = devc;
 	sdi->driver = &upstream_demo_driver_info;
-	sdi->dev_type = DEV_TYPE_DEMO;
+	sdi->dev_type = DEV_TYPE_USB;
 	ds_device_source_set(sdi, DS_DEVICE_SOURCE_UPSTREAM_COMPAT);
 
 	for (int i = 0; i < 8; i++) {
