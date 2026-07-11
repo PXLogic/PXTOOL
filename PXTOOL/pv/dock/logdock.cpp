@@ -157,6 +157,47 @@ QString logDockButtonStyle(const QFont &font)
         .arg(disabledFg);
 }
 
+QColor logDockTextColor(int level)
+{
+    const bool dark = AppConfig::Instance().IsDarkStyle();
+
+    switch (level) {
+    case XLOG_LEVEL_ERR:
+        return QColor(dark ? QStringLiteral("#ff7b72") : QStringLiteral("#b42318"));
+    case XLOG_LEVEL_WARN:
+        return QColor(dark ? QStringLiteral("#f2cc60") : QStringLiteral("#92400e"));
+    case XLOG_LEVEL_DBG:
+    case XLOG_LEVEL_DETAIL:
+        return QColor(dark ? QStringLiteral("#9ca3af") : QStringLiteral("#6b7280"));
+    default:
+        return QColor(dark ? QStringLiteral("#f3f4f6") : QStringLiteral("#111827"));
+    }
+}
+
+QString logDockTextStyle(const QFont &font)
+{
+    const bool dark = AppConfig::Instance().IsDarkStyle();
+    const QString family = logDockFontFamilyQss(font.family());
+    const QString bg = dark ? QStringLiteral("#101214") : QStringLiteral("#ffffff");
+    const QString fg = dark ? QStringLiteral("#f3f4f6") : QStringLiteral("#111827");
+    const QString border = dark ? QStringLiteral("#393939") : QStringLiteral("#d4d4d4");
+    const QString selectionBg = dark ? QStringLiteral("#2563eb") : QStringLiteral("#bfdbfe");
+    const QString selectionFg = dark ? QStringLiteral("#ffffff") : QStringLiteral("#111827");
+
+    return QString(
+        "QPlainTextEdit#log_text { background-color: %1; color: %2;"
+        " border: 1px solid %3; border-radius: 2px; font-family: \"%4\";"
+        " font-size: %5px; font-weight: normal; font-style: normal;"
+        " selection-background-color: %6; selection-color: %7; }")
+        .arg(bg)
+        .arg(fg)
+        .arg(border)
+        .arg(family)
+        .arg(font.pixelSize())
+        .arg(selectionBg)
+        .arg(selectionFg);
+}
+
 }
 
 namespace pv {
@@ -341,21 +382,7 @@ void LogDock::appendEntries(const QList<UiLogEntry> &entries)
 
         fmt.setFontWeight(QFont::Normal);
         fmt.setFontItalic(false);
-        switch (e.level) {
-        case XLOG_LEVEL_ERR:
-            fmt.setForeground(QColor("#e06c75"));
-            break;
-        case XLOG_LEVEL_WARN:
-            fmt.setForeground(QColor("#e5c07b"));
-            break;
-        case XLOG_LEVEL_DBG:
-        case XLOG_LEVEL_DETAIL:
-            fmt.setForeground(QColor("#5c6370"));
-            break;
-        default:
-            fmt.setForeground(_text->palette().color(QPalette::Text));
-            break;
-        }
+        fmt.setForeground(logDockTextColor(e.level));
         cursor.insertText(e.text + "\n", fmt);
     }
 
@@ -553,7 +580,12 @@ void LogDock::UpdateLanguage()
     UpdateFont();
 }
 
-void LogDock::UpdateTheme()  {}
+void LogDock::UpdateTheme()
+{
+    UpdateFont();
+    rerenderAll();
+}
+
 void LogDock::UpdateFont()
 {
     const QFont uiFont = logDockUiFont();
@@ -626,11 +658,7 @@ void LogDock::UpdateFont()
     if (_text) {
         _text->setFont(textFont);
         _text->document()->setDefaultFont(textFont);
-        _text->setStyleSheet(QString(
-            "QPlainTextEdit#log_text { font-family: \"%1\"; font-size: %2px;"
-            " font-weight: normal; font-style: normal; }")
-            .arg(logDockFontFamilyQss(textFont.family()))
-            .arg(textFont.pixelSize()));
+        _text->setStyleSheet(logDockTextStyle(textFont));
     }
 }
 
