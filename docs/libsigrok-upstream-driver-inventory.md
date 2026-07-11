@@ -35,6 +35,26 @@ Risks:
 
 Decision: recommended as the first real USB logic analyzer after the POC driver.
 
+## Selected Slice: fx2lafw Scan-Only
+
+Status: implemented behind `DSVIEW_ENABLE_UPSTREAM_FX2LAFW`.
+
+Scope included:
+
+- profile lookup for the selected upstream `fx2lafw` VID/PID table
+- DSView-compatible config contract for samplerate, limit samples, valid channels, and channel enable state
+- default-enabled logic channels named `D0` through `D7` or `D15`
+- libusb scan path that creates inactive DSView USB devices tagged as `DS_DEVICE_SOURCE_UPSTREAM_COMPAT`
+
+Scope intentionally deferred:
+
+- firmware upload and USB renumeration
+- opening and claiming device interfaces
+- asynchronous acquisition transfers
+- conversion into DSView's live logic data path
+
+Follow-up direction: keep the next slice small by adding open/close and firmware handling first, then add acquisition only after that lifecycle is covered by tests and manual hardware checks.
+
 ## Candidate: rigol-ds
 
 Purpose: SCPI oscilloscope class.
@@ -86,7 +106,6 @@ Decision: useful alternate first real USB logic analyzer if hardware is availabl
 
 ## Recommended Next Step
 
-Start with `fx2lafw` if test hardware and firmware are available. Otherwise use
-`hantek-4032l` as the first real import only if that device is on hand. Keep
-`rigol-ds` for a later SCPI-focused slice because it pulls in a larger shared
-transport surface.
+Continue `fx2lafw` after the scan-only slice. Add firmware/open lifecycle next
+if test hardware and firmware are available. Keep `rigol-ds` for a later
+SCPI-focused slice because it pulls in a larger shared transport surface.
