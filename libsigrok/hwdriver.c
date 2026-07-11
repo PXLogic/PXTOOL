@@ -122,6 +122,9 @@ extern SR_PRIV struct sr_dev_driver DSLogic_driver_info;
 extern SR_PRIV struct sr_dev_driver DSCope_driver_info;
 extern SR_PRIV struct sr_dev_driver px_driver_test_info;
 #endif
+#ifdef HAVE_UPSTREAM_COMPAT_DEMO
+extern SR_PRIV struct sr_dev_driver upstream_demo_driver_info;
+#endif
 /** @endcond */
 
 static struct sr_dev_driver *drivers_list[] = {
@@ -132,6 +135,9 @@ static struct sr_dev_driver *drivers_list[] = {
     &DSLogic_driver_info,
     &DSCope_driver_info,
 	&px_driver_test_info,
+#endif
+#ifdef HAVE_UPSTREAM_COMPAT_DEMO
+	&upstream_demo_driver_info,
 #endif
 	NULL,
 };

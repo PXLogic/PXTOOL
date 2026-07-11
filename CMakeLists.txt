@@ -63,7 +63,12 @@ set(DISABLE_WERROR TRUE) #Build without -Werror
 set(ENABLE_SIGNALS TRUE) #Build with UNIX signals
 set(ENABLE_COTIRE FALSE) #Enable cotire
 option(ENABLE_TESTS "Enable unit tests" OFF)
+option(DSVIEW_ENABLE_UPSTREAM_COMPAT_DEMO "Enable the upstream-compat demo driver proof of concept" OFF)
 set(STATIC_PKGDEPS_LIBS FALSE) #Statically link to (pkg-config) libraries
+
+if(DSVIEW_ENABLE_UPSTREAM_COMPAT_DEMO)
+    add_compile_definitions(HAVE_UPSTREAM_COMPAT_DEMO)
+endif()
 
 if(WIN32)
 	# On Windows/MinGW we need to statically link to libraries.
@@ -577,6 +582,12 @@ set(libsigrok_SOURCES
     libsigrok/hardware/pxlogic/usb_ctrl.c
     libsigrok/lib_main.c
 )
+
+if(DSVIEW_ENABLE_UPSTREAM_COMPAT_DEMO)
+    list(APPEND libsigrok_SOURCES
+        libsigrok/hardware/upstream-demo/upstream_demo.c
+    )
+endif()
 
 set(libsigrok_HEADERS
     libsigrok/version.h
