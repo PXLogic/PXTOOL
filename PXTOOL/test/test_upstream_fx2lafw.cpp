@@ -188,7 +188,7 @@ BOOST_AUTO_TEST_CASE(close_without_open_returns_error)
         0x0925, 0x3881, "", "");
     BOOST_REQUIRE(profile != nullptr);
 
-    sr_dev_inst *sdi = sr_dev_inst_new(LOGIC, SR_ST_INACTIVE,
+    sr_dev_inst *sdi = sr_dev_inst_new(LOGIC, SR_ST_INITIALIZING,
         profile->vendor, profile->model, nullptr);
     BOOST_REQUIRE(sdi != nullptr);
     sdi->driver = &fx2lafw_driver_info;
@@ -196,6 +196,7 @@ BOOST_AUTO_TEST_CASE(close_without_open_returns_error)
 
     BOOST_REQUIRE(fx2lafw_driver_info.dev_close != nullptr);
     BOOST_CHECK_EQUAL(fx2lafw_driver_info.dev_close(sdi), SR_ERR_BUG);
+    BOOST_CHECK_EQUAL(sdi->status, SR_ST_INACTIVE);
     sr_dev_inst_free(sdi);
 #else
     BOOST_TEST_MESSAGE("upstream fx2lafw is disabled for this build");

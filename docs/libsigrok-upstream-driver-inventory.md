@@ -53,21 +53,23 @@ Scope intentionally deferred:
 - asynchronous acquisition transfers
 - conversion into DSView's live logic data path
 
-Follow-up direction: the open/close and firmware lifecycle slice is now present. Keep the next implementation slice focused on acquisition only after hardware smoke tests confirm the lifecycle behavior.
+Follow-up direction: firmware-loaded device open/close is now present. Before the acquisition slice, add or document the required fx2lafw firmware resources and run hardware smoke tests for bootloader upload and re-enumeration.
 
 ## Selected Slice: fx2lafw Open/Firmware Lifecycle
 
-Status: implemented behind `DSVIEW_ENABLE_UPSTREAM_FX2LAFW`.
+Status: partially implemented behind `DSVIEW_ENABLE_UPSTREAM_FX2LAFW`.
 
 Scope:
 
 - detect firmware-loaded devices during scan
-- upload fx2lafw firmware for bootloader-state devices using DSView's firmware resource directory
+- attempt fx2lafw firmware upload for bootloader-state devices only when the required firmware file is present in DSView's firmware resource directory
 - wait for re-enumeration in `dev_open()`
 - open, claim interface 0, validate firmware major version, and close handles safely
 
 Still deferred:
 
+- bundling or documenting the required `fx2lafw-*.fw` firmware resources
+- manual bootloader upload and re-enumeration smoke tests
 - asynchronous acquisition transfers
 - trigger setup
 - DSView datafeed conversion

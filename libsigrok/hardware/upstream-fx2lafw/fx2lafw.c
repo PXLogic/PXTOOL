@@ -68,6 +68,10 @@ static int command_get_fw_version(libusb_device_handle *devhdl,
 			libusb_error_name(ret));
 		return SR_ERR;
 	}
+	if (ret != (int)sizeof(*version)) {
+		sr_err("Short fx2lafw firmware version response: %d bytes.", ret);
+		return SR_ERR;
+	}
 
 	return SR_OK;
 }
@@ -336,11 +340,16 @@ static GSList *hw_scan(GSList *options)
 
 			firmware = NULL;
 			upload_ret = fx2lafw_firmware_path(profile, &firmware);
+			if (upload_ret == SR_OK &&
+					!g_file_test(firmware, G_FILE_TEST_IS_REGULAR)) {
+				sr_err("Firmware file is not bundled: %s.", firmware);
+				upload_ret = SR_ERR_FIRMWARE_NOT_EXIST;
+			}
 			if (upload_ret == SR_OK) {
 				upload_ret = ezusb_upload_firmware(devlist[i],
 					FX2LAFW_USB_CONFIGURATION, firmware);
-				g_free(firmware);
 			}
+			g_free(firmware);
 			if (upload_ret == SR_OK) {
 				has_firmware = FALSE;
 				fw_updated = g_get_monotonic_time();
@@ -403,12 +412,31 @@ static int open_matching_device(struct sr_dev_inst *sdi)
 
 		bus = libusb_get_bus_number(devlist[i]);
 		address = libusb_get_device_address(devlist[i]);
+		if (usb->bus != bus)
+			continue;
 		if (usb->address != FX2LAFW_UNKNOWN_ADDRESS &&
-				(usb->bus != bus || usb->address != address))
+				usb->address != address)
 			continue;
 
 		if (libusb_open(devlist[i], &handle) != 0)
 			continue;
+		if (usb->address == FX2LAFW_UNKNOWN_ADDRESS) {
+			char manufacturer[64];
+			char product[64];
+
+			manufacturer[0] = '\0';
+			product[0] = '\0';
+			if (desc.iManufacturer)
+				libusb_get_string_descriptor_ascii(handle, desc.iManufacturer,
+					(unsigned char *)manufacturer, sizeof(manufacturer));
+			if (desc.iProduct)
+				libusb_get_string_descriptor_ascii(handle, desc.iProduct,
+					(unsigned char *)product, sizeof(product));
+			if (!fx2lafw_has_firmware(manufacturer, product)) {
+				libusb_close(handle);
+				continue;
+			}
+		}
 
 		usb->bus = bus;
 		usb->address = address;
@@ -545,8 +573,10 @@ static int hw_dev_open(struct sr_dev_inst *sdi)
 			g_usleep(100 * 1000);
 			waited_ms = (g_get_monotonic_time() - devc->fw_updated) / 1000;
 		}
-		if (!usb->devhdl)
+		if (!usb->devhdl) {
+			sdi->status = SR_ST_INACTIVE;
 			return SR_ERR;
+		}
 	} else {
 		ret = open_matching_device(sdi);
 		if (ret != SR_OK)
@@ -594,8 +624,10 @@ static int hw_dev_close(struct sr_dev_inst *sdi)
 		return SR_ERR_ARG;
 
 	usb = sdi->conn;
-	if (!usb->devhdl)
+	if (!usb->devhdl) {
+		sdi->status = SR_ST_INACTIVE;
 		return SR_ERR_BUG;
+	}
 
 	close_usb_handle(sdi);
 	sdi->status = SR_ST_INACTIVE;
@@ -604,7 +636,7 @@ static int hw_dev_close(struct sr_dev_inst *sdi)
 
 SR_PRIV struct sr_dev_driver fx2lafw_driver_info = {
 	.name = "fx2lafw",
-	.longname = "fx2lafw (upstream compat scan-only)",
+	.longname = "fx2lafw (upstream compat lifecycle)",
 	.api_version = 1,
 	.driver_type = DRIVER_TYPE_HARDWARE,
 	.init = hw_init,
