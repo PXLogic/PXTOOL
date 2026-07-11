@@ -43,6 +43,35 @@ struct fx2lafw_driver_context {
 	gboolean owns_libusb_ctx;
 };
 
+#pragma pack(push, 1)
+struct fx2lafw_version_info {
+	uint8_t major;
+	uint8_t minor;
+};
+#pragma pack(pop)
+
+static int command_get_fw_version(libusb_device_handle *devhdl,
+	struct fx2lafw_version_info *version)
+{
+	int ret;
+
+	if (!devhdl || !version)
+		return SR_ERR_ARG;
+
+	ret = libusb_control_transfer(devhdl,
+		LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_ENDPOINT_IN,
+		FX2LAFW_CMD_GET_FW_VERSION, 0x0000, 0x0000,
+		(unsigned char *)version, sizeof(*version),
+		FX2LAFW_USB_TIMEOUT_MS);
+	if (ret < 0) {
+		sr_err("Unable to get fx2lafw firmware version: %s.",
+			libusb_error_name(ret));
+		return SR_ERR;
+	}
+
+	return SR_OK;
+}
+
 static const struct fx2lafw_profile supported_fx2[] = {
 	{0x08a9, 0x0014, "CWAV", "USBee AX", "fx2lafw-cwav-usbeeax.fw", 0, NULL, NULL},
 	{0x08a9, 0x0015, "CWAV", "USBee DX", "fx2lafw-cwav-usbeedx.fw", FX2LAFW_DEV_CAPS_16BIT, NULL, NULL},
@@ -225,6 +254,22 @@ static struct sr_dev_inst *create_device_from_profile(
 	return sdi;
 }
 
+static void close_usb_handle(struct sr_dev_inst *sdi)
+{
+	struct sr_usb_dev_inst *usb;
+
+	if (!sdi || !sdi->conn)
+		return;
+
+	usb = sdi->conn;
+	if (!usb->devhdl)
+		return;
+
+	libusb_release_interface(usb->devhdl, FX2LAFW_USB_INTERFACE);
+	libusb_close(usb->devhdl);
+	usb->devhdl = NULL;
+}
+
 static GSList *hw_scan(GSList *options)
 {
 	struct fx2lafw_driver_context *drvc;
@@ -319,6 +364,61 @@ static GSList *hw_scan(GSList *options)
 
 	libusb_free_device_list(devlist, 1);
 	return devices;
+}
+
+static int open_matching_device(struct sr_dev_inst *sdi)
+{
+	struct fx2lafw_driver_context *drvc;
+	struct fx2lafw_context *devc;
+	struct sr_usb_dev_inst *usb;
+	libusb_device **devlist;
+	ssize_t device_count;
+	int ret;
+
+	if (!sdi || !sdi->priv || !sdi->conn)
+		return SR_ERR_ARG;
+
+	drvc = fx2lafw_driver_info.priv;
+	devc = sdi->priv;
+	usb = sdi->conn;
+	if (!drvc || !drvc->libusb_ctx || !devc->profile)
+		return SR_ERR;
+
+	device_count = libusb_get_device_list(drvc->libusb_ctx, &devlist);
+	if (device_count < 0)
+		return SR_ERR;
+
+	ret = SR_ERR;
+	for (ssize_t i = 0; i < device_count; i++) {
+		struct libusb_device_descriptor desc;
+		libusb_device_handle *handle;
+		uint8_t bus;
+		uint8_t address;
+
+		if (libusb_get_device_descriptor(devlist[i], &desc) < 0)
+			continue;
+		if (desc.idVendor != devc->profile->vid ||
+				desc.idProduct != devc->profile->pid)
+			continue;
+
+		bus = libusb_get_bus_number(devlist[i]);
+		address = libusb_get_device_address(devlist[i]);
+		if (usb->address != FX2LAFW_UNKNOWN_ADDRESS &&
+				(usb->bus != bus || usb->address != address))
+			continue;
+
+		if (libusb_open(devlist[i], &handle) != 0)
+			continue;
+
+		usb->bus = bus;
+		usb->address = address;
+		usb->devhdl = handle;
+		ret = SR_OK;
+		break;
+	}
+
+	libusb_free_device_list(devlist, 1);
+	return ret;
 }
 
 static int config_get(int id, GVariant **data, const struct sr_dev_inst *sdi,
@@ -417,6 +517,75 @@ static int config_list(int key, GVariant **data, const struct sr_dev_inst *sdi,
 	}
 }
 
+static int hw_dev_open(struct sr_dev_inst *sdi)
+{
+	struct fx2lafw_context *devc;
+	struct sr_usb_dev_inst *usb;
+	struct fx2lafw_version_info version;
+	int ret;
+
+	if (!sdi || !sdi->priv || !sdi->conn)
+		return SR_ERR_ARG;
+
+	devc = sdi->priv;
+	usb = sdi->conn;
+
+	if (usb->devhdl)
+		return SR_OK;
+
+	if (sdi->status == SR_ST_INITIALIZING && devc->fw_updated > 0) {
+		gint64 waited_ms;
+
+		g_usleep(300 * 1000);
+		waited_ms = 0;
+		while (waited_ms < FX2LAFW_MAX_RENUM_DELAY_MS) {
+			ret = open_matching_device(sdi);
+			if (ret == SR_OK)
+				break;
+			g_usleep(100 * 1000);
+			waited_ms = (g_get_monotonic_time() - devc->fw_updated) / 1000;
+		}
+		if (!usb->devhdl)
+			return SR_ERR;
+	} else {
+		ret = open_matching_device(sdi);
+		if (ret != SR_OK)
+			return ret;
+	}
+
+#if !defined(__APPLE__)
+	if (libusb_kernel_driver_active(usb->devhdl, FX2LAFW_USB_INTERFACE) == 1) {
+		ret = libusb_detach_kernel_driver(usb->devhdl,
+			FX2LAFW_USB_INTERFACE);
+		if (ret < 0) {
+			close_usb_handle(sdi);
+			return SR_ERR;
+		}
+	}
+#endif
+
+	ret = libusb_claim_interface(usb->devhdl, FX2LAFW_USB_INTERFACE);
+	if (ret != 0) {
+		close_usb_handle(sdi);
+		return SR_ERR;
+	}
+
+	ret = command_get_fw_version(usb->devhdl, &version);
+	if (ret != SR_OK) {
+		close_usb_handle(sdi);
+		return ret;
+	}
+
+	if (version.major != FX2LAFW_REQUIRED_VERSION_MAJOR) {
+		close_usb_handle(sdi);
+		return SR_ERR_DEVICE_FIRMWARE_VERSION_LOW;
+	}
+
+	devc->firmware_loaded = TRUE;
+	sdi->status = SR_ST_ACTIVE;
+	return SR_OK;
+}
+
 SR_PRIV struct sr_dev_driver fx2lafw_driver_info = {
 	.name = "fx2lafw",
 	.longname = "fx2lafw (upstream compat scan-only)",
@@ -425,6 +594,7 @@ SR_PRIV struct sr_dev_driver fx2lafw_driver_info = {
 	.init = hw_init,
 	.cleanup = hw_cleanup,
 	.scan = hw_scan,
+	.dev_open = hw_dev_open,
 	.config_get = config_get,
 	.config_set = config_set,
 	.config_list = config_list,

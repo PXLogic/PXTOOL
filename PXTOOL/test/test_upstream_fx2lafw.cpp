@@ -172,4 +172,13 @@ BOOST_AUTO_TEST_CASE(firmware_state_uses_sigrok_fx2lafw_strings)
 #endif
 }
 
+BOOST_AUTO_TEST_CASE(driver_exposes_open_lifecycle)
+{
+#ifdef HAVE_UPSTREAM_FX2LAFW
+    BOOST_REQUIRE(fx2lafw_driver_info.dev_open != nullptr);
+#else
+    BOOST_TEST_MESSAGE("upstream fx2lafw is disabled for this build");
+#endif
+}
+
 BOOST_AUTO_TEST_SUITE_END()
