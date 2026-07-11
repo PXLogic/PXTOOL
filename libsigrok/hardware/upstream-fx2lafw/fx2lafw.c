@@ -178,9 +178,11 @@ SR_PRIV int fx2lafw_firmware_path(const struct fx2lafw_profile *profile,
 
 	dir_len = strlen(DS_RES_PATH);
 	if (dir_len > 0 && DS_RES_PATH[dir_len - 1] == '/')
-		*path = g_strdup_printf("%s%s", DS_RES_PATH, profile->firmware);
+		*path = g_strdup_printf("%s%s/%s", DS_RES_PATH,
+			FX2LAFW_FIRMWARE_DIR, profile->firmware);
 	else
-		*path = g_strdup_printf("%s/%s", DS_RES_PATH, profile->firmware);
+		*path = g_strdup_printf("%s/%s/%s", DS_RES_PATH,
+			FX2LAFW_FIRMWARE_DIR, profile->firmware);
 
 	return *path ? SR_OK : SR_ERR_MALLOC;
 }
@@ -360,7 +362,7 @@ static GSList *hw_scan(GSList *options)
 			upload_ret = fx2lafw_firmware_path(profile, &firmware);
 			if (upload_ret == SR_OK &&
 					!g_file_test(firmware, G_FILE_TEST_IS_REGULAR)) {
-				sr_err("Firmware file is not bundled: %s.", firmware);
+				sr_err("fx2lafw firmware resource is missing: %s.", firmware);
 				upload_ret = SR_ERR_FIRMWARE_NOT_EXIST;
 			}
 			if (upload_ret == SR_OK) {

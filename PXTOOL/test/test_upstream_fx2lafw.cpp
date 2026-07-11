@@ -148,14 +148,14 @@ BOOST_AUTO_TEST_CASE(firmware_path_joins_resource_directory)
     char *path = nullptr;
     BOOST_REQUIRE_EQUAL(fx2lafw_firmware_path(profile, &path), SR_OK);
     BOOST_REQUIRE(path != nullptr);
-    BOOST_CHECK_EQUAL(path, "/tmp/dsview-fw/fx2lafw-saleae-logic.fw");
+    BOOST_CHECK_EQUAL(path, "/tmp/dsview-fw/fx2lafw/fx2lafw-saleae-logic.fw");
     g_free(path);
 
     g_strlcpy(DS_RES_PATH, "/tmp/dsview-fw/", sizeof(DS_RES_PATH));
     path = nullptr;
     BOOST_REQUIRE_EQUAL(fx2lafw_firmware_path(profile, &path), SR_OK);
     BOOST_REQUIRE(path != nullptr);
-    BOOST_CHECK_EQUAL(path, "/tmp/dsview-fw/fx2lafw-saleae-logic.fw");
+    BOOST_CHECK_EQUAL(path, "/tmp/dsview-fw/fx2lafw/fx2lafw-saleae-logic.fw");
     g_free(path);
     DS_RES_PATH[0] = '\0';
 #else
