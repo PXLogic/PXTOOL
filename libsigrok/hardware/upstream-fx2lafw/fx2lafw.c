@@ -108,6 +108,29 @@ SR_PRIV int fx2lafw_profile_channel_count(const struct fx2lafw_profile *profile)
 	return (profile->dev_caps & FX2LAFW_DEV_CAPS_16BIT) ? 16 : 8;
 }
 
+SR_PRIV int fx2lafw_firmware_path(const struct fx2lafw_profile *profile,
+	char **path)
+{
+	size_t dir_len;
+
+	if (!path)
+		return SR_ERR_ARG;
+	*path = NULL;
+
+	if (!profile || !profile->firmware)
+		return SR_ERR_ARG;
+	if (DS_RES_PATH[0] == '\0')
+		return SR_ERR_FIRMWARE_NOT_EXIST;
+
+	dir_len = strlen(DS_RES_PATH);
+	if (dir_len > 0 && DS_RES_PATH[dir_len - 1] == '/')
+		*path = g_strdup_printf("%s%s", DS_RES_PATH, profile->firmware);
+	else
+		*path = g_strdup_printf("%s/%s", DS_RES_PATH, profile->firmware);
+
+	return *path ? SR_OK : SR_ERR_MALLOC;
+}
+
 static int hw_init(struct sr_context *ctx)
 {
 	struct fx2lafw_driver_context *drvc;

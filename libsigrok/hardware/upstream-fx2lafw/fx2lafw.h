@@ -40,6 +40,8 @@ struct fx2lafw_profile {
 SR_PRIV const struct fx2lafw_profile *fx2lafw_profile_find(
 	uint16_t vid, uint16_t pid, const char *manufacturer, const char *product);
 SR_PRIV int fx2lafw_profile_channel_count(const struct fx2lafw_profile *profile);
+SR_PRIV int fx2lafw_firmware_path(const struct fx2lafw_profile *profile,
+	char **path);
 extern SR_PRIV struct sr_dev_driver fx2lafw_driver_info;
 
 #endif
