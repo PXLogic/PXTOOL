@@ -144,6 +144,10 @@ The first phase should keep DSView's CMake build and add only the upstream sourc
 
 The implementation should not rely on `/Users/yuanji/Desktop/project/libsigrok` at runtime. That path is a reference source during development, not an application dependency.
 
+### 7. Imported Source File Headers
+
+When copying source files from upstream libsigrok into DSView, normalize each copied file's header to the DSView/PXTOOL copyright and license style used by nearby files. Do not paste upstream libsigrok headers verbatim into the DSView tree. Keep the resulting header consistent with the target directory's existing GPL notice style.
+
 ## Migration Phases
 
 ### Phase 0: Baseline Inventory
@@ -155,6 +159,7 @@ Produce a local compatibility table:
 - upstream equivalents or missing fields
 - source files required by candidate upstream drivers
 - dependency list per candidate driver
+- header normalization requirements for any source files copied from upstream
 
 Exit criteria:
 
