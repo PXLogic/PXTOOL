@@ -936,6 +936,13 @@ git commit -m "feat: add upstream compat demo driver gate"
 
 ## Task 4: Scan Integration for Upstream-Compat Demo
 
+**Implementation note:** Task 3 registers `upstream_demo_driver_info` as
+`DRIVER_TYPE_DEMO`. DSView's existing `make_demo_device_to_list()` path already
+scans all registered demo drivers during `ds_lib_init()`, so do not add a second
+append helper for this POC or the device will appear twice. Task 4 is therefore
+verified by building with `DSVIEW_ENABLE_UPSTREAM_COMPAT_DEMO=ON` and confirming
+`libsigrok/hardware/upstream-demo/upstream_demo.c` is compiled into `DSView`.
+
 **Files:**
 - Modify: `libsigrok/lib_main.c`
 - Modify: `libsigrok/hardware/upstream-demo/upstream_demo.c`
