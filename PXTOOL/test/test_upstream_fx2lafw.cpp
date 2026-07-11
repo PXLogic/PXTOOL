@@ -20,6 +20,9 @@
  */
 
 #include <boost/test/unit_test.hpp>
+#include <fstream>
+#include <set>
+#include <string>
 
 extern "C" {
 #include "libsigrok-internal.h"
@@ -198,6 +201,45 @@ BOOST_AUTO_TEST_CASE(close_without_open_returns_error)
     BOOST_CHECK_EQUAL(fx2lafw_driver_info.dev_close(sdi), SR_ERR_BUG);
     BOOST_CHECK_EQUAL(sdi->status, SR_ST_INACTIVE);
     sr_dev_inst_free(sdi);
+#else
+    BOOST_TEST_MESSAGE("upstream fx2lafw is disabled for this build");
+#endif
+}
+
+BOOST_AUTO_TEST_CASE(firmware_manifest_matches_profiles)
+{
+#ifdef HAVE_UPSTREAM_FX2LAFW
+    std::ifstream manifest(FX2LAFW_MANIFEST_PATH);
+    BOOST_REQUIRE_MESSAGE(manifest.good(), FX2LAFW_MANIFEST_PATH);
+
+    std::set<std::string> manifest_files;
+    std::string line;
+    while (std::getline(manifest, line)) {
+        if (line.empty() || line[0] == '#')
+            continue;
+        manifest_files.insert(line);
+    }
+
+    std::set<std::string> profile_files;
+    for (size_t i = 0; i < fx2lafw_profile_count(); i++) {
+        const fx2lafw_profile *profile = fx2lafw_profile_get(i);
+        BOOST_REQUIRE(profile != nullptr);
+        BOOST_REQUIRE(profile->firmware != nullptr);
+        profile_files.insert(profile->firmware);
+    }
+
+    BOOST_CHECK_EQUAL_COLLECTIONS(
+        profile_files.begin(), profile_files.end(),
+        manifest_files.begin(), manifest_files.end());
+#else
+    BOOST_TEST_MESSAGE("upstream fx2lafw is disabled for this build");
+#endif
+}
+
+BOOST_AUTO_TEST_CASE(firmware_manifest_documents_all_profiles)
+{
+#ifdef HAVE_UPSTREAM_FX2LAFW
+    BOOST_CHECK_EQUAL(fx2lafw_profile_count(), 10U);
 #else
     BOOST_TEST_MESSAGE("upstream fx2lafw is disabled for this build");
 #endif

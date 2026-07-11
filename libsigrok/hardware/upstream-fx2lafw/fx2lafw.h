@@ -25,6 +25,7 @@
 #include "libsigrok-internal.h"
 
 #define FX2LAFW_DEV_CAPS_16BIT (1 << 0)
+#define FX2LAFW_FIRMWARE_DIR "fx2lafw"
 #define FX2LAFW_USB_INTERFACE 0
 #define FX2LAFW_USB_CONFIGURATION 1
 #define FX2LAFW_UNKNOWN_ADDRESS 0xff
@@ -46,6 +47,8 @@ struct fx2lafw_profile {
 
 SR_PRIV const struct fx2lafw_profile *fx2lafw_profile_find(
 	uint16_t vid, uint16_t pid, const char *manufacturer, const char *product);
+SR_PRIV size_t fx2lafw_profile_count(void);
+SR_PRIV const struct fx2lafw_profile *fx2lafw_profile_get(size_t index);
 SR_PRIV int fx2lafw_profile_channel_count(const struct fx2lafw_profile *profile);
 SR_PRIV int fx2lafw_firmware_path(const struct fx2lafw_profile *profile,
 	char **path);

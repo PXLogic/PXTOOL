@@ -136,6 +136,24 @@ SR_PRIV const struct fx2lafw_profile *fx2lafw_profile_find(
 	return NULL;
 }
 
+SR_PRIV size_t fx2lafw_profile_count(void)
+{
+	size_t count;
+
+	for (count = 0; supported_fx2[count].vid; count++)
+		;
+
+	return count;
+}
+
+SR_PRIV const struct fx2lafw_profile *fx2lafw_profile_get(size_t index)
+{
+	if (index >= fx2lafw_profile_count())
+		return NULL;
+
+	return &supported_fx2[index];
+}
+
 SR_PRIV int fx2lafw_profile_channel_count(const struct fx2lafw_profile *profile)
 {
 	if (!profile)
