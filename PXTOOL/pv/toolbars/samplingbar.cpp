@@ -32,6 +32,7 @@
 #include <QToolButton>
 #include <QFontMetrics>
 #include <math.h>
+#include <limits>
 #include <libusb-1.0/libusb.h>
 #include "../dialogs/deviceoptions.h"
 #include "../dialogs/waitingdialog.h"
@@ -326,7 +327,8 @@ namespace pv
             if (_lbl_smplrate) _lbl_smplrate->setText(tr("Sample Rate"));
             if (_lbl_buffer) {
                 bool stream_mode = false;
-                if (_device_agent && _device_agent->have_instance())
+                if (_device_agent && _device_agent->have_instance() &&
+                    _device_agent->supports_config(SR_CONF_STREAM))
                     _device_agent->get_config_bool(SR_CONF_STREAM, stream_mode);
                 update_buffer_label(stream_mode);
             }
@@ -835,8 +837,13 @@ namespace pv
             assert(!_updating_sample_count);
             _updating_sample_count = true;
 
-            _device_agent->get_config_bool(SR_CONF_STREAM, stream_mode);
-            _device_agent->get_config_uint64(SR_CONF_HW_DEPTH, hw_depth);
+            if (_device_agent->supports_config(SR_CONF_STREAM))
+                _device_agent->get_config_bool(SR_CONF_STREAM, stream_mode);
+
+            if (!_device_agent->supports_config(SR_CONF_HW_DEPTH) ||
+                !_device_agent->get_config_uint64(SR_CONF_HW_DEPTH, hw_depth))
+                hw_depth = _device_agent->get_sample_limit();
+
             int mode = _device_agent->get_work_mode();
 
             if (mode == LOGIC)
@@ -858,7 +865,8 @@ namespace pv
 
             if (mode == LOGIC)
             {
-                _device_agent->get_config_bool(SR_CONF_RLE_SUPPORT, rle_support);
+                if (_device_agent->supports_config(SR_CONF_RLE_SUPPORT))
+                    _device_agent->get_config_bool(SR_CONF_RLE_SUPPORT, rle_support);
                 if (rle_support)
                     rle_depth = min(hw_depth * SR_KB(1), sw_depth);
             }
@@ -899,7 +907,8 @@ namespace pv
                 const auto &dc = _session->disk_cache_settings();
                 const uint64_t disk_gb = dc.disk_limit_gb == 0 ? 128 : dc.disk_limit_gb;
                 double stream_buff_gb = 0;
-                if (_device_agent->get_config_double(SR_CONF_STREAM_BUFF, stream_buff_gb) &&
+                if (_device_agent->supports_config(SR_CONF_STREAM_BUFF) &&
+                    _device_agent->get_config_double(SR_CONF_STREAM_BUFF, stream_buff_gb) &&
                     stream_buff_gb > 0) {
                     const double scaled_depth =
                         (static_cast<double>(hw_depth) * static_cast<double>(disk_gb)) /
@@ -1171,18 +1180,23 @@ namespace pv
                                         .value<double>();
 
             const uint64_t sample_limit = _device_agent->get_sample_limit();
-            uint64_t max_sample_rate;
+            uint64_t max_sample_rate = std::numeric_limits<uint64_t>::max();
 
-            if (_device_agent->get_config_uint64(SR_CONF_MAX_DSO_SAMPLERATE, max_sample_rate) == false)
+            if (_device_agent->supports_config(SR_CONF_MAX_DSO_SAMPLERATE) &&
+                _device_agent->get_config_uint64(SR_CONF_MAX_DSO_SAMPLERATE, max_sample_rate) == false)
             {
                 dsv_err("ERROR: config_get SR_CONF_MAX_DSO_SAMPLERATE failed.");
                 return -1;
             }
 
-            const uint64_t sample_rate = min((uint64_t)(sample_limit * SR_SEC(1) /
-                                                        (hori_res * DS_CONF_DSO_HDIVS)),
-                                             (uint64_t)(max_sample_rate /
-                                                        (_session->get_ch_num(SR_CHANNEL_DSO) ? _session->get_ch_num(SR_CHANNEL_DSO) : 1)));
+            const uint64_t requested_sample_rate = (uint64_t)(sample_limit * SR_SEC(1) /
+                                                              (hori_res * DS_CONF_DSO_HDIVS));
+            const int dso_ch_num = _session->get_ch_num(SR_CHANNEL_DSO) ?
+                _session->get_ch_num(SR_CHANNEL_DSO) : 1;
+            const uint64_t capped_sample_rate =
+                max_sample_rate == std::numeric_limits<uint64_t>::max() ?
+                requested_sample_rate : (uint64_t)(max_sample_rate / dso_ch_num);
+            const uint64_t sample_rate = min(requested_sample_rate, capped_sample_rate);
             set_sample_rate(sample_rate);
 
             _device_agent->set_config_uint64( SR_CONF_TIMEBASE, hori_res);
@@ -1436,7 +1450,8 @@ namespace pv
     int op_mode = -1;
     bool stream_cfg = false;
     const bool has_op_mode = _device_agent->get_config_int16(SR_CONF_OPERATION_MODE, op_mode);
-    const bool has_stream_cfg = _device_agent->get_config_bool(SR_CONF_STREAM, stream_cfg);
+    const bool has_stream_cfg = _device_agent->supports_config(SR_CONF_STREAM) &&
+        _device_agent->get_config_bool(SR_CONF_STREAM, stream_cfg);
     const bool stream_by_helper = _device_agent->is_stream_mode();
     dsv_info("SamplingBar::reload mode=%d dev=%s op_mode(valid=%d,val=%d) stream_cfg(valid=%d,val=%d) helper_stream=%d demo=%d",
              _device_agent->get_work_mode(),
@@ -1616,7 +1631,8 @@ namespace pv
             int op_mode = -1;
             bool stream_cfg = false;
             const bool has_op_mode = _session->get_device()->get_config_int16(SR_CONF_OPERATION_MODE, op_mode);
-            const bool has_stream_cfg = _session->get_device()->get_config_bool(SR_CONF_STREAM, stream_cfg);
+            const bool has_stream_cfg = _session->get_device()->supports_config(SR_CONF_STREAM) &&
+                _session->get_device()->get_config_bool(SR_CONF_STREAM, stream_cfg);
 
             _device_type.setEnabled(bEnable);
             _mode_button.setEnabled(bEnable);
