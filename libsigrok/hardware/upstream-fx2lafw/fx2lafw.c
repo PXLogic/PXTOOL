@@ -21,6 +21,7 @@
 
 #include "fx2lafw.h"
 #include "device_source.h"
+#include "../../log.h"
 
 #include <libusb.h>
 #include <stdio.h>
@@ -33,6 +34,8 @@ struct fx2lafw_context {
 	const struct fx2lafw_profile *profile;
 	uint64_t samplerate;
 	uint64_t limit_samples;
+	gint64 fw_updated;
+	gboolean firmware_loaded;
 };
 
 struct fx2lafw_driver_context {
@@ -131,6 +134,14 @@ SR_PRIV int fx2lafw_firmware_path(const struct fx2lafw_profile *profile,
 	return *path ? SR_OK : SR_ERR_MALLOC;
 }
 
+SR_PRIV int fx2lafw_has_firmware(const char *manufacturer,
+	const char *product)
+{
+	return manufacturer && product &&
+		strcmp(manufacturer, "sigrok") == 0 &&
+		strcmp(product, "fx2lafw") == 0;
+}
+
 static int hw_init(struct sr_context *ctx)
 {
 	struct fx2lafw_driver_context *drvc;
@@ -170,7 +181,8 @@ static int hw_cleanup(void)
 }
 
 static struct sr_dev_inst *create_device_from_profile(
-	const struct fx2lafw_profile *profile, uint8_t bus, uint8_t address)
+	const struct fx2lafw_profile *profile, uint8_t bus, uint8_t address,
+	int status, gboolean firmware_loaded, gint64 fw_updated)
 {
 	struct fx2lafw_context *devc;
 	struct sr_dev_inst *sdi;
@@ -179,7 +191,7 @@ static struct sr_dev_inst *create_device_from_profile(
 	if (!profile)
 		return NULL;
 
-	sdi = sr_dev_inst_new(LOGIC, SR_ST_INACTIVE,
+	sdi = sr_dev_inst_new(LOGIC, status,
 		profile->vendor, profile->model, NULL);
 	if (!sdi)
 		return NULL;
@@ -188,6 +200,8 @@ static struct sr_dev_inst *create_device_from_profile(
 	devc->profile = profile;
 	devc->samplerate = samplerates[0];
 	devc->limit_samples = 0;
+	devc->firmware_loaded = firmware_loaded;
+	devc->fw_updated = fw_updated;
 	sdi->priv = devc;
 	sdi->driver = &fx2lafw_driver_info;
 	sdi->dev_type = DEV_TYPE_USB;
@@ -261,9 +275,44 @@ static GSList *hw_scan(GSList *options)
 		if (!profile)
 			continue;
 
+		gboolean has_firmware;
+		gint64 fw_updated;
+		uint8_t address;
+		int status;
+
+		has_firmware = fx2lafw_has_firmware(manufacturer, product);
+		fw_updated = 0;
+		address = libusb_get_device_address(devlist[i]);
+		status = SR_ST_INACTIVE;
+
+		if (!has_firmware) {
+			char *firmware;
+			int upload_ret;
+
+			firmware = NULL;
+			upload_ret = fx2lafw_firmware_path(profile, &firmware);
+			if (upload_ret == SR_OK) {
+				upload_ret = ezusb_upload_firmware(devlist[i],
+					FX2LAFW_USB_CONFIGURATION, firmware);
+				g_free(firmware);
+			}
+			if (upload_ret == SR_OK) {
+				has_firmware = FALSE;
+				fw_updated = g_get_monotonic_time();
+				address = FX2LAFW_UNKNOWN_ADDRESS;
+				status = SR_ST_INITIALIZING;
+			} else {
+				sr_err("Firmware upload failed for device %d.%d, name %s.",
+					libusb_get_bus_number(devlist[i]),
+					libusb_get_device_address(devlist[i]),
+					profile->firmware ? profile->firmware : "(null)");
+				continue;
+			}
+		}
+
 		struct sr_dev_inst *sdi = create_device_from_profile(profile,
-			libusb_get_bus_number(devlist[i]),
-			libusb_get_device_address(devlist[i]));
+			libusb_get_bus_number(devlist[i]), address, status, has_firmware,
+			fw_updated);
 		if (sdi)
 			devices = g_slist_append(devices, sdi);
 	}

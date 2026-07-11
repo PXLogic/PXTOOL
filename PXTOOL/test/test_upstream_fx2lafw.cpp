@@ -31,6 +31,11 @@ extern "C" {
 #ifdef HAVE_UPSTREAM_FX2LAFW
 extern "C" {
 char DS_RES_PATH[500];
+
+void ds_set_last_error(int error)
+{
+    (void)error;
+}
 }
 #endif
 
@@ -150,6 +155,18 @@ BOOST_AUTO_TEST_CASE(firmware_path_joins_resource_directory)
     BOOST_CHECK_EQUAL(path, "/tmp/dsview-fw/fx2lafw-saleae-logic.fw");
     g_free(path);
     DS_RES_PATH[0] = '\0';
+#else
+    BOOST_TEST_MESSAGE("upstream fx2lafw is disabled for this build");
+#endif
+}
+
+BOOST_AUTO_TEST_CASE(firmware_state_uses_sigrok_fx2lafw_strings)
+{
+#ifdef HAVE_UPSTREAM_FX2LAFW
+    BOOST_CHECK_EQUAL(fx2lafw_has_firmware("sigrok", "fx2lafw"), TRUE);
+    BOOST_CHECK_EQUAL(fx2lafw_has_firmware("Saleae", "Logic"), FALSE);
+    BOOST_CHECK_EQUAL(fx2lafw_has_firmware(nullptr, "fx2lafw"), FALSE);
+    BOOST_CHECK_EQUAL(fx2lafw_has_firmware("sigrok", nullptr), FALSE);
 #else
     BOOST_TEST_MESSAGE("upstream fx2lafw is disabled for this build");
 #endif
