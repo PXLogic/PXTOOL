@@ -55,6 +55,23 @@ Scope intentionally deferred:
 
 Follow-up direction: keep the next slice small by adding open/close and firmware handling first, then add acquisition only after that lifecycle is covered by tests and manual hardware checks.
 
+## Next Slice: fx2lafw Open/Firmware Lifecycle
+
+Status: planned for implementation behind `DSVIEW_ENABLE_UPSTREAM_FX2LAFW`.
+
+Scope:
+
+- detect firmware-loaded devices during scan
+- upload fx2lafw firmware for bootloader-state devices using DSView's firmware resource directory
+- wait for re-enumeration in `dev_open()`
+- open, claim interface 0, validate firmware major version, and close handles safely
+
+Still deferred:
+
+- asynchronous acquisition transfers
+- trigger setup
+- DSView datafeed conversion
+
 ## Candidate: rigol-ds
 
 Purpose: SCPI oscilloscope class.

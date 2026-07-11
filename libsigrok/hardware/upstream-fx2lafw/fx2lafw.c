@@ -586,6 +586,22 @@ static int hw_dev_open(struct sr_dev_inst *sdi)
 	return SR_OK;
 }
 
+static int hw_dev_close(struct sr_dev_inst *sdi)
+{
+	struct sr_usb_dev_inst *usb;
+
+	if (!sdi || !sdi->conn)
+		return SR_ERR_ARG;
+
+	usb = sdi->conn;
+	if (!usb->devhdl)
+		return SR_ERR_BUG;
+
+	close_usb_handle(sdi);
+	sdi->status = SR_ST_INACTIVE;
+	return SR_OK;
+}
+
 SR_PRIV struct sr_dev_driver fx2lafw_driver_info = {
 	.name = "fx2lafw",
 	.longname = "fx2lafw (upstream compat scan-only)",
@@ -595,6 +611,7 @@ SR_PRIV struct sr_dev_driver fx2lafw_driver_info = {
 	.cleanup = hw_cleanup,
 	.scan = hw_scan,
 	.dev_open = hw_dev_open,
+	.dev_close = hw_dev_close,
 	.config_get = config_get,
 	.config_set = config_set,
 	.config_list = config_list,
