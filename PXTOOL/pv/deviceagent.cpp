@@ -295,6 +295,37 @@ GSList *DeviceAgent::get_channels()
     return -1;
  }
 
+ bool DeviceAgent::supports_config(int key)
+ {
+    if (!have_instance())
+        return false;
+
+    return ds_actived_device_supports_config_key(key) > 0;
+ }
+
+ bool DeviceAgent::supports_capability(int capability)
+ {
+    if (!have_instance())
+        return false;
+
+    return ds_actived_device_supports_capability(capability) > 0;
+ }
+
+ bool DeviceAgent::supports_waveform()
+ {
+    return supports_capability(DS_DEVICE_CAP_WAVEFORM);
+ }
+
+ bool DeviceAgent::supports_stream()
+ {
+    return supports_capability(DS_DEVICE_CAP_STREAM);
+ }
+
+ bool DeviceAgent::supports_advanced_trigger()
+ {
+    return supports_capability(DS_DEVICE_CAP_ADVANCED_TRIGGER);
+ }
+
  bool DeviceAgent::is_stream_mode()
  { 
     return get_hardware_operation_mode() == LO_OP_STREAM;

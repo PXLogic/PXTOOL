@@ -171,6 +171,16 @@ public:
 
     int get_hardware_operation_mode();
 
+    bool supports_config(int key);
+
+    bool supports_capability(int capability);
+
+    bool supports_waveform();
+
+    bool supports_stream();
+
+    bool supports_advanced_trigger();
+
     bool is_stream_mode();
 
     bool check_firmware_version();

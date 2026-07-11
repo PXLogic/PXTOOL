@@ -20,6 +20,7 @@
 add_executable(DSView-test
     test.cpp
     test_channeltint.cpp
+    test_deviceagent_capability.cpp
     test_device_source.cpp
     test_diskcachesettings.cpp
     test_logsearch.cpp
