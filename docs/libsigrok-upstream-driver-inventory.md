@@ -68,8 +68,8 @@ Scope:
 
 Still deferred:
 
-- bundling or documenting the required `fx2lafw-*.fw` firmware resources
-- manual bootloader upload and re-enumeration smoke tests
+- adding licensed `fx2lafw-*.fw` binary files, if the project chooses to distribute them
+- manual bootloader upload and re-enumeration smoke tests with real hardware
 - asynchronous acquisition transfers
 - trigger setup
 - DSView datafeed conversion
