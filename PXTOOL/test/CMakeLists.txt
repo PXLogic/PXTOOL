@@ -25,6 +25,7 @@ add_executable(DSView-test
     test_diskcachesettings.cpp
     test_logsearch.cpp
     test_theme_qss.cpp
+    test_upstream_demo.cpp
     ../pv/view/channeltint.cpp
     ../pv/dock/logsearch.cpp
     ../../libsigrok/device_source.c
@@ -33,6 +34,12 @@ add_executable(DSView-test
     ../../libsigrok/strutil.c
     ../../common/log/xlog.c
 )
+
+if(DSVIEW_ENABLE_UPSTREAM_COMPAT_DEMO)
+    target_sources(DSView-test PRIVATE
+        ../../libsigrok/hardware/upstream-demo/upstream_demo.c
+    )
+endif()
 
 target_include_directories(DSView-test PRIVATE
     ..

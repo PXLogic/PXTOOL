@@ -29,6 +29,8 @@
 #undef LOG_PREFIX
 #define LOG_PREFIX "upstream-demo: "
 
+#define UPSTREAM_DEMO_CHANNEL_COUNT 8
+
 struct upstream_demo_context {
 	uint64_t samplerate;
 	uint64_t limit_samples;
@@ -43,6 +45,8 @@ static const uint64_t samplerates[] = {
 static const int32_t devopts[] = {
 	SR_CONF_SAMPLERATE,
 	SR_CONF_LIMIT_SAMPLES,
+	SR_CONF_VLD_CH_NUM,
+	SR_CONF_PROBE_EN,
 };
 
 static int hw_init(struct sr_context *ctx)
@@ -76,7 +80,7 @@ static GSList *hw_scan(GSList *options)
 	sdi->dev_type = DEV_TYPE_USB;
 	ds_device_source_set(sdi, DS_DEVICE_SOURCE_UPSTREAM_COMPAT);
 
-	for (int i = 0; i < 8; i++) {
+	for (int i = 0; i < UPSTREAM_DEMO_CHANNEL_COUNT; i++) {
 		char name[8];
 		struct sr_channel *probe;
 
@@ -103,7 +107,6 @@ static int config_get(int id, GVariant **data, const struct sr_dev_inst *sdi,
 {
 	struct upstream_demo_context *devc;
 
-	(void)ch;
 	(void)cg;
 
 	if (!sdi || !sdi->priv || !data)
@@ -117,6 +120,14 @@ static int config_get(int id, GVariant **data, const struct sr_dev_inst *sdi,
 	case SR_CONF_LIMIT_SAMPLES:
 		*data = g_variant_new_uint64(devc->limit_samples);
 		return SR_OK;
+	case SR_CONF_VLD_CH_NUM:
+		*data = g_variant_new_int16(UPSTREAM_DEMO_CHANNEL_COUNT);
+		return SR_OK;
+	case SR_CONF_PROBE_EN:
+		if (!ch)
+			return SR_ERR_ARG;
+		*data = g_variant_new_boolean(ch->enabled);
+		return SR_OK;
 	default:
 		return SR_ERR_NA;
 	}
@@ -127,7 +138,6 @@ static int config_set(int id, GVariant *data, struct sr_dev_inst *sdi,
 {
 	struct upstream_demo_context *devc;
 
-	(void)ch;
 	(void)cg;
 
 	if (!sdi || !sdi->priv || !data)
@@ -140,6 +150,11 @@ static int config_set(int id, GVariant *data, struct sr_dev_inst *sdi,
 		return SR_OK;
 	case SR_CONF_LIMIT_SAMPLES:
 		devc->limit_samples = g_variant_get_uint64(data);
+		return SR_OK;
+	case SR_CONF_PROBE_EN:
+		if (!ch)
+			return SR_ERR_ARG;
+		ch->enabled = g_variant_get_boolean(data);
 		return SR_OK;
 	default:
 		return SR_ERR_NA;
