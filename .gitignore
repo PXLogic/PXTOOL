@@ -14,10 +14,15 @@
 # CMake and build artifacts (in-source build)
 /CMakeCache.txt
 /CMakeFiles/
+/CTestTestfile.cmake
 /_deps/
 /Makefile
 /cmake_install.cmake
 /install_manifest.txt
+/PXTOOL/test/CMakeFiles/
+/PXTOOL/test/CTestTestfile.cmake
+/PXTOOL/test/Makefile
+/PXTOOL/test/cmake_install.cmake
 
 # CPack packaging artifacts
 /CPackConfig.cmake
