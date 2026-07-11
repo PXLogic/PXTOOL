@@ -125,6 +125,9 @@ extern SR_PRIV struct sr_dev_driver px_driver_test_info;
 #ifdef HAVE_UPSTREAM_COMPAT_DEMO
 extern SR_PRIV struct sr_dev_driver upstream_demo_driver_info;
 #endif
+#ifdef HAVE_UPSTREAM_FX2LAFW
+extern SR_PRIV struct sr_dev_driver fx2lafw_driver_info;
+#endif
 /** @endcond */
 
 static struct sr_dev_driver *drivers_list[] = {
@@ -138,6 +141,9 @@ static struct sr_dev_driver *drivers_list[] = {
 #endif
 #ifdef HAVE_UPSTREAM_COMPAT_DEMO
 	&upstream_demo_driver_info,
+#endif
+#ifdef HAVE_UPSTREAM_FX2LAFW
+	&fx2lafw_driver_info,
 #endif
 	NULL,
 };

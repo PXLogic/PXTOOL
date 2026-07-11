@@ -593,6 +593,12 @@ if(DSVIEW_ENABLE_UPSTREAM_COMPAT_DEMO)
     )
 endif()
 
+if(DSVIEW_ENABLE_UPSTREAM_FX2LAFW)
+    list(APPEND libsigrok_SOURCES
+        libsigrok/hardware/upstream-fx2lafw/fx2lafw.c
+    )
+endif()
+
 set(libsigrok_HEADERS
     libsigrok/version.h
     libsigrok/libsigrok-internal.h
