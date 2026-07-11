@@ -20,6 +20,7 @@
  */
 
 #include "libsigrok-internal.h"
+#include "device_source.h"
 #include "log.h"
 #include <pthread.h>
 #include <stdlib.h>
@@ -715,6 +716,30 @@ SR_API int ds_get_actived_device_mode()
 	pthread_mutex_unlock(&lib_ctx.mutext);
 
 	return mode;
+}
+
+SR_API int ds_actived_device_supports_config_key(int key)
+{
+	int supported = 0;
+
+	pthread_mutex_lock(&lib_ctx.mutext);
+	if (lib_ctx.actived_device_instance != NULL)
+		supported = ds_device_supports_config_key(lib_ctx.actived_device_instance, key) ? 1 : 0;
+	pthread_mutex_unlock(&lib_ctx.mutext);
+
+	return supported;
+}
+
+SR_API int ds_actived_device_supports_capability(int capability)
+{
+	int supported = 0;
+
+	pthread_mutex_lock(&lib_ctx.mutext);
+	if (lib_ctx.actived_device_instance != NULL)
+		supported = ds_device_supports_capability(lib_ctx.actived_device_instance, capability) ? 1 : 0;
+	pthread_mutex_unlock(&lib_ctx.mutext);
+
+	return supported;
 }
 
 /**

@@ -193,6 +193,7 @@ SR_PRIV struct sr_dev_inst *sr_dev_inst_new(int mode, int status,
     sdi->mode = mode;
 	sdi->status = status;
     sdi->handle = (ds_device_handle)sdi;
+    sdi->source_kind = DS_DEVICE_SOURCE_NATIVE;
 
 	if (vendor != NULL){
 		sdi->vendor = g_strdup(vendor);

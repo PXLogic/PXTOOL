@@ -94,6 +94,15 @@ enum sr_dev_driver_type
 	DRIVER_TYPE_HARDWARE = 2
 };
 
+enum ds_device_source_kind
+{
+	DS_DEVICE_SOURCE_UNKNOWN = 0,
+	DS_DEVICE_SOURCE_NATIVE = 1,
+	DS_DEVICE_SOURCE_UPSTREAM_COMPAT = 2,
+	DS_DEVICE_SOURCE_FILE = 3,
+	DS_DEVICE_SOURCE_DEMO = 4
+};
+
 struct lang_text_map_item{
 	int  config_id;
 	int  id;
@@ -153,6 +162,9 @@ struct sr_dev_inst {
 
 	/** Device type:(demo,filelog,hardware). The type see enum sr_device_type. */
 	int dev_type;
+
+	/** Internal source kind: native, upstream-compat, file, or demo. */
+	int source_kind;
 
     /** Index of device in driver. */
     int index;

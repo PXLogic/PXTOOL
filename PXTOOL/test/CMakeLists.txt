@@ -20,11 +20,17 @@
 add_executable(DSView-test
     test.cpp
     test_channeltint.cpp
+    test_device_source.cpp
     test_diskcachesettings.cpp
     test_logsearch.cpp
     test_theme_qss.cpp
     ../pv/view/channeltint.cpp
     ../pv/dock/logsearch.cpp
+    ../../libsigrok/device_source.c
+    ../../libsigrok/dsdevice.c
+    ../../libsigrok/log.c
+    ../../libsigrok/strutil.c
+    ../../common/log/xlog.c
 )
 
 target_include_directories(DSView-test PRIVATE
@@ -32,10 +38,14 @@ target_include_directories(DSView-test PRIVATE
     ../..
     ../../common
     ../../libsigrok
+    ${GLIB_INCLUDE_DIRS}
+    ${LIBUSB_1_INCLUDE_DIRS}
     ${QT_INCLUDE_DIRS}
     ${Boost_INCLUDE_DIRS}
 )
 
 target_link_libraries(DSView-test
     ${QT_LIBRARIES}
+    -lglib-2.0
+    ${LIBUSB_1_LIBRARIES}
 )

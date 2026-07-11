@@ -1350,6 +1350,16 @@ typedef unsigned long long ds_device_handle;
 
 #define NULL_HANDLE		0
 
+enum ds_device_capability {
+	DS_DEVICE_CAP_WAVEFORM = 1,
+	DS_DEVICE_CAP_LOGIC = 2,
+	DS_DEVICE_CAP_ANALOG = 3,
+	DS_DEVICE_CAP_DSO = 4,
+	DS_DEVICE_CAP_ADVANCED_TRIGGER = 5,
+	DS_DEVICE_CAP_STREAM = 6,
+	DS_DEVICE_CAP_DISK_CACHE = 7,
+};
+
 /**
  * Device base info
  */
@@ -1481,6 +1491,10 @@ SR_API int ds_get_actived_device_info(struct ds_device_full_info *fill_info);
  * Get actived device work model. mode list:LOGIC、ANALOG、DSO
  */
 SR_API int ds_get_actived_device_mode();
+
+SR_API int ds_actived_device_supports_config_key(int key);
+
+SR_API int ds_actived_device_supports_capability(int capability);
 
 /**
  * Start collect data

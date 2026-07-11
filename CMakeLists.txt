@@ -569,6 +569,7 @@ set(libsigrok_SOURCES
     libsigrok/hardware/common/ezusb.c
     libsigrok/trigger.c
     libsigrok/dsdevice.c
+    libsigrok/device_source.c
     libsigrok/hardware/DSL/dscope.c
     libsigrok/hardware/DSL/command.c
     libsigrok/hardware/DSL/dsl.c
