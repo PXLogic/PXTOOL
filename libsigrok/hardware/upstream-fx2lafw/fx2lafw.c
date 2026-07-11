@@ -20,7 +20,10 @@
  */
 
 #include "fx2lafw.h"
+#include "device_source.h"
 
+#include <libusb.h>
+#include <stdio.h>
 #include <string.h>
 
 #undef LOG_PREFIX
@@ -30,6 +33,11 @@ struct fx2lafw_context {
 	const struct fx2lafw_profile *profile;
 	uint64_t samplerate;
 	uint64_t limit_samples;
+};
+
+struct fx2lafw_driver_context {
+	libusb_context *libusb_ctx;
+	gboolean owns_libusb_ctx;
 };
 
 static const struct fx2lafw_profile supported_fx2[] = {
@@ -102,19 +110,143 @@ SR_PRIV int fx2lafw_profile_channel_count(const struct fx2lafw_profile *profile)
 
 static int hw_init(struct sr_context *ctx)
 {
-	(void)ctx;
+	struct fx2lafw_driver_context *drvc;
+
+	drvc = g_malloc0(sizeof(*drvc));
+	if (!drvc)
+		return SR_ERR_MALLOC;
+
+	if (ctx && ctx->libusb_ctx) {
+		drvc->libusb_ctx = ctx->libusb_ctx;
+		drvc->owns_libusb_ctx = FALSE;
+	} else if (libusb_init(&drvc->libusb_ctx) == 0) {
+		drvc->owns_libusb_ctx = TRUE;
+	} else {
+		g_free(drvc);
+		return SR_ERR;
+	}
+
+	fx2lafw_driver_info.priv = drvc;
 	return SR_OK;
 }
 
 static int hw_cleanup(void)
 {
+	struct fx2lafw_driver_context *drvc;
+
+	drvc = fx2lafw_driver_info.priv;
+	if (!drvc)
+		return SR_OK;
+
+	if (drvc->owns_libusb_ctx && drvc->libusb_ctx)
+		libusb_exit(drvc->libusb_ctx);
+	g_free(drvc);
+	fx2lafw_driver_info.priv = NULL;
+
 	return SR_OK;
+}
+
+static struct sr_dev_inst *create_device_from_profile(
+	const struct fx2lafw_profile *profile, uint8_t bus, uint8_t address)
+{
+	struct fx2lafw_context *devc;
+	struct sr_dev_inst *sdi;
+	int channel_count;
+
+	if (!profile)
+		return NULL;
+
+	sdi = sr_dev_inst_new(LOGIC, SR_ST_INACTIVE,
+		profile->vendor, profile->model, NULL);
+	if (!sdi)
+		return NULL;
+
+	devc = g_malloc0(sizeof(*devc));
+	devc->profile = profile;
+	devc->samplerate = samplerates[0];
+	devc->limit_samples = 0;
+	sdi->priv = devc;
+	sdi->driver = &fx2lafw_driver_info;
+	sdi->dev_type = DEV_TYPE_USB;
+	sdi->conn = sr_usb_dev_inst_new(bus, address);
+	ds_device_source_set(sdi, DS_DEVICE_SOURCE_UPSTREAM_COMPAT);
+
+	channel_count = fx2lafw_profile_channel_count(profile);
+	for (int i = 0; i < channel_count; i++) {
+		char name[8];
+		struct sr_channel *probe;
+
+		snprintf(name, sizeof(name), "D%d", i);
+		probe = sr_channel_new(i, SR_CHANNEL_LOGIC, TRUE, name);
+		if (!probe) {
+			sr_dev_inst_free(sdi);
+			return NULL;
+		}
+		sdi->channels = g_slist_append(sdi->channels, probe);
+	}
+
+	return sdi;
 }
 
 static GSList *hw_scan(GSList *options)
 {
+	struct fx2lafw_driver_context *drvc;
+	libusb_device **devlist;
+	GSList *devices;
+	ssize_t device_count;
+
 	(void)options;
-	return NULL;
+
+	drvc = fx2lafw_driver_info.priv;
+	if (!drvc || !drvc->libusb_ctx)
+		return NULL;
+
+	devices = NULL;
+	device_count = libusb_get_device_list(drvc->libusb_ctx, &devlist);
+	if (device_count < 0)
+		return NULL;
+
+	for (ssize_t i = 0; i < device_count; i++) {
+		struct libusb_device_descriptor desc;
+		libusb_device_handle *handle;
+		char manufacturer[64];
+		char product[64];
+		const struct fx2lafw_profile *profile;
+
+		manufacturer[0] = '\0';
+		product[0] = '\0';
+
+		if (libusb_get_device_descriptor(devlist[i], &desc) < 0)
+			continue;
+
+		profile = fx2lafw_profile_find(desc.idVendor, desc.idProduct, "", "");
+		if (!profile)
+			continue;
+
+		if (libusb_open(devlist[i], &handle) == 0) {
+			if (desc.iManufacturer)
+				libusb_get_string_descriptor_ascii(handle, desc.iManufacturer,
+					(unsigned char *)manufacturer, sizeof(manufacturer));
+			if (desc.iProduct)
+				libusb_get_string_descriptor_ascii(handle, desc.iProduct,
+					(unsigned char *)product, sizeof(product));
+			libusb_close(handle);
+		}
+
+		profile = fx2lafw_profile_find(desc.idVendor, desc.idProduct,
+			manufacturer, product);
+		if (!profile)
+			continue;
+
+		struct sr_dev_inst *sdi = create_device_from_profile(profile,
+			libusb_get_bus_number(devlist[i]),
+			libusb_get_device_address(devlist[i]));
+		if (sdi)
+			devices = g_slist_append(devices, sdi);
+	}
+
+	libusb_free_device_list(devlist, 1);
+	return devices;
 }
 
 static int config_get(int id, GVariant **data, const struct sr_dev_inst *sdi,

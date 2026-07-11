@@ -92,4 +92,18 @@ BOOST_AUTO_TEST_CASE(driver_exposes_dsview_supported_configs)
 #endif
 }
 
+BOOST_AUTO_TEST_CASE(scan_without_options_does_not_crash)
+{
+#ifdef HAVE_UPSTREAM_FX2LAFW
+    sr_context ctx = {};
+
+    BOOST_REQUIRE_EQUAL(fx2lafw_driver_info.init(&ctx), SR_OK);
+    GSList *devices = fx2lafw_driver_info.scan(nullptr);
+    g_slist_free_full(devices, (GDestroyNotify)sr_dev_inst_free);
+    BOOST_CHECK_EQUAL(fx2lafw_driver_info.cleanup(), SR_OK);
+#else
+    BOOST_TEST_MESSAGE("upstream fx2lafw is disabled for this build");
+#endif
+}
+
 BOOST_AUTO_TEST_SUITE_END()
