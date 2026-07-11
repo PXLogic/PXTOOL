@@ -30,6 +30,7 @@
 - Modify `CMakeLists.txt`: add `DSVIEW_ENABLE_UPSTREAM_FX2LAFW` option, compile definition, and gated source.
 - Modify `PXTOOL/test/CMakeLists.txt`: compile the scan-only driver into `DSView-test` only when the option is enabled.
 - Create `PXTOOL/test/test_upstream_fx2lafw.cpp`: Boost tests for profile lookup, config list/get/set, default channel state, and no-hardware scan stability.
+- Modify `CMakeLists.txt`: add `DSVIEW_ENABLE_UPSTREAM_FX2LAFW` and `HAVE_UPSTREAM_FX2LAFW` before focused tests rely on the flag.
 - Modify `docs/libsigrok-upstream-driver-inventory.md`: record that the selected next slice is scan-only `fx2lafw`.
 
 ## Task 1: FX2LAFW Profile and Config Contract
@@ -38,6 +39,7 @@
 - Create: `libsigrok/hardware/upstream-fx2lafw/fx2lafw.h`
 - Create: `libsigrok/hardware/upstream-fx2lafw/fx2lafw.c`
 - Create: `PXTOOL/test/test_upstream_fx2lafw.cpp`
+- Modify: `CMakeLists.txt`
 - Modify: `PXTOOL/test/CMakeLists.txt`
 
 **Interfaces:**
@@ -149,7 +151,21 @@ BOOST_AUTO_TEST_CASE(driver_exposes_dsview_supported_configs)
 BOOST_AUTO_TEST_SUITE_END()
 ```
 
-- [ ] **Step 2: Wire the failing test into `DSView-test`**
+- [ ] **Step 2: Add the CMake option and wire the failing test into `DSView-test`**
+
+Modify `CMakeLists.txt` near `DSVIEW_ENABLE_UPSTREAM_COMPAT_DEMO`:
+
+```cmake
+option(DSVIEW_ENABLE_UPSTREAM_FX2LAFW "Enable the upstream-compat fx2lafw scan-only driver" OFF)
+```
+
+Modify the compile definition area:
+
+```cmake
+if(DSVIEW_ENABLE_UPSTREAM_FX2LAFW)
+    add_compile_definitions(HAVE_UPSTREAM_FX2LAFW)
+endif()
+```
 
 Modify `PXTOOL/test/CMakeLists.txt` so the executable source list includes:
 
@@ -464,7 +480,7 @@ Expected: `upstream_fx2lafw` passes.
 Run:
 
 ```bash
-git add PXTOOL/test/CMakeLists.txt PXTOOL/test/test_upstream_fx2lafw.cpp libsigrok/hardware/upstream-fx2lafw/fx2lafw.c libsigrok/hardware/upstream-fx2lafw/fx2lafw.h
+git add CMakeLists.txt PXTOOL/test/CMakeLists.txt PXTOOL/test/test_upstream_fx2lafw.cpp libsigrok/hardware/upstream-fx2lafw/fx2lafw.c libsigrok/hardware/upstream-fx2lafw/fx2lafw.h
 git commit -m "feat: add fx2lafw profile contract"
 ```
 
@@ -477,25 +493,10 @@ git commit -m "feat: add fx2lafw profile contract"
 **Interfaces:**
 - Consumes: `SR_PRIV struct sr_dev_driver fx2lafw_driver_info`.
 - Produces:
-  - CMake option `DSVIEW_ENABLE_UPSTREAM_FX2LAFW`
-  - compile definition `HAVE_UPSTREAM_FX2LAFW`
   - optional registration in `sr_driver_list()`
+  - app build source inclusion for `libsigrok/hardware/upstream-fx2lafw/fx2lafw.c`
 
-- [ ] **Step 1: Add disabled-by-default CMake option**
-
-Modify `CMakeLists.txt` near `DSVIEW_ENABLE_UPSTREAM_COMPAT_DEMO`:
-
-```cmake
-option(DSVIEW_ENABLE_UPSTREAM_FX2LAFW "Enable the upstream-compat fx2lafw scan-only driver" OFF)
-```
-
-Modify the compile definition area:
-
-```cmake
-if(DSVIEW_ENABLE_UPSTREAM_FX2LAFW)
-    add_compile_definitions(HAVE_UPSTREAM_FX2LAFW)
-endif()
-```
+- [ ] **Step 1: Add app source inclusion behind the existing gate**
 
 Modify `set(libsigrok_SOURCES ...)` after the upstream-demo block:
 

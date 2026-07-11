@@ -26,6 +26,7 @@ add_executable(DSView-test
     test_logsearch.cpp
     test_theme_qss.cpp
     test_upstream_demo.cpp
+    test_upstream_fx2lafw.cpp
     ../pv/view/channeltint.cpp
     ../pv/dock/logsearch.cpp
     ../../libsigrok/device_source.c
@@ -38,6 +39,12 @@ add_executable(DSView-test
 if(DSVIEW_ENABLE_UPSTREAM_COMPAT_DEMO)
     target_sources(DSView-test PRIVATE
         ../../libsigrok/hardware/upstream-demo/upstream_demo.c
+    )
+endif()
+
+if(DSVIEW_ENABLE_UPSTREAM_FX2LAFW)
+    target_sources(DSView-test PRIVATE
+        ../../libsigrok/hardware/upstream-fx2lafw/fx2lafw.c
     )
 endif()
 
