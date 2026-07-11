@@ -23,6 +23,7 @@
 #include <fstream>
 #include <set>
 #include <string>
+#include <vector>
 
 extern "C" {
 #include "libsigrok-internal.h"
@@ -212,25 +213,34 @@ BOOST_AUTO_TEST_CASE(firmware_manifest_matches_profiles)
     std::ifstream manifest(FX2LAFW_MANIFEST_PATH);
     BOOST_REQUIRE_MESSAGE(manifest.good(), FX2LAFW_MANIFEST_PATH);
 
-    std::set<std::string> manifest_files;
+    std::vector<std::string> manifest_files;
+    std::set<std::string> unique_manifest_files;
     std::string line;
     while (std::getline(manifest, line)) {
         if (line.empty() || line[0] == '#')
             continue;
-        manifest_files.insert(line);
+        manifest_files.push_back(line);
+        BOOST_CHECK_MESSAGE(unique_manifest_files.insert(line).second,
+            "duplicate firmware manifest entry: " << line);
     }
 
-    std::set<std::string> profile_files;
+    std::vector<std::string> profile_files;
+    std::set<std::string> unique_profile_files;
     for (size_t i = 0; i < fx2lafw_profile_count(); i++) {
         const fx2lafw_profile *profile = fx2lafw_profile_get(i);
         BOOST_REQUIRE(profile != nullptr);
         BOOST_REQUIRE(profile->firmware != nullptr);
-        profile_files.insert(profile->firmware);
+        profile_files.push_back(profile->firmware);
+        BOOST_CHECK_MESSAGE(unique_profile_files.insert(profile->firmware).second,
+            "duplicate fx2lafw profile firmware: " << profile->firmware);
     }
 
+    BOOST_CHECK_EQUAL(manifest_files.size(), profile_files.size());
+    BOOST_CHECK_EQUAL(unique_manifest_files.size(), manifest_files.size());
+    BOOST_CHECK_EQUAL(unique_profile_files.size(), profile_files.size());
     BOOST_CHECK_EQUAL_COLLECTIONS(
-        profile_files.begin(), profile_files.end(),
-        manifest_files.begin(), manifest_files.end());
+        unique_profile_files.begin(), unique_profile_files.end(),
+        unique_manifest_files.begin(), unique_manifest_files.end());
 #else
     BOOST_TEST_MESSAGE("upstream fx2lafw is disabled for this build");
 #endif

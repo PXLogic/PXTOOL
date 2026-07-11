@@ -5,6 +5,10 @@ Date: 2026-07-11
 ## Preconditions
 
 - Build with `DSVIEW_ENABLE_UPSTREAM_FX2LAFW=ON`.
+- Configure the active build tree before launching:
+  `cmake . -DENABLE_TESTS=ON -DDSVIEW_ENABLE_UPSTREAM_COMPAT_DEMO=ON -DDSVIEW_ENABLE_UPSTREAM_FX2LAFW=ON`
+- `scripts/macOS/build_and_run.sh` uses the existing CMake cache; run the
+  configure command above first so the fx2lafw gate is enabled.
 - Use firmware-loaded fx2lafw-compatible hardware for open/close validation.
 - For bootloader-state validation, place licensed firmware files under
   `PXTOOL/res/fx2lafw/` before building or launching DSView.
@@ -13,7 +17,7 @@ Date: 2026-07-11
 ## Firmware-Loaded Device
 
 1. Start DSView from the build produced by:
-   `script/macos/build_and_run.sh`
+   `scripts/macOS/build_and_run.sh`
 2. Confirm the fx2lafw-compatible device appears in the device list.
 3. Activate the device.
 4. Confirm open succeeds and the device remains stable.
@@ -22,7 +26,12 @@ Date: 2026-07-11
 
 ## Bootloader-State Device
 
-1. Remove `PXTOOL/res/fx2lafw/<firmware>.fw` and start DSView.
+1. Remove `PXTOOL/res/fx2lafw/<firmware>.fw` and the matching active app
+   bundle firmware file:
+   `build.macOS/PXTOOL.app/Contents/Resources/share/PXTOOL/res/fx2lafw/<firmware>.fw`.
+   Alternatively, clean
+   `build.macOS/PXTOOL.app/Contents/Resources/share/PXTOOL/res/fx2lafw/`
+   before rebuilding or launching.
 2. Confirm scan logs the exact missing firmware path.
 3. Add the licensed matching firmware file under `PXTOOL/res/fx2lafw/`.
 4. Rebuild or ensure the app bundle contains `share/PXTOOL/res/fx2lafw/<firmware>.fw`.
