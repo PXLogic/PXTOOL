@@ -53,11 +53,11 @@ Scope intentionally deferred:
 - asynchronous acquisition transfers
 - conversion into DSView's live logic data path
 
-Follow-up direction: keep the next slice small by adding open/close and firmware handling first, then add acquisition only after that lifecycle is covered by tests and manual hardware checks.
+Follow-up direction: the open/close and firmware lifecycle slice is now present. Keep the next implementation slice focused on acquisition only after hardware smoke tests confirm the lifecycle behavior.
 
-## Next Slice: fx2lafw Open/Firmware Lifecycle
+## Selected Slice: fx2lafw Open/Firmware Lifecycle
 
-Status: planned for implementation behind `DSVIEW_ENABLE_UPSTREAM_FX2LAFW`.
+Status: implemented behind `DSVIEW_ENABLE_UPSTREAM_FX2LAFW`.
 
 Scope:
 
