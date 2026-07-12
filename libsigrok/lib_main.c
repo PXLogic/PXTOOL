@@ -74,7 +74,7 @@ struct sr_lib_context
 static void hotplug_event_listen_callback(struct libusb_context *ctx, struct libusb_device *dev, int event);
 static gpointer usb_hotplug_process_proc(gpointer data);
 static void destroy_device_instance(struct sr_dev_inst *dev);
-static void close_device_instance(struct sr_dev_inst *dev);
+static int close_device_instance(struct sr_dev_inst *dev);
 static int open_device_instance(struct sr_dev_inst *dev);
 static gpointer collect_run_proc(gpointer data);
 static void post_event_async(int event);
@@ -389,7 +389,11 @@ SR_API int ds_active_device(ds_device_handle handle)
 		{
 			sr_info("Close the previous device, name:\"%s\"", 
 					lib_ctx.actived_device_instance->name);
-			close_device_instance(lib_ctx.actived_device_instance);
+			ret = close_device_instance(lib_ctx.actived_device_instance);
+			if (ret != SR_OK) {
+				pthread_mutex_unlock(&lib_ctx.mutext);
+				return ret;
+			}
 			old_dev = lib_ctx.actived_device_instance;
 		}
 	}
@@ -899,6 +903,8 @@ SR_API int ds_is_collecting()
 
 SR_API int ds_release_actived_device()
 {
+	int ret;
+
 	if (lib_ctx.actived_device_instance == NULL){
 		return SR_ERR_CALL_STATUS;
 	}
@@ -919,7 +925,9 @@ SR_API int ds_release_actived_device()
 			lib_ctx.actived_device_instance->name);
 	}	
 
-	close_device_instance(lib_ctx.actived_device_instance);
+	ret = close_device_instance(lib_ctx.actived_device_instance);
+	if (ret != SR_OK)
+		return ret;
 
 	// Destroy current session.
 	sr_session_destroy();
@@ -1225,7 +1233,10 @@ static int update_device_handle(struct libusb_device *old_dev, struct libusb_dev
 			if (dev == lib_ctx.actived_device_instance)
 			{
 				sr_info("To release the old device's resource.");
-				close_device_instance(dev);
+				if (close_device_instance(dev) != SR_OK) {
+					pthread_mutex_unlock(&lib_ctx.mutext);
+					return SR_ERR;
+				}
 			}
 
 			bus = libusb_get_bus_number(new_dev);
@@ -1587,18 +1598,20 @@ static void destroy_device_instance(struct sr_dev_inst *dev)
 		driver_ins->dev_close(dev);
 }
 
-static void close_device_instance(struct sr_dev_inst *dev)
+static int close_device_instance(struct sr_dev_inst *dev)
 {
 	if (dev == NULL || dev->driver == NULL)
 	{
 		sr_err("close_device_instance() argument error.");
-		return;
+		return SR_ERR_ARG;
 	}
 	struct sr_dev_driver *driver_ins;
 	driver_ins = dev->driver;
 
 	if (driver_ins->dev_close)
-		driver_ins->dev_close(dev);
+		return driver_ins->dev_close(dev);
+
+	return SR_OK;
 }
 
 static int open_device_instance(struct sr_dev_inst *dev)
