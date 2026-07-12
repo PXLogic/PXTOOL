@@ -835,6 +835,7 @@ static int hw_dev_open(struct sr_dev_inst *sdi)
 
 static int hw_dev_acquisition_stop(const struct sr_dev_inst *sdi,
 	void *cb_data);
+static int fx2lafw_drain_transfers(struct sr_dev_inst *sdi);
 
 static int hw_dev_close(struct sr_dev_inst *sdi)
 {
@@ -842,8 +843,11 @@ static int hw_dev_close(struct sr_dev_inst *sdi)
 
 	if (!sdi || !sdi->conn)
 		return SR_ERR_ARG;
-	if (sdi->priv)
+	if (sdi->priv) {
 		hw_dev_acquisition_stop(sdi, sdi);
+		if (fx2lafw_drain_transfers(sdi) != SR_OK)
+			return SR_ERR;
+	}
 
 	usb = sdi->conn;
 	if (!usb->devhdl) {
@@ -885,6 +889,16 @@ static void fx2lafw_remove_event_source(struct fx2lafw_context *devc)
 	devc->event_source_added = FALSE;
 }
 
+static void fx2lafw_free_transfer_array(struct fx2lafw_context *devc)
+{
+	if (!devc || devc->submitted_transfers != 0)
+		return;
+
+	devc->num_transfers = 0;
+	g_free(devc->transfers);
+	devc->transfers = NULL;
+}
+
 static void fx2lafw_finish_acquisition(struct sr_dev_inst *sdi)
 {
 	struct fx2lafw_context *devc;
@@ -896,9 +910,7 @@ static void fx2lafw_finish_acquisition(struct sr_dev_inst *sdi)
 	fx2lafw_remove_event_source(devc);
 	fx2lafw_send_end_once(sdi);
 	devc->acquisition_running = FALSE;
-	devc->num_transfers = 0;
-	g_free(devc->transfers);
-	devc->transfers = NULL;
+	fx2lafw_free_transfer_array(devc);
 }
 
 static void fx2lafw_free_transfer(struct libusb_transfer *transfer)
@@ -1054,6 +1066,43 @@ static int fx2lafw_handle_events(int fd, int revents,
 	return TRUE;
 }
 
+static int fx2lafw_drain_transfers(struct sr_dev_inst *sdi)
+{
+	struct fx2lafw_context *devc;
+	struct fx2lafw_driver_context *drvc;
+	struct timeval tv;
+	unsigned int i;
+	int ret;
+
+	if (!sdi || !sdi->priv)
+		return SR_ERR_ARG;
+
+	devc = sdi->priv;
+	if (devc->submitted_transfers == 0)
+		return SR_OK;
+
+	drvc = fx2lafw_driver_info.priv;
+	if (!drvc || !drvc->libusb_ctx)
+		return SR_ERR;
+
+	for (i = 0; i < 10 && devc->submitted_transfers > 0; i++) {
+		tv.tv_sec = 0;
+		tv.tv_usec = FX2LAFW_USB_TIMEOUT_MS * 1000;
+		ret = libusb_handle_events_timeout(drvc->libusb_ctx, &tv);
+		if (ret < 0) {
+			sr_err("Unable to drain fx2lafw transfers: %s.",
+				libusb_error_name(ret));
+			return SR_ERR;
+		}
+	}
+
+	if (devc->submitted_transfers == 0)
+		return SR_OK;
+
+	sr_err("Timed out draining fx2lafw transfers.");
+	return SR_ERR;
+}
+
 static int fx2lafw_start_transfers(struct sr_dev_inst *sdi)
 {
 	struct fx2lafw_context *devc;
@@ -1070,6 +1119,10 @@ static int fx2lafw_start_transfers(struct sr_dev_inst *sdi)
 	usb = sdi->conn;
 	if (!usb->devhdl)
 		return SR_ERR_DEVICE_CLOSED;
+	if (devc->submitted_transfers != 0)
+		return SR_ERR;
+
+	fx2lafw_free_transfer_array(devc);
 
 	size = fx2lafw_transfer_buffer_size(devc->samplerate);
 	num_transfers = fx2lafw_transfer_count(devc->samplerate);
@@ -1091,6 +1144,7 @@ static int fx2lafw_start_transfers(struct sr_dev_inst *sdi)
 		buffer = g_try_malloc(size);
 		if (!buffer) {
 			fx2lafw_abort_acquisition(devc);
+			fx2lafw_free_transfer_array(devc);
 			return SR_ERR_MALLOC;
 		}
 
@@ -1098,6 +1152,7 @@ static int fx2lafw_start_transfers(struct sr_dev_inst *sdi)
 		if (!transfer) {
 			g_free(buffer);
 			fx2lafw_abort_acquisition(devc);
+			fx2lafw_free_transfer_array(devc);
 			return SR_ERR_MALLOC;
 		}
 
@@ -1111,6 +1166,7 @@ static int fx2lafw_start_transfers(struct sr_dev_inst *sdi)
 			g_free(buffer);
 			libusb_free_transfer(transfer);
 			fx2lafw_abort_acquisition(devc);
+			fx2lafw_free_transfer_array(devc);
 			return SR_ERR;
 		}
 
@@ -1156,19 +1212,24 @@ static int hw_dev_acquisition_start(struct sr_dev_inst *sdi, void *cb_data)
 
 	ret = fx2lafw_start_transfers(sdi);
 	if (ret != SR_OK) {
-		fx2lafw_remove_event_source(devc);
+		if (devc->submitted_transfers == 0)
+			fx2lafw_remove_event_source(devc);
 		return ret;
 	}
 
 	ret = std_session_send_df_header(sdi, LOG_PREFIX);
 	if (ret != SR_OK) {
 		fx2lafw_abort_acquisition(devc);
+		if (devc->submitted_transfers == 0)
+			fx2lafw_remove_event_source(devc);
 		return ret;
 	}
 
 	ret = command_start_acquisition(sdi);
 	if (ret != SR_OK) {
 		fx2lafw_abort_acquisition(devc);
+		if (devc->submitted_transfers == 0)
+			fx2lafw_remove_event_source(devc);
 		return ret;
 	}
 
@@ -1187,6 +1248,7 @@ static int hw_dev_acquisition_stop(const struct sr_dev_inst *sdi, void *cb_data)
 
 	devc = sdi->priv;
 	if (!devc->acquisition_running && devc->submitted_transfers == 0) {
+		fx2lafw_free_transfer_array(devc);
 		fx2lafw_remove_event_source(devc);
 		return SR_OK;
 	}
