@@ -845,8 +845,10 @@ static int hw_dev_close(struct sr_dev_inst *sdi)
 		return SR_ERR_ARG;
 	if (sdi->priv) {
 		hw_dev_acquisition_stop(sdi, sdi);
-		if (fx2lafw_drain_transfers(sdi) != SR_OK)
+		if (fx2lafw_drain_transfers(sdi) != SR_OK) {
+			sr_err("Refusing to close fx2lafw device with live transfers.");
 			return SR_ERR;
+		}
 	}
 
 	usb = sdi->conn;
@@ -1082,8 +1084,10 @@ static int fx2lafw_drain_transfers(struct sr_dev_inst *sdi)
 		return SR_OK;
 
 	drvc = fx2lafw_driver_info.priv;
-	if (!drvc || !drvc->libusb_ctx)
-		return SR_ERR;
+	if (!drvc || !drvc->libusb_ctx) {
+		sr_err("Unable to drain fx2lafw transfers without a libusb context.");
+		goto undrained;
+	}
 
 	for (i = 0; i < 10 && devc->submitted_transfers > 0; i++) {
 		tv.tv_sec = 0;
@@ -1092,7 +1096,7 @@ static int fx2lafw_drain_transfers(struct sr_dev_inst *sdi)
 		if (ret < 0) {
 			sr_err("Unable to drain fx2lafw transfers: %s.",
 				libusb_error_name(ret));
-			return SR_ERR;
+			goto undrained;
 		}
 	}
 
@@ -1100,7 +1104,33 @@ static int fx2lafw_drain_transfers(struct sr_dev_inst *sdi)
 		return SR_OK;
 
 	sr_err("Timed out draining fx2lafw transfers.");
+
+undrained:
+	/* Do not leave a session-owned callback pointing at live transfers. */
+	fx2lafw_remove_event_source(devc);
 	return SR_ERR;
+}
+
+static int fx2lafw_cleanup_start_failure(struct sr_dev_inst *sdi)
+{
+	struct fx2lafw_context *devc;
+
+	if (!sdi || !sdi->priv)
+		return SR_ERR_ARG;
+
+	devc = sdi->priv;
+	fx2lafw_abort_acquisition(devc);
+	if (devc->submitted_transfers != 0 &&
+			fx2lafw_drain_transfers(sdi) != SR_OK) {
+		sr_err("Unable to clean up failed fx2lafw acquisition start.");
+		return SR_ERR;
+	}
+
+	/* No callback runs when submission failed before the first transfer. */
+	if (devc->submitted_transfers == 0)
+		fx2lafw_finish_acquisition(sdi);
+
+	return SR_OK;
 }
 
 static int fx2lafw_start_transfers(struct sr_dev_inst *sdi)
@@ -1212,24 +1242,22 @@ static int hw_dev_acquisition_start(struct sr_dev_inst *sdi, void *cb_data)
 
 	ret = fx2lafw_start_transfers(sdi);
 	if (ret != SR_OK) {
-		if (devc->submitted_transfers == 0)
-			fx2lafw_remove_event_source(devc);
+		if (fx2lafw_cleanup_start_failure(sdi) != SR_OK)
+			return SR_ERR;
 		return ret;
 	}
 
 	ret = std_session_send_df_header(sdi, LOG_PREFIX);
 	if (ret != SR_OK) {
-		fx2lafw_abort_acquisition(devc);
-		if (devc->submitted_transfers == 0)
-			fx2lafw_remove_event_source(devc);
+		if (fx2lafw_cleanup_start_failure(sdi) != SR_OK)
+			return SR_ERR;
 		return ret;
 	}
 
 	ret = command_start_acquisition(sdi);
 	if (ret != SR_OK) {
-		fx2lafw_abort_acquisition(devc);
-		if (devc->submitted_transfers == 0)
-			fx2lafw_remove_event_source(devc);
+		if (fx2lafw_cleanup_start_failure(sdi) != SR_OK)
+			return SR_ERR;
 		return ret;
 	}
 
