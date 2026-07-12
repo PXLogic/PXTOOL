@@ -204,7 +204,7 @@ BOOST_AUTO_TEST_CASE(driver_exposes_open_lifecycle)
 #endif
 }
 
-BOOST_AUTO_TEST_CASE(close_without_open_returns_error)
+BOOST_AUTO_TEST_CASE(close_without_open_is_idempotent)
 {
 #ifdef HAVE_UPSTREAM_FX2LAFW
     const fx2lafw_profile *profile = fx2lafw_profile_find(
@@ -217,9 +217,9 @@ BOOST_AUTO_TEST_CASE(close_without_open_returns_error)
     sdi->driver = &fx2lafw_driver_info;
     sdi->conn = sr_usb_dev_inst_new(1, 2);
 
-    BOOST_REQUIRE(fx2lafw_driver_info.dev_close != nullptr);
-    BOOST_CHECK_EQUAL(fx2lafw_driver_info.dev_close(sdi), SR_ERR_BUG);
-    BOOST_CHECK_EQUAL(sdi->status, SR_ST_INACTIVE);
+	BOOST_REQUIRE(fx2lafw_driver_info.dev_close != nullptr);
+	BOOST_CHECK_EQUAL(fx2lafw_driver_info.dev_close(sdi), SR_OK);
+	BOOST_CHECK_EQUAL(sdi->status, SR_ST_INACTIVE);
     sr_dev_inst_free(sdi);
 #else
     BOOST_TEST_MESSAGE("upstream fx2lafw is disabled for this build");

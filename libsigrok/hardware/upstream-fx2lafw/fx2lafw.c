@@ -854,7 +854,7 @@ static int hw_dev_close(struct sr_dev_inst *sdi)
 	usb = sdi->conn;
 	if (!usb->devhdl) {
 		sdi->status = SR_ST_INACTIVE;
-		return SR_ERR_BUG;
+		return SR_OK;
 	}
 
 	close_usb_handle(sdi);
