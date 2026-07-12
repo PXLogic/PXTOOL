@@ -162,6 +162,129 @@ SR_PRIV int fx2lafw_profile_channel_count(const struct fx2lafw_profile *profile)
 	return (profile->dev_caps & FX2LAFW_DEV_CAPS_16BIT) ? 16 : 8;
 }
 
+SR_PRIV uint16_t fx2lafw_enabled_channel_mask(const struct sr_dev_inst *sdi)
+{
+	GSList *l;
+	uint16_t mask;
+
+	if (!sdi)
+		return 0;
+
+	mask = 0;
+	for (l = sdi->channels; l; l = l->next) {
+		struct sr_channel *channel = l->data;
+		if (channel && channel->enabled && channel->index < 16)
+			mask |= (uint16_t)(1U << channel->index);
+	}
+
+	return mask;
+}
+
+SR_PRIV gboolean fx2lafw_sample_wide_for_channels(const struct sr_dev_inst *sdi)
+{
+	return (fx2lafw_enabled_channel_mask(sdi) & 0xff00) != 0;
+}
+
+SR_PRIV int fx2lafw_build_start_command(uint64_t samplerate,
+	gboolean sample_wide, struct fx2lafw_start_command *command)
+{
+	uint64_t delay;
+	gboolean delay_valid;
+
+	if (!command)
+		return SR_ERR_ARG;
+	memset(command, 0, sizeof(*command));
+
+	if (samplerate == 0)
+		return SR_ERR;
+	if (sample_wide && samplerate > FX2LAFW_MAX_16BIT_SAMPLE_RATE)
+		return SR_ERR;
+
+	delay = 0;
+	delay_valid = FALSE;
+	if (SR_MHZ(48) % samplerate == 0) {
+		delay = SR_MHZ(48) / samplerate - 1;
+		if (delay <= FX2LAFW_MAX_SAMPLE_DELAY) {
+			command->flags = FX2LAFW_CMD_START_FLAGS_CLK_48MHZ;
+			delay_valid = TRUE;
+		}
+	}
+
+	if (!delay_valid && SR_MHZ(30) % samplerate == 0) {
+		delay = SR_MHZ(30) / samplerate - 1;
+		command->flags = FX2LAFW_CMD_START_FLAGS_CLK_30MHZ;
+		delay_valid = TRUE;
+	}
+
+	if (!delay_valid || delay > FX2LAFW_MAX_SAMPLE_DELAY)
+		return SR_ERR;
+
+	command->sample_delay_h = (delay >> 8) & 0xff;
+	command->sample_delay_l = delay & 0xff;
+	command->flags |= sample_wide ?
+		FX2LAFW_CMD_START_FLAGS_SAMPLE_16BIT :
+		FX2LAFW_CMD_START_FLAGS_SAMPLE_8BIT;
+
+	return SR_OK;
+}
+
+static unsigned int fx2lafw_bytes_per_ms(uint64_t samplerate)
+{
+	if (samplerate == 0)
+		return 0;
+
+	return samplerate / 1000;
+}
+
+SR_PRIV size_t fx2lafw_transfer_buffer_size(uint64_t samplerate)
+{
+	size_t size;
+	unsigned int bytes_per_ms;
+
+	bytes_per_ms = fx2lafw_bytes_per_ms(samplerate);
+	if (bytes_per_ms == 0)
+		return 0;
+
+	size = 10 * bytes_per_ms;
+	return (size + 511) & ~((size_t)511);
+}
+
+SR_PRIV unsigned int fx2lafw_transfer_count(uint64_t samplerate)
+{
+	size_t buffer_size;
+	unsigned int bytes_per_ms;
+	unsigned int count;
+
+	bytes_per_ms = fx2lafw_bytes_per_ms(samplerate);
+	buffer_size = fx2lafw_transfer_buffer_size(samplerate);
+	if (bytes_per_ms == 0 || buffer_size == 0)
+		return 0;
+
+	count = (500 * bytes_per_ms) / buffer_size;
+	if (count == 0)
+		count = 1;
+	if (count > FX2LAFW_NUM_SIMUL_TRANSFERS)
+		count = FX2LAFW_NUM_SIMUL_TRANSFERS;
+
+	return count;
+}
+
+SR_PRIV unsigned int fx2lafw_transfer_timeout_ms(uint64_t samplerate)
+{
+	size_t total_size;
+	unsigned int bytes_per_ms;
+	unsigned int timeout;
+
+	bytes_per_ms = fx2lafw_bytes_per_ms(samplerate);
+	if (bytes_per_ms == 0)
+		return 0;
+
+	total_size = fx2lafw_transfer_buffer_size(samplerate) *
+		fx2lafw_transfer_count(samplerate);
+	timeout = total_size / bytes_per_ms;
+	return timeout + timeout / 4;
+}
+
 SR_PRIV int fx2lafw_firmware_path(const struct fx2lafw_profile *profile,
 	char **path)
 {
@@ -233,7 +356,7 @@ static int hw_cleanup(void)
 	return SR_OK;
 }
 
-static struct sr_dev_inst *create_device_from_profile(
+SR_PRIV struct sr_dev_inst *fx2lafw_dev_inst_new_for_profile(
 	const struct fx2lafw_profile *profile, uint8_t bus, uint8_t address,
 	int status, gboolean firmware_loaded, gint64 fw_updated)
 {
@@ -384,7 +507,7 @@ static GSList *hw_scan(GSList *options)
 			}
 		}
 
-		struct sr_dev_inst *sdi = create_device_from_profile(profile,
+		struct sr_dev_inst *sdi = fx2lafw_dev_inst_new_for_profile(profile,
 			libusb_get_bus_number(devlist[i]), address, status, has_firmware,
 			fw_updated);
 		if (sdi)

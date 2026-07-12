@@ -255,4 +255,85 @@ BOOST_AUTO_TEST_CASE(firmware_manifest_documents_all_profiles)
 #endif
 }
 
+BOOST_AUTO_TEST_CASE(acquisition_helpers_choose_sample_width_from_enabled_channels)
+{
+#ifdef HAVE_UPSTREAM_FX2LAFW
+    const fx2lafw_profile *profile = fx2lafw_profile_find(
+        0x1d50, 0x608d, "sigrok", "fx2lafw");
+    BOOST_REQUIRE(profile != nullptr);
+
+    sr_dev_inst *sdi = fx2lafw_dev_inst_new_for_profile(
+        profile, 1, 2, SR_ST_ACTIVE, TRUE, 0);
+    BOOST_REQUIRE(sdi != nullptr);
+
+    BOOST_CHECK_EQUAL(fx2lafw_enabled_channel_mask(sdi), 0xffff);
+    BOOST_CHECK_EQUAL(fx2lafw_sample_wide_for_channels(sdi), TRUE);
+
+    for (GSList *l = sdi->channels; l; l = l->next) {
+        struct sr_channel *channel = static_cast<struct sr_channel *>(l->data);
+        if (channel->index > 7)
+            channel->enabled = FALSE;
+    }
+
+    BOOST_CHECK_EQUAL(fx2lafw_enabled_channel_mask(sdi), 0x00ff);
+    BOOST_CHECK_EQUAL(fx2lafw_sample_wide_for_channels(sdi), FALSE);
+
+    sr_dev_inst_free(sdi);
+#else
+    BOOST_TEST_MESSAGE("upstream fx2lafw is disabled for this build");
+#endif
+}
+
+BOOST_AUTO_TEST_CASE(acquisition_start_command_uses_upstream_clock_rules)
+{
+#ifdef HAVE_UPSTREAM_FX2LAFW
+    fx2lafw_start_command command = {};
+
+    BOOST_REQUIRE_EQUAL(fx2lafw_build_start_command(SR_MHZ(24), FALSE, &command), SR_OK);
+    BOOST_CHECK_EQUAL(command.flags, FX2LAFW_CMD_START_FLAGS_CLK_48MHZ |
+        FX2LAFW_CMD_START_FLAGS_SAMPLE_8BIT);
+    BOOST_CHECK_EQUAL(command.sample_delay_h, 0);
+    BOOST_CHECK_EQUAL(command.sample_delay_l, 1);
+
+    command = {};
+    BOOST_REQUIRE_EQUAL(fx2lafw_build_start_command(SR_MHZ(48), FALSE, &command), SR_OK);
+    BOOST_CHECK_EQUAL(command.flags, FX2LAFW_CMD_START_FLAGS_CLK_48MHZ |
+        FX2LAFW_CMD_START_FLAGS_SAMPLE_8BIT);
+    BOOST_CHECK_EQUAL(command.sample_delay_h, 0);
+    BOOST_CHECK_EQUAL(command.sample_delay_l, 0);
+
+    command = {};
+    BOOST_REQUIRE_EQUAL(fx2lafw_build_start_command(SR_MHZ(12), TRUE, &command), SR_OK);
+    BOOST_CHECK_EQUAL(command.flags, FX2LAFW_CMD_START_FLAGS_CLK_48MHZ |
+        FX2LAFW_CMD_START_FLAGS_SAMPLE_16BIT);
+    BOOST_CHECK_EQUAL(command.sample_delay_h, 0);
+    BOOST_CHECK_EQUAL(command.sample_delay_l, 3);
+
+    BOOST_CHECK_EQUAL(fx2lafw_build_start_command(SR_MHZ(16), TRUE, &command), SR_ERR);
+    BOOST_CHECK_EQUAL(fx2lafw_build_start_command(1234567, FALSE, &command), SR_ERR);
+    BOOST_CHECK_EQUAL(fx2lafw_build_start_command(SR_MHZ(1), FALSE, nullptr), SR_ERR_ARG);
+#else
+    BOOST_TEST_MESSAGE("upstream fx2lafw is disabled for this build");
+#endif
+}
+
+BOOST_AUTO_TEST_CASE(acquisition_transfer_sizing_matches_upstream_rules)
+{
+#ifdef HAVE_UPSTREAM_FX2LAFW
+    BOOST_CHECK_EQUAL(fx2lafw_transfer_buffer_size(SR_MHZ(1)), 10240U);
+    BOOST_CHECK_EQUAL(fx2lafw_transfer_count(SR_MHZ(1)), 32U);
+    BOOST_CHECK_EQUAL(fx2lafw_transfer_timeout_ms(SR_MHZ(1)), 408U);
+
+    BOOST_CHECK_EQUAL(fx2lafw_transfer_buffer_size(SR_KHZ(20)), 512U);
+    BOOST_CHECK_EQUAL(fx2lafw_transfer_count(SR_KHZ(20)), 19U);
+    BOOST_CHECK_EQUAL(fx2lafw_transfer_timeout_ms(SR_KHZ(20)), 607U);
+
+    BOOST_CHECK_EQUAL(fx2lafw_transfer_buffer_size(0), 0U);
+    BOOST_CHECK_EQUAL(fx2lafw_transfer_count(0), 0U);
+    BOOST_CHECK_EQUAL(fx2lafw_transfer_timeout_ms(0), 0U);
+#else
+    BOOST_TEST_MESSAGE("upstream fx2lafw is disabled for this build");
+#endif
+}
+
 BOOST_AUTO_TEST_SUITE_END()
