@@ -376,4 +376,55 @@ BOOST_AUTO_TEST_CASE(logic_packet_adapter_forwards_cross_data)
 #endif
 }
 
+BOOST_AUTO_TEST_CASE(driver_exposes_acquisition_lifecycle)
+{
+#ifdef HAVE_UPSTREAM_FX2LAFW
+    BOOST_REQUIRE(fx2lafw_driver_info.dev_acquisition_start != nullptr);
+    BOOST_REQUIRE(fx2lafw_driver_info.dev_acquisition_stop != nullptr);
+#else
+    BOOST_TEST_MESSAGE("upstream fx2lafw is disabled for this build");
+#endif
+}
+
+BOOST_AUTO_TEST_CASE(acquisition_start_requires_active_open_device)
+{
+#ifdef HAVE_UPSTREAM_FX2LAFW
+    const fx2lafw_profile *profile = fx2lafw_profile_find(
+        0x0925, 0x3881, "", "");
+    BOOST_REQUIRE(profile != nullptr);
+
+    sr_dev_inst *sdi = fx2lafw_dev_inst_new_for_profile(
+        profile, 1, 2, SR_ST_INACTIVE, TRUE, 0);
+    BOOST_REQUIRE(sdi != nullptr);
+
+    BOOST_REQUIRE(fx2lafw_driver_info.dev_acquisition_start != nullptr);
+    BOOST_CHECK_EQUAL(fx2lafw_driver_info.dev_acquisition_start(sdi, sdi),
+        SR_ERR_DEVICE_CLOSED);
+
+    sr_dev_inst_free(sdi);
+#else
+    BOOST_TEST_MESSAGE("upstream fx2lafw is disabled for this build");
+#endif
+}
+
+BOOST_AUTO_TEST_CASE(acquisition_stop_without_running_is_safe)
+{
+#ifdef HAVE_UPSTREAM_FX2LAFW
+    const fx2lafw_profile *profile = fx2lafw_profile_find(
+        0x0925, 0x3881, "", "");
+    BOOST_REQUIRE(profile != nullptr);
+
+    sr_dev_inst *sdi = fx2lafw_dev_inst_new_for_profile(
+        profile, 1, 2, SR_ST_ACTIVE, TRUE, 0);
+    BOOST_REQUIRE(sdi != nullptr);
+
+    BOOST_REQUIRE(fx2lafw_driver_info.dev_acquisition_stop != nullptr);
+    BOOST_CHECK_EQUAL(fx2lafw_driver_info.dev_acquisition_stop(sdi, sdi), SR_OK);
+
+    sr_dev_inst_free(sdi);
+#else
+    BOOST_TEST_MESSAGE("upstream fx2lafw is disabled for this build");
+#endif
+}
+
 BOOST_AUTO_TEST_SUITE_END()

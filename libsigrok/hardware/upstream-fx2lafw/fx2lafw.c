@@ -36,6 +36,17 @@ struct fx2lafw_context {
 	uint64_t limit_samples;
 	gint64 fw_updated;
 	gboolean firmware_loaded;
+	gboolean acquisition_running;
+	gboolean acquisition_aborted;
+	gboolean sample_wide;
+	uint64_t sent_samples;
+	unsigned int submitted_transfers;
+	unsigned int num_transfers;
+	unsigned int empty_transfer_count;
+	struct libusb_transfer **transfers;
+	gintptr event_source;
+	gboolean event_source_added;
+	gboolean end_sent;
 };
 
 struct fx2lafw_driver_context {
@@ -70,6 +81,44 @@ static int command_get_fw_version(libusb_device_handle *devhdl,
 	}
 	if (ret != (int)sizeof(*version)) {
 		sr_err("Short fx2lafw firmware version response: %d bytes.", ret);
+		return SR_ERR;
+	}
+
+	return SR_OK;
+}
+
+static int command_start_acquisition(const struct sr_dev_inst *sdi)
+{
+	struct fx2lafw_context *devc;
+	struct sr_usb_dev_inst *usb;
+	struct fx2lafw_start_command command;
+	int ret;
+
+	if (!sdi || !sdi->priv || !sdi->conn)
+		return SR_ERR_ARG;
+
+	devc = sdi->priv;
+	usb = sdi->conn;
+	if (!usb->devhdl)
+		return SR_ERR_DEVICE_CLOSED;
+
+	ret = fx2lafw_build_start_command(devc->samplerate,
+		devc->sample_wide, &command);
+	if (ret != SR_OK)
+		return ret;
+
+	ret = libusb_control_transfer(usb->devhdl,
+		LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_ENDPOINT_OUT,
+		FX2LAFW_CMD_START, 0x0000, 0x0000,
+		(unsigned char *)&command, sizeof(command),
+		FX2LAFW_USB_TIMEOUT_MS);
+	if (ret < 0) {
+		sr_err("Unable to send fx2lafw start command: %s.",
+			libusb_error_name(ret));
+		return SR_ERR;
+	}
+	if (ret != (int)sizeof(command)) {
+		sr_err("Short fx2lafw start command write: %d bytes.", ret);
 		return SR_ERR;
 	}
 
@@ -402,6 +451,7 @@ SR_PRIV struct sr_dev_inst *fx2lafw_dev_inst_new_for_profile(
 	devc->limit_samples = 0;
 	devc->firmware_loaded = firmware_loaded;
 	devc->fw_updated = fw_updated;
+	devc->event_source = -2;
 	sdi->priv = devc;
 	sdi->driver = &fx2lafw_driver_info;
 	sdi->dev_type = DEV_TYPE_USB;
@@ -801,6 +851,39 @@ static int hw_dev_close(struct sr_dev_inst *sdi)
 	return SR_OK;
 }
 
+static int hw_dev_acquisition_start(struct sr_dev_inst *sdi, void *cb_data)
+{
+	struct fx2lafw_context *devc;
+
+	(void)cb_data;
+
+	if (!sdi || !sdi->priv || !sdi->conn)
+		return SR_ERR_ARG;
+	if (sdi->status != SR_ST_ACTIVE) {
+		ds_set_last_error(SR_ERR_DEVICE_CLOSED);
+		return SR_ERR_DEVICE_CLOSED;
+	}
+
+	devc = sdi->priv;
+	devc->sample_wide = fx2lafw_sample_wide_for_channels(sdi);
+	devc->sent_samples = 0;
+	devc->empty_transfer_count = 0;
+	devc->acquisition_aborted = FALSE;
+	devc->end_sent = FALSE;
+
+	return command_start_acquisition(sdi);
+}
+
+static int hw_dev_acquisition_stop(const struct sr_dev_inst *sdi, void *cb_data)
+{
+	(void)cb_data;
+
+	if (!sdi || !sdi->priv)
+		return SR_ERR_ARG;
+
+	return SR_OK;
+}
+
 SR_PRIV struct sr_dev_driver fx2lafw_driver_info = {
 	.name = "fx2lafw",
 	.longname = "fx2lafw (upstream compat lifecycle)",
@@ -811,6 +894,8 @@ SR_PRIV struct sr_dev_driver fx2lafw_driver_info = {
 	.scan = hw_scan,
 	.dev_open = hw_dev_open,
 	.dev_close = hw_dev_close,
+	.dev_acquisition_start = hw_dev_acquisition_start,
+	.dev_acquisition_stop = hw_dev_acquisition_stop,
 	.config_get = config_get,
 	.config_set = config_set,
 	.config_list = config_list,
