@@ -82,6 +82,8 @@ SR_PRIV int fx2lafw_build_start_command(uint64_t samplerate,
 SR_PRIV size_t fx2lafw_transfer_buffer_size(uint64_t samplerate);
 SR_PRIV unsigned int fx2lafw_transfer_count(uint64_t samplerate);
 SR_PRIV unsigned int fx2lafw_transfer_timeout_ms(uint64_t samplerate);
+SR_PRIV int fx2lafw_send_logic_packet(const struct sr_dev_inst *sdi,
+	const uint8_t *data, size_t length, size_t unitsize);
 extern SR_PRIV struct sr_dev_driver fx2lafw_driver_info;
 
 #endif

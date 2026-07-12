@@ -26,14 +26,6 @@ extern "C" {
 extern SR_PRIV struct sr_dev_driver upstream_demo_driver_info;
 }
 
-#ifdef HAVE_UPSTREAM_COMPAT_DEMO
-extern "C" int ds_data_forward(const struct sr_dev_inst *,
-    const struct sr_datafeed_packet *)
-{
-    return SR_OK;
-}
-#endif
-
 BOOST_AUTO_TEST_SUITE(upstream_demo)
 
 BOOST_AUTO_TEST_CASE(channels_default_enabled_and_support_probe_enable_config)

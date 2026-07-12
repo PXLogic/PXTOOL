@@ -285,6 +285,30 @@ SR_PRIV unsigned int fx2lafw_transfer_timeout_ms(uint64_t samplerate)
 	return timeout + timeout / 4;
 }
 
+SR_PRIV int fx2lafw_send_logic_packet(const struct sr_dev_inst *sdi,
+	const uint8_t *data, size_t length, size_t unitsize)
+{
+	struct sr_datafeed_logic logic;
+	struct sr_datafeed_packet packet;
+
+	if (!sdi || !data || length == 0 || unitsize == 0)
+		return SR_ERR_ARG;
+
+	memset(&logic, 0, sizeof(logic));
+	memset(&packet, 0, sizeof(packet));
+
+	logic.length = length;
+	logic.format = LA_CROSS_DATA;
+	logic.unitsize = unitsize;
+	logic.data = (void *)data;
+
+	packet.type = SR_DF_LOGIC;
+	packet.status = SR_PKT_OK;
+	packet.payload = &logic;
+
+	return ds_data_forward(sdi, &packet);
+}
+
 SR_PRIV int fx2lafw_firmware_path(const struct fx2lafw_profile *profile,
 	char **path)
 {

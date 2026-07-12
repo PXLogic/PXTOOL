@@ -25,6 +25,8 @@
 #include <string>
 #include <vector>
 
+#include "test_datafeed_stub.h"
+
 extern "C" {
 #include "libsigrok-internal.h"
 #ifdef HAVE_UPSTREAM_FX2LAFW
@@ -331,6 +333,44 @@ BOOST_AUTO_TEST_CASE(acquisition_transfer_sizing_matches_upstream_rules)
     BOOST_CHECK_EQUAL(fx2lafw_transfer_buffer_size(0), 0U);
     BOOST_CHECK_EQUAL(fx2lafw_transfer_count(0), 0U);
     BOOST_CHECK_EQUAL(fx2lafw_transfer_timeout_ms(0), 0U);
+#else
+    BOOST_TEST_MESSAGE("upstream fx2lafw is disabled for this build");
+#endif
+}
+
+BOOST_AUTO_TEST_CASE(logic_packet_adapter_forwards_cross_data)
+{
+#ifdef HAVE_UPSTREAM_FX2LAFW
+    const fx2lafw_profile *profile = fx2lafw_profile_find(
+        0x0925, 0x3881, "", "");
+    BOOST_REQUIRE(profile != nullptr);
+
+    sr_dev_inst *sdi = fx2lafw_dev_inst_new_for_profile(
+        profile, 1, 2, SR_ST_ACTIVE, TRUE, 0);
+    BOOST_REQUIRE(sdi != nullptr);
+
+    uint8_t data[] = {0x12, 0x34, 0x56, 0x78};
+    test_datafeed_reset();
+    BOOST_REQUIRE_EQUAL(fx2lafw_send_logic_packet(sdi, data, sizeof(data), 1), SR_OK);
+    const test_captured_datafeed_packet *packet = test_datafeed_last_packet();
+
+    BOOST_CHECK_EQUAL(packet->type, SR_DF_LOGIC);
+    BOOST_CHECK_EQUAL(packet->status, SR_PKT_OK);
+    BOOST_CHECK_EQUAL(packet->logic_length, sizeof(data));
+    BOOST_CHECK_EQUAL(packet->logic_format, LA_CROSS_DATA);
+    BOOST_CHECK_EQUAL(packet->logic_unitsize, 1);
+    BOOST_CHECK_EQUAL(packet->logic_data, data);
+
+    BOOST_CHECK_EQUAL(fx2lafw_send_logic_packet(sdi, data, sizeof(data), 2), SR_OK);
+    packet = test_datafeed_last_packet();
+    BOOST_CHECK_EQUAL(packet->logic_unitsize, 2);
+
+    BOOST_CHECK_EQUAL(fx2lafw_send_logic_packet(nullptr, data, sizeof(data), 1), SR_ERR_ARG);
+    BOOST_CHECK_EQUAL(fx2lafw_send_logic_packet(sdi, nullptr, sizeof(data), 1), SR_ERR_ARG);
+    BOOST_CHECK_EQUAL(fx2lafw_send_logic_packet(sdi, data, 0, 1), SR_ERR_ARG);
+    BOOST_CHECK_EQUAL(fx2lafw_send_logic_packet(sdi, data, sizeof(data), 0), SR_ERR_ARG);
+
+    sr_dev_inst_free(sdi);
 #else
     BOOST_TEST_MESSAGE("upstream fx2lafw is disabled for this build");
 #endif
