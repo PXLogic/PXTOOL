@@ -57,22 +57,36 @@ Follow-up direction: firmware-loaded device open/close is now present. Before th
 
 ## Selected Slice: fx2lafw Open/Firmware Lifecycle
 
-Status: partially implemented behind `DSVIEW_ENABLE_UPSTREAM_FX2LAFW`.
+Status: implemented behind `DSVIEW_ENABLE_UPSTREAM_FX2LAFW`.
 
 Scope:
 
 - detect firmware-loaded devices during scan
-- attempt fx2lafw firmware upload for bootloader-state devices only when the required firmware file is present in DSView's firmware resource directory
+- attempt fx2lafw firmware upload for bootloader-state devices only when the required firmware file is present in DSView's `PXTOOL/res/fx2lafw/` resource directory
 - wait for re-enumeration in `dev_open()`
 - open, claim interface 0, validate firmware major version, and close handles safely
+- document the firmware resource manifest and hardware smoke gate
+
+## Selected Slice: fx2lafw Acquisition/Datafeed
+
+Status: implemented behind `DSVIEW_ENABLE_UPSTREAM_FX2LAFW`; hardware smoke evidence still required.
+
+Scope:
+
+- compute fx2lafw start command and transfer sizing from samplerate and enabled channels
+- start logic-only acquisition using FX2 `CMD_START`
+- submit async libusb bulk transfers from endpoint `2 | LIBUSB_ENDPOINT_IN`
+- forward received bytes as `SR_DF_LOGIC` packets through DSView's `ds_data_forward()` path
+- cancel transfers and emit one end packet on stop or finite sample completion
 
 Still deferred:
 
 - adding licensed `fx2lafw-*.fw` binary files, if the project chooses to distribute them
-- manual bootloader upload and re-enumeration smoke tests with real hardware
-- asynchronous acquisition transfers
-- trigger setup
-- DSView datafeed conversion
+- manual acquisition smoke tests with real hardware
+- upstream soft trigger support
+- DSView advanced trigger mapping
+- analog/MSO support
+- generic upstream USB helper extraction
 
 ## Candidate: rigol-ds
 
@@ -125,6 +139,7 @@ Decision: useful alternate first real USB logic analyzer if hardware is availabl
 
 ## Recommended Next Step
 
-Continue `fx2lafw` after the scan-only slice. Add firmware/open lifecycle next
-if test hardware and firmware are available. Keep `rigol-ds` for a later
-SCPI-focused slice because it pulls in a larger shared transport surface.
+After fx2lafw acquisition hardware smoke testing, extract the reusable USB
+acquisition pieces or add a second USB logic analyzer such as `hantek-4032l`.
+Keep `rigol-ds` for a later SCPI-focused slice because it pulls in a larger
+shared transport surface.

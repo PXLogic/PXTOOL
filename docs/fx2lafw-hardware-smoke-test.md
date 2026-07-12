@@ -41,9 +41,30 @@ Date: 2026-07-11
 8. Activate the device.
 9. Confirm open, firmware version validation, and close succeed.
 
+## Acquisition
+
+1. Complete either the firmware-loaded or bootloader-state open/close checklist above.
+2. Keep all logic channels enabled for the first run.
+3. Set a low samplerate such as `1 MHz`.
+4. Set a finite sample limit such as `100000`.
+5. Start acquisition.
+6. Confirm DSView shows changing logic waveform data.
+7. Stop acquisition from the UI.
+8. Confirm stop returns promptly and exactly one acquisition end is observed in logs.
+9. Start acquisition a second time without restarting DSView.
+10. Confirm the second run starts, streams, stops, and closes cleanly.
+11. For 16-channel profiles, enable at least one channel above `D7` and repeat
+    a finite acquisition to exercise 16-bit transfer units.
+12. During a controlled test only, unplug during acquisition and confirm DSView
+    does not hang and the device can be scanned again after reconnect.
+
 ## Stop Conditions
 
 - Missing firmware path is wrong.
 - Upload succeeds but re-enumeration opens a different same-VID/PID device.
 - Open succeeds but close hangs or leaves the handle claimed.
+- Acquisition start succeeds but no `SR_DF_LOGIC` data reaches the waveform view.
+- Stop does not return promptly.
+- A second acquisition run fails after the first run stopped cleanly.
+- Unplug during acquisition hangs the session thread.
 - Any DSLogic, DSCope, PXLogic, demo, file, decode, or session behavior regresses.
