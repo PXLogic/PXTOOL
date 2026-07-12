@@ -833,12 +833,17 @@ static int hw_dev_open(struct sr_dev_inst *sdi)
 	return SR_OK;
 }
 
+static int hw_dev_acquisition_stop(const struct sr_dev_inst *sdi,
+	void *cb_data);
+
 static int hw_dev_close(struct sr_dev_inst *sdi)
 {
 	struct sr_usb_dev_inst *usb;
 
 	if (!sdi || !sdi->conn)
 		return SR_ERR_ARG;
+	if (sdi->priv)
+		hw_dev_acquisition_stop(sdi, sdi);
 
 	usb = sdi->conn;
 	if (!usb->devhdl) {
@@ -851,9 +856,276 @@ static int hw_dev_close(struct sr_dev_inst *sdi)
 	return SR_OK;
 }
 
+static void fx2lafw_send_end_once(struct sr_dev_inst *sdi)
+{
+	struct fx2lafw_context *devc;
+	struct sr_datafeed_packet packet;
+
+	if (!sdi || !sdi->priv)
+		return;
+
+	devc = sdi->priv;
+	if (devc->end_sent)
+		return;
+
+	memset(&packet, 0, sizeof(packet));
+	packet.type = SR_DF_END;
+	packet.status = SR_PKT_OK;
+	packet.payload = NULL;
+	ds_data_forward(sdi, &packet);
+	devc->end_sent = TRUE;
+}
+
+static void fx2lafw_remove_event_source(struct fx2lafw_context *devc)
+{
+	if (!devc || !devc->event_source_added)
+		return;
+
+	sr_session_source_remove(devc->event_source);
+	devc->event_source_added = FALSE;
+}
+
+static void fx2lafw_finish_acquisition(struct sr_dev_inst *sdi)
+{
+	struct fx2lafw_context *devc;
+
+	if (!sdi || !sdi->priv)
+		return;
+
+	devc = sdi->priv;
+	fx2lafw_remove_event_source(devc);
+	fx2lafw_send_end_once(sdi);
+	devc->acquisition_running = FALSE;
+	devc->num_transfers = 0;
+	g_free(devc->transfers);
+	devc->transfers = NULL;
+}
+
+static void fx2lafw_free_transfer(struct libusb_transfer *transfer)
+{
+	struct sr_dev_inst *sdi;
+	struct fx2lafw_context *devc;
+	unsigned int i;
+
+	if (!transfer)
+		return;
+
+	sdi = transfer->user_data;
+	devc = sdi ? sdi->priv : NULL;
+
+	if (devc) {
+		for (i = 0; i < devc->num_transfers; i++) {
+			if (devc->transfers && devc->transfers[i] == transfer) {
+				devc->transfers[i] = NULL;
+				break;
+			}
+		}
+		if (devc->submitted_transfers > 0)
+			devc->submitted_transfers--;
+	}
+
+	g_free(transfer->buffer);
+	transfer->buffer = NULL;
+	libusb_free_transfer(transfer);
+
+	if (sdi && devc && devc->submitted_transfers == 0)
+		fx2lafw_finish_acquisition(sdi);
+}
+
+static void fx2lafw_abort_acquisition(struct fx2lafw_context *devc)
+{
+	unsigned int i;
+
+	if (!devc || devc->acquisition_aborted)
+		return;
+
+	devc->acquisition_aborted = TRUE;
+	for (i = 0; i < devc->num_transfers; i++) {
+		if (devc->transfers && devc->transfers[i])
+			libusb_cancel_transfer(devc->transfers[i]);
+	}
+}
+
+static void fx2lafw_resubmit_transfer(struct libusb_transfer *transfer)
+{
+	int ret;
+
+	ret = libusb_submit_transfer(transfer);
+	if (ret == LIBUSB_SUCCESS)
+		return;
+
+	sr_err("Unable to resubmit fx2lafw transfer: %s.", libusb_error_name(ret));
+	fx2lafw_free_transfer(transfer);
+}
+
+static void LIBUSB_CALL fx2lafw_receive_transfer(struct libusb_transfer *transfer)
+{
+	struct sr_dev_inst *sdi;
+	struct fx2lafw_context *devc;
+	size_t unitsize;
+	size_t sample_count;
+	size_t bytes_to_send;
+	gboolean packet_has_error;
+
+	sdi = transfer ? transfer->user_data : NULL;
+	devc = sdi ? sdi->priv : NULL;
+	if (!transfer || !sdi || !devc)
+		return;
+
+	if (devc->acquisition_aborted) {
+		fx2lafw_free_transfer(transfer);
+		return;
+	}
+
+	packet_has_error = FALSE;
+	switch (transfer->status) {
+	case LIBUSB_TRANSFER_NO_DEVICE:
+		fx2lafw_abort_acquisition(devc);
+		fx2lafw_free_transfer(transfer);
+		return;
+	case LIBUSB_TRANSFER_COMPLETED:
+	case LIBUSB_TRANSFER_TIMED_OUT:
+		break;
+	default:
+		packet_has_error = TRUE;
+		break;
+	}
+
+	if (transfer->actual_length == 0 || packet_has_error) {
+		devc->empty_transfer_count++;
+		if (devc->empty_transfer_count > FX2LAFW_MAX_EMPTY_TRANSFERS) {
+			fx2lafw_abort_acquisition(devc);
+			fx2lafw_free_transfer(transfer);
+		} else {
+			fx2lafw_resubmit_transfer(transfer);
+		}
+		return;
+	}
+
+	devc->empty_transfer_count = 0;
+	unitsize = devc->sample_wide ? 2 : 1;
+	sample_count = transfer->actual_length / unitsize;
+	if (sample_count == 0) {
+		fx2lafw_resubmit_transfer(transfer);
+		return;
+	}
+
+	if (devc->limit_samples &&
+			devc->sent_samples + sample_count > devc->limit_samples)
+		sample_count = devc->limit_samples - devc->sent_samples;
+	bytes_to_send = sample_count * unitsize;
+
+	if (bytes_to_send > 0) {
+		fx2lafw_send_logic_packet(sdi, transfer->buffer,
+			bytes_to_send, unitsize);
+		devc->sent_samples += sample_count;
+	}
+
+	if (devc->limit_samples && devc->sent_samples >= devc->limit_samples) {
+		fx2lafw_abort_acquisition(devc);
+		fx2lafw_free_transfer(transfer);
+	} else {
+		fx2lafw_resubmit_transfer(transfer);
+	}
+}
+
+static int fx2lafw_handle_events(int fd, int revents,
+	const struct sr_dev_inst *cb_data)
+{
+	struct sr_dev_inst *sdi;
+	struct fx2lafw_driver_context *drvc;
+	struct timeval tv;
+
+	(void)fd;
+	(void)revents;
+
+	sdi = (struct sr_dev_inst *)cb_data;
+	if (!sdi || !sdi->priv)
+		return FALSE;
+
+	drvc = fx2lafw_driver_info.priv;
+	if (!drvc || !drvc->libusb_ctx)
+		return FALSE;
+
+	tv.tv_sec = 0;
+	tv.tv_usec = 0;
+	libusb_handle_events_timeout(drvc->libusb_ctx, &tv);
+
+	return TRUE;
+}
+
+static int fx2lafw_start_transfers(struct sr_dev_inst *sdi)
+{
+	struct fx2lafw_context *devc;
+	struct sr_usb_dev_inst *usb;
+	unsigned int num_transfers;
+	unsigned int timeout;
+	size_t size;
+	unsigned int i;
+
+	if (!sdi || !sdi->priv || !sdi->conn)
+		return SR_ERR_ARG;
+
+	devc = sdi->priv;
+	usb = sdi->conn;
+	if (!usb->devhdl)
+		return SR_ERR_DEVICE_CLOSED;
+
+	size = fx2lafw_transfer_buffer_size(devc->samplerate);
+	num_transfers = fx2lafw_transfer_count(devc->samplerate);
+	timeout = fx2lafw_transfer_timeout_ms(devc->samplerate);
+	if (size == 0 || num_transfers == 0 || timeout == 0)
+		return SR_ERR;
+
+	devc->transfers = g_try_malloc0(sizeof(*devc->transfers) * num_transfers);
+	if (!devc->transfers)
+		return SR_ERR_MALLOC;
+
+	devc->num_transfers = num_transfers;
+	devc->submitted_transfers = 0;
+	for (i = 0; i < num_transfers; i++) {
+		struct libusb_transfer *transfer;
+		unsigned char *buffer;
+		int ret;
+
+		buffer = g_try_malloc(size);
+		if (!buffer) {
+			fx2lafw_abort_acquisition(devc);
+			return SR_ERR_MALLOC;
+		}
+
+		transfer = libusb_alloc_transfer(0);
+		if (!transfer) {
+			g_free(buffer);
+			fx2lafw_abort_acquisition(devc);
+			return SR_ERR_MALLOC;
+		}
+
+		libusb_fill_bulk_transfer(transfer, usb->devhdl,
+			FX2LAFW_BULK_ENDPOINT, buffer, size,
+			fx2lafw_receive_transfer, sdi, timeout);
+		ret = libusb_submit_transfer(transfer);
+		if (ret != LIBUSB_SUCCESS) {
+			sr_err("Unable to submit fx2lafw transfer: %s.",
+				libusb_error_name(ret));
+			g_free(buffer);
+			libusb_free_transfer(transfer);
+			fx2lafw_abort_acquisition(devc);
+			return SR_ERR;
+		}
+
+		devc->transfers[i] = transfer;
+		devc->submitted_transfers++;
+	}
+
+	return SR_OK;
+}
+
 static int hw_dev_acquisition_start(struct sr_dev_inst *sdi, void *cb_data)
 {
 	struct fx2lafw_context *devc;
+	int ret;
+	unsigned int timeout;
 
 	(void)cb_data;
 
@@ -871,15 +1143,57 @@ static int hw_dev_acquisition_start(struct sr_dev_inst *sdi, void *cb_data)
 	devc->acquisition_aborted = FALSE;
 	devc->end_sent = FALSE;
 
-	return command_start_acquisition(sdi);
+	timeout = fx2lafw_transfer_timeout_ms(devc->samplerate);
+	if (timeout == 0)
+		return SR_ERR;
+
+	devc->event_source = -2;
+	ret = sr_session_source_add(devc->event_source, 0, timeout,
+		fx2lafw_handle_events, sdi);
+	if (ret != SR_OK)
+		return ret;
+	devc->event_source_added = TRUE;
+
+	ret = fx2lafw_start_transfers(sdi);
+	if (ret != SR_OK) {
+		fx2lafw_remove_event_source(devc);
+		return ret;
+	}
+
+	ret = std_session_send_df_header(sdi, LOG_PREFIX);
+	if (ret != SR_OK) {
+		fx2lafw_abort_acquisition(devc);
+		return ret;
+	}
+
+	ret = command_start_acquisition(sdi);
+	if (ret != SR_OK) {
+		fx2lafw_abort_acquisition(devc);
+		return ret;
+	}
+
+	devc->acquisition_running = TRUE;
+	return SR_OK;
 }
 
 static int hw_dev_acquisition_stop(const struct sr_dev_inst *sdi, void *cb_data)
 {
+	struct fx2lafw_context *devc;
+
 	(void)cb_data;
 
 	if (!sdi || !sdi->priv)
 		return SR_ERR_ARG;
+
+	devc = sdi->priv;
+	if (!devc->acquisition_running && devc->submitted_transfers == 0) {
+		fx2lafw_remove_event_source(devc);
+		return SR_OK;
+	}
+
+	fx2lafw_abort_acquisition(devc);
+	if (devc->submitted_transfers == 0)
+		fx2lafw_finish_acquisition((struct sr_dev_inst *)sdi);
 
 	return SR_OK;
 }

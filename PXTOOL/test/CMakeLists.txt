@@ -47,6 +47,7 @@ if(DSVIEW_ENABLE_UPSTREAM_FX2LAFW)
     target_sources(DSView-test PRIVATE
         ../../libsigrok/hardware/upstream-fx2lafw/fx2lafw.c
         ../../libsigrok/hardware/common/ezusb.c
+        ../../libsigrok/std.c
     )
 endif()
 

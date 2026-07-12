@@ -42,6 +42,23 @@ void ds_set_last_error(int error)
 {
     (void)error;
 }
+
+int sr_session_source_add(gintptr poll_object, int events, int timeout,
+    sr_receive_data_callback_t cb, const struct sr_dev_inst *sdi)
+{
+    (void)poll_object;
+    (void)events;
+    (void)timeout;
+    (void)cb;
+    (void)sdi;
+    return SR_OK;
+}
+
+int sr_session_source_remove(gintptr poll_object)
+{
+    (void)poll_object;
+    return SR_OK;
+}
 }
 #endif
 
@@ -419,6 +436,26 @@ BOOST_AUTO_TEST_CASE(acquisition_stop_without_running_is_safe)
     BOOST_REQUIRE(sdi != nullptr);
 
     BOOST_REQUIRE(fx2lafw_driver_info.dev_acquisition_stop != nullptr);
+    BOOST_CHECK_EQUAL(fx2lafw_driver_info.dev_acquisition_stop(sdi, sdi), SR_OK);
+
+    sr_dev_inst_free(sdi);
+#else
+    BOOST_TEST_MESSAGE("upstream fx2lafw is disabled for this build");
+#endif
+}
+
+BOOST_AUTO_TEST_CASE(acquisition_stop_is_idempotent_for_test_device)
+{
+#ifdef HAVE_UPSTREAM_FX2LAFW
+    const fx2lafw_profile *profile = fx2lafw_profile_find(
+        0x1d50, 0x608d, "sigrok", "fx2lafw");
+    BOOST_REQUIRE(profile != nullptr);
+
+    sr_dev_inst *sdi = fx2lafw_dev_inst_new_for_profile(
+        profile, 1, 2, SR_ST_ACTIVE, TRUE, 0);
+    BOOST_REQUIRE(sdi != nullptr);
+
+    BOOST_CHECK_EQUAL(fx2lafw_driver_info.dev_acquisition_stop(sdi, sdi), SR_OK);
     BOOST_CHECK_EQUAL(fx2lafw_driver_info.dev_acquisition_stop(sdi, sdi), SR_OK);
 
     sr_dev_inst_free(sdi);
