@@ -336,6 +336,22 @@ BOOST_AUTO_TEST_CASE(acquisition_start_command_uses_upstream_clock_rules)
 #endif
 }
 
+BOOST_AUTO_TEST_CASE(acquisition_start_command_falls_back_to_30mhz_clock)
+{
+#ifdef HAVE_UPSTREAM_FX2LAFW
+    fx2lafw_start_command command = {};
+
+    BOOST_REQUIRE_EQUAL(fx2lafw_build_start_command(SR_MHZ(15), FALSE, &command),
+        SR_OK);
+    BOOST_CHECK_EQUAL(command.flags, FX2LAFW_CMD_START_FLAGS_CLK_30MHZ |
+        FX2LAFW_CMD_START_FLAGS_SAMPLE_8BIT);
+    BOOST_CHECK_EQUAL(command.sample_delay_h, 0);
+    BOOST_CHECK_EQUAL(command.sample_delay_l, 1);
+#else
+    BOOST_TEST_MESSAGE("upstream fx2lafw is disabled for this build");
+#endif
+}
+
 BOOST_AUTO_TEST_CASE(acquisition_transfer_sizing_matches_upstream_rules)
 {
 #ifdef HAVE_UPSTREAM_FX2LAFW
