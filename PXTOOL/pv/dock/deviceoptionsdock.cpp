@@ -1170,6 +1170,7 @@ void DeviceOptionsDock::channel_check()
     }
     assert(mode_index >= 0);
     _device_agent->set_config_int16(SR_CONF_CHANNEL_MODE, mode_index);
+    _session->enable_all_channels();
     build_dynamic_panel();
     schedule_apply();
 }

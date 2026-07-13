@@ -433,6 +433,7 @@ public:
     void refresh_signal_probes();
     void save_channel_enabled_states();
     void restore_channel_enabled_states();
+    void enable_all_channels();
     bool is_channel_enabled(int ch_index);
     void broadcast_msg(int msg);    
     bool have_new_realtime_refresh(bool keep);

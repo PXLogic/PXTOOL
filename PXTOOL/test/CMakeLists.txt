@@ -73,3 +73,33 @@ target_link_libraries(DSView-test
     -lglib-2.0
     ${LIBUSB_1_LIBRARIES}
 )
+
+add_executable(srd-c-decoder-lifetime-test
+    test_srd_c_decoder_lifetime.c
+    ../../libsigrokdecode/type_decoder.c
+    ../../libsigrokdecode/srd.c
+    ../../libsigrokdecode/module_sigrokdecode.c
+    ../../libsigrokdecode/decoder.c
+    ../../libsigrokdecode/c_decoder_api.c
+    ../../libsigrokdecode/dll_registry.c
+    ../../libsigrokdecode/error.c
+    ../../libsigrokdecode/exception.c
+    ../../libsigrokdecode/instance.c
+    ../../libsigrokdecode/log.c
+    ../../libsigrokdecode/session.c
+    ../../libsigrokdecode/util.c
+    ../../libsigrokdecode/version.c
+    ../../common/log/xlog.c
+)
+
+target_include_directories(srd-c-decoder-lifetime-test PRIVATE
+    ../..
+    ../../libsigrokdecode
+    ${GLIB_INCLUDE_DIRS}
+    ${Python3_INCLUDE_DIRS}
+)
+
+target_link_libraries(srd-c-decoder-lifetime-test
+    ${PY_LIB}
+    -lglib-2.0
+)

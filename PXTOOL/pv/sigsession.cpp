@@ -265,15 +265,9 @@ namespace pv
         _capture_data = _view_data;
         invalidate_glitch_filter_state();
 
-        // Reset all probes to enabled before building the signal list.
-        // The demo device driver is a global singleton; if another session
-        // previously disabled some channels, this session would otherwise
-        // inherit those disabled states. Session switching restores per-session
-        // states via restore_channel_enabled_states(), which runs after this call.
-        for (GSList *l = _device_agent.get_channels(); l; l = l->next) {
-            sr_channel *probe = (sr_channel *)l->data;
-            probe->enabled = true;
-        }
+        // Reset probes before building the signal list so a newly selected
+        // device/channel mode starts with usable channels enabled.
+        enable_all_channels();
 
         init_signals();
 
@@ -2182,6 +2176,7 @@ namespace pv
         if (ds_active_device(handle) == SR_OK) {
             _device_agent.update();
             restore_channel_enabled_states();
+            enable_all_channels();
             refresh_signal_probes();
         }
         dsv_info("rebind_device done: session@%p has_data=%d",
@@ -2252,13 +2247,17 @@ namespace pv
         // Restore string configs first: SR_CONF_PATTERN_MODE sets sample_generator,
         // and SR_CONF_CHANNEL_MODE (int16) is only applied by the driver when
         // sample_generator == PATTERN_RANDOM, so order matters.
-        for (auto &kv : _device_config_string_cache)
-            _device_agent.set_config_string(kv.first, kv.second.toUtf8().constData());
+        for (auto &kv : _device_config_string_cache) {
+            if (_device_agent.supports_config(kv.first))
+                _device_agent.set_config_string(kv.first, kv.second.toUtf8().constData());
+        }
 
         // Restore int16 device configs; SR_CONF_CHANNEL_MODE in particular
         // affects the valid channel count that limits probe->enabled below.
-        for (auto &kv : _device_config_int16_cache)
-            _device_agent.set_config_int16(kv.first, kv.second);
+        for (auto &kv : _device_config_int16_cache) {
+            if (_device_agent.supports_config(kv.first))
+                _device_agent.set_config_int16(kv.first, kv.second);
+        }
 
         if (_channel_enabled_cache.empty())
             return;
@@ -2268,6 +2267,29 @@ namespace pv
             if (it != _channel_enabled_cache.end())
                 ch->enabled = it->second;
         }
+    }
+
+    void SigSession::enable_all_channels()
+    {
+        if (!_device_agent.have_instance())
+            return;
+
+        int max_enabled = -1;
+        bool stream_mode = false;
+        if (_device_agent.get_config_bool(SR_CONF_STREAM, stream_mode) && stream_mode) {
+            int vld_ch_num = 0;
+            if (_device_agent.get_config_int16(SR_CONF_VLD_CH_NUM, vld_ch_num) && vld_ch_num > 0)
+                max_enabled = vld_ch_num;
+        }
+
+        int enabled_count = 0;
+        for (GSList *l = _device_agent.get_channels(); l; l = l->next) {
+            sr_channel *ch = (sr_channel *)l->data;
+            ch->enabled = (max_enabled < 0 || enabled_count < max_enabled);
+            if (ch->enabled)
+                enabled_count++;
+        }
+        _channel_enabled_cache.clear();
     }
 
     void SigSession::broadcast_msg(int msg)
