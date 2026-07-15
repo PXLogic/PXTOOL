@@ -449,6 +449,11 @@ static GSList *scan(GSList *options)
         bus = libusb_get_bus_number(device_handle);
         address = libusb_get_device_address(device_handle);
         sr_info("Found a new device,handle:%p,bus:%d,address:%d", device_handle, bus, address);
+        if (sr_usb_device_is_exists(device_handle)) {
+            sr_detail("Device is exists, handle: %p", device_handle);
+            continue;
+        }
+
         uint32_t logic_mode = 0;
         if (logic_check_conf_profile(device_handle, &logic_mode)) {
             for (j = 0; supported_PX[j].vid; j++) {
@@ -2024,6 +2029,7 @@ SR_PRIV struct sr_dev_driver px_driver_test_info = {
     .name = "pxlogic",
     .longname = "PXLogic",
     .api_version = 1,
+    .driver_type = DRIVER_TYPE_HARDWARE,
     .init = hw_init,
     .cleanup = hw_cleanup,
     .scan = scan,

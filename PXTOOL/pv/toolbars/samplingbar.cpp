@@ -27,10 +27,13 @@
 #include <QHBoxLayout>
 #include <QAbstractItemView>
 #include <QStandardItemModel>
+#include <QStandardItem>
 #include <QStyleFactory>
 #include <QApplication>
 #include <QToolButton>
 #include <QFontMetrics>
+#include <QSignalBlocker>
+#include <QTimer>
 #include <math.h>
 #include <limits>
 #include <libusb-1.0/libusb.h>
@@ -1565,27 +1568,57 @@ namespace pv
             struct ds_device_base_info *array = NULL;
             int dev_count = 0;
             int select_index = 0;
+            const bool reopen_popup = _device_selector.IsPopup();
 
             dsv_info("Update device list.");
 
+            if (reopen_popup)
+                _device_selector.hidePopup();
+
             array = _session->get_device_list(dev_count, select_index);
+
+            _updating_device_list = true;
+            QSignalBlocker deviceSelectorBlocker(&_device_selector);
 
             if (array == NULL)
             {
-                dsv_err("Get deivce list error!");
+                if (dev_count == 0)
+                {
+                    dsv_info("Device list is empty; showing empty device selector state.");
+                    _device_selector.clear();
+                    _device_selector.addItem(tr("No device"), QVariant::fromValue((unsigned long long)NULL_HANDLE));
+                    if (QStandardItemModel *model = qobject_cast<QStandardItemModel*>(_device_selector.model())) {
+                        if (QStandardItem *item = model->item(0))
+                            item->setEnabled(false);
+                    }
+                    _device_selector.setCurrentIndex(0);
+                    _device_selector.setEnabled(false);
+                    _last_device_handle = NULL_HANDLE;
+                    _last_device_index = 0;
+                    apply_device_bar_combo_popup();
+                    _device_selector.refreshPopupLayout();
+                    _updating_device_list = false;
+                    return;
+                }
+
+                dsv_err("Get device list error! count=%d", dev_count);
+                _updating_device_list = false;
                 return;
             }
 
-            _updating_device_list = true;
             struct ds_device_base_info *p = NULL;
             ds_device_handle    cur_dev_handle = NULL_HANDLE;
 
             _device_selector.clear();
+            _device_selector.setEnabled(true);
+            dsv_info("Device selector refresh: count=%d active_index=%d", dev_count, select_index);
 
             for (int i = 0; i < dev_count; i++)
             {
                 p = (array + i);
                 _device_selector.addItem(QString(p->name), QVariant::fromValue((unsigned long long)p->handle));
+                dsv_info("Device selector item[%d]: name=\"%s\" handle=%llu",
+                         i, p->name, (unsigned long long)p->handle);
                 
                 if (i == select_index)
                     cur_dev_handle = p->handle;
@@ -1606,13 +1639,23 @@ namespace pv
             }
 
             _last_device_index = select_index;
+            dsv_info("Device selector selected index=%d handle=%llu combo_count=%d",
+                     select_index, (unsigned long long)cur_dev_handle, _device_selector.count());
             int width = _device_selector.sizeHint().width();
             _device_selector.setFixedWidth(min(width + 15, _device_selector.maximumWidth()));
             _device_selector.view()->setMinimumWidth(width + 30);
             apply_device_bar_combo_popup();
+            _device_selector.refreshPopupLayout();
             sync_buffer_combo_width();
 
             _updating_device_list = false;
+
+            if (reopen_popup && _device_selector.count() > 0) {
+                QTimer::singleShot(0, this, [this]() {
+                    if (_device_selector.isEnabled() && _device_selector.count() > 0)
+                        _device_selector.showPopup();
+                });
+            }
         }
 
         void SamplingBar::config_device()

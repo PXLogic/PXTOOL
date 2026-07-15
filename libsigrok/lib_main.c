@@ -82,6 +82,7 @@ static void send_event(int event);
 static void make_demo_device_to_list();
 static void process_attach_event(int isEvent);
 static void poll_usb_hotplug_fallback();
+static int usb_device_matches_dev_inst(const struct sr_dev_inst *dev, libusb_device *usb_dev);
 static struct libusb_device* get_new_attached_usb_device_impl(int log_missing);
 static struct libusb_device* get_new_detached_usb_device_impl(int log_missing);
 static struct libusb_device* get_new_attached_usb_device();
@@ -315,6 +316,7 @@ SR_API int ds_get_device_list(struct ds_device_base_info **out_list, int *out_co
 	if (num == 0)
 	{
 		pthread_mutex_unlock(&lib_ctx.mutext);
+		sr_info("ds_get_device_list: device list is empty.");
 		return SR_OK;
 	}
 
@@ -333,6 +335,8 @@ SR_API int ds_get_device_list(struct ds_device_base_info **out_list, int *out_co
 		dev = l->data;
 		p->handle = dev->handle;
 		strncpy(p->name, (const char*)dev->name, sizeof(p->name) - 1);
+		p->name[sizeof(p->name) - 1] = '\0';
+		sr_info("ds_get_device_list: item handle:%p, name:\"%s\"", dev->handle, dev->name);
 		p++;
 	}
 
@@ -343,6 +347,7 @@ SR_API int ds_get_device_list(struct ds_device_base_info **out_list, int *out_co
 	{
 		*out_count = num;
 	}
+	sr_info("ds_get_device_list: count=%d", num);
 
 	pthread_mutex_unlock(&lib_ctx.mutext);
 
@@ -1155,6 +1160,24 @@ GSList *ds_get_actived_device_channels()
 /**-------------------config end-------------------*/
 
 /**-------------------internal function ---------------*/
+static int usb_device_matches_dev_inst(const struct sr_dev_inst *dev, libusb_device *usb_dev)
+{
+	struct sr_usb_dev_inst *usb_info;
+
+	if (dev == NULL || usb_dev == NULL)
+		return 0;
+
+	if (dev->handle == (ds_device_handle)usb_dev)
+		return 1;
+
+	if (dev->dev_type != DEV_TYPE_USB || dev->conn == NULL)
+		return 0;
+
+	usb_info = dev->conn;
+	return usb_info->bus == libusb_get_bus_number(usb_dev) &&
+		usb_info->address == libusb_get_device_address(usb_dev);
+}
+
 /**
  * Check whether the USB device is in the device list.
  */
@@ -1175,7 +1198,7 @@ SR_PRIV int sr_usb_device_is_exists(libusb_device *usb_dev)
 	for (l = lib_ctx.device_list; l; l = l->next)
 	{
 		dev = l->data;
-		if (dev->handle == (ds_device_handle)usb_dev)
+		if (usb_device_matches_dev_inst(dev, usb_dev))
 		{
 			bFind = 1;
 			break;
@@ -1242,7 +1265,7 @@ static int update_device_handle(struct libusb_device *old_dev, struct libusb_dev
 	{
 		dev = l->data;
 		usb_dev_info = dev->conn;
-		if (usb_dev_info != NULL && dev->handle == (ds_device_handle)old_dev)
+		if (usb_dev_info != NULL && usb_device_matches_dev_inst(dev, old_dev))
 		{
 			// Release the old device and the resource.
 			if (dev == lib_ctx.actived_device_instance)
@@ -1352,10 +1375,18 @@ static void hotplug_event_listen_callback(struct libusb_context *ctx, struct lib
 		{
 			sr_err("One detached device haven't processed complete,handle:%p",
 				   lib_ctx.detach_device_handle);
+
+			if (sr_usb_device_is_exists(lib_ctx.detach_device_handle) &&
+				!sr_usb_device_is_exists(dev))
+			{
+				sr_info("Keep pending detached device handle:%p, ignore extra detach handle:%p",
+						lib_ctx.detach_device_handle, dev);
+				return;
+			}
 		}
 
-		if (lib_ctx.actived_device_instance != NULL 
-			&& lib_ctx.actived_device_instance->handle == (ds_device_handle)dev 
+		if (lib_ctx.actived_device_instance != NULL
+			&& usb_device_matches_dev_inst(lib_ctx.actived_device_instance, dev)
 			&& ds_is_collecting())
 		{
 			sr_info("The collecting device is detached, will stop the collect thread.");
@@ -1445,7 +1476,7 @@ static void process_detach_event()
 	{
 		dev = l->data;
 
-		if (dev->handle == (ds_device_handle)ev_dev)
+		if (usb_device_matches_dev_inst(dev, ev_dev))
 		{
 			if (dev == lib_ctx.actived_device_instance)
 			{
@@ -1461,8 +1492,11 @@ static void process_detach_event()
 				}
 			}
 
+			sr_info("Detached device matched list entry, event_handle:%p, device_handle:%p, name:\"%s\"",
+					ev_dev, dev->handle, dev->name);
 			// Found the device, and remove it from list.
 			lib_ctx.device_list = g_slist_remove(lib_ctx.device_list, l->data);
+			sr_info("Device list count after detach: %d", g_slist_length(lib_ctx.device_list));
 			bFind = 1;
 			break;
 		}
@@ -1472,7 +1506,10 @@ static void process_detach_event()
 	// Tell user a new device detached, and the list is updated.
 	if (bFind){
 		post_event_async(ev);
-	}	
+	}
+	else {
+		sr_warn("Detached device handle:%p was not found in device list.", ev_dev);
+	}
 }
 
 static gpointer usb_hotplug_process_proc(gpointer data)
