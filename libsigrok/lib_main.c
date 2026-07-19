@@ -83,6 +83,8 @@ static void make_demo_device_to_list();
 static void process_attach_event(int isEvent);
 static void poll_usb_hotplug_fallback();
 static int usb_device_matches_dev_inst(const struct sr_dev_inst *dev, libusb_device *usb_dev);
+static int device_instance_matches(const struct sr_dev_inst *a, const struct sr_dev_inst *b);
+static int append_device_instance_if_new(struct sr_dev_inst *dev);
 static struct libusb_device* get_new_attached_usb_device_impl(int log_missing);
 static struct libusb_device* get_new_detached_usb_device_impl(int log_missing);
 static struct libusb_device* get_new_attached_usb_device();
@@ -1178,6 +1180,57 @@ static int usb_device_matches_dev_inst(const struct sr_dev_inst *dev, libusb_dev
 		usb_info->address == libusb_get_device_address(usb_dev);
 }
 
+static int device_instance_matches(const struct sr_dev_inst *a, const struct sr_dev_inst *b)
+{
+	struct sr_usb_dev_inst *a_usb;
+	struct sr_usb_dev_inst *b_usb;
+
+	if (a == NULL || b == NULL)
+		return 0;
+
+	if (a == b || a->handle == b->handle)
+		return 1;
+
+	if (a->driver != b->driver || a->dev_type != b->dev_type)
+		return 0;
+
+	if (a->dev_type == DEV_TYPE_USB && a->conn != NULL && b->conn != NULL) {
+		a_usb = a->conn;
+		b_usb = b->conn;
+		return a_usb->bus == b_usb->bus && a_usb->address == b_usb->address;
+	}
+
+	return 0;
+}
+
+static int append_device_instance_if_new(struct sr_dev_inst *dev)
+{
+	GSList *l;
+
+	if (dev == NULL)
+		return 0;
+
+	if (dev->status == SR_ST_INITIALIZING) {
+		sr_info("Skip initializing device instance, name:\"%s\"",
+			dev->name ? dev->name : "");
+		destroy_device_instance(dev);
+		return 0;
+	}
+
+	for (l = lib_ctx.device_list; l; l = l->next) {
+		if (device_instance_matches(l->data, dev)) {
+			struct sr_dev_inst *old_dev = l->data;
+			sr_info("Skip duplicate device instance, old_handle:%p new_handle:%p name:\"%s\"",
+				old_dev->handle, dev->handle, dev->name ? dev->name : "");
+			destroy_device_instance(dev);
+			return 0;
+		}
+	}
+
+	lib_ctx.device_list = g_slist_append(lib_ctx.device_list, dev);
+	return 1;
+}
+
 /**
  * Check whether the USB device is in the device list.
  */
@@ -1430,8 +1483,7 @@ static void process_attach_event(int isEvent)
 
 				for (l = dev_list; l; l = l->next)
 				{
-					lib_ctx.device_list = g_slist_append(lib_ctx.device_list, l->data);
-					num++;
+					num += append_device_instance_if_new(l->data);
 				}
 				pthread_mutex_unlock(&lib_ctx.mutext);
 				g_slist_free(dev_list);

@@ -20,6 +20,7 @@
  */
 
 #include <boost/test/unit_test.hpp>
+#include <cstring>
 #include <fstream>
 #include <set>
 #include <string>
@@ -38,6 +39,8 @@ extern "C" {
 extern "C" {
 char DS_RES_PATH[500];
 
+size_t fx2lafw_pack_interleaved_samples(const uint8_t *input,
+    size_t sample_count, size_t unitsize, uint8_t *output);
 void ds_set_last_error(int error)
 {
     (void)error;
@@ -190,6 +193,29 @@ BOOST_AUTO_TEST_CASE(firmware_state_uses_sigrok_fx2lafw_strings)
     BOOST_CHECK_EQUAL(fx2lafw_has_firmware("Saleae", "Logic"), FALSE);
     BOOST_CHECK_EQUAL(fx2lafw_has_firmware(nullptr, "fx2lafw"), FALSE);
     BOOST_CHECK_EQUAL(fx2lafw_has_firmware("sigrok", nullptr), FALSE);
+#else
+    BOOST_TEST_MESSAGE("upstream fx2lafw is disabled for this build");
+#endif
+}
+
+BOOST_AUTO_TEST_CASE(new_device_has_nonzero_default_sample_limit)
+{
+#ifdef HAVE_UPSTREAM_FX2LAFW
+    const fx2lafw_profile *profile = fx2lafw_profile_find(
+        0x0925, 0x3881, "", "");
+    BOOST_REQUIRE(profile != nullptr);
+
+    sr_dev_inst *sdi = fx2lafw_dev_inst_new_for_profile(
+        profile, 1, 2, SR_ST_INACTIVE, TRUE, 0);
+    BOOST_REQUIRE(sdi != nullptr);
+
+    GVariant *limit = nullptr;
+    BOOST_REQUIRE_EQUAL(fx2lafw_driver_info.config_get(SR_CONF_LIMIT_SAMPLES,
+        &limit, sdi, nullptr, nullptr), SR_OK);
+    BOOST_REQUIRE(limit != nullptr);
+    BOOST_CHECK_GT(g_variant_get_uint64(limit), 0U);
+    g_variant_unref(limit);
+    sr_dev_inst_free(sdi);
 #else
     BOOST_TEST_MESSAGE("upstream fx2lafw is disabled for this build");
 #endif
@@ -404,6 +430,30 @@ BOOST_AUTO_TEST_CASE(logic_packet_adapter_forwards_cross_data)
     BOOST_CHECK_EQUAL(fx2lafw_send_logic_packet(sdi, data, sizeof(data), 0), SR_ERR_ARG);
 
     sr_dev_inst_free(sdi);
+#else
+    BOOST_TEST_MESSAGE("upstream fx2lafw is disabled for this build");
+#endif
+}
+
+BOOST_AUTO_TEST_CASE(interleaved_fx2_samples_pack_into_channel_blocks)
+{
+#ifdef HAVE_UPSTREAM_FX2LAFW
+    uint8_t input[64] = {};
+    uint8_t output[64] = {};
+    uint64_t d0 = 0;
+    uint64_t d1 = 0;
+
+    for (size_t sample = 0; sample < 64; sample++) {
+        input[sample] = (sample % 2 == 0 ? 1U : 0U) |
+            (sample % 4 < 2 ? 2U : 0U);
+    }
+
+    BOOST_REQUIRE_EQUAL(fx2lafw_pack_interleaved_samples(input, 64, 1,
+        output), sizeof(output));
+    std::memcpy(&d0, output, sizeof(d0));
+    std::memcpy(&d1, output + sizeof(d0), sizeof(d1));
+    BOOST_CHECK_EQUAL(d0, UINT64_C(0x5555555555555555));
+    BOOST_CHECK_EQUAL(d1, UINT64_C(0x3333333333333333));
 #else
     BOOST_TEST_MESSAGE("upstream fx2lafw is disabled for this build");
 #endif

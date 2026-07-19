@@ -47,6 +47,7 @@ struct fx2lafw_context {
 	gintptr event_source;
 	gboolean event_source_added;
 	gboolean end_sent;
+	gboolean logged_first_sample_block;
 };
 
 struct fx2lafw_driver_context {
@@ -358,6 +359,82 @@ SR_PRIV int fx2lafw_send_logic_packet(const struct sr_dev_inst *sdi,
 	return ds_data_forward(sdi, &packet);
 }
 
+SR_PRIV size_t fx2lafw_pack_interleaved_samples(const uint8_t *input,
+	size_t sample_count, size_t unitsize, uint8_t *output)
+{
+	const size_t channel_count = unitsize * 8;
+	size_t block;
+
+	if (!input || !output || (unitsize != 1 && unitsize != 2) ||
+			sample_count == 0 || sample_count % 64 != 0)
+		return 0;
+
+	for (block = 0; block < sample_count / 64; block++) {
+		size_t channel;
+		for (channel = 0; channel < channel_count; channel++) {
+			uint64_t channel_samples = 0;
+			size_t sample;
+
+			for (sample = 0; sample < 64; sample++) {
+				const size_t index = (block * 64 + sample) * unitsize;
+				uint16_t value = input[index];
+				if (unitsize == 2)
+					value |= (uint16_t)input[index + 1] << 8;
+				channel_samples |= (uint64_t)((value >> channel) & 1) << sample;
+			}
+			memcpy(output + (block * channel_count + channel) *
+					sizeof(channel_samples), &channel_samples,
+				sizeof(channel_samples));
+		}
+	}
+
+	return sample_count * unitsize;
+}
+
+static int fx2lafw_forward_interleaved_samples(const struct sr_dev_inst *sdi,
+	const uint8_t *data, size_t sample_count, size_t unitsize)
+{
+	struct fx2lafw_context *devc;
+	uint8_t *packed;
+	size_t length;
+	int ret;
+
+	if (!sdi || !data || sample_count == 0 || sample_count % 64 != 0)
+		return SR_ERR_ARG;
+
+	length = sample_count * unitsize;
+	packed = g_try_malloc(length);
+	if (!packed)
+		return SR_ERR_MALLOC;
+	if (fx2lafw_pack_interleaved_samples(data, sample_count, unitsize,
+			packed) != length) {
+		g_free(packed);
+		return SR_ERR;
+	}
+
+	devc = sdi->priv;
+	if (devc && !devc->logged_first_sample_block) {
+		const size_t channel_count = unitsize * 8;
+		GString *message = g_string_new("FX2 first 64 samples:");
+		size_t channel;
+
+		for (channel = 0; channel < channel_count; channel++) {
+			uint64_t samples;
+			memcpy(&samples, packed + channel * sizeof(samples),
+				sizeof(samples));
+			g_string_append_printf(message, " D%zu=0x%016llx", channel,
+				(unsigned long long)samples);
+		}
+		sr_info("%s", message->str);
+		g_string_free(message, TRUE);
+		devc->logged_first_sample_block = TRUE;
+	}
+
+	ret = fx2lafw_send_logic_packet(sdi, packed, length, unitsize);
+	g_free(packed);
+	return ret;
+}
+
 SR_PRIV int fx2lafw_firmware_path(const struct fx2lafw_profile *profile,
 	char **path)
 {
@@ -448,7 +525,7 @@ SR_PRIV struct sr_dev_inst *fx2lafw_dev_inst_new_for_profile(
 	devc = g_malloc0(sizeof(*devc));
 	devc->profile = profile;
 	devc->samplerate = samplerates[0];
-	devc->limit_samples = 0;
+	devc->limit_samples = SR_MHZ(1);
 	devc->firmware_loaded = firmware_loaded;
 	devc->fw_updated = fw_updated;
 	devc->event_source = -2;
@@ -568,10 +645,10 @@ static GSList *hw_scan(GSList *options)
 			}
 			g_free(firmware);
 			if (upload_ret == SR_OK) {
-				has_firmware = FALSE;
-				fw_updated = g_get_monotonic_time();
-				address = FX2LAFW_UNKNOWN_ADDRESS;
-				status = SR_ST_INITIALIZING;
+				sr_info("fx2lafw firmware uploaded for device %d.%d; waiting for re-enumeration.",
+					libusb_get_bus_number(devlist[i]),
+					libusb_get_device_address(devlist[i]));
+				continue;
 			} else {
 				sr_err("Firmware upload failed for device %d.%d, name %s.",
 					libusb_get_bus_number(devlist[i]),
@@ -1030,8 +1107,14 @@ static void LIBUSB_CALL fx2lafw_receive_transfer(struct libusb_transfer *transfe
 	bytes_to_send = sample_count * unitsize;
 
 	if (bytes_to_send > 0) {
-		fx2lafw_send_logic_packet(sdi, transfer->buffer,
-			bytes_to_send, unitsize);
+		const size_t packed_samples = sample_count - sample_count % 64;
+
+		if (packed_samples > 0 && fx2lafw_forward_interleaved_samples(sdi,
+				transfer->buffer, packed_samples, unitsize) != SR_OK) {
+			fx2lafw_abort_acquisition(devc);
+			fx2lafw_free_transfer(transfer);
+			return;
+		}
 		devc->sent_samples += sample_count;
 	}
 
@@ -1225,6 +1308,7 @@ static int hw_dev_acquisition_start(struct sr_dev_inst *sdi, void *cb_data)
 	devc = sdi->priv;
 	devc->sample_wide = fx2lafw_sample_wide_for_channels(sdi);
 	devc->sent_samples = 0;
+	devc->logged_first_sample_block = FALSE;
 	devc->empty_transfer_count = 0;
 	devc->acquisition_aborted = FALSE;
 	devc->end_sent = FALSE;
