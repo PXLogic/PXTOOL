@@ -125,9 +125,7 @@ private slots:
     void on_screenShot();
     void on_save();
     void on_export();
-    void on_export_format(QString format_id);
     void on_import_format_triggered();
-    void on_export_format_triggered();
     void on_disk_cache_settings();
 
     // Shortcut slots
@@ -288,9 +286,6 @@ private:
     QAction *_action_default  = nullptr;
     QAction *_action_save     = nullptr;
     QAction *_action_export   = nullptr;
-    QMenu   *_menu_export_format = nullptr;
-    QMap<QAction *, QString> _export_format_ids;
-    QString _selected_export_format_id;
     QAction *_action_capture  = nullptr;
     QAction *_action_disk_cache = nullptr;
 

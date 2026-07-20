@@ -80,7 +80,6 @@ public:
     bool load_decoders(dock::ProtocolDock *widget, QJsonArray &dec_array);
     QString MakeSaveFile(bool bDlg);
     QString MakeExportFile(bool bDlg);
-    void setSelectedOutputFormatId(const QString &format_id);
 
     inline QString GetFileName(){
         return _file_name;
@@ -114,7 +113,6 @@ private:
     SigSession      *_session;
 	std::thread     _thread;
     const struct sr_output_module* _outModule;
-    QString         _selectedOutputFormatId;
  
 	uint64_t        _units_stored;
 	uint64_t        _unit_count;

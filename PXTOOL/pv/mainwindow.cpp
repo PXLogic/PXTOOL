@@ -288,7 +288,6 @@ namespace pv
         _menu_import = _menu_file->addMenu(tr("Import"));
         _action_save    = _menu_file->addAction(tr("Save..."));
         _action_export  = _menu_file->addAction(tr("Export..."));
-        _menu_export_format = _menu_file->addMenu(tr("Export Format"));
         _action_capture = _menu_file->addAction(tr("Capture..."));
         _menu_file->addSeparator();
         _action_quit = _menu_file->addAction(tr("Exit"));
@@ -308,14 +307,6 @@ namespace pv
             action->setData(format.id);
             _import_format_ids.insert(action, format.id);
             connect(action, SIGNAL(triggered()), this, SLOT(on_import_format_triggered()));
-        }
-
-        const QVector<pv::data::FormatCapability> export_formats = pv::data::exportFormats();
-        for (const pv::data::FormatCapability &format : export_formats) {
-            QAction *action = _menu_export_format->addAction(format.menuText);
-            action->setData(format.id);
-            _export_format_ids.insert(action, format.id);
-            connect(action, SIGNAL(triggered()), this, SLOT(on_export_format_triggered()));
         }
 
         // Window menu
@@ -414,8 +405,6 @@ namespace pv
                 this, SLOT(on_import_file(QString, QString)));
         connect(_file_bar, SIGNAL(sig_save()), this, SLOT(on_save()));
         connect(_file_bar, SIGNAL(sig_export()), this, SLOT(on_export()));
-        connect(_file_bar, SIGNAL(sig_export_format(QString)),
-                this, SLOT(on_export_format(QString)));
         connect(_file_bar, SIGNAL(sig_screenShot()), this, SLOT(on_screenShot()), Qt::QueuedConnection);
         connect(_file_bar, SIGNAL(sig_load_session(QString)), this, SLOT(on_load_session(QString)));
         connect(_file_bar, SIGNAL(sig_store_session(QString)), this, SLOT(on_store_session(QString)));
@@ -599,7 +588,6 @@ namespace pv
         if (_menu_import)    _menu_import->setTitle(tr("Import"));
         if (_action_save)    _action_save->setText(tr("Save..."));
         if (_action_export)  _action_export->setText(tr("Export..."));
-        if (_menu_export_format) _menu_export_format->setTitle(tr("Export Format"));
         if (_action_capture) _action_capture->setText(tr("Capture..."));
         if (_action_quit)    _action_quit->setText(tr("Exit"));
 
@@ -1609,17 +1597,7 @@ namespace pv
 
         StoreProgress *dlg = new StoreProgress(_session, this);
         dlg->SetView(_view);
-        if (!_selected_export_format_id.isEmpty())
-            dlg->setSelectedOutputFormatId(_selected_export_format_id);
-        _selected_export_format_id.clear();
         dlg->export_run();
-    }
-
-    void MainWindow::on_export_format(QString format_id)
-    {
-        dsv_info("Export data: selected format=%s", format_id.toUtf8().constData());
-        _selected_export_format_id = format_id;
-        on_export();
     }
 
     void MainWindow::on_import_format_triggered()
@@ -1651,19 +1629,6 @@ namespace pv
         }
 
         on_import_file(format_id, file_name);
-    }
-
-    void MainWindow::on_export_format_triggered()
-    {
-        QAction *action = qobject_cast<QAction *>(sender());
-        if (!action)
-            return;
-
-        const QString format_id = action->data().toString();
-        if (format_id.isEmpty())
-            return;
-
-        on_export_format(format_id);
     }
 
     bool MainWindow::on_load_session(QString name)
