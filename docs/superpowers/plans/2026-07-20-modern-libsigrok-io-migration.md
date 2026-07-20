@@ -112,6 +112,12 @@ git commit -m "test: define modern io format manifest"
 - Modify: `libsigrok/libsigrok.h`
 - Modify: `libsigrok/libsigrok-internal.h`
 - Modify: `libsigrok/input/input.c`
+- Delete: `libsigrok/input/in_binary.c`
+- Delete: `libsigrok/input/in_vcd.c`
+- Delete: `libsigrok/input/in_wav.c`
+- Create: `libsigrok/input/binary.c`
+- Create: `libsigrok/input/vcd.c`
+- Create: `libsigrok/input/wav.c`
 - Modify: `libsigrok/output/output.c`
 - Modify: `CMakeLists.txt`
 - Modify: `PXTOOL/test/CMakeLists.txt`
@@ -175,7 +181,11 @@ int sr_output_free(const struct sr_output *o);
 ```
 
 Import `sr_output_module::flags`, `sr_output_module::exts`, and the current
-input-module streaming callbacks. Do not leave old `sr_input_format` and new
+input-module streaming callbacks. In the same change, replace the existing
+`in_binary.c`, `in_vcd.c`, and `in_wav.c` modules with their current upstream
+streaming counterparts from `src/input/binary.c`, `src/input/vcd.c`, and
+`src/input/wav.c`. Replace each imported upstream file header with the
+DSView/PXTOOL GPL header style. Do not leave old `sr_input_format` and new
 `sr_input_module` registrations active at the same time.
 
 Keep `gnuplot` in DSView's output registration after the upstream module
@@ -192,6 +202,9 @@ test stubs in place of hardware-only services.
 
 ```cmake
     libsigrok/input/input.c
+    libsigrok/input/binary.c
+    libsigrok/input/vcd.c
+    libsigrok/input/wav.c
     libsigrok/output/output.c
     libsigrok/output/null.c
 ```
@@ -213,7 +226,8 @@ red until all modules are added.
 
 ```bash
 git add libsigrok/libsigrok.h libsigrok/libsigrok-internal.h \
-  libsigrok/input/input.c libsigrok/output/output.c \
+  libsigrok/input/input.c libsigrok/input/binary.c libsigrok/input/vcd.c \
+  libsigrok/input/wav.c libsigrok/output/output.c \
   libsigrok/output/null.c CMakeLists.txt PXTOOL/test/CMakeLists.txt \
   PXTOOL/test/test_io_options.cpp PXTOOL/test/test_upstream_io_stubs.c
 git commit -m "feat: migrate libsigrok io lifecycle contracts"
@@ -894,17 +908,11 @@ git add PXTOOL/pv/mainwindow.cpp PXTOOL/pv/mainwindow.h \
 git commit -m "feat: complete upstream export format integration"
 ```
 
-## Task 9: Migrate Input Modules to the Streaming API Without Enabling Import UI
+## Task 9: Verify Streaming Input Modules Before Enabling Import UI
 
 **Files:**
-- Create: `libsigrok/input/binary.c`
-- Create: `libsigrok/input/vcd.c`
-- Create: `libsigrok/input/wav.c`
-- Modify: `libsigrok/input/input.c`
-- Modify: `libsigrok/output/output.c`
-- Modify: `CMakeLists.txt`
-- Modify: `PXTOOL/test/CMakeLists.txt`
 - Modify: `PXTOOL/test/test_input_fixtures.cpp`
+- Modify: `PXTOOL/test/test_upstream_io_stubs.c`
 
 - [ ] **Step 1: Write a failing streaming-input test**
 
@@ -934,24 +942,10 @@ cmake --build . --target DSView-test
 ./build.macOS/DSView-test --run_test=binary_input_streams_logic_packets
 ```
 
-Expected: compile failure because DSView still compiles old `in_binary.c`.
+Expected: test failure because the migrated streaming modules are not yet
+covered by a datafeed observer.
 
-- [ ] **Step 3: Import upstream streaming input modules**
-
-Import from:
-
-```text
-/Users/yuanji/Desktop/project/libsigrok/src/input/binary.c
-/Users/yuanji/Desktop/project/libsigrok/src/input/vcd.c
-/Users/yuanji/Desktop/project/libsigrok/src/input/wav.c
-```
-
-Replace headers with the DSView/PXTOOL GPL header. Replace old
-`in_binary.c`, `in_vcd.c`, and `in_wav.c` registrations rather than compiling
-both APIs. Register only `binary`, `vcd`, and `wav`; do not add additional
-upstream input formats in this task.
-
-- [ ] **Step 4: Add a test input observer**
+- [ ] **Step 3: Add a test input observer**
 
 In `test_upstream_io_stubs.c`, register a test datafeed callback that records
 header/meta/logic/analog/end packets. Expose C accessors consumed by
@@ -966,7 +960,7 @@ uint64_t test_input_observer_samplerate(void);
 bool test_input_observer_saw_end(void);
 ```
 
-- [ ] **Step 5: Run binary, VCD, and WAV parser tests**
+- [ ] **Step 4: Run binary, VCD, and WAV parser tests**
 
 Run:
 
@@ -980,13 +974,11 @@ cmake --build . --target DSView-test
 Expected: all tests pass while MainWindow still retains the placeholder
 non-DSL import behavior.
 
-- [ ] **Step 6: Commit the streaming input framework**
+- [ ] **Step 5: Commit streaming input verification**
 
 ```bash
-git add libsigrok/input/binary.c libsigrok/input/vcd.c libsigrok/input/wav.c \
-  libsigrok/input/input.c CMakeLists.txt PXTOOL/test/CMakeLists.txt \
-  PXTOOL/test/test_input_fixtures.cpp PXTOOL/test/test_upstream_io_stubs.c
-git commit -m "feat: migrate current input formats to streaming api"
+git add PXTOOL/test/test_input_fixtures.cpp PXTOOL/test/test_upstream_io_stubs.c
+git commit -m "test: cover streaming input formats"
 ```
 
 ## Task 10: Connect VCD, WAV, and Raw Binary Import to Waveforms
