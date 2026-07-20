@@ -147,7 +147,7 @@ SR_API int sr_analog_to_float(const struct sr_datafeed_analog *analog,
 SR_API const char *sr_analog_si_prefix(float *value, int *digits)
 {
     static const char *prefixes[] = {
-        "f", "p", "n", "\\xc2\\xb5", "m", "", "k", "M", "G", "T"
+        "f", "p", "n", "\xc2\xb5", "m", "", "k", "M", "G", "T"
     };
     const int zero_index = 5;
     int prefix;
@@ -199,11 +199,11 @@ SR_API int sr_analog_unit_to_string(const struct sr_datafeed_analog *analog,
     switch (analog->meaning->unit) {
     case SR_UNIT_VOLT: unit = "V"; break;
     case SR_UNIT_AMPERE: unit = "A"; break;
-    case SR_UNIT_OHM: unit = "\\xe2\\x84\\xa6"; break;
+    case SR_UNIT_OHM: unit = "\xe2\x84\xa6"; break;
     case SR_UNIT_FARAD: unit = "F"; break;
     case SR_UNIT_KELVIN: unit = "K"; break;
-    case SR_UNIT_CELSIUS: unit = "\\xc2\\xb0C"; break;
-    case SR_UNIT_FAHRENHEIT: unit = "\\xc2\\xb0F"; break;
+    case SR_UNIT_CELSIUS: unit = "\xc2\xb0" "C"; break;
+    case SR_UNIT_FAHRENHEIT: unit = "\xc2\xb0" "F"; break;
     case SR_UNIT_HERTZ: unit = "Hz"; break;
     case SR_UNIT_PERCENTAGE: unit = "%"; break;
     case SR_UNIT_SECOND: unit = "s"; break;

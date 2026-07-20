@@ -34,6 +34,23 @@ BOOST_AUTO_TEST_CASE(upstream_direct_core_initializes_standard_analog_packet)
     BOOST_CHECK_EQUAL(spec.spec_digits, 3);
 }
 
+BOOST_AUTO_TEST_CASE(upstream_direct_core_reports_utf8_ohm_unit)
+{
+    sr_datafeed_analog analog{};
+    sr_analog_encoding encoding{};
+    sr_analog_meaning meaning{};
+    sr_analog_spec spec{};
+    char *unit = nullptr;
+
+    BOOST_REQUIRE_EQUAL(sr_analog_init(&analog, &encoding, &meaning, &spec, 3), SR_OK);
+    meaning.unit = SR_UNIT_OHM;
+
+    BOOST_REQUIRE_EQUAL(sr_analog_unit_to_string(&analog, &unit), SR_OK);
+    BOOST_REQUIRE(unit != nullptr);
+    BOOST_CHECK_EQUAL(std::string(unit), std::string("\xe2\x84\xa6"));
+    g_free(unit);
+}
+
 BOOST_AUTO_TEST_CASE(upstream_direct_core_forwards_analog_datafeed_packet)
 {
     sr_dev_inst sdi{};

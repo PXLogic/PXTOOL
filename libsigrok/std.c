@@ -1,7 +1,8 @@
 /*
- * This file is part of the libsigrok project.
+ * This file is part of the PXTOOL project.
+ * PXTOOL is based on PulseView.
  *
- * Copyright (C) 2013 Uwe Hermann <uwe@hermann-uwe.de>
+ * Copyright (C) 2026 DreamSourceLab <support@dreamsourcelab.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -68,9 +69,6 @@ SR_PRIV int std_hw_init(struct sr_context *sr_ctx, struct sr_dev_driver *di,
  * hw_dev_acquisition_start() API callback.
  *
  * @param sdi The device instance to use.
- * @param prefix A driver-specific prefix string used for log messages.
- * 		 Must not be NULL. An empty string is allowed.
- *
  * @return SR_OK upon success, SR_ERR_ARG upon invalid arguments, or
  *         SR_ERR upon other errors.
  */
