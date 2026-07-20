@@ -23,6 +23,7 @@
 #define DSVIEW_PV_DATA_FORMATCAPABILITY_H
 
 #include <QString>
+#include <QStringList>
 #include <QVector>
 
 namespace pv {
@@ -39,6 +40,11 @@ struct FormatCapability {
     QString description;
     QString dialogFilter;
     QString menuText;
+    QStringList extensions;
+    bool hasOptions = false;
+    bool supportsLogic = false;
+    bool supportsAnalog = false;
+    bool acceptsAnyData = false;
 };
 
 QVector<FormatCapability> importFormats();

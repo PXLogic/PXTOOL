@@ -29,6 +29,7 @@
 #include "data/logicsnapshot.h"
 #include "data/dsosnapshot.h"
 #include "data/analogsnapshot.h"
+#include "data/formatcapability.h"
 #include "data/iooptions.h"
 #include "data/decoderstack.h"
 #include "data/decode/decoder.h"
@@ -139,25 +140,6 @@ void StoreSession::wait()
 void StoreSession::cancel()
 { 
     _canceled = true; 
-}
-
-QList<QString> StoreSession::getSuportedExportFormats(){
-    const struct sr_output_module** supportedModules = sr_output_list();
-    QList<QString> list;
-    while(*supportedModules){
-        if(*supportedModules == NULL)
-            break;
-        if (_session->get_device()->get_work_mode() != LOGIC &&
-            strcmp((*supportedModules)->id, "csv"))
-            break;
-        QString format((*supportedModules)->desc);
-        format.append(" (*.");
-        format.append((*supportedModules)->id);
-        format.append(")");
-        list.append(format);
-        supportedModules++;
-    }
-    return list;
 }
 
 void StoreSession::setSelectedOutputFormatId(const QString &format_id)
@@ -858,17 +840,19 @@ bool StoreSession::export_start()
         return false;
     }
 
-    const struct sr_output_module **supportedModules = sr_output_list();
-    while (*supportedModules)
-    {
-        if (*supportedModules == NULL)
-            break;
-        if (!strcmp((*supportedModules)->id, _suffix.toUtf8().data()))
-        {
-            _outModule = *supportedModules;
-            break;
+    _outModule = NULL;
+    if (!_selectedOutputFormatId.isEmpty()) {
+        _outModule = sr_output_find(_selectedOutputFormatId.toUtf8().data());
+    }
+
+    if (_outModule == NULL) {
+        const QVector<data::FormatCapability> formats = data::exportFormats();
+        for (const data::FormatCapability &format : formats) {
+            if (format.extensions.contains(_suffix, Qt::CaseInsensitive)) {
+                _outModule = sr_output_find(format.id.toUtf8().data());
+                break;
+            }
         }
-        supportedModules++;
     }
 
     if (_outModule == NULL)
@@ -1756,35 +1740,35 @@ QString StoreSession::MakeExportFile(bool bDlg)
     }
     default_name += _session->get_session_time().toString("-yyMMdd-hhmmss");
 
-    //ext name
-    QList<QString> supportedFormats = getSuportedExportFormats();
-    QString filter;
-    for(int i = 0; i < supportedFormats.count();i++){
-        filter.append(supportedFormats[i]);
-        if(i < supportedFormats.count() - 1)
-            filter.append(";;");
-    }
+    const QVector<data::FormatCapability> formats = data::exportFormats();
+    const QString filter = data::saveDialogFilter(formats);
 
     QString selfilter;
+    const data::FormatCapability *selected_format = nullptr;
     if (!_selectedOutputFormatId.isEmpty()) {
-        const struct sr_output_module **supportedModules = sr_output_list();
-        while (*supportedModules) {
-            if (_selectedOutputFormatId == QString::fromUtf8((*supportedModules)->id)) {
-                selfilter = QString("%1 (*.%2)")
-                    .arg(QString::fromUtf8((*supportedModules)->desc))
-                    .arg(QString::fromUtf8((*supportedModules)->id));
-                break;
-            }
-            supportedModules++;
-        }
+        selected_format = data::findFormatById(formats, _selectedOutputFormatId);
+        if (selected_format)
+            selfilter = selected_format->dialogFilter;
     }
 
     if (selfilter.isEmpty() && app.userHistory.exportFormat != ""
             && _session->get_device()->get_work_mode() == LOGIC){
-        selfilter.append(app.userHistory.exportFormat);
+        for (const data::FormatCapability &format : formats) {
+            if (format.dialogFilter == app.userHistory.exportFormat) {
+                selected_format = &format;
+                _selectedOutputFormatId = format.id;
+                selfilter = format.dialogFilter;
+                break;
+            }
+        }
     }
-    else if (selfilter.isEmpty()){
-        selfilter.append(".csv");
+
+    if (selfilter.isEmpty()) {
+        selected_format = data::findFormatById(formats, "csv");
+        if (selected_format) {
+            selfilter = selected_format->dialogFilter;
+            _selectedOutputFormatId = selected_format->id;
+        }
     }
 
     if (bDlg)
@@ -1799,6 +1783,14 @@ QString StoreSession::MakeExportFile(bool bDlg)
         if (default_name == "")
         {
             return "";
+        }
+
+        for (const data::FormatCapability &format : formats) {
+            if (format.dialogFilter == selfilter) {
+                selected_format = &format;
+                _selectedOutputFormatId = format.id;
+                break;
+            }
         }
 
         bool bChange = false;
@@ -1820,19 +1812,11 @@ QString StoreSession::MakeExportFile(bool bDlg)
         }
     }
 
-    QString extName = selfilter;
-    if (extName == ""){
-        extName = filter;
-    }
-
-    QStringList list = extName.split('.').last().split(')');
-    _suffix = list.first();
-
     QFileInfo f(default_name);
-    if(f.suffix().compare(_suffix)){
-        //tr
-         default_name += "." + _suffix;
-    }           
+    if (f.suffix().isEmpty() && selected_format && !selected_format->extensions.isEmpty())
+        default_name += "." + selected_format->extensions.first();
+
+    _suffix = QFileInfo(default_name).suffix();
 
     _file_name = default_name;
     return default_name;    

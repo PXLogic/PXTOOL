@@ -119,6 +119,35 @@ BOOST_AUTO_TEST_CASE(export_menu_labels_are_stable)
                       "Export Value Change Dump...");
 }
 
+BOOST_AUTO_TEST_CASE(export_capabilities_keep_declared_extensions)
+{
+    const QVector<FormatCapability> outputs = pv::data::exportFormats();
+
+    BOOST_CHECK(find_id(outputs, "gnuplot").extensions == QStringList({"dat"}));
+    BOOST_CHECK(find_id(outputs, "srzip").extensions == QStringList({"sr"}));
+    BOOST_CHECK(find_id(outputs, "null").extensions.isEmpty());
+}
+
+BOOST_AUTO_TEST_CASE(export_capabilities_report_option_availability)
+{
+    const QVector<FormatCapability> outputs = pv::data::exportFormats();
+
+    BOOST_CHECK(find_id(outputs, "csv").hasOptions);
+    BOOST_CHECK(find_id(outputs, "srzip").hasOptions);
+    BOOST_CHECK(!find_id(outputs, "vcd").hasOptions);
+    BOOST_CHECK(!find_id(outputs, "null").hasOptions);
+}
+
+BOOST_AUTO_TEST_CASE(deferred_output_extensions_remain_unavailable_until_registered)
+{
+    const QVector<FormatCapability> outputs = pv::data::exportFormats();
+
+    BOOST_CHECK(find_id(outputs, "chronovu-la8").extensions == QStringList({"kdt"}));
+    BOOST_CHECK(find_id(outputs, "ols").extensions == QStringList({"ols"}));
+    BOOST_CHECK(find_id(outputs, "wavedrom").extensions ==
+                QStringList({"wavedrom", "json"}));
+}
+
 BOOST_AUTO_TEST_SUITE_END()
 
 BOOST_AUTO_TEST_CASE(enumerates_final_export_format_manifest)

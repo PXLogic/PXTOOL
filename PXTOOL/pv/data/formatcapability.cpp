@@ -21,6 +21,8 @@
 
 #include "formatcapability.h"
 
+#include <algorithm>
+
 #include <QStringList>
 
 extern "C" {
@@ -42,26 +44,47 @@ QString outputDescription(const sr_output_module *module)
     return QString::fromUtf8(module->desc ? module->desc : module->id);
 }
 
-QString extensionFromId(const char *id)
+QStringList extensionsFrom(const char *const *extensions)
 {
-    if (!id || !*id)
-        return "*";
-    return QString("*.%1").arg(QString::fromUtf8(id));
+    QStringList result;
+    for (int i = 0; extensions && extensions[i]; ++i) {
+        if (*extensions[i])
+            result.append(QString::fromUtf8(extensions[i]));
+    }
+    return result;
+}
+
+QString dialogFilter(const QString &description, const QStringList &extensions)
+{
+    QStringList patterns;
+    for (const QString &extension : extensions)
+        patterns.append(QString("*.%1").arg(extension));
+
+    if (patterns.isEmpty())
+        patterns.append("*");
+
+    return QString("%1 (%2)").arg(description, patterns.join(' '));
+}
+
+bool hasOutputOptions(const sr_output_module *module)
+{
+    const sr_option **options = sr_output_options_get(module);
+    const bool has_options = options && options[0];
+    sr_output_options_free(options);
+    return has_options;
 }
 
 FormatCapability makeImportCapability(const sr_input_module *module)
 {
     const QString id = QString::fromUtf8(module->id);
     const QString description = inputDescription(module);
-    const QString extension = module->exts && module->exts[0]
-        ? QString("*.%1").arg(QString::fromUtf8(module->exts[0]))
-        : extensionFromId(module->id);
 
     FormatCapability capability;
     capability.kind = FormatKind::Import;
     capability.id = id;
     capability.description = description;
-    capability.dialogFilter = QString("%1 (%2)").arg(description, extension);
+    capability.extensions = extensionsFrom(module->exts);
+    capability.dialogFilter = dialogFilter(description, capability.extensions);
     capability.menuText = QString("Import %1...").arg(description);
     return capability;
 }
@@ -70,15 +93,27 @@ FormatCapability makeExportCapability(const sr_output_module *module)
 {
     const QString id = QString::fromUtf8(module->id);
     const QString description = outputDescription(module);
-    const QString extension = extensionFromId(module->id);
 
     FormatCapability capability;
     capability.kind = FormatKind::Export;
     capability.id = id;
     capability.description = description;
-    capability.dialogFilter = QString("%1 (%2)").arg(description, extension);
+    capability.extensions = extensionsFrom(sr_output_extensions_get(module));
+    capability.hasOptions = hasOutputOptions(module);
+    capability.dialogFilter = dialogFilter(description, capability.extensions);
     capability.menuText = QString("Export %1...").arg(description);
     return capability;
+}
+
+int exportRank(const FormatCapability &capability)
+{
+    static const QStringList kExportOrder = {
+        "csv", "vcd", "gnuplot", "srzip", "analog", "ascii", "binary",
+        "bits", "chronovu-la8", "hex", "null", "ols", "wav", "wavedrom"
+    };
+
+    const int rank = kExportOrder.indexOf(capability.id);
+    return rank < 0 ? kExportOrder.size() : rank;
 }
 
 } // namespace
@@ -104,6 +139,10 @@ QVector<FormatCapability> exportFormats()
             continue;
         formats.push_back(makeExportCapability(modules[i]));
     }
+    std::stable_sort(formats.begin(), formats.end(),
+        [](const FormatCapability &left, const FormatCapability &right) {
+            return exportRank(left) < exportRank(right);
+        });
     return formats;
 }
 

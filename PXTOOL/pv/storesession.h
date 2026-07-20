@@ -99,7 +99,6 @@ public:
     }
 
 private:
-    QList<QString> getSuportedExportFormats();
     bool append_output(QFile &file, GString *chunk);
     double get_integer(GVariant * var);
     void MakeChunkName(char *chunk_name, int chunk_num, int index, int type, int version);
