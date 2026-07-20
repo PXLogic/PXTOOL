@@ -61,7 +61,8 @@ static int init(struct sr_output *o, GHashTable *options)
 	outc->meta = NULL;
 	outc->chunk_index = 0;
 
-    outc->filename = g_strdup(g_variant_get_bytestring(g_hash_table_lookup(options, "filename")));
+    outc->filename = g_strdup(g_variant_get_string(
+        g_hash_table_lookup(options, "filename"), NULL));
 
 	if (strlen(outc->filename) == 0)
 		return SR_ERR_ARG;
@@ -335,4 +336,3 @@ SR_PRIV struct sr_output_module output_srzip = {
 	.receive = receive,
 	.cleanup = cleanup,
 };
-

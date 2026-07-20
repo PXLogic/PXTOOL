@@ -29,6 +29,7 @@
 #include "data/logicsnapshot.h"
 #include "data/dsosnapshot.h"
 #include "data/analogsnapshot.h"
+#include "data/iooptions.h"
 #include "data/decoderstack.h"
 #include "data/decode/decoder.h"
 #include "data/decode/row.h"
@@ -46,7 +47,6 @@
 #include <QJsonArray>
 #include <QStandardPaths>
 #include <math.h>
-#include <QTextStream>
 #include <list>
 
 #ifdef _WIN32
@@ -56,7 +56,6 @@
 #include <libsigrokdecode.h>
 #include "config/appconfig.h"
 #include "dsvdef.h"
-#include "utility/encoding.h"
 #include "utility/path.h"
 #include "log.h" 
 
@@ -64,6 +63,33 @@
 #define DEOCDER_CONFIG_VERSION  2
  
 namespace pv { 
+
+namespace {
+
+class OutputInstance final {
+public:
+    OutputInstance(const sr_output_module *module, GHashTable *options,
+                   const sr_dev_inst *sdi)
+        : value_(sr_output_new(module, options, sdi))
+    {
+    }
+
+    ~OutputInstance()
+    {
+        if (value_)
+            sr_output_free(value_);
+    }
+
+    const sr_output *get() const
+    {
+        return value_;
+    }
+
+private:
+    const sr_output *value_ = nullptr;
+};
+
+} // namespace
 
 StoreSession::StoreSession(SigSession *session) :
 	_session(session),
@@ -136,6 +162,17 @@ QList<QString> StoreSession::getSuportedExportFormats(){
 void StoreSession::setSelectedOutputFormatId(const QString &format_id)
 {
     _selectedOutputFormatId = format_id;
+}
+
+bool StoreSession::append_output(QFile &file, GString *chunk)
+{
+    if (!chunk)
+        return true;
+
+    const gsize length = chunk->len;
+    const qint64 written = file.write(chunk->str, static_cast<qint64>(length));
+    g_string_free(chunk, TRUE);
+    return written == static_cast<qint64>(length);
 }
 
 bool StoreSession::save_start()
@@ -887,37 +924,69 @@ void StoreSession::export_exec(data::Snapshot *snapshot)
         return;
     }
 
-    GHashTable *params = g_hash_table_new(g_str_hash, g_str_equal);
-    GVariant* filenameGVariant = g_variant_new_bytestring(_file_name.toUtf8().data());
-    g_hash_table_insert(params, (char*)"filename", filenameGVariant);
-    GVariant* typeGVariant = g_variant_new_int16(channel_type);
-    g_hash_table_insert(params, (char*)"type", typeGVariant);
+    const sr_option **module_options = sr_output_options_get(_outModule);
+    data::IoOptions output_options(module_options);
+    if (module_options)
+        sr_output_options_free(module_options);
 
-    struct sr_output output;
-    output.module = (sr_output_module*) _outModule;
-    output.sdi = _session->get_device()->inst();
-    output.param = NULL;
-    output.start_sample_index = 0;
+    if (!strcmp(_outModule->id, "csv"))
+        output_options.set("type", channel_type);
+    else if (!strcmp(_outModule->id, "srzip"))
+        output_options.set("filename", _file_name);
 
-    if (channel_type == SR_CHANNEL_LOGIC){
-        output.start_sample_index = _start_index;
-    }
+    GHashTable *params = output_options.toGHashTable();
+    OutputInstance output(_outModule, params, _session->get_device()->inst());
+    g_hash_table_destroy(params);
 
-    if(_outModule->init){
-       if(_outModule->init(&output, params) != SR_OK){
-        dsv_err("Failed to init export module.");
+    if (!output.get()) {
+        _has_error = true;
+        _error = tr("Failed to initialize export module.");
         return;
-       }
     }
 
+    const bool module_writes_file = !strcmp(_outModule->id, "srzip");
     QFile file(_file_name);
-    file.open(QIODevice::WriteOnly | QIODevice::Text);
-    QTextStream out(&file); 
-    encoding::set_utf8(out);
-    //out.setGenerateByteOrderMark(true);  // UTF-8 without BOM
+    if (!module_writes_file &&
+        !file.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
+        _has_error = true;
+        _error = tr("Failed to open export file for writing.");
+        QFile::remove(_file_name);
+        return;
+    }
+
+    const auto fail_export = [this, &file, module_writes_file](const QString &error) {
+        _has_error = true;
+        _error = error;
+        file.close();
+        if (!module_writes_file)
+            QFile::remove(_file_name);
+    };
+
+    const auto send_packet = [this, &output, &file, module_writes_file, &fail_export](
+        const sr_datafeed_packet &packet) {
+        GString *chunk = nullptr;
+        if (sr_output_send(output.get(), &packet, &chunk) != SR_OK) {
+            if (chunk)
+                g_string_free(chunk, TRUE);
+            fail_export(QObject::tr("Failed to export data."));
+            return false;
+        }
+
+        if (module_writes_file) {
+            if (chunk)
+                g_string_free(chunk, TRUE);
+            return true;
+        }
+
+        if (!append_output(file, chunk)) {
+            fail_export(QObject::tr("Failed to write export file."));
+            return false;
+        }
+
+        return true;
+    };
 
     // Meta
-    GString *data_out;
     struct sr_datafeed_packet p;
     struct sr_datafeed_meta meta;
     struct sr_config *src;
@@ -962,11 +1031,11 @@ void StoreSession::export_exec(data::Snapshot *snapshot)
     p.status = SR_PKT_OK;
     p.payload = &meta;
     p.bExportOriginalData = 0;
-    _outModule->receive(&output, &p, &data_out);
-
-    if(data_out){
-        out << QString::fromUtf8((char*) data_out->str);
-        g_string_free(data_out,TRUE);
+    if (!send_packet(p)) {
+        for (GSList *l = meta.config; l; l = l->next)
+            _session->get_device()->free_config(static_cast<sr_config *>(l->data));
+        g_slist_free(meta.config);
+        return;
     }
     for (GSList *l = meta.config; l; l = l->next) {
         src = (struct sr_config *)l->data;
@@ -1069,11 +1138,9 @@ void StoreSession::export_exec(data::Snapshot *snapshot)
                 p.status = SR_PKT_OK;
                 p.payload = &lp;
                 p.bExportOriginalData = origin_flag;
-                _outModule->receive(&output, &p, &data_out);
-
-                if(data_out){
-                    out << QString::fromUtf8((char*) data_out->str);
-                    g_string_free(data_out,TRUE);
+                if (!send_packet(p)) {
+                    free(xbuf);
+                    return;
                 }
 
                 _units_stored += size;
@@ -1130,11 +1197,9 @@ void StoreSession::export_exec(data::Snapshot *snapshot)
             p.status = SR_PKT_OK;
             p.payload = &dp;
             p.bExportOriginalData = 0;
-            _outModule->receive(&output, &p, &data_out);
-
-            if(data_out){
-                out << (char*) data_out->str;
-                g_string_free(data_out,TRUE);
+            if (!send_packet(p)) {
+                free(ch_data_buffer);
+                return;
             }
 
             _units_stored += size;
@@ -1192,12 +1257,8 @@ void StoreSession::export_exec(data::Snapshot *snapshot)
                 p.status = SR_PKT_OK;
                 p.payload = &ap;
                 p.bExportOriginalData = 0;
-                _outModule->receive(&output, &p, &data_out);
-
-                if(data_out){
-                    out << (char*) data_out->str;
-                    g_string_free(data_out,TRUE);
-                }           
+                if (!send_packet(p))
+                    return;
 
                 _units_stored += size;
                 progress_updated();
@@ -1207,12 +1268,7 @@ void StoreSession::export_exec(data::Snapshot *snapshot)
         }
     }
 
-    // optional, as QFile destructor will already do it:
     file.close();
-    _outModule->cleanup(&output);
-    g_hash_table_destroy(params);
-    if (filenameGVariant != NULL)
-        g_variant_unref(filenameGVariant);
 
     progress_updated();
 }
