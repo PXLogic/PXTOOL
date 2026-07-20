@@ -1,0 +1,56 @@
+# VCS and local agent/index caches
+.git/
+.codegraph/
+.codex/
+
+# Build and packaging output
+build/
+build.linux/
+build.windows/
+build.macOS/
+build.dir/
+dist/
+package-root/
+share/
+logo/
+_CPack_Packages/
+CPackConfig.cmake
+CPackSourceConfig.cmake
+*.dmg
+*.zip
+
+# CMake in-source artifacts
+/CMakeCache.txt
+/CMakeFiles/
+/CTestTestfile.cmake
+/Makefile
+/cmake_install.cmake
+/install_manifest.txt
+/_deps/
+/PXTOOL/test/CMakeFiles/
+/PXTOOL/test/CTestTestfile.cmake
+/PXTOOL/test/Makefile
+/PXTOOL/test/cmake_install.cmake
+
+# Qt generated sources
+**/moc_*.cpp
+**/moc_*.cpp_parameters
+qrc_*.cpp
+
+# Web dependencies and output
+web/node_modules/
+web/dist/
+web/dist-ssr/
+web/logs/
+web/*.local
+
+# Python runtime/cache artifacts
+__pycache__/
+*.py[cod]
+.venv*/
+
+# Logs and temporary/editor files
+*.log
+.DS_Store
+*.sw?
+*~

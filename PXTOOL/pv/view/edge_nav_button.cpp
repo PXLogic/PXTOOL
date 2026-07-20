@@ -91,7 +91,11 @@ void EdgeNavButton::paintEvent(QPaintEvent *event)
     p.drawPath(arrow);
 }
 
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
 void EdgeNavButton::enterEvent(QEnterEvent *event)
+#else
+void EdgeNavButton::enterEvent(QEvent *event)
+#endif
 {
     (void)event;
     _hovered = true;
