@@ -36,6 +36,8 @@ add_executable(DSView-test
     ../pv/view/channeltint.cpp
     ../pv/dock/logsearch.cpp
     ../pv/data/formatcapability.cpp
+    ../pv/data/iooptions.cpp
+    ../pv/dialogs/inputoutputoptioneditor.cpp
     test_formatcapability_stubs.c
     test_upstream_io_stubs.c
     ../../libsigrok/analog.c

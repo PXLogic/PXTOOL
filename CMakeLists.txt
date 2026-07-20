@@ -291,10 +291,13 @@ set(DSView_SOURCES
     PXTOOL/pv/data/snapshot.cpp
     PXTOOL/pv/data/signaldata.cpp
     PXTOOL/pv/data/formatcapability.cpp
+    PXTOOL/pv/data/iooptions.cpp
     PXTOOL/pv/data/logicsnapshot.cpp
     PXTOOL/pv/data/spillmanager.cpp
     PXTOOL/pv/data/analogsnapshot.cpp
     PXTOOL/pv/dialogs/deviceoptions.cpp
+    PXTOOL/pv/dialogs/inputoutputoptioneditor.cpp
+    PXTOOL/pv/dialogs/inputoutputoptionsdlg.cpp
     PXTOOL/pv/prop/property.cpp
     PXTOOL/pv/prop/int.cpp
     PXTOOL/pv/prop/enum.cpp
@@ -440,7 +443,10 @@ set(DSView_HEADERS
     PXTOOL/pv/sigsession.h
     PXTOOL/pv/mainwindow.h
     PXTOOL/pv/dialogs/deviceoptions.h
+    PXTOOL/pv/dialogs/inputoutputoptioneditor.h
+    PXTOOL/pv/dialogs/inputoutputoptionsdlg.h
     PXTOOL/pv/data/formatcapability.h
+    PXTOOL/pv/data/iooptions.h
     PXTOOL/pv/data/spillmanager.h
     PXTOOL/pv/utility/diskcachesettings.h
     PXTOOL/pv/prop/property.h
