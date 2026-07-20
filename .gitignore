@@ -8,6 +8,9 @@
 # Local documentation (not tracked)
 /docs/
 
+# Local linked Git worktrees
+/.worktrees/
+
 # Local Qt user cache
 /.qt/
 
