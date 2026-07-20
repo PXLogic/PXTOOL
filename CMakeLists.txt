@@ -557,6 +557,7 @@ endif ()
 #-------------------------------------------------------------------------------
 set(libsigrok_SOURCES
     libsigrok/version.c
+    libsigrok/analog.c
     libsigrok/strutil.c
     libsigrok/std.c
     libsigrok/session_driver.c

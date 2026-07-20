@@ -264,7 +264,10 @@ struct ds_trigger {
 
 /*--- device.c --------------------------------------------------------------*/
 
-SR_PRIV struct sr_channel *sr_channel_new(uint16_t index, int type, gboolean enabled, const char *name);
+SR_PRIV struct sr_channel *sr_channel_new(struct sr_dev_inst *sdi,
+        int index, int type, gboolean enabled, const char *name);
+SR_PRIV void sr_channel_free(struct sr_channel *channel);
+SR_PRIV void sr_channel_free_cb(void *channel);
 
 SR_PRIV void sr_dev_probes_free(struct sr_dev_inst *sdi);
 
@@ -311,6 +314,10 @@ SR_PRIV int sr_session_source_add(gintptr poll_object, int events,
                                   sr_receive_data_callback_t cb,
                                   const struct sr_dev_inst *sdi);
 SR_PRIV int sr_session_source_remove(gintptr poll_object);
+SR_PRIV int sr_session_send_meta(const struct sr_dev_inst *sdi,
+        uint32_t key, GVariant *var);
+SR_PRIV int sr_session_send(const struct sr_dev_inst *sdi,
+        const struct sr_datafeed_packet *packet);
 
 /*--- std.c -----------------------------------------------------------------*/
 
@@ -318,8 +325,28 @@ typedef int (*dev_close_t)(struct sr_dev_inst *sdi);
 
 SR_PRIV int std_hw_init(struct sr_context *sr_ctx, struct sr_dev_driver *di,
 		const char *prefix);
-SR_PRIV int std_session_send_df_header(const struct sr_dev_inst *sdi,
-		const char *prefix);
+SR_PRIV int std_session_send_df_header(const struct sr_dev_inst *sdi);
+SR_PRIV int std_session_send_df_end(const struct sr_dev_inst *sdi);
+SR_PRIV int std_session_send_df_trigger(const struct sr_dev_inst *sdi);
+SR_PRIV int std_session_send_df_frame_begin(const struct sr_dev_inst *sdi);
+SR_PRIV int std_session_send_df_frame_end(const struct sr_dev_inst *sdi);
+
+/*--- analog.c ------------------------------------------------------------*/
+
+SR_PRIV int sr_analog_init(struct sr_datafeed_analog *analog,
+        struct sr_analog_encoding *encoding,
+        struct sr_analog_meaning *meaning,
+        struct sr_analog_spec *spec, int digits);
+
+/*--- strutil.c ------------------------------------------------------------*/
+
+SR_PRIV int sr_atod_ascii(const char *str, double *ret);
+SR_PRIV int sr_atod_ascii_digits(const char *str, double *ret, int *digits);
+SR_PRIV int sr_atof_ascii(const char *str, float *ret);
+SR_PRIV int sr_atof_ascii_digits(const char *str, float *ret, int *digits);
+SR_PRIV int sr_count_digits(const char *str, int *digits);
+SR_PRIV GString *sr_hexdump_new(const uint8_t *data, size_t len);
+SR_PRIV void sr_hexdump_free(GString *text);
 
 /*--- trigger.c -------------------------------------------------*/
 SR_PRIV uint64_t sr_trigger_get_mask0(uint16_t stage);

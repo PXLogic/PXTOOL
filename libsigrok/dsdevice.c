@@ -43,9 +43,13 @@
  */
 
 /** @private */
-SR_PRIV struct sr_channel *sr_channel_new(uint16_t index, int type, gboolean enabled, const char *name)
+SR_PRIV struct sr_channel *sr_channel_new(struct sr_dev_inst *sdi,
+        int index, int type, gboolean enabled, const char *name)
 {
 	struct sr_channel *probe;
+
+	if (!sdi)
+		return NULL;
 
 	probe = malloc(sizeof(struct sr_channel));
 	if (probe == NULL) {
@@ -54,14 +58,32 @@ SR_PRIV struct sr_channel *sr_channel_new(uint16_t index, int type, gboolean ena
 	}
 	memset(probe, 0, sizeof(struct sr_channel));
 
+	probe->sdi = sdi;
 	probe->index = index;
 	probe->type = type;
 	probe->enabled = enabled;
 	if (name)
 		probe->name = g_strdup(name);
     probe->vga_ptr = NULL;
+	sdi->channels = g_slist_append(sdi->channels, probe);
 
 	return probe;
+}
+
+SR_PRIV void sr_channel_free(struct sr_channel *channel)
+{
+	if (!channel)
+		return;
+
+	g_free(channel->name);
+	g_free(channel->trigger);
+	g_free(channel->vga_ptr);
+	g_free(channel);
+}
+
+SR_PRIV void sr_channel_free_cb(void *channel)
+{
+	sr_channel_free(channel);
 }
 
 /**
@@ -212,17 +234,11 @@ SR_PRIV struct sr_dev_inst *sr_dev_inst_new(int mode, int status,
 /** @private */
 SR_PRIV void sr_dev_probes_free(struct sr_dev_inst *sdi)
 {
-    struct sr_channel *probe;
-    GSList *l;
+    if (!sdi)
+        return;
 
-    for (l = sdi->channels; l; l = l->next) {
-        probe = l->data;
-        safe_free(probe->name);
-        safe_free(probe->trigger);
-		safe_free(probe->vga_ptr);
-        g_free(probe);
-    }
-	g_safe_free_list(sdi->channels);
+    g_slist_free_full(sdi->channels, sr_channel_free_cb);
+    sdi->channels = NULL;
 }
 
 SR_PRIV void sr_dev_inst_free(struct sr_dev_inst *sdi)

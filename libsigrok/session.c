@@ -124,6 +124,45 @@ SR_PRIV int sr_session_destroy(void)
 	return SR_OK;
 }
 
+SR_PRIV int sr_session_send_meta(const struct sr_dev_inst *sdi,
+		uint32_t key, GVariant *var)
+{
+	struct sr_config *config;
+	struct sr_datafeed_packet packet;
+	struct sr_datafeed_meta meta;
+	int ret;
+
+	if (!var)
+		return SR_ERR_ARG;
+
+	config = sr_config_new(key, var);
+	if (!config)
+		return SR_ERR_MALLOC;
+
+	memset(&meta, 0, sizeof(meta));
+	memset(&packet, 0, sizeof(packet));
+	meta.config = g_slist_append(NULL, config);
+	packet.type = SR_DF_META;
+	packet.status = SR_PKT_OK;
+	packet.payload = &meta;
+
+	ret = sr_session_send(sdi, &packet);
+	g_slist_free(meta.config);
+	sr_config_free(config);
+
+	return ret;
+}
+
+SR_PRIV int sr_session_send(const struct sr_dev_inst *sdi,
+		const struct sr_datafeed_packet *packet)
+{
+	if (!sdi || !packet)
+		return SR_ERR_ARG;
+
+	/* DSView retains one installed datafeed boundary for native and file input. */
+	return ds_data_forward(sdi, packet);
+}
+
 
 /**
  * Call every device in the session's callback.

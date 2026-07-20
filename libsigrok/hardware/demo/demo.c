@@ -2624,14 +2624,12 @@ static int load_virtual_device_session(struct sr_dev_inst *sdi)
                         {
                             tmp_u64 = strtoul(keys[j] + 5, NULL, 10);
                             channel_type = SR_CHANNEL_LOGIC;
-                            if (!(probe = sr_channel_new(tmp_u64, channel_type, TRUE, val)))
+                            if (!(probe = sr_channel_new(sdi, tmp_u64, channel_type, TRUE, val)))
                             {
                                 sr_err("%s: create channel failed", __func__);
                                 sr_dev_inst_free(sdi);
                                 return SR_ERR;
                             }
-
-                            sdi->channels = g_slist_append(sdi->channels, probe);
                         }
                     }
                     adjust_samplerate(sdi);
@@ -2651,13 +2649,12 @@ static int load_virtual_device_session(struct sr_dev_inst *sdi)
 
             for (int i = 0; i < vdev->num_probes; i++)
             { 
-                if (!(probe = sr_channel_new(i, SR_CHANNEL_LOGIC, TRUE, probe_names[i])))
+                if (!(probe = sr_channel_new(sdi, i, SR_CHANNEL_LOGIC, TRUE, probe_names[i])))
                 {
                     sr_err("%s: create channel failed", __func__);
                     sr_dev_inst_free(sdi);
                     return SR_ERR;
                 }
-                sdi->channels = g_slist_append(sdi->channels, probe);
             }
             logic_adjust_samplerate(sdi->priv);
         }
@@ -2671,7 +2668,7 @@ static int load_virtual_device_session(struct sr_dev_inst *sdi)
 
         for (int i = 0; i < DSO_DEFAULT_NUM_PROBE; i++)
         { 
-            if (!(probe = sr_channel_new(i, SR_CHANNEL_DSO, TRUE, probe_names[i])))
+            if (!(probe = sr_channel_new(sdi, i, SR_CHANNEL_DSO, TRUE, probe_names[i])))
             {
                 sr_err("%s: create channel failed", __func__);
                 sr_dev_inst_free(sdi);
@@ -2684,7 +2681,6 @@ static int load_virtual_device_session(struct sr_dev_inst *sdi)
             probe->hw_offset = DSO_DEFAULT_HW_OFFSET;
             probe->offset = DSO_DEFAULT_OFFSET;
             probe->trig_value = DSO_DEFAULT_TRIG_VAL;
-            sdi->channels = g_slist_append(sdi->channels, probe);
         }
         adjust_samplerate(sdi);
         break;
@@ -2697,7 +2693,7 @@ static int load_virtual_device_session(struct sr_dev_inst *sdi)
         
         for (int i = 0; i < ANALOG_DEFAULT_NUM_PROBE; i++)
         { 
-            if (!(probe = sr_channel_new(i, SR_CHANNEL_ANALOG, TRUE, probe_names[i])))
+            if (!(probe = sr_channel_new(sdi, i, SR_CHANNEL_ANALOG, TRUE, probe_names[i])))
             {
                 sr_err("%s: create channel failed", __func__);
                 sr_dev_inst_free(sdi);
@@ -2716,7 +2712,6 @@ static int load_virtual_device_session(struct sr_dev_inst *sdi)
             probe->map_min =  ANALOG_DEFAULT_MAP_MIN;
             probe->map_max = ANALOG_DEFAULT_MAP_MAX;
 
-            sdi->channels = g_slist_append(sdi->channels, probe);
         }
         adjust_samplerate(sdi);
         break;

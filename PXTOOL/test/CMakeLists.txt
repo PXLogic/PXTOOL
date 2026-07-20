@@ -38,8 +38,11 @@ add_executable(DSView-test
     ../pv/data/formatcapability.cpp
     test_formatcapability_stubs.c
     test_upstream_io_stubs.c
+    ../../libsigrok/analog.c
     ../../libsigrok/device_source.c
     ../../libsigrok/dsdevice.c
+    ../../libsigrok/session.c
+    ../../libsigrok/std.c
     ../../libsigrok/input/input.c
     ../../libsigrok/input/in_binary.c
     ../../libsigrok/input/in_vcd.c
@@ -66,7 +69,6 @@ if(DSVIEW_ENABLE_UPSTREAM_FX2LAFW)
     target_sources(DSView-test PRIVATE
         ../../libsigrok/hardware/upstream-fx2lafw/fx2lafw.c
         ../../libsigrok/hardware/common/ezusb.c
-        ../../libsigrok/std.c
     )
 endif()
 

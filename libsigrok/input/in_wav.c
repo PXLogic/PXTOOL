@@ -121,9 +121,8 @@ static int init(struct sr_input *in, const char *filename)
 
 	for (i = 0; i < ctx->num_channels; i++) {
 		sprintf(probename,"CH%d", i + 1);
-		if (!(probe = sr_channel_new(0, SR_CHANNEL_ANALOG, TRUE, probename)))
+		if (!(probe = sr_channel_new(in->sdi, i, SR_CHANNEL_ANALOG, TRUE, probename)))
 			return SR_ERR;
-		in->sdi->channels = g_slist_append(in->sdi->channels, probe);
 	}
 
 	return SR_OK;
@@ -145,7 +144,7 @@ static int loadfile(struct sr_input *in, const char *filename)
     packet.status = SR_PKT_OK;
 
 	/* Send header packet to the session bus. */
-	std_session_send_df_header(in->sdi, LOG_PREFIX);
+	std_session_send_df_header(in->sdi);
 
 	packet.type = SR_DF_META;
 	packet.payload = &meta;
@@ -209,4 +208,3 @@ SR_PRIV struct sr_input_format input_wav = {
 	.init = init,
 	.loadfile = loadfile,
 };
-

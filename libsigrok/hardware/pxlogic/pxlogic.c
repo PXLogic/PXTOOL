@@ -228,10 +228,9 @@ static int setup_probes(struct sr_dev_inst *sdi, int num_probes)
     struct PX_context *devc = sdi->priv;
 
     for (j = 0; j < num_probes; j++) {
-        if (!(probe = sr_channel_new(j, channel_modes[devc->ch_mode].type,
+        if (!(probe = sr_channel_new(sdi, j, channel_modes[devc->ch_mode].type,
                   TRUE, probe_names[j])))
             return SR_ERR;
-        sdi->channels = g_slist_append(sdi->channels, probe);
     }
 
     probe_init(sdi);
@@ -1023,15 +1022,16 @@ SR_PRIV int pxlogic_adjust_probes(struct sr_dev_inst *sdi, int num_probes)
 
     j = g_slist_length(sdi->channels);
     while (j < num_probes) {
-        if (!(probe = sr_channel_new(j, channel_modes[devc->ch_mode].type,
+        if (!(probe = sr_channel_new(sdi, j, channel_modes[devc->ch_mode].type,
                   TRUE, probe_names[j])))
             return SR_ERR;
-        sdi->channels = g_slist_append(sdi->channels, probe);
         j++;
     }
 
     while (j > num_probes) {
-        sdi->channels = g_slist_delete_link(sdi->channels, g_slist_last(sdi->channels));
+        GSList *last = g_slist_last(sdi->channels);
+        sr_channel_free(last->data);
+        sdi->channels = g_slist_delete_link(sdi->channels, last);
         j--;
     }
 
@@ -1985,7 +1985,7 @@ static int hw_dev_acquisition_start(struct sr_dev_inst *sdi, void *cb_data)
 
     sr_session_source_add((gintptr)devc->channel, G_IO_IN | G_IO_ERR, 5,
         receive_data2, sdi);
-    std_session_send_df_header(sdi, LOG_PREFIX);
+    std_session_send_df_header(sdi);
 
     start_transfers(devc->cb_data);
     sr_dbg("start_transfers");

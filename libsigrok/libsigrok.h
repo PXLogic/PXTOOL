@@ -203,8 +203,8 @@ enum sr_datafeed_packet_type {
     SR_DF_OVERFLOW,
 };
 
-/** Values for sr_datafeed_analog.mq. */
-enum {
+/** Values for sr_datafeed_analog.meaning->mq. */
+enum sr_mq {
 	SR_MQ_VOLTAGE = 10000,
 	SR_MQ_CURRENT,
 	SR_MQ_RESISTANCE,
@@ -226,8 +226,8 @@ enum {
 	SR_MQ_RELATIVE_HUMIDITY,
 };
 
-/** Values for sr_datafeed_analog.unit. */
-enum {
+/** Values for sr_datafeed_analog.meaning->unit. */
+enum sr_unit {
 	SR_UNIT_VOLT = 10000,
 	SR_UNIT_AMPERE,
 	SR_UNIT_OHM,
@@ -264,8 +264,8 @@ enum {
 	SR_UNIT_CONCENTRATION,
 };
 
-/** Values for sr_datafeed_analog.flags. */
-enum {
+/** Values for sr_datafeed_analog.meaning->mqflags. */
+enum sr_mqflag {
 	/** Voltage measurement is alternating current (AC). */
 	SR_MQFLAG_AC = 0x01,
 	/** Voltage measurement is direct current (DC). */
@@ -359,6 +359,11 @@ struct sr_context; //hidden all field
 struct sr_dev_inst;
 struct sr_dev_driver;
 
+struct sr_rational {
+    int64_t p;
+    uint64_t q;
+};
+
 struct sr_datafeed_packet {
 	uint16_t type; //see enum sr_datafeed_packet_type
     uint16_t status;
@@ -393,6 +398,28 @@ struct sr_datafeed_logic {
 	void *data;
 };
 
+struct sr_analog_encoding {
+    uint8_t unitsize;
+    gboolean is_signed;
+    gboolean is_float;
+    gboolean is_bigendian;
+    int8_t digits;
+    gboolean is_digits_decimal;
+    struct sr_rational scale;
+    struct sr_rational offset;
+};
+
+struct sr_analog_meaning {
+    enum sr_mq mq;
+    enum sr_unit unit;
+    enum sr_mqflag mqflags;
+    GSList *channels;
+};
+
+struct sr_analog_spec {
+    int8_t spec_digits;
+};
+
 struct sr_datafeed_dso {
     /** The probes for which data is included in this packet. */
     GSList *probes;
@@ -415,9 +442,16 @@ struct sr_datafeed_dso {
 };
 
 struct sr_datafeed_analog {
+	/* Standard libsigrok packet representation. */
+	void *data;
+	uint32_t num_samples;
+	struct sr_analog_encoding *encoding;
+	struct sr_analog_meaning *meaning;
+	struct sr_analog_spec *spec;
+
+	/* DSView legacy acquisition fields retained for native hardware paths. */
 	/** The probes for which data is included in this packet. */
 	GSList *probes;
-	int num_samples;
     /** How many bits for each sample */
     uint8_t unit_bits;
     /** Interval between two valid samples */
@@ -428,9 +462,6 @@ struct sr_datafeed_analog {
 	int unit;
 	/** Bitmap with extra information about the MQ. */
 	uint64_t mqflags;
-	/** The analog value(s). The data is interleaved according to
-	 * the probes list. */
-    void *data;
 };
 
 /** Input (file) format struct. */
@@ -652,6 +683,8 @@ enum OPERATION_MODE {
 };
 
 struct sr_channel {
+    /** Device instance this channel belongs to. */
+    struct sr_dev_inst *sdi;
     /* The index field will go: use g_slist_length(sdi->channels) instead. */
     uint16_t index;
     int type;
@@ -1270,6 +1303,28 @@ SR_API uint64_t sr_parse_timestring(const char *timestring);
 SR_API gboolean sr_parse_boolstring(const char *boolstring);
 SR_API int sr_parse_period(const char *periodstr, uint64_t *p, uint64_t *q);
 SR_API int sr_parse_voltage(const char *voltstr, uint64_t *p, uint64_t *q);
+SR_API char *sr_text_trim_spaces(char *s);
+SR_API char *sr_text_next_line(char *s, size_t l, char **next, size_t *taken);
+SR_API char *sr_text_next_word(char *s, char **next);
+
+/*--- analog.c ------------------------------------------------------------*/
+
+SR_API int sr_analog_to_float(const struct sr_datafeed_analog *analog,
+                               float *outbuf);
+SR_API const char *sr_analog_si_prefix(float *value, int *digits);
+SR_API gboolean sr_analog_si_prefix_friendly(enum sr_unit unit);
+SR_API int sr_analog_unit_to_string(const struct sr_datafeed_analog *analog,
+                                    char **result);
+SR_API void sr_rational_set(struct sr_rational *r, int64_t p, uint64_t q);
+
+enum sr_loglevel {
+    SR_LOG_NONE = 0,
+    SR_LOG_ERR,
+    SR_LOG_WARN,
+    SR_LOG_INFO,
+    SR_LOG_DBG,
+    SR_LOG_SPEW,
+};
 
 /*--- version.c -------------------------------------------------------------*/
 
@@ -1305,6 +1360,7 @@ SR_API void ds_log_set_context(xlog_context *ctx);
  * Set the private log context level
  */
 SR_API void ds_log_level(int level);
+SR_API int sr_log_loglevel_get(void);
 
 
 // A new device attached, user need to call ds_get_device_list to get the list,

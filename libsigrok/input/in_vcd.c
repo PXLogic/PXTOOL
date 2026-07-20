@@ -383,13 +383,12 @@ static int init(struct sr_input *in, const char *filename)
 	for (i = 0; i < num_probes; i++) {
 		snprintf(name, SR_MAX_PROBENAME_LEN, "%d", i);
 		
-		if (!(probe = sr_channel_new(i, SR_CHANNEL_LOGIC, TRUE, name)))
+		if (!(probe = sr_channel_new(in->sdi, i, SR_CHANNEL_LOGIC, TRUE, name)))
 		{
 			release_context(ctx);
 			return SR_ERR;
 		}
 			
-		in->sdi->channels = g_slist_append(in->sdi->channels, probe);
 	}
 
 	return SR_OK;
@@ -582,7 +581,7 @@ static int loadfile(struct sr_input *in, const char *filename)
 	}
 
 	/* Send header packet to the session bus. */
-	std_session_send_df_header(in->sdi, LOG_PREFIX);
+	std_session_send_df_header(in->sdi);
 
 	/* Send metadata about the SR_DF_LOGIC packets to come. */
 	packet.type = SR_DF_META;
