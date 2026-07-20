@@ -247,8 +247,9 @@ SR_API void sr_output_options_free(const struct sr_option **options)
  *
  * @since 0.4.0
  */
-SR_API const struct sr_output *sr_output_new(const struct sr_output_module *omod,
-		GHashTable *options, const struct sr_dev_inst *sdi)
+static const struct sr_output *output_new(
+		const struct sr_output_module *omod, GHashTable *options,
+		const struct sr_dev_inst *sdi, uint64_t start_sample_index)
 {
 	struct sr_output *op;
 	const struct sr_option *mod_opts;
@@ -264,6 +265,7 @@ SR_API const struct sr_output *sr_output_new(const struct sr_output_module *omod
 	op = g_malloc0(sizeof(struct sr_output));
 	op->module = omod;
 	op->sdi = sdi;
+	op->start_sample_index = start_sample_index;
 
 	new_opts = g_hash_table_new_full(g_str_hash, g_str_equal, g_free,
 			(GDestroyNotify)g_variant_unref);
@@ -312,6 +314,19 @@ SR_API const struct sr_output *sr_output_new(const struct sr_output_module *omod
 		g_hash_table_destroy(new_opts);
 
 	return op;
+}
+
+SR_API const struct sr_output *sr_output_new(const struct sr_output_module *omod,
+		GHashTable *options, const struct sr_dev_inst *sdi)
+{
+	return output_new(omod, options, sdi, 0);
+}
+
+SR_API const struct sr_output *sr_output_new_with_start_sample_index(
+		const struct sr_output_module *omod, GHashTable *options,
+		const struct sr_dev_inst *sdi, uint64_t start_sample_index)
+{
+	return output_new(omod, options, sdi, start_sample_index);
 }
 
 /**

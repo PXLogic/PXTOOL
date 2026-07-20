@@ -1276,6 +1276,10 @@ SR_API const struct sr_option **sr_output_options_get(const struct sr_output_mod
 SR_API void sr_output_options_free(const struct sr_option **options);
 SR_API const struct sr_output *sr_output_new(const struct sr_output_module *omod,
 		GHashTable *options, const struct sr_dev_inst *sdi);
+/* DSView extension for exports that retain their original sample index. */
+SR_API const struct sr_output *sr_output_new_with_start_sample_index(
+		const struct sr_output_module *omod, GHashTable *options,
+		const struct sr_dev_inst *sdi, uint64_t start_sample_index);
 SR_API int sr_output_send(const struct sr_output *o,
 		const struct sr_datafeed_packet *packet, GString **out);
 SR_API int sr_output_free(const struct sr_output *o);

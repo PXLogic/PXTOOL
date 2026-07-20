@@ -500,7 +500,8 @@ Run:
 
 ```bash
 cmake --build . --target DSView-test
-./build.macOS/DSView-test --run_test=binary_output_preserves_nul_bytes,null_output_writes_no_payload
+./build.macOS/DSView-test --run_test=io_migration_output_fixtures/binary_output_preserves_nul_bytes
+./build.macOS/DSView-test --run_test=io_migration_output_fixtures/null_output_writes_no_payload
 ```
 
 Expected: failure because the binary module is not registered and the current
@@ -555,7 +556,8 @@ Run:
 
 ```bash
 cmake --build . --target DSView-test
-./build.macOS/DSView-test --run_test=binary_output_preserves_nul_bytes,null_output_writes_no_payload
+./build.macOS/DSView-test --run_test=io_migration_output_fixtures/binary_output_preserves_nul_bytes
+./build.macOS/DSView-test --run_test=io_migration_output_fixtures/null_output_writes_no_payload
 ./build.macOS/DSView-test --run_test=formatcapability
 ```
 

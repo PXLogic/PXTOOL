@@ -69,8 +69,9 @@ namespace {
 class OutputInstance final {
 public:
     OutputInstance(const sr_output_module *module, GHashTable *options,
-                   const sr_dev_inst *sdi)
-        : value_(sr_output_new(module, options, sdi))
+                   const sr_dev_inst *sdi, uint64_t start_sample_index)
+        : value_(sr_output_new_with_start_sample_index(
+            module, options, sdi, start_sample_index))
     {
     }
 
@@ -930,12 +931,16 @@ void StoreSession::export_exec(data::Snapshot *snapshot)
         sr_output_options_free(module_options);
 
     if (!strcmp(_outModule->id, "csv"))
-        output_options.set("type", channel_type);
+        output_options.set("type",
+            QVariant::fromValue(static_cast<qint16>(channel_type)));
     else if (!strcmp(_outModule->id, "srzip"))
         output_options.set("filename", _file_name);
 
     GHashTable *params = output_options.toGHashTable();
-    OutputInstance output(_outModule, params, _session->get_device()->inst());
+    const uint64_t start_sample_index =
+        channel_type == SR_CHANNEL_LOGIC ? _start_index : 0;
+    OutputInstance output(_outModule, params, _session->get_device()->inst(),
+                          start_sample_index);
     g_hash_table_destroy(params);
 
     if (!output.get()) {
@@ -954,12 +959,16 @@ void StoreSession::export_exec(data::Snapshot *snapshot)
         return;
     }
 
-    const auto fail_export = [this, &file, module_writes_file](const QString &error) {
-        _has_error = true;
-        _error = error;
+    const auto cleanup_partial_export = [&file, module_writes_file, this] {
         file.close();
         if (!module_writes_file)
             QFile::remove(_file_name);
+    };
+
+    const auto fail_export = [this, &cleanup_partial_export](const QString &error) {
+        _has_error = true;
+        _error = error;
+        cleanup_partial_export();
     };
 
     const auto send_packet = [this, &output, &file, module_writes_file, &fail_export](
@@ -1060,6 +1069,7 @@ void StoreSession::export_exec(data::Snapshot *snapshot)
         if (start_index > logic_snapshot->get_ring_sample_count()){
             dsv_err("ERROR:the start curosr is invalid!");
             _units_stored = -1;
+            fail_export(tr("Invalid export data range."));
             progress_updated();
             return;
         }
@@ -1116,8 +1126,7 @@ void StoreSession::export_exec(data::Snapshot *snapshot)
                     size = buf_sample_num - i;
                 uint8_t *xbuf = (uint8_t *)malloc(size * unitsize);
                 if (xbuf == NULL) {
-                    _has_error = true;
-                    _error = tr("xbuffer malloc failed.");
+                    fail_export(tr("Failed to allocate export buffer."));
                     return;
                 }                
                 memset(xbuf, 0, size * unitsize);
@@ -1159,6 +1168,7 @@ void StoreSession::export_exec(data::Snapshot *snapshot)
         uint8_t *ch_data_buffer = (uint8_t*)malloc(usize * dso_snapshot->get_channel_num() + 1);
         if (ch_data_buffer == NULL){
             dsv_err("StoreSession::export_proc, malloc failed.");
+            fail_export(tr("Failed to allocate export buffer."));
             return;
         }
 
@@ -1267,6 +1277,18 @@ void StoreSession::export_exec(data::Snapshot *snapshot)
             }
         }
     }
+
+    if (_canceled) {
+        cleanup_partial_export();
+        return;
+    }
+
+    p.type = SR_DF_END;
+    p.status = SR_PKT_OK;
+    p.payload = nullptr;
+    p.bExportOriginalData = 0;
+    if (!send_packet(p))
+        return;
 
     file.close();
 
