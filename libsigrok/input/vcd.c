@@ -992,6 +992,15 @@ static void create_feeds(const struct sr_input *in)
 	}
 }
 
+static void free_previous_header(struct context *inc)
+{
+	g_slist_free_full(inc->prev.sr_groups, sr_channel_group_free_cb);
+	inc->prev.sr_groups = NULL;
+
+	g_slist_free_full(inc->prev.sr_channels, sr_channel_free_cb);
+	inc->prev.sr_channels = NULL;
+}
+
 /*
  * Keep track of a previously created channel list, in preparation of
  * re-reading the input file. Gets called from reset()/cleanup() paths.
@@ -1002,11 +1011,10 @@ static void keep_header_for_reread(const struct sr_input *in)
 
 	inc = in->priv;
 
-	g_slist_free_full(inc->prev.sr_groups, sr_channel_group_free_cb);
+	free_previous_header(inc);
 	inc->prev.sr_groups = in->sdi->channel_groups;
 	in->sdi->channel_groups = NULL;
 
-	g_slist_free_full(inc->prev.sr_channels, sr_channel_free_cb);
 	inc->prev.sr_channels = in->sdi->channels;
 	in->sdi->channels = NULL;
 }
@@ -2068,6 +2076,8 @@ static void cleanup(struct sr_input *in)
 	inc = in->priv;
 
 	keep_header_for_reread(in);
+	if (in->finalizing)
+		free_previous_header(inc);
 
 	g_slist_free_full(inc->channels, free_channel);
 	inc->channels = NULL;

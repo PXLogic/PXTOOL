@@ -85,6 +85,10 @@ target_include_directories(DSView-test PRIVATE
     ${Boost_INCLUDE_DIRS}
 )
 
+target_compile_definitions(DSView-test PRIVATE
+    DSVIEW_TESTING
+)
+
 if(DSVIEW_ENABLE_UPSTREAM_FX2LAFW)
     target_compile_definitions(DSView-test PRIVATE
         FX2LAFW_MANIFEST_PATH="${CMAKE_CURRENT_SOURCE_DIR}/../res/fx2lafw/manifest.txt"

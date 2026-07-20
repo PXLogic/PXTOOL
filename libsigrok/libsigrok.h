@@ -479,6 +479,7 @@ struct sr_input {
 	GString *buf;
 	struct sr_dev_inst *sdi;
 	gboolean sdi_ready;
+	gboolean finalizing;
 	void *priv;
 };
 

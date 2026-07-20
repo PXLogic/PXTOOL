@@ -30,6 +30,27 @@
 #undef LOG_PREFIX
 #define LOG_PREFIX "device: "
 
+#ifdef DSVIEW_TESTING
+static unsigned int channel_free_count;
+static unsigned int channel_group_free_count;
+
+SR_PRIV void sr_test_channel_lifecycle_reset(void)
+{
+	channel_free_count = 0;
+	channel_group_free_count = 0;
+}
+
+SR_PRIV unsigned int sr_test_channel_free_count(void)
+{
+	return channel_free_count;
+}
+
+SR_PRIV unsigned int sr_test_channel_group_free_count(void)
+{
+	return channel_group_free_count;
+}
+#endif
+
 /**
  * @file
  *
@@ -77,6 +98,9 @@ SR_PRIV void sr_channel_free(struct sr_channel *channel)
 	if (!channel)
 		return;
 
+#ifdef DSVIEW_TESTING
+	channel_free_count++;
+#endif
 	g_free(channel->name);
 	g_free(channel->trigger);
 	g_free(channel->vga_ptr);
@@ -136,6 +160,9 @@ SR_PRIV void sr_channel_group_free(struct sr_channel_group *group)
     if (!group)
         return;
 
+#ifdef DSVIEW_TESTING
+	channel_group_free_count++;
+#endif
     g_free((gpointer)group->name);
     g_slist_free(group->channels);
     g_free(group->priv);

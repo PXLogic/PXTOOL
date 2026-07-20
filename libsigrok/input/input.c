@@ -676,15 +676,20 @@ SR_API int sr_input_reset(const struct sr_input *in_ro)
  */
 SR_API void sr_input_free(const struct sr_input *in)
 {
+	struct sr_input *input;
+
 	if (!in)
 		return;
+
+	input = (struct sr_input *)in;
+	input->finalizing = TRUE;
 
 	/*
 	 * Run the input module's optional .cleanup() routine. This
 	 * takes care of the context (kept in the 'inc' variable).
 	 */
 	if (in->module->cleanup)
-		in->module->cleanup((struct sr_input *)in);
+		in->module->cleanup(input);
 
 	/*
 	 * Common code releases the input module's state (kept in the

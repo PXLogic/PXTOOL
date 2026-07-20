@@ -312,6 +312,12 @@ SR_PRIV void sr_channel_group_free_cb(void *cg);
 
 SR_PRIV void sr_dev_probes_free(struct sr_dev_inst *sdi);
 
+#ifdef DSVIEW_TESTING
+SR_PRIV void sr_test_channel_lifecycle_reset(void);
+SR_PRIV unsigned int sr_test_channel_free_count(void);
+SR_PRIV unsigned int sr_test_channel_group_free_count(void);
+#endif
+
 SR_PRIV int sr_enable_device_channel(struct sr_dev_inst *sdi, const struct sr_channel *probe, gboolean enable);
 
 SR_PRIV int sr_dev_probe_name_set(const struct sr_dev_inst *sdi,
