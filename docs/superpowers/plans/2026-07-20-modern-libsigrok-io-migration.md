@@ -106,11 +106,124 @@ git add PXTOOL/test/test_formatcapability.cpp PXTOOL/test/test_io_options.cpp \
 git commit -m "test: define modern io format manifest"
 ```
 
-## Task 2: Import the Current Upstream I/O Contracts
+## Task 2A: Migrate Upstream I/O Direct-Core Dependencies
 
 **Files:**
 - Modify: `libsigrok/libsigrok.h`
 - Modify: `libsigrok/libsigrok-internal.h`
+- Modify: `libsigrok/dsdevice.c`
+- Modify: `libsigrok/session.c`
+- Modify: `libsigrok/std.c`
+- Modify: `libsigrok/strutil.c`
+- Modify: `libsigrok/log.c`
+- Create: `libsigrok/analog.c`
+- Modify: every DSView `libsigrok/**/*.c` caller of `sr_channel_new()` and
+  `std_session_send_df_header()` reported by `rg`
+- Modify: `CMakeLists.txt`
+- Modify: `PXTOOL/test/CMakeLists.txt`
+- Modify: `PXTOOL/test/test_upstream_io_stubs.c`
+- Modify: `PXTOOL/test/test_input_fixtures.cpp`
+- Modify: `PXTOOL/test/test_analogpacketadapter.cpp`
+
+- [ ] **Step 1: Write failing direct-core contract tests**
+
+Add tests that compile against the upstream signatures and verify the standard
+datafeed helpers forward a header, metadata, logic, analog, and end packet:
+
+```cpp
+BOOST_AUTO_TEST_CASE(upstream_direct_core_creates_channels_on_the_device)
+{
+    sr_dev_inst sdi{};
+    sr_channel *channel = sr_channel_new(&sdi, 3, SR_CHANNEL_LOGIC, TRUE, "D3");
+
+    BOOST_REQUIRE(channel != nullptr);
+    BOOST_CHECK_EQUAL(g_slist_length(sdi.channels), 1);
+    BOOST_CHECK_EQUAL(channel->index, 3);
+}
+
+BOOST_AUTO_TEST_CASE(upstream_direct_core_initializes_standard_analog_packet)
+{
+    sr_datafeed_analog analog{};
+    sr_analog_encoding encoding{};
+    sr_analog_meaning meaning{};
+    sr_analog_spec spec{};
+
+    BOOST_CHECK_EQUAL(sr_analog_init(&analog, &encoding, &meaning, &spec, 3), SR_OK);
+    BOOST_CHECK_EQUAL(analog.encoding, &encoding);
+    BOOST_CHECK_EQUAL(analog.meaning, &meaning);
+}
+```
+
+- [ ] **Step 2: Run the direct-core tests and verify they fail**
+
+Run:
+
+```bash
+cmake --build . --target DSView-test
+./build.macOS/DSView-test --run_test=upstream_direct_core_*
+```
+
+Expected: compile failure because DSView currently exposes the old
+four-argument `sr_channel_new` and simplified analog packet model.
+
+- [ ] **Step 3: Import the direct-core implementation**
+
+Port the required upstream code from:
+
+```text
+/Users/yuanji/Desktop/project/libsigrok/src/device.c
+/Users/yuanji/Desktop/project/libsigrok/src/session.c
+/Users/yuanji/Desktop/project/libsigrok/src/std.c
+/Users/yuanji/Desktop/project/libsigrok/src/analog.c
+/Users/yuanji/Desktop/project/libsigrok/src/strutil.c
+/Users/yuanji/Desktop/project/libsigrok/src/log.c
+```
+
+Replace copied source headers with the DSView/PXTOOL GPL header. Preserve
+DSView-only `sr_dev_inst`, DSO, device-handle, and event members in the
+merged headers; migrate all direct-core type and function definitions needed
+by the input/output source set.
+
+Update each DSView source caller of `sr_channel_new()` to pass its owning
+`sr_dev_inst *` as the first argument. Update each
+`std_session_send_df_header()` caller to its upstream signature. Do not add
+an overload, macro, or compatibility wrapper for the old signatures.
+
+Implement the upstream session-send helpers by forwarding standard packets to
+DSView's installed datafeed callback. Keep DSView hardware session loops and
+DSO-specific packet handling unchanged outside this forwarding boundary.
+
+- [ ] **Step 4: Register the direct-core sources in production and tests**
+
+Add the migrated sources to both `libsigrok_SOURCES` and `DSView-test`.
+Replace test-only implementations only where a source would otherwise require
+hardware. The test target must link the same direct-core APIs as production.
+
+- [ ] **Step 5: Run direct-core and existing hardware compatibility tests**
+
+Run:
+
+```bash
+cmake . -DDSVIEW_ENABLE_UPSTREAM_COMPAT_DEMO=ON -DENABLE_TESTS=ON
+cmake --build . --target DSView-test
+./build.macOS/DSView-test --run_test=upstream_direct_core_*
+./build.macOS/DSView-test --run_test=upstream_fx2lafw
+./build.macOS/DSView-test --run_test=formatcapability
+```
+
+Expected: all commands exit 0. Existing compiler warnings are recorded but
+must not become new errors.
+
+- [ ] **Step 6: Commit the direct-core migration**
+
+```bash
+git add libsigrok PXTOOL/test CMakeLists.txt
+git commit -m "feat: migrate libsigrok io direct core"
+```
+
+## Task 2B: Import the Current Upstream I/O Contracts
+
+**Files:**
 - Modify: `libsigrok/input/input.c`
 - Delete: `libsigrok/input/in_binary.c`
 - Delete: `libsigrok/input/in_vcd.c`
@@ -181,7 +294,8 @@ int sr_output_free(const struct sr_output *o);
 ```
 
 Import `sr_output_module::flags`, `sr_output_module::exts`, and the current
-input-module streaming callbacks. In the same change, replace the existing
+input-module streaming callbacks. The direct-core APIs required by these
+contracts are supplied by Task 2A. In the same change, replace the existing
 `in_binary.c`, `in_vcd.c`, and `in_wav.c` modules with their current upstream
 streaming counterparts from `src/input/binary.c`, `src/input/vcd.c`, and
 `src/input/wav.c`. Replace each imported upstream file header with the
