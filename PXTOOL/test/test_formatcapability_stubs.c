@@ -58,3 +58,11 @@ SR_PRIV int sr_config_get(const struct sr_dev_driver *driver,
     (void)data;
     return SR_ERR_ARG;
 }
+
+SR_PRIV int std_session_send_df_header(const struct sr_dev_inst *sdi,
+                                       const char *log_prefix)
+{
+    (void)sdi;
+    (void)log_prefix;
+    return SR_OK;
+}
