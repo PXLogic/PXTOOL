@@ -145,7 +145,7 @@ cmake --build . --target DSView-test
 ./build.macOS/DSView-test --run_test=creates_and_frees_output_with_default_options
 ```
 
-Expected: compilation failure or link failure because `null` is not registered and the modern lifecycle is not available from the current build.
+Expected: failure because `null` is not registered in the current output list.
 
 - [ ] **Step 3: Port the upstream contract without replacing DSView-only declarations**
 
