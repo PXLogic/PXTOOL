@@ -60,6 +60,13 @@
 extern SR_PRIV struct sr_output_module output_vcd;
 extern SR_PRIV struct sr_output_module output_csv;
 extern SR_PRIV struct sr_output_module output_srzip;
+extern SR_PRIV struct sr_output_module output_ascii;
+extern SR_PRIV struct sr_output_module output_binary;
+extern SR_PRIV struct sr_output_module output_bits;
+extern SR_PRIV struct sr_output_module output_chronovu_la8;
+extern SR_PRIV struct sr_output_module output_hex;
+extern SR_PRIV struct sr_output_module output_ols;
+extern SR_PRIV struct sr_output_module output_wavedrom;
 extern SR_PRIV struct sr_output_module output_null;
 extern SR_PRIV struct sr_output_module output_gnuplot;
 /** @endcond */
@@ -68,6 +75,13 @@ static const struct sr_output_module *output_module_list[] = {
 	&output_csv,
 	&output_vcd,
 	&output_srzip,
+	&output_ascii,
+	&output_binary,
+	&output_bits,
+	&output_chronovu_la8,
+	&output_hex,
+	&output_ols,
+	&output_wavedrom,
 	&output_null,
 	&output_gnuplot,
 	NULL,

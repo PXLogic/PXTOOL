@@ -9,3 +9,7 @@ StoreSession cancellation cleanup has no direct DSView-test coverage)
 Task 5: complete (format capabilities now expose real module extensions and
 option availability; Task 6/7 module-extension and final-manifest tests remain
 intentionally RED until their modules are registered)
+Task 6: complete (registered current upstream logic outputs: ascii,
+binary, bits, chronovu-la8, hex, ols, and wavedrom; their fixture and
+capability tests are green. The final manifest is intentionally 12/14 until
+Task 7 imports analog and wav.)

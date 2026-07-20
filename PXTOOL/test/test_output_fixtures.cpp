@@ -15,6 +15,8 @@
 #include <initializer_list>
 
 #include <QByteArray>
+#include <QDir>
+#include <QTemporaryFile>
 
 extern "C" {
 #include "libsigrok-internal.h"
@@ -51,6 +53,15 @@ QByteArray export_logic_fixture(const char *format,
     BOOST_REQUIRE_EQUAL(sr_output_send(output, &packet, &chunk), SR_OK);
 
     QByteArray exported;
+    if (chunk) {
+        exported.append(chunk->str, static_cast<qsizetype>(chunk->len));
+        g_string_free(chunk, TRUE);
+    }
+
+    sr_datafeed_packet end_packet{};
+    end_packet.type = SR_DF_END;
+    end_packet.status = SR_PKT_OK;
+    BOOST_REQUIRE_EQUAL(sr_output_send(output, &end_packet, &chunk), SR_OK);
     if (chunk) {
         exported.append(chunk->str, static_cast<qsizetype>(chunk->len));
         g_string_free(chunk, TRUE);
@@ -105,6 +116,59 @@ BOOST_AUTO_TEST_CASE(binary_output_preserves_nul_bytes)
     BOOST_REQUIRE_EQUAL(bytes.size(), 4);
     BOOST_CHECK_EQUAL(static_cast<unsigned char>(bytes.at(0)), 0x00);
     BOOST_CHECK_EQUAL(static_cast<unsigned char>(bytes.at(3)), 0xff);
+}
+
+BOOST_AUTO_TEST_CASE(exports_logic_formats)
+{
+    struct LogicOutputExpectation {
+        const char *id;
+        QByteArray prefix;
+        QString suffix;
+    };
+
+    const LogicOutputExpectation expectations[] = {
+        {"ascii", QByteArray(""), "txt"},
+        {"binary", QByteArray("\x00\x01\x03", 3), ""},
+        {"bits", QByteArray(""), "txt"},
+        {"chronovu-la8", QByteArray(), "kdt"},
+        {"hex", QByteArray(""), "txt"},
+        {"ols", QByteArray(), "ols"},
+        {"vcd", QByteArray("$date"), "vcd"},
+        {"wavedrom", QByteArray("{"), "wavedrom"},
+    };
+
+    for (const LogicOutputExpectation &expectation : expectations) {
+        const sr_output_module *module =
+            sr_output_find(const_cast<char *>(expectation.id));
+        BOOST_REQUIRE_MESSAGE(module != nullptr,
+            "Missing output module: " << expectation.id);
+
+        const char *const *extensions = sr_output_extensions_get(module);
+        if (expectation.suffix.isEmpty()) {
+            BOOST_CHECK(extensions == nullptr);
+        } else {
+            BOOST_REQUIRE(extensions != nullptr);
+            BOOST_REQUIRE(extensions[0] != nullptr);
+            BOOST_CHECK_EQUAL(QString::fromUtf8(extensions[0]).toStdString(),
+                              expectation.suffix.toStdString());
+        }
+
+        const QByteArray exported = export_logic_fixture(
+            expectation.id, {0x00, 0x01, 0x03});
+        QString file_template = QDir::tempPath() + "/dsview-output-XXXXXX";
+        if (!expectation.suffix.isEmpty())
+            file_template += "." + expectation.suffix;
+        QTemporaryFile file(file_template);
+        BOOST_REQUIRE(file.open());
+        BOOST_REQUIRE_EQUAL(file.write(exported), exported.size());
+        file.flush();
+        BOOST_CHECK(file.exists());
+        if (!expectation.suffix.isEmpty())
+            BOOST_CHECK(file.fileName().endsWith("." + expectation.suffix));
+
+        if (!expectation.prefix.isEmpty())
+            BOOST_CHECK(exported.startsWith(expectation.prefix));
+    }
 }
 
 BOOST_AUTO_TEST_CASE(null_output_writes_no_payload)

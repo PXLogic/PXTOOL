@@ -53,10 +53,17 @@ add_executable(DSView-test
     ../../libsigrok/log.c
     ../../libsigrok/output/output.c
     ../../libsigrok/output/csv.c
+    ../../libsigrok/output/ascii.c
+    ../../libsigrok/output/binary.c
+    ../../libsigrok/output/bits.c
+    ../../libsigrok/output/chronovu_la8.c
     ../../libsigrok/output/gnuplot.c
+    ../../libsigrok/output/hex.c
     ../../libsigrok/output/null.c
+    ../../libsigrok/output/ols.c
     ../../libsigrok/output/srzip.c
     ../../libsigrok/output/vcd.c
+    ../../libsigrok/output/wavedrom.c
     ../../libsigrok/strutil.c
     ../../common/log/xlog.c
     ../../common/minizip/ioapi.c

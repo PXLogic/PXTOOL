@@ -580,10 +580,17 @@ set(libsigrok_SOURCES
     libsigrok/input/vcd.c
     libsigrok/input/wav.c
     libsigrok/output/csv.c
+    libsigrok/output/ascii.c
+    libsigrok/output/binary.c
+    libsigrok/output/bits.c
+    libsigrok/output/chronovu_la8.c
     libsigrok/output/gnuplot.c
+    libsigrok/output/hex.c
     libsigrok/output/null.c
+    libsigrok/output/ols.c
     libsigrok/output/srzip.c
     libsigrok/output/vcd.c
+    libsigrok/output/wavedrom.c
     libsigrok/hardware/DSL/dslogic.c
     libsigrok/hardware/common/usb.c
     libsigrok/hardware/common/ezusb.c
