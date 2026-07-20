@@ -37,10 +37,12 @@ add_executable(DSView-test
     ../pv/dock/logsearch.cpp
     ../pv/data/formatcapability.cpp
     ../pv/data/iooptions.cpp
+    ../pv/data/analogpacketadapter.cpp
     ../pv/dialogs/inputoutputoptioneditor.cpp
     test_formatcapability_stubs.c
     test_upstream_io_stubs.c
     ../../libsigrok/analog.c
+    ../../libsigrok/keyinfo.c
     ../../libsigrok/device_source.c
     ../../libsigrok/dsdevice.c
     ../../libsigrok/session.c
@@ -53,6 +55,7 @@ add_executable(DSView-test
     ../../libsigrok/log.c
     ../../libsigrok/output/output.c
     ../../libsigrok/output/csv.c
+    ../../libsigrok/output/analog.c
     ../../libsigrok/output/ascii.c
     ../../libsigrok/output/binary.c
     ../../libsigrok/output/bits.c
@@ -63,6 +66,7 @@ add_executable(DSView-test
     ../../libsigrok/output/ols.c
     ../../libsigrok/output/srzip.c
     ../../libsigrok/output/vcd.c
+    ../../libsigrok/output/wav.c
     ../../libsigrok/output/wavedrom.c
     ../../libsigrok/strutil.c
     ../../common/log/xlog.c

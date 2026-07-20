@@ -31,6 +31,7 @@
 #include "data/analogsnapshot.h"
 #include "data/formatcapability.h"
 #include "data/iooptions.h"
+#include "data/analogpacketadapter.h"
 #include "data/decoderstack.h"
 #include "data/decode/decoder.h"
 #include "data/decode/row.h"
@@ -47,6 +48,8 @@
 #include <QJsonObject>
 #include <QJsonArray>
 #include <QStandardPaths>
+#include <cmath>
+#include <limits>
 #include <math.h>
 #include <list>
 
@@ -90,6 +93,12 @@ public:
 private:
     const sr_output *value_ = nullptr;
 };
+
+bool format_requires_standard_analog(const sr_output_module *module)
+{
+    return module && (!strcmp(module->id, "analog") ||
+                      !strcmp(module->id, "wav"));
+}
 
 } // namespace
 
@@ -861,6 +870,70 @@ bool StoreSession::export_start()
     }
     else
     {
+        if (format_requires_standard_analog(_outModule)) {
+            auto *analog_snapshot =
+                dynamic_cast<data::AnalogSnapshot *>(snapshot);
+            QString reason;
+            uint32_t ref_min = 0;
+            uint32_t ref_max = 0;
+            int enabled_channels = 0;
+
+            if (!analog_snapshot) {
+                reason = tr("the active capture is not analog data");
+            } else if (analog_snapshot->get_unit_bytes() != 1) {
+                reason = tr("only 8-bit analog snapshots can be converted safely");
+            } else if (_session->cur_snap_samplerate() == 0) {
+                reason = tr("the sample rate is unavailable");
+            } else if (!_session->get_device()->get_config_uint32(
+                           SR_CONF_REF_MIN, ref_min) ||
+                       !_session->get_device()->get_config_uint32(
+                           SR_CONF_REF_MAX, ref_max) || ref_max <= ref_min) {
+                reason = tr("the capture reference range is unavailable");
+            } else {
+                for (const GSList *item =
+                         _session->get_device()->get_channels();
+                     item; item = item->next) {
+                    const auto *channel =
+                        static_cast<const sr_channel *>(item->data);
+                    if (!channel || channel->type != SR_CHANNEL_ANALOG ||
+                        !channel->enabled)
+                        continue;
+
+                    ++enabled_channels;
+                    if (!channel->name || !channel->map_unit ||
+                        strcmp(channel->map_unit, "V") ||
+                        !analog_snapshot->has_data(channel->index) ||
+                        analog_snapshot->get_ch_order(channel->index) < 0 ||
+                        !std::isfinite(channel->map_min) ||
+                        !std::isfinite(channel->map_max) ||
+                        channel->map_max <= channel->map_min) {
+                        reason = tr("an enabled channel lacks a valid voltage mapping");
+                        break;
+                    }
+                }
+                if (reason.isEmpty() && enabled_channels == 0)
+                    reason = tr("no enabled analog channels are available");
+                if (reason.isEmpty() && !strcmp(_outModule->id, "wav")) {
+                    const uint64_t bytes_per_frame =
+                        static_cast<uint64_t>(enabled_channels) * sizeof(float);
+                    if (bytes_per_frame >
+                            (std::numeric_limits<uint16_t>::max)() ||
+                        _session->cur_snap_samplerate() >
+                            (std::numeric_limits<uint32_t>::max)() /
+                                bytes_per_frame) {
+                        reason = tr("the sample rate or channel count exceeds the WAV format limits");
+                    }
+                }
+            }
+
+            if (!reason.isEmpty()) {
+                _has_error = true;
+                _error = tr("%1 requires standard analog samples: %2.")
+                    .arg(QString::fromUtf8(_outModule->desc), reason);
+                return false;
+            }
+        }
+
         if (_thread.joinable()) _thread.join();
         _thread = std::thread(&StoreSession::export_proc, this, snapshot);
         return !_has_error;
@@ -1002,36 +1075,40 @@ void StoreSession::export_exec(data::Snapshot *snapshot)
 
     meta.config = g_slist_append(NULL, src);
 
-    src = _session->get_device()->new_config(SR_CONF_LIMIT_SAMPLES,
-                g_variant_new_uint64(snapshot->get_sample_count()));
+    const bool standard_analog_output =
+        format_requires_standard_analog(_outModule);
+    if (!standard_analog_output) {
+        src = _session->get_device()->new_config(SR_CONF_LIMIT_SAMPLES,
+                    g_variant_new_uint64(snapshot->get_sample_count()));
 
-    meta.config = g_slist_append(meta.config, src);
+        meta.config = g_slist_append(meta.config, src);
 
-    GVariant *gvar;
-    int bits=0;
+        GVariant *gvar;
+        int bits=0;
 
-    _session->get_device()->get_config_byte(SR_CONF_UNIT_BITS, bits);
+        _session->get_device()->get_config_byte(SR_CONF_UNIT_BITS, bits);
 
-    gvar = _session->get_device()->get_config(SR_CONF_REF_MIN);
-    if (gvar != NULL) {
-        src = _session->get_device()->new_config(SR_CONF_REF_MIN, gvar);
-        g_variant_unref(gvar);
-    } 
-    else {
-        src = _session->get_device()->new_config(SR_CONF_REF_MIN, g_variant_new_uint32(1));
+        gvar = _session->get_device()->get_config(SR_CONF_REF_MIN);
+        if (gvar != NULL) {
+            src = _session->get_device()->new_config(SR_CONF_REF_MIN, gvar);
+            g_variant_unref(gvar);
+        }
+        else {
+            src = _session->get_device()->new_config(SR_CONF_REF_MIN, g_variant_new_uint32(1));
+        }
+
+        meta.config = g_slist_append(meta.config, src);
+
+        gvar = _session->get_device()->get_config(SR_CONF_REF_MAX);
+        if (gvar != NULL) {
+            src = _session->get_device()->new_config(SR_CONF_REF_MAX, gvar);
+            g_variant_unref(gvar);
+        }
+        else {
+            src = _session->get_device()->new_config(SR_CONF_REF_MAX, g_variant_new_uint32((1 << bits) - 1));
+        }
+        meta.config = g_slist_append(meta.config, src);
     }
-
-    meta.config = g_slist_append(meta.config, src);
-
-    gvar = _session->get_device()->get_config(SR_CONF_REF_MAX);
-    if (gvar != NULL) {
-        src = _session->get_device()->new_config(SR_CONF_REF_MAX, gvar);
-        g_variant_unref(gvar);
-    }
-    else {
-        src = _session->get_device()->new_config(SR_CONF_REF_MAX, g_variant_new_uint32((1 << bits) - 1));
-    }
-    meta.config = g_slist_append(meta.config, src);
 
     p.type = SR_DF_META;
     p.status = SR_PKT_OK;
@@ -1222,10 +1299,43 @@ void StoreSession::export_exec(data::Snapshot *snapshot)
         _unit_count = snapshot->get_sample_count();
         uint64_t unit_count = _unit_count;
         void* data_buffer = analog_snapshot->get_data();
-        unsigned int usize = 8192;        
-        struct sr_datafeed_analog ap;
-        
-        unsigned char* read_buf = (unsigned char*)data_buffer;
+        unsigned int usize = 8192;
+
+        QVector<data::AnalogChannelRef> analog_channels;
+        QVector<data::Unsigned8AnalogConversion> conversions;
+        uint32_t ref_min = 0;
+        uint32_t ref_max = 0;
+        if (standard_analog_output) {
+            if (!_session->get_device()->get_config_uint32(
+                    SR_CONF_REF_MIN, ref_min) ||
+                !_session->get_device()->get_config_uint32(
+                    SR_CONF_REF_MAX, ref_max) || ref_max <= ref_min) {
+                fail_export(tr("The analog reference range became unavailable."));
+                return;
+            }
+
+            for (GSList *item = _session->get_device()->get_channels();
+                 item; item = item->next) {
+                auto *channel = static_cast<sr_channel *>(item->data);
+                if (!channel || channel->type != SR_CHANNEL_ANALOG ||
+                    !channel->enabled)
+                    continue;
+
+                const int source_index =
+                    analog_snapshot->get_ch_order(channel->index);
+                const double units_per_code =
+                    (channel->map_max - channel->map_min) /
+                    static_cast<double>(ref_max - ref_min);
+                analog_channels.append(data::AnalogChannelRef(channel));
+                conversions.append({
+                    static_cast<uint32_t>(source_index),
+                    static_cast<double>(channel->hw_offset),
+                    units_per_code,
+                });
+            }
+        }
+
+        struct sr_datafeed_analog ap{};
 
         const uint64_t ring_start = analog_snapshot->get_ring_start();
  
@@ -1258,14 +1368,36 @@ void StoreSession::export_exec(data::Snapshot *snapshot)
                     size = sample_count - i;
                 }
          
-                ap.data = (unsigned char*)block_buffer[j] + i * ch_count;
-                ap.num_samples = size;
-                p.type = SR_DF_ANALOG;
-                p.status = SR_PKT_OK;
-                p.payload = &ap;
-                p.bExportOriginalData = 0;
-                if (!send_packet(p))
-                    return;
+                if (standard_analog_output) {
+                    try {
+                        const auto samples =
+                            data::convertUnsigned8AnalogSamples(
+                                static_cast<const uint8_t *>(block_buffer[j]) +
+                                    i * ch_count,
+                                size, ch_count, conversions);
+                        auto packet = data::makeAnalogPacket(
+                            analog_channels, samples, size,
+                            _session->cur_snap_samplerate(),
+                            SR_MQ_VOLTAGE, SR_UNIT_VOLT);
+                        packet.packet.bExportOriginalData = 0;
+                        if (!send_packet(packet.packet))
+                            return;
+                    } catch (const std::exception &error) {
+                        dsv_err("Failed to create standard analog packet: %s",
+                                error.what());
+                        fail_export(tr("Failed to convert analog samples."));
+                        return;
+                    }
+                } else {
+                    ap.data = (unsigned char*)block_buffer[j] + i * ch_count;
+                    ap.num_samples = size;
+                    p.type = SR_DF_ANALOG;
+                    p.status = SR_PKT_OK;
+                    p.payload = &ap;
+                    p.bExportOriginalData = 0;
+                    if (!send_packet(p))
+                        return;
+                }
 
                 _units_stored += size;
                 progress_updated();

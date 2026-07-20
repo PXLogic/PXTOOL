@@ -61,6 +61,14 @@ static inline int16_t read_i16le(const uint8_t *p)
 }
 #define RL16S(x) read_i16le((const uint8_t *)(x))
 
+static inline void write_u16le(uint8_t *p, uint16_t x)
+{
+    p[0] = x & 0xff;
+    x >>= 8;
+    p[1] = x & 0xff;
+}
+#define WL16(p, x) write_u16le((uint8_t *)(p), (uint16_t)(x))
+
 static inline uint32_t read_u32le(const uint8_t *p)
 {
     return (uint32_t)p[0] | ((uint32_t)p[1] << 8) |
@@ -73,6 +81,18 @@ static inline int32_t read_i32le(const uint8_t *p)
     return (int32_t)read_u32le(p);
 }
 #define RL32S(x) read_i32le((const uint8_t *)(x))
+
+static inline void write_u32le(uint8_t *p, uint32_t x)
+{
+    p[0] = x & 0xff;
+    x >>= 8;
+    p[1] = x & 0xff;
+    x >>= 8;
+    p[2] = x & 0xff;
+    x >>= 8;
+    p[3] = x & 0xff;
+}
+#define WL32(p, x) write_u32le((uint8_t *)(p), (uint32_t)(x))
 
 #undef min
 #define min(a,b) ((a)<(b)?(a):(b))

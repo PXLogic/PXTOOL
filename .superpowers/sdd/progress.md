@@ -14,3 +14,10 @@ binary, bits, chronovu-la8, hex, ols, and wavedrom; their fixture and
 capability tests are green. The final manifest is intentionally 12/14 until
 Task 7 imports analog and wav. Follow-up fixed StoreSession header forwarding
 for ChronoVu LA8 exports.)
+
+Task 5: complete (commit 17308b8, review clean)
+Task 6: complete (commits af4fa6c..ad9b380, review clean)
+Task 7: complete (standard AnalogPacket owner and unsigned 8-bit conversion
+boundary added; upstream analog/wav outputs registered; final export manifest
+is 14/14; focused fixtures, full 85-test suite, and DSView build are green.
+StoreSession rejects unsupported standard analog exports before file creation.)

@@ -60,6 +60,8 @@
 extern SR_PRIV struct sr_output_module output_vcd;
 extern SR_PRIV struct sr_output_module output_csv;
 extern SR_PRIV struct sr_output_module output_srzip;
+extern SR_PRIV struct sr_output_module output_analog;
+extern SR_PRIV struct sr_output_module output_wav;
 extern SR_PRIV struct sr_output_module output_ascii;
 extern SR_PRIV struct sr_output_module output_binary;
 extern SR_PRIV struct sr_output_module output_bits;
@@ -75,6 +77,8 @@ static const struct sr_output_module *output_module_list[] = {
 	&output_csv,
 	&output_vcd,
 	&output_srzip,
+	&output_analog,
+	&output_wav,
 	&output_ascii,
 	&output_binary,
 	&output_bits,

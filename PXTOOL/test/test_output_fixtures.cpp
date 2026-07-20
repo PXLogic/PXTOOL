@@ -26,6 +26,7 @@ struct sr_dev_inst *make_test_sdi_with_samplerate(uint64_t samplerate);
 }
 
 #include "../pv/data/iooptions.h"
+#include "../pv/data/analogpacketadapter.h"
 
 namespace {
 
@@ -121,6 +122,79 @@ void send_samplerate_meta(const sr_output *output, uint64_t samplerate)
     send_output_packet(output, packet);
     g_slist_free(meta.config);
     g_variant_unref(config.data);
+}
+
+QByteArray export_analog_fixture(const char *format)
+{
+    sr_channel channel0{};
+    channel0.index = 0;
+    channel0.type = SR_CHANNEL_ANALOG;
+    channel0.enabled = TRUE;
+    channel0.name = const_cast<char *>("A0");
+
+    sr_channel channel1{};
+    channel1.index = 1;
+    channel1.type = SR_CHANNEL_ANALOG;
+    channel1.enabled = TRUE;
+    channel1.name = const_cast<char *>("A1");
+
+    sr_dev_inst sdi{};
+    channel0.sdi = &sdi;
+    channel1.sdi = &sdi;
+    sdi.channels = g_slist_append(sdi.channels, &channel0);
+    sdi.channels = g_slist_append(sdi.channels, &channel1);
+
+    std::vector<float> samples;
+    for (int index = 0; index < 12; ++index) {
+        samples.push_back(static_cast<float>(index) / 12.0F);
+        samples.push_back(-static_cast<float>(index) / 12.0F);
+    }
+    auto analog = pv::data::makeAnalogPacket(
+        {pv::data::AnalogChannelRef(&channel0),
+         pv::data::AnalogChannelRef(&channel1)},
+        samples, 12, 48'000, SR_MQ_VOLTAGE, SR_UNIT_VOLT);
+
+    const sr_output_module *module = sr_output_find(const_cast<char *>(format));
+    BOOST_REQUIRE(module != nullptr);
+    const sr_output *output = sr_output_new(module, nullptr, &sdi);
+    BOOST_REQUIRE(output != nullptr);
+
+    QByteArray exported;
+    sr_datafeed_packet packet{};
+    packet.status = SR_PKT_OK;
+
+    sr_datafeed_header header{};
+    header.feed_version = 1;
+    packet.type = SR_DF_HEADER;
+    packet.payload = &header;
+    exported += send_output_packet(output, packet);
+
+    packet.type = SR_DF_FRAME_BEGIN;
+    packet.payload = nullptr;
+    exported += send_output_packet(output, packet);
+
+    packet.type = SR_DF_META;
+    packet.payload = &analog.meta;
+    exported += send_output_packet(output, packet);
+
+    exported += send_output_packet(output, analog.packet);
+
+    packet.type = SR_DF_FRAME_END;
+    packet.payload = nullptr;
+    exported += send_output_packet(output, packet);
+
+    packet.type = SR_DF_END;
+    exported += send_output_packet(output, packet);
+
+    BOOST_CHECK_EQUAL(sr_output_free(output), SR_OK);
+    g_slist_free(sdi.channels);
+    return exported;
+}
+
+bool has_wave_header(const QByteArray &bytes)
+{
+    return bytes.size() >= 12 && bytes.startsWith("RIFF") &&
+           bytes.mid(8, 4) == "WAVE";
 }
 
 } // namespace
@@ -300,6 +374,50 @@ BOOST_AUTO_TEST_CASE(srzip_output_accepts_io_options_filename)
     g_hash_table_destroy(values);
     BOOST_REQUIRE(output != nullptr);
     BOOST_CHECK_EQUAL(sr_output_free(output), SR_OK);
+}
+
+BOOST_AUTO_TEST_CASE(analog_outputs_accept_standard_packets)
+{
+    const sr_output_module *analog_module =
+        sr_output_find(const_cast<char *>("analog"));
+    const sr_output_module *wav_module =
+        sr_output_find(const_cast<char *>("wav"));
+    BOOST_REQUIRE(analog_module != nullptr);
+    BOOST_REQUIRE(wav_module != nullptr);
+    BOOST_CHECK(sr_output_extensions_get(analog_module) == nullptr);
+    BOOST_REQUIRE(sr_output_extensions_get(wav_module) != nullptr);
+    BOOST_CHECK_EQUAL(std::string(sr_output_extensions_get(wav_module)[0]),
+                      "wav");
+
+    const sr_option **analog_options = sr_output_options_get(analog_module);
+    const sr_option **wav_options = sr_output_options_get(wav_module);
+    BOOST_REQUIRE(analog_options != nullptr);
+    BOOST_REQUIRE(wav_options != nullptr);
+    BOOST_CHECK_EQUAL(std::string(analog_options[0]->id), "digits");
+    BOOST_CHECK(g_variant_is_of_type(analog_options[0]->def,
+                                     G_VARIANT_TYPE_STRING));
+    BOOST_CHECK_EQUAL(std::string(wav_options[0]->id), "scale");
+    BOOST_CHECK(g_variant_is_of_type(wav_options[0]->def,
+                                     G_VARIANT_TYPE_DOUBLE));
+    sr_output_options_free(analog_options);
+    sr_output_options_free(wav_options);
+
+    const QByteArray analog = export_analog_fixture("analog");
+    const QByteArray wav = export_analog_fixture("wav");
+    BOOST_CHECK(analog.startsWith("FRAME-BEGIN"));
+    BOOST_CHECK(analog.contains("META samplerate: 48000"));
+    BOOST_CHECK(has_wave_header(wav));
+
+    QTemporaryFile analog_file(
+        QDir::tempPath() + "/dsview-analog-output-XXXXXX");
+    QTemporaryFile wav_file(
+        QDir::tempPath() + "/dsview-analog-output-XXXXXX.wav");
+    BOOST_REQUIRE(analog_file.open());
+    BOOST_REQUIRE(wav_file.open());
+    BOOST_REQUIRE_EQUAL(analog_file.write(analog), analog.size());
+    BOOST_REQUIRE_EQUAL(wav_file.write(wav), wav.size());
+    BOOST_CHECK(!analog_file.fileName().endsWith(".analog"));
+    BOOST_CHECK(wav_file.fileName().endsWith(".wav"));
 }
 
 BOOST_AUTO_TEST_SUITE_END()

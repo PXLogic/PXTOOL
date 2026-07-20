@@ -187,7 +187,9 @@ enum {
 	SR_T_RATIONAL_VOLT,
 	SR_T_KEYVALUE,
 	SR_T_LIST,
-	SR_T_INT16
+	SR_T_INT16,
+	SR_T_STRING,
+	SR_T_UINT32
 };
 
 /** Value for sr_datafeed_packet.type. */
@@ -694,6 +696,20 @@ struct sr_channel_group {
 struct sr_config {
 	int key;
 	GVariant *data;
+};
+
+enum sr_keytype {
+	SR_KEY_CONFIG,
+	SR_KEY_MQ,
+	SR_KEY_MQFLAGS,
+};
+
+struct sr_key_info {
+	uint32_t key;
+	int datatype;
+	const char *id;
+	const char *name;
+	const char *description;
 };
 
 struct sr_config_info {
@@ -1283,6 +1299,8 @@ SR_API const struct sr_output *sr_output_new_with_start_sample_index(
 SR_API int sr_output_send(const struct sr_output *o,
 		const struct sr_datafeed_packet *packet, GString **out);
 SR_API int sr_output_free(const struct sr_output *o);
+
+SR_API const struct sr_key_info *sr_key_info_get(int keytype, uint32_t key);
 
 /*--- strutil.c -------------------------------------------------------------*/
 
