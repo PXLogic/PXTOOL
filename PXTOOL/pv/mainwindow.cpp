@@ -64,6 +64,7 @@
 #include "data/logicsnapshot.h"
 #include "data/dsosnapshot.h"
 #include "data/analogsnapshot.h"
+#include "data/formatcapability.h"
 
 #include "dialogs/about.h"
 #include "dialogs/deviceoptions.h"
@@ -284,8 +285,10 @@ namespace pv
         _action_default = _menu_session->addAction(tr("Default..."));
         _action_disk_cache = _menu_session->addAction(tr("Disk Cache Settings..."));
         _action_open = _menu_file->addAction(tr("Open..."));
+        _menu_import = _menu_file->addMenu(tr("Import"));
         _action_save    = _menu_file->addAction(tr("Save..."));
         _action_export  = _menu_file->addAction(tr("Export..."));
+        _menu_export_format = _menu_file->addMenu(tr("Export Format"));
         _action_capture = _menu_file->addAction(tr("Capture..."));
         _menu_file->addSeparator();
         _action_quit = _menu_file->addAction(tr("Exit"));
@@ -298,6 +301,22 @@ namespace pv
         connect(_action_export,  &QAction::triggered, this, &MainWindow::on_export);
         connect(_action_capture, SIGNAL(triggered()), _file_bar, SLOT(on_actionCapture_triggered()));
         connect(_action_quit,    &QAction::triggered, this, &MainWindow::close);
+
+        const QVector<pv::data::FormatCapability> import_formats = pv::data::importFormats();
+        for (const pv::data::FormatCapability &format : import_formats) {
+            QAction *action = _menu_import->addAction(format.menuText);
+            action->setData(format.id);
+            _import_format_ids.insert(action, format.id);
+            connect(action, SIGNAL(triggered()), this, SLOT(on_import_format_triggered()));
+        }
+
+        const QVector<pv::data::FormatCapability> export_formats = pv::data::exportFormats();
+        for (const pv::data::FormatCapability &format : export_formats) {
+            QAction *action = _menu_export_format->addAction(format.menuText);
+            action->setData(format.id);
+            _export_format_ids.insert(action, format.id);
+            connect(action, SIGNAL(triggered()), this, SLOT(on_export_format_triggered()));
+        }
 
         // Window menu
         _menu_view = _menu_bar->addMenu(tr("Window"));
@@ -577,8 +596,10 @@ namespace pv
         if (_action_store)   _action_store->setText(tr("Store..."));
         if (_action_default) _action_default->setText(tr("Default..."));
         if (_action_open)    _action_open->setText(tr("Open..."));
+        if (_menu_import)    _menu_import->setTitle(tr("Import"));
         if (_action_save)    _action_save->setText(tr("Save..."));
         if (_action_export)  _action_export->setText(tr("Export..."));
+        if (_menu_export_format) _menu_export_format->setTitle(tr("Export Format"));
         if (_action_capture) _action_capture->setText(tr("Capture..."));
         if (_action_quit)    _action_quit->setText(tr("Exit"));
 
@@ -1599,6 +1620,50 @@ namespace pv
         dsv_info("Export data: selected format=%s", format_id.toUtf8().constData());
         _selected_export_format_id = format_id;
         on_export();
+    }
+
+    void MainWindow::on_import_format_triggered()
+    {
+        QAction *action = qobject_cast<QAction *>(sender());
+        if (!action)
+            return;
+
+        const QString format_id = action->data().toString();
+        const QVector<pv::data::FormatCapability> formats = pv::data::importFormats();
+        const pv::data::FormatCapability *format = pv::data::findFormatById(formats, format_id);
+        if (!format)
+            return;
+
+        AppConfig &app = AppConfig::Instance();
+        const QString file_name = QFileDialog::getOpenFileName(
+            this,
+            tr("Import File"),
+            app.userHistory.openDir,
+            format->dialogFilter);
+
+        if (file_name.isEmpty())
+            return;
+
+        const QString dir = path::GetDirectoryName(file_name);
+        if (dir != app.userHistory.openDir) {
+            app.userHistory.openDir = dir;
+            app.SaveHistory();
+        }
+
+        on_import_file(format_id, file_name);
+    }
+
+    void MainWindow::on_export_format_triggered()
+    {
+        QAction *action = qobject_cast<QAction *>(sender());
+        if (!action)
+            return;
+
+        const QString format_id = action->data().toString();
+        if (format_id.isEmpty())
+            return;
+
+        on_export_format(format_id);
     }
 
     bool MainWindow::on_load_session(QString name)
