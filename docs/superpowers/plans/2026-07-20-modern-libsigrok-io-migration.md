@@ -559,8 +559,11 @@ cmake --build . --target DSView-test
 ./build.macOS/DSView-test --run_test=formatcapability
 ```
 
-Expected: writer tests pass once `binary` and `null` are registered; existing
-format capability tests remain green.
+Expected: the `null` lifecycle assertion and existing format capability tests
+pass. Keep the binary assertion red until Task 6 imports and registers the
+upstream binary module; Task 6 runs this same assertion as part of its
+fixture suite. This avoids registering a Task 6 output module before the
+standard StoreSession lifecycle is in place.
 
 - [ ] **Step 6: Commit the output lifecycle conversion**
 
