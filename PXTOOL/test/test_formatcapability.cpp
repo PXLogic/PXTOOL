@@ -23,6 +23,8 @@
 
 #include <algorithm>
 
+#include <QStringList>
+
 #include "../pv/data/formatcapability.h"
 
 using pv::data::FormatCapability;
@@ -34,6 +36,14 @@ bool contains_id(const QVector<FormatCapability> &formats, const QString &id)
 {
     return std::any_of(formats.begin(), formats.end(),
         [&](const FormatCapability &format) { return format.id == id; });
+}
+
+QStringList ids(const QVector<FormatCapability> &formats)
+{
+    QStringList result;
+    for (const FormatCapability &format : formats)
+        result.append(format.id);
+    return result;
 }
 
 FormatCapability find_id(const QVector<FormatCapability> &formats, const QString &id)
@@ -110,3 +120,18 @@ BOOST_AUTO_TEST_CASE(export_menu_labels_are_stable)
 }
 
 BOOST_AUTO_TEST_SUITE_END()
+
+BOOST_AUTO_TEST_CASE(enumerates_final_export_format_manifest)
+{
+    const QVector<pv::data::FormatCapability> formats = pv::data::exportFormats();
+    const QStringList actual = ids(formats);
+    const QStringList expected = {
+        "csv", "vcd", "gnuplot", "srzip",
+        "analog", "ascii", "binary", "bits", "chronovu-la8",
+        "hex", "null", "ols", "wav", "wavedrom"
+    };
+
+    BOOST_REQUIRE_EQUAL(actual.size(), expected.size());
+    for (int i = 0; i < actual.size(); ++i)
+        BOOST_CHECK_EQUAL(actual.at(i).toStdString(), expected.at(i).toStdString());
+}

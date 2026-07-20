@@ -25,6 +25,10 @@ add_executable(DSView-test
     test_device_source.cpp
     test_diskcachesettings.cpp
     test_formatcapability.cpp
+    test_io_options.cpp
+    test_output_fixtures.cpp
+    test_input_fixtures.cpp
+    test_analogpacketadapter.cpp
     test_logsearch.cpp
     test_theme_qss.cpp
     test_upstream_demo.cpp
@@ -33,6 +37,7 @@ add_executable(DSView-test
     ../pv/dock/logsearch.cpp
     ../pv/data/formatcapability.cpp
     test_formatcapability_stubs.c
+    test_upstream_io_stubs.c
     ../../libsigrok/device_source.c
     ../../libsigrok/dsdevice.c
     ../../libsigrok/input/input.c
