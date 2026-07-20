@@ -63,6 +63,8 @@ public:
         _view = view;
     }
 
+    void setSelectedOutputFormatId(const QString &format_id);
+
     void save_run(ISessionDataGetter *getter);
     void export_run();
  

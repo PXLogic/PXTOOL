@@ -66,12 +66,19 @@ FileBar::FileBar(SigSession *session, QWidget *parent) :
 
     _menu_import = new QMenu(this);
     _menu_import->setObjectName(QString::fromUtf8("menuImport"));
+    QAction *action_import_dsl = _menu_import->addAction(tr("Open DSView Data..."));
+    _menu_import->addSeparator();
     
     _action_save = new QAction(this);
     _action_save->setObjectName(QString::fromUtf8("actionSave"));
      
     _action_export = new QAction(this);
     _action_export->setObjectName(QString::fromUtf8("actionExport"));
+
+    _menu_export = new QMenu(this);
+    _menu_export->setObjectName(QString::fromUtf8("menuExport"));
+    _menu_export->addAction(_action_export);
+    _menu_export->addSeparator();
      
     _action_capture = new QAction(this);
     _action_capture->setObjectName(QString::fromUtf8("actionCapture"));
@@ -84,7 +91,7 @@ FileBar::FileBar(SigSession *session, QWidget *parent) :
     _menu->addAction(_action_open);
     _menu->addMenu(_menu_import);
     _menu->addAction(_action_save);
-    _menu->addAction(_action_export);
+    _menu->addMenu(_menu_export);
     _menu->addAction(_action_capture);
     _file_button.setMenu(_menu);
     addWidget(&_file_button);
@@ -93,6 +100,7 @@ FileBar::FileBar(SigSession *session, QWidget *parent) :
     connect(_action_store, SIGNAL(triggered()), this, SLOT(on_actionStore_triggered()));
     connect(_action_default, SIGNAL(triggered()), this, SLOT(on_actionDefault_triggered()));
     connect(_action_open, SIGNAL(triggered()), this, SLOT(on_actionOpen_triggered()));
+    connect(action_import_dsl, SIGNAL(triggered()), this, SLOT(on_actionOpen_triggered()));
     connect(_action_save, SIGNAL(triggered()), this, SIGNAL(sig_save()));
     connect(_action_export, SIGNAL(triggered()), this, SIGNAL(sig_export()));
     connect(_action_capture, SIGNAL(triggered()), this, SLOT(on_actionCapture_triggered()));
@@ -103,6 +111,14 @@ FileBar::FileBar(SigSession *session, QWidget *parent) :
         action->setData(format.id);
         _import_format_ids.insert(action, format.id);
         connect(action, SIGNAL(triggered()), this, SLOT(on_import_format_triggered()));
+    }
+
+    const QVector<pv::data::FormatCapability> export_formats = pv::data::exportFormats();
+    for (const pv::data::FormatCapability &format : export_formats) {
+        QAction *action = _menu_export->addAction(format.menuText);
+        action->setData(format.id);
+        _export_format_ids.insert(action, format.id);
+        connect(action, SIGNAL(triggered()), this, SLOT(on_export_format_triggered()));
     }
 
     ADD_UI(this);
@@ -123,7 +139,8 @@ void FileBar::retranslateUi()
     _action_open->setText(tr("&Open..."));
     _menu_import->setTitle(tr("&Import"));
     _action_save->setText(tr("&Save..."));
-    _action_export->setText(tr("&Export..."));
+    _menu_export->setTitle(tr("&Export"));
+    _action_export->setText(tr("&Export Data..."));
     _action_capture->setText(tr("&Capture..."));
 }
 
@@ -138,6 +155,7 @@ void FileBar::reStyle()
     _action_open->setIcon(QIcon(iconPath+"/open.svg"));
     _menu_import->setIcon(QIcon(iconPath+"/open.svg"));
     _action_save->setIcon(QIcon(iconPath+"/save.svg"));
+    _menu_export->setIcon(QIcon(iconPath+"/export.svg"));
     _action_export->setIcon(QIcon(iconPath+"/export.svg"));
     _action_capture->setIcon(QIcon(iconPath+"/capture.svg"));
     _file_button.setIcon(QIcon(iconPath+"/file.svg"));
@@ -202,6 +220,19 @@ void FileBar::on_import_format_triggered()
     }
 
     sig_import_file(format_id, file_name);
+}
+
+void FileBar::on_export_format_triggered()
+{
+    QAction *action = qobject_cast<QAction *>(sender());
+    if (!action)
+        return;
+
+    const QString format_id = action->data().toString();
+    if (format_id.isEmpty())
+        return;
+
+    sig_export_format(format_id);
 }
 
 void FileBar::on_actionLoad_triggered()
