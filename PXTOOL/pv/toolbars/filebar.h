@@ -26,6 +26,7 @@
 #include <QToolBar>
 #include <QAction>
 #include <QMenu>
+#include <QMap>
 
 #include "../sigsession.h" 
 #include "../interface/icallbacks.h"
@@ -61,8 +62,10 @@ private:
 
 signals:
     void sig_load_file(QString); 
+    void sig_import_file(QString format_id, QString file_name);
     void sig_save();
     void sig_export();
+    void sig_export_format(QString format_id);
     void sig_screenShot(); //post screen capture event message
     void sig_load_session(QString); //post load session event message
     void sig_store_session(QString); //post store session event message
@@ -72,6 +75,8 @@ private slots:
     void on_actionStore_triggered();
     void on_actionDefault_triggered();
     void on_actionOpen_triggered();
+    void on_import_format_triggered();
+    void on_export_format_triggered();
     void on_actionCapture_triggered();
 
 private:
@@ -84,8 +89,12 @@ private:
     QAction *_action_store;
     QAction *_action_default;
     QAction *_action_open;
+    QMenu   *_menu_import;
+    QMap<QAction *, QString> _import_format_ids;
     QAction *_action_save;
     QAction *_action_export;
+    QMenu   *_menu_export;
+    QMap<QAction *, QString> _export_format_ids;
     QAction *_action_capture;
 };
 

@@ -24,17 +24,31 @@ add_executable(DSView-test
     test_deviceagent_capability.cpp
     test_device_source.cpp
     test_diskcachesettings.cpp
+    test_formatcapability.cpp
     test_logsearch.cpp
     test_theme_qss.cpp
     test_upstream_demo.cpp
     test_upstream_fx2lafw.cpp
     ../pv/view/channeltint.cpp
     ../pv/dock/logsearch.cpp
+    ../pv/data/formatcapability.cpp
+    test_formatcapability_stubs.c
     ../../libsigrok/device_source.c
     ../../libsigrok/dsdevice.c
+    ../../libsigrok/input/input.c
+    ../../libsigrok/input/in_binary.c
+    ../../libsigrok/input/in_vcd.c
+    ../../libsigrok/input/in_wav.c
     ../../libsigrok/log.c
+    ../../libsigrok/output/output.c
+    ../../libsigrok/output/csv.c
+    ../../libsigrok/output/gnuplot.c
+    ../../libsigrok/output/srzip.c
+    ../../libsigrok/output/vcd.c
     ../../libsigrok/strutil.c
     ../../common/log/xlog.c
+    ../../common/minizip/ioapi.c
+    ../../common/minizip/zip.c
 )
 
 if(DSVIEW_ENABLE_UPSTREAM_COMPAT_DEMO)
@@ -72,6 +86,7 @@ target_link_libraries(DSView-test
     ${QT_LIBRARIES}
     -lglib-2.0
     ${LIBUSB_1_LIBRARIES}
+    ${ZLIB_LIBRARIES}
 )
 
 add_executable(srd-c-decoder-lifetime-test

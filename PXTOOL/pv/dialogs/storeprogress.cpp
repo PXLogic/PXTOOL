@@ -142,6 +142,12 @@ StoreProgress::StoreProgress(SigSession *session, QWidget *parent) :
     m_timer.setInterval(100);
 }
 
+void StoreProgress::setSelectedOutputFormatId(const QString &format_id)
+{
+    if (_store_session)
+        _store_session->setSelectedOutputFormatId(format_id);
+}
+
 StoreProgress::~StoreProgress()
 {
     _store_session->wait();

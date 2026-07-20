@@ -28,6 +28,7 @@
 #include <QMouseEvent>
 #include <QVBoxLayout>
 #include <QAbstractButton>
+#include <QPushButton>
 #include "../dsvdef.h"
 #include "../config/appconfig.h"
 #include "../ui/fn.h"
@@ -157,9 +158,30 @@ void DSMessageBox::update_font()
     }
 }
 
+void DSMessageBox::update_button_style()
+{
+    QPushButton *ok_btn = qobject_cast<QPushButton *>(_msg->button(QMessageBox::Ok));
+    QPushButton *yes_btn = qobject_cast<QPushButton *>(_msg->button(QMessageBox::Yes));
+    QPushButton *no_btn = qobject_cast<QPushButton *>(_msg->button(QMessageBox::No));
+    QPushButton *cancel_btn = qobject_cast<QPushButton *>(_msg->button(QMessageBox::Cancel));
+
+    if (ok_btn != NULL)
+        ok_btn->setObjectName("device_ok_btn");
+
+    if (yes_btn != NULL)
+        yes_btn->setObjectName("device_ok_btn");
+
+    if (no_btn != NULL)
+        no_btn->setObjectName("device_cancel_btn");
+
+    if (cancel_btn != NULL)
+        cancel_btn->setObjectName("device_cancel_btn");
+}
+
 int DSMessageBox::exec()
 {
     update_font();
+    update_button_style();
 
     PopupDlgList::AddDlgTolist(this);
 

@@ -391,8 +391,12 @@ namespace pv
 
         // file toolbar
         connect(_file_bar, SIGNAL(sig_load_file(QString)), this, SLOT(on_load_file(QString)));
+        connect(_file_bar, SIGNAL(sig_import_file(QString, QString)),
+                this, SLOT(on_import_file(QString, QString)));
         connect(_file_bar, SIGNAL(sig_save()), this, SLOT(on_save()));
         connect(_file_bar, SIGNAL(sig_export()), this, SLOT(on_export()));
+        connect(_file_bar, SIGNAL(sig_export_format(QString)),
+                this, SLOT(on_export_format(QString)));
         connect(_file_bar, SIGNAL(sig_screenShot()), this, SLOT(on_screenShot()), Qt::QueuedConnection);
         connect(_file_bar, SIGNAL(sig_load_session(QString)), this, SLOT(on_load_session(QString)));
         connect(_file_bar, SIGNAL(sig_store_session(QString)), this, SLOT(on_store_session(QString)));
@@ -1295,6 +1299,19 @@ namespace pv
         switch_to_device(file_handle);
     }
 
+    void MainWindow::on_import_file(QString format_id, QString file_name)
+    {
+        dsv_info("Import data: format=%s file=%s",
+                 format_id.toUtf8().constData(),
+                 file_name.toUtf8().constData());
+
+        QString strMsg(tr("Import format is listed but not connected yet: "));
+        strMsg += format_id;
+        strMsg += "\n";
+        strMsg += file_name;
+        MsgBox::Show(strMsg);
+    }
+
     void MainWindow::session_error()
     {
         _event.session_error();
@@ -1571,7 +1588,17 @@ namespace pv
 
         StoreProgress *dlg = new StoreProgress(_session, this);
         dlg->SetView(_view);
+        if (!_selected_export_format_id.isEmpty())
+            dlg->setSelectedOutputFormatId(_selected_export_format_id);
+        _selected_export_format_id.clear();
         dlg->export_run();
+    }
+
+    void MainWindow::on_export_format(QString format_id)
+    {
+        dsv_info("Export data: selected format=%s", format_id.toUtf8().constData());
+        _selected_export_format_id = format_id;
+        on_export();
     }
 
     bool MainWindow::on_load_session(QString name)

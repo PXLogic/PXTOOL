@@ -23,6 +23,8 @@
 #include "../dialogs/dsmessagebox.h"
 #include <assert.h>
 #include <QMessageBox>
+#include <QPainter>
+#include <QPixmap>
 #include "../dsvdef.h"
 #include "../appcontrol.h"
 
@@ -30,6 +32,30 @@
 //QMessageBox::information(NULL, "Title", "Content",QMessageBox::Yes|QMessageBox::No);
 //QMessageBox::information(NULL, "Title", "Content");
 //QMessageBox::information(NULL, "Title", "Content",QMessageBox::Yes|QMessageBox::No|QMessageBox::Abort);
+
+static QPixmap question_pixmap()
+{
+    QPixmap pixmap(36, 36);
+    pixmap.fill(Qt::transparent);
+
+    QPainter painter(&pixmap);
+    painter.setRenderHint(QPainter::Antialiasing);
+
+    QPen ring_pen(QColor("#16c8d8"), 2);
+    painter.setPen(ring_pen);
+    painter.setBrush(Qt::NoBrush);
+    painter.drawEllipse(QRectF(5.5, 5.5, 25.0, 25.0));
+
+    QFont font = painter.font();
+    font.setBold(true);
+    font.setPixelSize(25);
+    painter.setFont(font);
+    painter.setPen(QColor("#f3f7fb"));
+    painter.drawText(QRectF(0, 1, 36, 32), Qt::AlignCenter, "?");
+
+    painter.end();
+    return pixmap;
+}
 
 void MsgBox::Show(const QString text)
 {
@@ -105,6 +131,7 @@ bool MsgBox::Confirm(const QString text, const QString infoText,
     msg.mBox()->setText(str);
     msg.mBox()->setStandardButtons(QMessageBox::Yes | QMessageBox::No);
     msg.mBox()->setIcon(QMessageBox::Question);
+    msg.mBox()->setIconPixmap(question_pixmap());
 
     if (infoText != ""){
         msg.mBox()->setInformativeText(infoText);

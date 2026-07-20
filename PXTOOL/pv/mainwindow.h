@@ -114,6 +114,7 @@ private slots:
     void on_session_tab_switch(int index);
     void on_session_tab_close_by_uid(int uid);
 	void on_load_file(QString file_name);
+    void on_import_file(QString format_id, QString file_name);
     void on_open_doc();
     void on_protocol(bool visible);
     void on_trigger(bool visible);
@@ -123,6 +124,7 @@ private slots:
     void on_screenShot();
     void on_save();
     void on_export();
+    void on_export_format(QString format_id);
     void on_disk_cache_settings();
 
     // Shortcut slots
@@ -281,6 +283,7 @@ private:
     QAction *_action_default  = nullptr;
     QAction *_action_save     = nullptr;
     QAction *_action_export   = nullptr;
+    QString _selected_export_format_id;
     QAction *_action_capture  = nullptr;
     QAction *_action_disk_cache = nullptr;
 

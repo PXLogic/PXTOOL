@@ -133,6 +133,11 @@ QList<QString> StoreSession::getSuportedExportFormats(){
     return list;
 }
 
+void StoreSession::setSelectedOutputFormatId(const QString &format_id)
+{
+    _selectedOutputFormatId = format_id;
+}
+
 bool StoreSession::save_start()
 { 
     assert(_sessionDataGetter);
@@ -1683,11 +1688,24 @@ QString StoreSession::MakeExportFile(bool bDlg)
     }
 
     QString selfilter;
-    if (app.userHistory.exportFormat != "" 
+    if (!_selectedOutputFormatId.isEmpty()) {
+        const struct sr_output_module **supportedModules = sr_output_list();
+        while (*supportedModules) {
+            if (_selectedOutputFormatId == QString::fromUtf8((*supportedModules)->id)) {
+                selfilter = QString("%1 (*.%2)")
+                    .arg(QString::fromUtf8((*supportedModules)->desc))
+                    .arg(QString::fromUtf8((*supportedModules)->id));
+                break;
+            }
+            supportedModules++;
+        }
+    }
+
+    if (selfilter.isEmpty() && app.userHistory.exportFormat != ""
             && _session->get_device()->get_work_mode() == LOGIC){
         selfilter.append(app.userHistory.exportFormat);
     }
-    else{
+    else if (selfilter.isEmpty()){
         selfilter.append(".csv");
     }
 

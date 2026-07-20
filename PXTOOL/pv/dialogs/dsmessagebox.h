@@ -48,6 +48,7 @@ public:
     int exec();
 
     void update_font();
+    void update_button_style();
     
     inline int IsYes(){return _bClickYes;}
 
