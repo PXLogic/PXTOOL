@@ -12,4 +12,5 @@ intentionally RED until their modules are registered)
 Task 6: complete (registered current upstream logic outputs: ascii,
 binary, bits, chronovu-la8, hex, ols, and wavedrom; their fixture and
 capability tests are green. The final manifest is intentionally 12/14 until
-Task 7 imports analog and wav.)
+Task 7 imports analog and wav. Follow-up fixed StoreSession header forwarding
+for ChronoVu LA8 exports.)

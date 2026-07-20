@@ -70,3 +70,35 @@ shows each imported module differs only in its required DSView header and the
 three API-boundary adjustments documented above. Registration order, module
 extensions, and production/test source-list parity were checked directly.
 No legacy output framework or old/new compatibility wrapper was introduced.
+
+## Follow-up: StoreSession Header Packet
+
+Review found that `StoreSession::export_exec()` started standard output streams
+at `SR_DF_META`, so output modules that render bytes from `SR_DF_HEADER` did
+not receive their initial packet during real exports. ChronoVu LA8 depends on
+that packet for its one-byte samplerate divcount header.
+
+Added a focused ChronoVu fixture using a 50 MHz test samplerate. The fixture was
+observed RED before the fix:
+
+```text
+./build.macOS/DSView-test \
+  --run_test=io_migration_output_fixtures/chronovu_output_requires_header_and_preserves_logic_bytes
+
+critical check exported.size() == 1 + 4 + source.size() failed [8 != 9]
+```
+
+The fix sends `SR_DF_HEADER` through `sr_output_send()` and writes any returned
+bytes before metadata, logic data, and `SR_DF_END`. The ChronoVu output module
+algorithm was not changed. The fixture now asserts that 50 MHz emits divcount
+`0x01`, and that the original logic bytes survive in order after the trigger
+record.
+
+Follow-up verification passed:
+
+```text
+cmake --build . --target DSView-test
+./build.macOS/DSView-test --run_test=io_migration_output_fixtures
+./build.macOS/DSView-test --run_test=formatcapability
+cmake --build . --target DSView
+```

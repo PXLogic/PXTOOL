@@ -12,6 +12,8 @@
 
 #include "libsigrok-internal.h"
 
+static uint64_t test_samplerate;
+
 struct sr_dev_inst *make_test_sdi(void)
 {
     static struct sr_channel channel = {
@@ -27,6 +29,24 @@ struct sr_dev_inst *make_test_sdi(void)
         sdi.channels = g_slist_append(NULL, &channel);
         initialized = TRUE;
     }
+    sdi.priv = NULL;
 
     return &sdi;
+}
+
+struct sr_dev_inst *make_test_sdi_with_samplerate(uint64_t samplerate)
+{
+    struct sr_dev_inst *sdi = make_test_sdi();
+
+    test_samplerate = samplerate;
+    sdi->priv = &test_samplerate;
+    return sdi;
+}
+
+uint64_t test_sdi_samplerate_get(const struct sr_dev_inst *sdi)
+{
+    if (!sdi || !sdi->priv)
+        return 0;
+
+    return *(const uint64_t *)sdi->priv;
 }

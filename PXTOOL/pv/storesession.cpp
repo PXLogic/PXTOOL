@@ -979,8 +979,21 @@ void StoreSession::export_exec(data::Snapshot *snapshot)
         return true;
     };
 
-    // Meta
     struct sr_datafeed_packet p;
+    struct sr_datafeed_header header;
+
+    memset(&header, 0, sizeof(header));
+    header.feed_version = 1;
+    gettimeofday(&header.starttime, NULL);
+
+    p.type = SR_DF_HEADER;
+    p.status = SR_PKT_OK;
+    p.payload = &header;
+    p.bExportOriginalData = 0;
+    if (!send_packet(p))
+        return;
+
+    // Meta
     struct sr_datafeed_meta meta;
     struct sr_config *src;
 

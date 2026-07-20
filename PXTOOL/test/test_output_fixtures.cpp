@@ -22,6 +22,7 @@ extern "C" {
 #include "libsigrok-internal.h"
 
 struct sr_dev_inst *make_test_sdi(void);
+struct sr_dev_inst *make_test_sdi_with_samplerate(uint64_t samplerate);
 }
 
 #include "../pv/data/iooptions.h"
@@ -29,13 +30,31 @@ struct sr_dev_inst *make_test_sdi(void);
 namespace {
 
 QByteArray export_logic_fixture(const char *format,
-                                std::initializer_list<unsigned char> samples)
+                                std::initializer_list<unsigned char> samples,
+                                const sr_dev_inst *sdi = make_test_sdi())
 {
     const sr_output_module *module = sr_output_find(const_cast<char *>(format));
     BOOST_REQUIRE(module != nullptr);
 
-    const sr_output *output = sr_output_new(module, nullptr, make_test_sdi());
+    const sr_output *output = sr_output_new(module, nullptr, sdi);
     BOOST_REQUIRE(output != nullptr);
+
+    sr_datafeed_header header{};
+    header.feed_version = 1;
+
+    sr_datafeed_packet header_packet{};
+    header_packet.type = SR_DF_HEADER;
+    header_packet.status = SR_PKT_OK;
+    header_packet.payload = &header;
+
+    GString *chunk = nullptr;
+    BOOST_REQUIRE_EQUAL(sr_output_send(output, &header_packet, &chunk), SR_OK);
+
+    QByteArray exported;
+    if (chunk) {
+        exported.append(chunk->str, static_cast<qsizetype>(chunk->len));
+        g_string_free(chunk, TRUE);
+    }
 
     QByteArray source(reinterpret_cast<const char *>(samples.begin()),
                       static_cast<qsizetype>(samples.size()));
@@ -49,10 +68,9 @@ QByteArray export_logic_fixture(const char *format,
     packet.status = SR_PKT_OK;
     packet.payload = &logic;
 
-    GString *chunk = nullptr;
+    chunk = nullptr;
     BOOST_REQUIRE_EQUAL(sr_output_send(output, &packet, &chunk), SR_OK);
 
-    QByteArray exported;
     if (chunk) {
         exported.append(chunk->str, static_cast<qsizetype>(chunk->len));
         g_string_free(chunk, TRUE);
@@ -116,6 +134,18 @@ BOOST_AUTO_TEST_CASE(binary_output_preserves_nul_bytes)
     BOOST_REQUIRE_EQUAL(bytes.size(), 4);
     BOOST_CHECK_EQUAL(static_cast<unsigned char>(bytes.at(0)), 0x00);
     BOOST_CHECK_EQUAL(static_cast<unsigned char>(bytes.at(3)), 0xff);
+}
+
+BOOST_AUTO_TEST_CASE(chronovu_output_requires_header_and_preserves_logic_bytes)
+{
+    const QByteArray source("\x00\x7f\x80\xff", 4);
+    const QByteArray exported = export_logic_fixture(
+        "chronovu-la8", {0x00, 0x7f, 0x80, 0xff},
+        make_test_sdi_with_samplerate(50000000));
+
+    BOOST_REQUIRE_EQUAL(exported.size(), 1 + 4 + source.size());
+    BOOST_CHECK_EQUAL(static_cast<unsigned char>(exported.at(0)), 0x01);
+    BOOST_CHECK(exported.mid(5) == source);
 }
 
 BOOST_AUTO_TEST_CASE(exports_logic_formats)
