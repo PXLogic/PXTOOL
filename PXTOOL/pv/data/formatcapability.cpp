@@ -32,9 +32,9 @@ namespace data {
 
 namespace {
 
-QString inputDescription(const sr_input_format *format)
+QString inputDescription(const sr_input_module *module)
 {
-    return QString::fromUtf8(format->description ? format->description : format->id);
+    return QString::fromUtf8(module->desc ? module->desc : module->id);
 }
 
 QString outputDescription(const sr_output_module *module)
@@ -49,11 +49,13 @@ QString extensionFromId(const char *id)
     return QString("*.%1").arg(QString::fromUtf8(id));
 }
 
-FormatCapability makeImportCapability(const sr_input_format *format)
+FormatCapability makeImportCapability(const sr_input_module *module)
 {
-    const QString id = QString::fromUtf8(format->id);
-    const QString description = inputDescription(format);
-    const QString extension = extensionFromId(format->id);
+    const QString id = QString::fromUtf8(module->id);
+    const QString description = inputDescription(module);
+    const QString extension = module->exts && module->exts[0]
+        ? QString("*.%1").arg(QString::fromUtf8(module->exts[0]))
+        : extensionFromId(module->id);
 
     FormatCapability capability;
     capability.kind = FormatKind::Import;
@@ -84,7 +86,7 @@ FormatCapability makeExportCapability(const sr_output_module *module)
 QVector<FormatCapability> importFormats()
 {
     QVector<FormatCapability> formats;
-    sr_input_format **modules = sr_input_list();
+    const sr_input_module **modules = sr_input_list();
     for (int i = 0; modules && modules[i]; i++) {
         if (!modules[i]->id)
             continue;

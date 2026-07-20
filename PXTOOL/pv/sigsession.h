@@ -577,11 +577,11 @@ private:
     /**
      * Attempts to autodetect the format. Failing that
      * @param filename The filename of the input file.
-     * @return A pointer to the 'struct sr_input_format' that should be
+     * @return A pointer to the 'struct sr_input_module' that should be
      * 	used, or NULL if no input format was selected or
      * 	auto-detected.
      */
-    static sr_input_format* determine_input_file_format(const std::string &filename); 
+    static const sr_input_module* determine_input_file_format(const std::string &filename);
 
     // data feed
 	void feed_in_header(const sr_dev_inst *sdi);

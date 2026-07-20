@@ -68,9 +68,9 @@ BOOST_AUTO_TEST_CASE(enumerates_current_input_formats)
 
     const FormatCapability vcd = find_id(inputs, "vcd");
     BOOST_CHECK(vcd.kind == FormatKind::Import);
-    BOOST_CHECK_EQUAL(vcd.description.toStdString(), "Value Change Dump");
+    BOOST_CHECK_EQUAL(vcd.description.toStdString(), "Value Change Dump data");
     BOOST_CHECK(vcd.dialogFilter.contains("*.vcd"));
-    BOOST_CHECK(vcd.menuText.contains("Value Change Dump"));
+    BOOST_CHECK(vcd.menuText.contains("Value Change Dump data"));
 }
 
 BOOST_AUTO_TEST_CASE(enumerates_current_output_formats)
@@ -94,8 +94,8 @@ BOOST_AUTO_TEST_CASE(native_open_filter_precedes_import_filters)
     const QString filter = pv::data::openDialogFilter();
 
     BOOST_CHECK(filter.startsWith("DSView Data (*.dsl)"));
-    BOOST_CHECK(filter.contains("Value Change Dump (*.vcd)"));
-    BOOST_CHECK(filter.contains("WAV file (*.wav)"));
+    BOOST_CHECK(filter.contains("Value Change Dump data (*.vcd)"));
+    BOOST_CHECK(filter.contains("Microsoft WAV file format data (*.wav)"));
 }
 
 BOOST_AUTO_TEST_CASE(import_menu_labels_are_stable)
@@ -105,8 +105,8 @@ BOOST_AUTO_TEST_CASE(import_menu_labels_are_stable)
     const FormatCapability vcd = find_id(inputs, "vcd");
     const FormatCapability wav = find_id(inputs, "wav");
 
-    BOOST_CHECK_EQUAL(vcd.menuText.toStdString(), "Import Value Change Dump...");
-    BOOST_CHECK_EQUAL(wav.menuText.toStdString(), "Import WAV file...");
+    BOOST_CHECK_EQUAL(vcd.menuText.toStdString(), "Import Value Change Dump data...");
+    BOOST_CHECK_EQUAL(wav.menuText.toStdString(), "Import Microsoft WAV file format data...");
 }
 
 BOOST_AUTO_TEST_CASE(export_menu_labels_are_stable)

@@ -353,7 +353,7 @@ static const struct DSL_vga vga_defaults[] = {
 struct DSL_channels {
     enum DSL_CHANNEL_ID id;
     enum OPERATION_MODE mode;
-    enum CHANNEL_TYPE type;
+    enum sr_channeltype type;
     gboolean stream;
     uint16_t num;
     uint16_t vld_num;

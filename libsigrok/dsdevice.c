@@ -88,6 +88,65 @@ SR_PRIV void sr_channel_free_cb(void *channel)
 	sr_channel_free(channel);
 }
 
+SR_PRIV gboolean sr_channels_differ(struct sr_channel *ch1,
+        struct sr_channel *ch2)
+{
+    if (!ch1 || !ch2)
+        return TRUE;
+
+    return ch1->type != ch2->type || g_strcmp0(ch1->name, ch2->name) != 0;
+}
+
+SR_PRIV gboolean sr_channel_lists_differ(GSList *l1, GSList *l2)
+{
+    struct sr_channel *ch1;
+    struct sr_channel *ch2;
+
+    while (l1 && l2) {
+        ch1 = l1->data;
+        ch2 = l2->data;
+        if (!ch1 || !ch2 || sr_channels_differ(ch1, ch2) ||
+                ch1->index != ch2->index)
+            return TRUE;
+        l1 = l1->next;
+        l2 = l2->next;
+    }
+
+    return l1 || l2;
+}
+
+SR_PRIV struct sr_channel_group *sr_channel_group_new(struct sr_dev_inst *sdi,
+        const char *name, void *priv)
+{
+    struct sr_channel_group *group = g_malloc0(sizeof(*group));
+
+    if (!group)
+        return NULL;
+    if (name && *name)
+        group->name = g_strdup(name);
+    group->priv = priv;
+    if (sdi)
+        sdi->channel_groups = g_slist_append(sdi->channel_groups, group);
+
+    return group;
+}
+
+SR_PRIV void sr_channel_group_free(struct sr_channel_group *group)
+{
+    if (!group)
+        return;
+
+    g_free((gpointer)group->name);
+    g_slist_free(group->channels);
+    g_free(group->priv);
+    g_free(group);
+}
+
+SR_PRIV void sr_channel_group_free_cb(void *group)
+{
+    sr_channel_group_free(group);
+}
+
 /**
  * Set the name of the specified probe in the specified device.
  *
@@ -241,6 +300,8 @@ SR_PRIV void sr_dev_probes_free(struct sr_dev_inst *sdi)
 
     g_slist_free_full(sdi->channels, sr_channel_free_cb);
     sdi->channels = NULL;
+    g_slist_free_full(sdi->channel_groups, sr_channel_group_free_cb);
+    sdi->channel_groups = NULL;
 }
 
 SR_PRIV void sr_dev_inst_free(struct sr_dev_inst *sdi)

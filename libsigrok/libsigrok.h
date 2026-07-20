@@ -81,6 +81,7 @@ enum {
 	SR_ERR_DEVICE_IS_EXCLUSIVE 	= 11, /**< The device is exclusive by other process.*/
 	SR_ERR_DEVICE_FIRMWARE_VERSION_LOW = 12, /**< The firmware version is too low.*/
 	SR_ERR_DEVICE_USB_IO_ERROR = 13, /**< THe use io error.*/
+	SR_ERR_DATA = 14, /**< Input data is recognized but unsupported/corrupt. */
 
 	/*
 	 * Note: When adding entries here, don't forget to also update the
@@ -464,94 +465,48 @@ struct sr_datafeed_analog {
 	uint64_t mqflags;
 };
 
-/** Input (file) format struct. */
-struct sr_input {
-	/**
-	 * A pointer to this input format's 'struct sr_input_format'.
-	 * The frontend can use this to call the module's callbacks.
-	 */
-	struct sr_input_format *format;
-
-	GHashTable *param;
-
-	struct sr_dev_inst *sdi;
-
-	void *internal;
+/** Input module metadata keys. */
+enum sr_input_meta_keys {
+	SR_INPUT_META_FILENAME = 0x01,
+	SR_INPUT_META_FILESIZE = 0x02,
+	SR_INPUT_META_HEADER = 0x04,
+	SR_INPUT_META_REQUIRED = 0x80,
 };
 
-struct sr_input_format {
-	/** The unique ID for this input format. Must not be NULL. */
-	char *id;
+/** Input (file) module instance. */
+struct sr_input {
+	const struct sr_input_module *module;
+	GString *buf;
+	struct sr_dev_inst *sdi;
+	gboolean sdi_ready;
+	void *priv;
+};
 
-	/**
-	 * A short description of the input format, which can (for example)
-	 * be displayed to the user by frontends. Must not be NULL.
-	 */
-	char *description;
-
-	/**
-	 * Check if this input module can load and parse the specified file.
-	 *
-	 * @param filename The name (and path) of the file to check.
-	 *
-	 * @return TRUE if this module knows the format, FALSE if it doesn't.
-	 */
-	int (*format_match) (const char *filename);
-
-	/**
-	 * Initialize the input module.
-	 *
-	 * @param in A pointer to a valid 'struct sr_input' that the caller
-	 *           has to allocate and provide to this function. It is also
-	 *           the responsibility of the caller to free it later.
-	 * @param filename The name (and path) of the file to use.
-	 *
-	 * @return SR_OK upon success, a negative error code upon failure.
-	 */
-	int (*init) (struct sr_input *in, const char *filename);
-
-	/**
-	 * Load a file, parsing the input according to the file's format.
-     *
-	 * This function will send datafeed packets to the session bus, so
-	 * the calling frontend must have registered its session callbacks
-	 * beforehand.
-	 *
-	 * The packet types sent across the session bus by this function must
-	 * include at least SR_DF_HEADER, SR_DF_END, and an appropriate data
-	 * type such as SR_DF_LOGIC. It may also send a SR_DF_TRIGGER packet
-	 * if appropriate.
-	 *
-	 * @param in A pointer to a valid 'struct sr_input' that the caller
-	 *           has to allocate and provide to this function. It is also
-	 *           the responsibility of the caller to free it later.
-	 * @param filename The name (and path) of the file to use.
-	 *
-     * @return SR_OK upon succcess, a negative error code upon failure.
-	 */
-	int (*loadfile) (struct sr_input *in, const char *filename);
+/** Input (file) module driver. */
+struct sr_input_module {
+	const char *id;
+	const char *name;
+	const char *desc;
+	const char *const *exts;
+	const uint8_t metadata[8];
+	const struct sr_option *(*options)(void);
+	int (*format_match)(GHashTable *metadata, unsigned int *confidence);
+	int (*init)(struct sr_input *in, GHashTable *options);
+	int (*receive)(struct sr_input *in, GString *buf);
+	int (*end)(struct sr_input *in);
+	int (*reset)(struct sr_input *in);
+	void (*cleanup)(struct sr_input *in);
 };
 
 /** Output (file) format struct. */
 struct sr_output {
-	/**
-	 * A pointer to this output format's 'struct sr_output_format'.
-	 * The frontend can use this to call the module's callbacks.
-	 */
-    const struct sr_output_module *module;
+	const struct sr_output_module *module;
 
 	/**
 	 * The device for which this output module is creating output. This
 	 * can be used by the module to find out probe names and numbers.
 	 */
     const struct sr_dev_inst *sdi;
-
-	/**
-	 * An optional parameter which the frontend can pass in to the
-	 * output module. How the string is interpreted is entirely up to
-	 * the module.
-	 */
-	char *param;
 
 	/**
 	 * A generic pointer which can be used by the module to keep internal
@@ -562,17 +517,19 @@ struct sr_output {
 	 */
 	void *priv;
 
+	/* DSView native export state retained for existing output paths. */
+	char *param;
 	uint64_t start_sample_index;
 };
 
 /** Generic option struct used by various subsystems. */
 struct sr_option {
 	/* Short name suitable for commandline usage, [a-z0-9-]. */
-	char *id;
+	const char *id;
 	/* Short name suitable for GUI usage, can contain UTF-8. */
-	char *name;
+	const char *name;
 	/* Description of the option, in a sentence. */
-	char *desc;
+	const char *desc;
 	/* Default value for this option. */
 	GVariant *def;
 	/* List of possible values, if this is an option with few values. */
@@ -585,7 +542,7 @@ struct sr_output_module {
 	 * A unique ID for this output module, suitable for use in command-line
 	 * clients, [a-z0-9-]. Must not be NULL.
 	 */
-	char *id;
+	const char *id;
 
 	/**
 	 * A unique name for this output module, suitable for use in GUI
@@ -599,7 +556,7 @@ struct sr_output_module {
 	 * This can be displayed by frontends, e.g. when selecting the output
 	 * module for saving a file.
 	 */
-	char *desc;
+	const char *desc;
 
 	/**
 	 * A NULL terminated array of strings containing a list of file name
@@ -607,6 +564,8 @@ struct sr_output_module {
 	 * no typical extension for this file format.
 	 */
 	const char *const *exts;
+
+	const uint64_t flags;
 
 	/**
 	 * Returns a NULL-terminated list of options this module can take.
@@ -664,7 +623,7 @@ struct sr_output_module {
 };
 
 
-enum CHANNEL_TYPE {
+enum sr_channeltype {
     SR_CHANNEL_DECODER = 9998,
     SR_CHANNEL_GROUP = 9999,
     SR_CHANNEL_LOGIC = 10000,
@@ -1283,11 +1242,42 @@ enum DSL_CHANNEL_ID
 
 /*--- input/input.c ---------------------------------------------------------*/
 
-SR_API struct sr_input_format **sr_input_list(void);
+SR_API const struct sr_input_module **sr_input_list(void);
+SR_API const char *sr_input_id_get(const struct sr_input_module *imod);
+SR_API const char *sr_input_name_get(const struct sr_input_module *imod);
+SR_API const char *sr_input_description_get(const struct sr_input_module *imod);
+SR_API const char *const *sr_input_extensions_get(const struct sr_input_module *imod);
+SR_API const struct sr_input_module *sr_input_find(const char *id);
+SR_API const struct sr_option **sr_input_options_get(const struct sr_input_module *imod);
+SR_API void sr_input_options_free(const struct sr_option **options);
+SR_API struct sr_input *sr_input_new(const struct sr_input_module *imod,
+		GHashTable *options);
+SR_API int sr_input_scan_buffer(GString *buf, const struct sr_input **in);
+SR_API int sr_input_scan_file(const char *filename, const struct sr_input **in);
+SR_API const struct sr_input_module *sr_input_module_get(const struct sr_input *in);
+SR_API struct sr_dev_inst *sr_input_dev_inst_get(const struct sr_input *in);
+SR_API int sr_input_send(const struct sr_input *in, GString *buf);
+SR_API int sr_input_end(const struct sr_input *in);
+SR_API int sr_input_reset(const struct sr_input *in);
+SR_API void sr_input_free(const struct sr_input *in);
 
 /*--- output/output.c -------------------------------------------------------*/
 
 SR_API const struct sr_output_module **sr_output_list(void);
+SR_API const char *sr_output_id_get(const struct sr_output_module *omod);
+SR_API const char *sr_output_name_get(const struct sr_output_module *omod);
+SR_API const char *sr_output_description_get(const struct sr_output_module *omod);
+SR_API const char *const *sr_output_extensions_get(const struct sr_output_module *omod);
+SR_API gboolean sr_output_test_flag(const struct sr_output_module *omod,
+		uint64_t flag);
+SR_API const struct sr_output_module *sr_output_find(char *id);
+SR_API const struct sr_option **sr_output_options_get(const struct sr_output_module *omod);
+SR_API void sr_output_options_free(const struct sr_option **options);
+SR_API const struct sr_output *sr_output_new(const struct sr_output_module *omod,
+		GHashTable *options, const struct sr_dev_inst *sdi);
+SR_API int sr_output_send(const struct sr_output *o,
+		const struct sr_datafeed_packet *packet, GString **out);
+SR_API int sr_output_free(const struct sr_output *o);
 
 /*--- strutil.c -------------------------------------------------------------*/
 

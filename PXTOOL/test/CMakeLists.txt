@@ -44,13 +44,15 @@ add_executable(DSView-test
     ../../libsigrok/session.c
     ../../libsigrok/std.c
     ../../libsigrok/input/input.c
-    ../../libsigrok/input/in_binary.c
-    ../../libsigrok/input/in_vcd.c
-    ../../libsigrok/input/in_wav.c
+    ../../libsigrok/input/binary.c
+    ../../libsigrok/input/feed_queue.c
+    ../../libsigrok/input/vcd.c
+    ../../libsigrok/input/wav.c
     ../../libsigrok/log.c
     ../../libsigrok/output/output.c
     ../../libsigrok/output/csv.c
     ../../libsigrok/output/gnuplot.c
+    ../../libsigrok/output/null.c
     ../../libsigrok/output/srzip.c
     ../../libsigrok/output/vcd.c
     ../../libsigrok/strutil.c

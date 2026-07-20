@@ -10,6 +10,23 @@
  * (at your option) any later version.
  */
 
-void dsview_test_upstream_io_stubs_anchor(void)
+#include "libsigrok-internal.h"
+
+struct sr_dev_inst *make_test_sdi(void)
 {
+    static struct sr_channel channel = {
+        .index = 0,
+        .type = SR_CHANNEL_LOGIC,
+        .enabled = TRUE,
+        .name = "D0",
+    };
+    static struct sr_dev_inst sdi;
+    static gboolean initialized;
+
+    if (!initialized) {
+        sdi.channels = g_slist_append(NULL, &channel);
+        initialized = TRUE;
+    }
+
+    return &sdi;
 }

@@ -569,11 +569,13 @@ set(libsigrok_SOURCES
     libsigrok/output/output.c
     libsigrok/input/input.c
     libsigrok/hardware/demo/demo.c
-    libsigrok/input/in_binary.c
-    libsigrok/input/in_vcd.c
-    libsigrok/input/in_wav.c
+    libsigrok/input/binary.c
+    libsigrok/input/feed_queue.c
+    libsigrok/input/vcd.c
+    libsigrok/input/wav.c
     libsigrok/output/csv.c
     libsigrok/output/gnuplot.c
+    libsigrok/output/null.c
     libsigrok/output/srzip.c
     libsigrok/output/vcd.c
     libsigrok/hardware/DSL/dslogic.c
