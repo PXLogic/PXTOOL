@@ -15,7 +15,6 @@
 #include <cstdint>
 
 #include <QByteArray>
-
 #include "test_datafeed_stub.h"
 
 extern "C" {

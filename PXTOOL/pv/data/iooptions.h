@@ -29,6 +29,7 @@ namespace data {
 class IoOptions {
 public:
     explicit IoOptions(const sr_option *const *options);
+    static IoOptions fromValues(const QMap<QString, QVariant> &values);
 
     QVariant value(const QString &id) const;
     void set(const QString &id, const QVariant &value);

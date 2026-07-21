@@ -430,6 +430,12 @@ public:
     void remove_msg_listener(IMessageListener *ln);
     void set_as_current();
     void rebind_device(ds_device_handle handle);
+    void bind_imported_device(struct sr_dev_inst *sdi,
+                              int work_mode,
+                              uint64_t sample_rate,
+                              uint64_t sample_limit,
+                              const QString &name,
+                              const QString &path);
     void refresh_signal_probes();
     void save_channel_enabled_states();
     void restore_channel_enabled_states();

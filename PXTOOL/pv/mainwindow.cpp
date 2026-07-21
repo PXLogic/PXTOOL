@@ -65,6 +65,7 @@
 #include "data/dsosnapshot.h"
 #include "data/analogsnapshot.h"
 #include "data/formatcapability.h"
+#include "data/inputimporter.h"
 #include "data/iooptions.h"
 
 #include "dialogs/about.h"
@@ -1332,11 +1333,61 @@ namespace pv
                  format_id.toUtf8().constData(),
                  file_name.toUtf8().constData());
 
-        QString strMsg(tr("Import format is listed but not connected yet: "));
-        strMsg += format_id;
-        strMsg += "\n";
-        strMsg += file_name;
-        MsgBox::Show(strMsg);
+        const QVector<pv::data::FormatCapability> formats = pv::data::importFormats();
+        const pv::data::FormatCapability *format = pv::data::findFormatById(formats, format_id);
+        if (!format) {
+            MsgBox::Show(tr("Unsupported import format."));
+            return;
+        }
+
+        SigSession *previous_session = _session;
+        SessionCallback *import_cb = new SessionCallback(this);
+        import_cb->setActive(false);
+        SigSession *import_session = new SigSession();
+        import_session->set_callback(import_cb);
+
+        const pv::data::IoOptions options(nullptr);
+        import_session->set_as_current();
+        const pv::data::ImportResult result = pv::data::InputImporter::importFile(
+            *import_session, format_id, file_name, options);
+
+        previous_session->set_as_current();
+
+        if (!result.ok) {
+            delete import_session;
+            delete import_cb;
+            MsgBox::Show(result.error.isEmpty()
+                ? tr("Failed to import %1.").arg(file_name)
+                : result.error);
+            return;
+        }
+
+        const int uid = _next_session_uid++;
+        pv::view::View *view = new pv::view::View(import_session, _sampling_bar, this);
+        _session_stack->addWidget(view);
+
+        SessionItem item;
+        item.uid = uid;
+        item.session = import_session;
+        item.view = view;
+        item.name = QFileInfo(file_name).completeBaseName();
+        if (item.name.isEmpty())
+            item.name = tr("Imported Session");
+        item.cb = import_cb;
+        _session_items.append(item);
+        _uid_to_index[uid] = _session_items.size() - 1;
+
+        DeviceGroup *grp = create_group(import_session->get_device()->handle());
+        grp->display_name = QFileInfo(file_name).completeBaseName();
+        if (grp->display_name.isEmpty())
+            grp->display_name = tr("Imported File");
+        grp->dev_type = DEV_TYPE_FILELOG;
+        grp->session_uids.append(uid);
+        grp->active_session_uid = uid;
+
+        rebuild_uid_index();
+        switch_to_session(_uid_to_index.value(uid));
+        rebuild_tab_buttons();
     }
 
     void MainWindow::session_error()

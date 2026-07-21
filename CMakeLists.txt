@@ -292,6 +292,7 @@ set(DSView_SOURCES
     PXTOOL/pv/data/signaldata.cpp
     PXTOOL/pv/data/formatcapability.cpp
     PXTOOL/pv/data/iooptions.cpp
+    PXTOOL/pv/data/inputimporter.cpp
     PXTOOL/pv/data/analogpacketadapter.cpp
     PXTOOL/pv/data/logicsnapshot.cpp
     PXTOOL/pv/data/spillmanager.cpp
@@ -448,6 +449,7 @@ set(DSView_HEADERS
     PXTOOL/pv/dialogs/inputoutputoptionsdlg.h
     PXTOOL/pv/data/formatcapability.h
     PXTOOL/pv/data/iooptions.h
+    PXTOOL/pv/data/inputimporter.h
     PXTOOL/pv/data/analogpacketadapter.h
     PXTOOL/pv/data/spillmanager.h
     PXTOOL/pv/utility/diskcachesettings.h

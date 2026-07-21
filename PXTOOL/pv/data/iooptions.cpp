@@ -109,6 +109,34 @@ bool isEnumeratedValue(const QList<QVariant> &allowedValues,
     return allowedValues.contains(value);
 }
 
+QByteArray typeSignatureForVariant(const QVariant &value)
+{
+    switch (value.metaType().id()) {
+    case QMetaType::Bool:
+        return "b";
+    case QMetaType::UChar:
+        return "y";
+    case QMetaType::Short:
+        return "n";
+    case QMetaType::UShort:
+        return "q";
+    case QMetaType::Int:
+        return "i";
+    case QMetaType::UInt:
+        return "u";
+    case QMetaType::LongLong:
+        return "x";
+    case QMetaType::ULongLong:
+        return "t";
+    case QMetaType::Double:
+        return "d";
+    case QMetaType::QString:
+        return "s";
+    default:
+        throw std::invalid_argument("Unsupported libsigrok option type");
+    }
+}
+
 } // namespace
 
 IoOptions::IoOptions(const sr_option *const *options)
@@ -133,6 +161,18 @@ IoOptions::IoOptions(const sr_option *const *options)
                 variantToQVariant(static_cast<GVariant *>(allowed->data)));
         entries_.insert(id, entry);
     }
+}
+
+IoOptions IoOptions::fromValues(const QMap<QString, QVariant> &values)
+{
+    IoOptions options(nullptr);
+    for (auto it = values.cbegin(); it != values.cend(); ++it) {
+        Entry entry;
+        entry.typeSignature = typeSignatureForVariant(it.value());
+        entry.value = it.value();
+        options.entries_.insert(it.key(), entry);
+    }
+    return options;
 }
 
 QVariant IoOptions::value(const QString &id) const
