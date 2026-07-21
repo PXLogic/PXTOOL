@@ -92,3 +92,42 @@ legacy/Qt warnings; no warning became an error.
 - `DSView-test` does not link the complete StoreSession/SigSession/snapshot
   graph, so the no-file rejection behavior is build- and path-reviewed here;
   the approved plan retains a direct StoreSession failure fixture for Task 11.
+
+## Follow-up Review Fix: WAV Option Lifetime
+
+Commit: `fix: reset wav output default option after cleanup`.
+
+Review finding addressed on 2026-07-21:
+
+- `libsigrok/output/wav.c` now mirrors `analog.c`: cleanup only unrefs the
+  module-global `options[0].def` when present and immediately sets it to
+  `NULL`. Repeated WAV output creation, options queries, and exports no longer
+  reuse a freed `GVariant`.
+- Added `wav_output_recreates_options_after_cleanup`. The RED run aborted in
+  GLib's GVariant type-info check after freeing one WAV output and querying WAV
+  options again. After the cleanup fix, the regression passes and performs a
+  second WAV export.
+- Strengthened the WAV fixture to verify RIFF/WAVE structure, `fmt ` chunk
+  size, IEEE-float format code `3`, channel count, sample rate, byte rate,
+  block alignment, bits per sample, extension size, `data` chunk marker/size,
+  and the emitted interleaved float payload.
+- The pre-file-open StoreSession rejection gap remains documented above; this
+  follow-up stays scoped to the reviewed module-global option lifetime and WAV
+  fixture coverage.
+
+Verification commands exited 0:
+
+```text
+cmake --build . --target DSView-test -j4
+./build.macOS/DSView-test --run_test=io_migration_output_fixtures/wav_output_recreates_options_after_cleanup
+./build.macOS/DSView-test --run_test=io_migration_output_fixtures
+./build.macOS/DSView-test '--run_test=analog_adapter_*'
+./build.macOS/DSView-test --run_test=enumerates_final_export_format_manifest
+./build.macOS/DSView-test --run_test=formatcapability
+./build.macOS/DSView-test
+cmake --build . --target DSView -j4
+```
+
+Results: 1 focused WAV lifetime regression, 10 output fixture cases, 5 analog
+adapter cases, the final manifest, 8 format capability cases, and all 86
+DSView-test cases passed. The DSView target built successfully.

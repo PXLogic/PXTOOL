@@ -356,7 +356,10 @@ static int cleanup(struct sr_output *o)
 
 	outc = o->priv;
 	g_slist_free(outc->channels);
-	g_variant_unref(options[0].def);
+	if (options[0].def) {
+		g_variant_unref(options[0].def);
+		options[0].def = NULL;
+	}
 	for (i = 0; i < outc->num_channels; i++)
 		g_free(outc->chanbuf[i]);
 	g_free(outc->chanbuf_used);

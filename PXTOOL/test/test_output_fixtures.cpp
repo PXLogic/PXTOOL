@@ -12,6 +12,7 @@
 
 #include <boost/test/unit_test.hpp>
 
+#include <cstring>
 #include <initializer_list>
 
 #include <QByteArray>
@@ -191,10 +192,64 @@ QByteArray export_analog_fixture(const char *format)
     return exported;
 }
 
-bool has_wave_header(const QByteArray &bytes)
+quint16 read_le16(const QByteArray &bytes, int offset)
 {
-    return bytes.size() >= 12 && bytes.startsWith("RIFF") &&
-           bytes.mid(8, 4) == "WAVE";
+    BOOST_REQUIRE_GE(bytes.size(), offset + 2);
+    return static_cast<quint16>(
+        static_cast<unsigned char>(bytes.at(offset)) |
+        (static_cast<unsigned char>(bytes.at(offset + 1)) << 8));
+}
+
+quint32 read_le32(const QByteArray &bytes, int offset)
+{
+    BOOST_REQUIRE_GE(bytes.size(), offset + 4);
+    return static_cast<quint32>(
+        static_cast<unsigned char>(bytes.at(offset)) |
+        (static_cast<unsigned char>(bytes.at(offset + 1)) << 8) |
+        (static_cast<unsigned char>(bytes.at(offset + 2)) << 16) |
+        (static_cast<unsigned char>(bytes.at(offset + 3)) << 24));
+}
+
+float read_le_float(const QByteArray &bytes, int offset)
+{
+    const quint32 bits = read_le32(bytes, offset);
+    float value = 0.0F;
+    std::memcpy(&value, &bits, sizeof(value));
+    return value;
+}
+
+void verify_wav_fixture(const QByteArray &wav)
+{
+    const int headerSize = 46;
+    const int channelCount = 2;
+    const int sampleRate = 48000;
+    const int samplesPerChannel = 12;
+
+    BOOST_REQUIRE_GE(wav.size(), headerSize);
+    BOOST_CHECK(wav.startsWith("RIFF"));
+    BOOST_CHECK_EQUAL(read_le32(wav, 4), 0xffffffffU);
+    BOOST_CHECK_EQUAL(wav.mid(8, 4).toStdString(), "WAVE");
+    BOOST_CHECK_EQUAL(wav.mid(12, 4).toStdString(), "fmt ");
+    BOOST_CHECK_EQUAL(read_le32(wav, 16), 0x12U);
+    BOOST_CHECK_EQUAL(read_le16(wav, 20), 0x0003U);
+    BOOST_CHECK_EQUAL(read_le16(wav, 22), channelCount);
+    BOOST_CHECK_EQUAL(read_le32(wav, 24), sampleRate);
+    BOOST_CHECK_EQUAL(read_le32(wav, 28), sampleRate * channelCount * 4);
+    BOOST_CHECK_EQUAL(read_le16(wav, 32), channelCount * 4);
+    BOOST_CHECK_EQUAL(read_le16(wav, 34), 32);
+    BOOST_CHECK_EQUAL(read_le16(wav, 36), 0);
+    BOOST_CHECK_EQUAL(wav.mid(38, 4).toStdString(), "data");
+    BOOST_CHECK_EQUAL(read_le32(wav, 42), 0xffffffffU);
+    BOOST_REQUIRE_EQUAL(wav.size(),
+                        headerSize + samplesPerChannel * channelCount * 4);
+
+    for (int sample = 0; sample < samplesPerChannel; ++sample) {
+        const float positive = static_cast<float>(sample) / 12.0F;
+        const float negative = -static_cast<float>(sample) / 12.0F;
+        const int offset = headerSize + sample * channelCount * 4;
+        BOOST_CHECK_CLOSE(read_le_float(wav, offset), positive, 0.001);
+        BOOST_CHECK_CLOSE(read_le_float(wav, offset + 4), negative, 0.001);
+    }
 }
 
 } // namespace
@@ -406,7 +461,7 @@ BOOST_AUTO_TEST_CASE(analog_outputs_accept_standard_packets)
     const QByteArray wav = export_analog_fixture("wav");
     BOOST_CHECK(analog.startsWith("FRAME-BEGIN"));
     BOOST_CHECK(analog.contains("META samplerate: 48000"));
-    BOOST_CHECK(has_wave_header(wav));
+    verify_wav_fixture(wav);
 
     QTemporaryFile analog_file(
         QDir::tempPath() + "/dsview-analog-output-XXXXXX");
@@ -418,6 +473,28 @@ BOOST_AUTO_TEST_CASE(analog_outputs_accept_standard_packets)
     BOOST_REQUIRE_EQUAL(wav_file.write(wav), wav.size());
     BOOST_CHECK(!analog_file.fileName().endsWith(".analog"));
     BOOST_CHECK(wav_file.fileName().endsWith(".wav"));
+}
+
+BOOST_AUTO_TEST_CASE(wav_output_recreates_options_after_cleanup)
+{
+    const sr_output_module *module = sr_output_find(const_cast<char *>("wav"));
+    BOOST_REQUIRE(module != nullptr);
+
+    const sr_output *first_output = sr_output_new(module, nullptr, make_test_sdi());
+    BOOST_REQUIRE(first_output != nullptr);
+    BOOST_CHECK_EQUAL(sr_output_free(first_output), SR_OK);
+
+    const sr_option **options = sr_output_options_get(module);
+    BOOST_REQUIRE(options != nullptr);
+    BOOST_REQUIRE(options[0] != nullptr);
+    BOOST_CHECK_EQUAL(std::string(options[0]->id), "scale");
+    BOOST_REQUIRE(options[0]->def != nullptr);
+    BOOST_CHECK(g_variant_is_of_type(options[0]->def, G_VARIANT_TYPE_DOUBLE));
+    BOOST_CHECK_CLOSE(g_variant_get_double(options[0]->def), 1.0, 0.001);
+    sr_output_options_free(options);
+
+    const QByteArray wav = export_analog_fixture("wav");
+    verify_wav_fixture(wav);
 }
 
 BOOST_AUTO_TEST_SUITE_END()
