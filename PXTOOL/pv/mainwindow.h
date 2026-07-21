@@ -41,6 +41,7 @@
 #include <QStackedWidget>
 #include <QShortcut>
 #include <libsigrok.h>
+#include "data/iooptions.h"
 #include "sessioncallback.h"
 
 class QAction;
@@ -291,6 +292,7 @@ private:
     QAction *_action_save     = nullptr;
     QAction *_action_export   = nullptr;
     QString _selected_export_format_id;
+    data::IoOptions _selected_export_options{nullptr};
     QAction *_action_capture  = nullptr;
     QAction *_action_disk_cache = nullptr;
 

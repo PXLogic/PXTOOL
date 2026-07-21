@@ -148,6 +148,13 @@ void StoreProgress::setSelectedOutputFormatId(const QString &format_id)
         _store_session->setSelectedOutputFormatId(format_id);
 }
 
+void StoreProgress::setSelectedOutputOptions(
+    const pv::data::IoOptions &options)
+{
+    if (_store_session)
+        _store_session->setSelectedOutputOptions(options);
+}
+
 StoreProgress::~StoreProgress()
 {
     _store_session->wait();
@@ -388,8 +395,15 @@ void StoreProgress::export_run()
 
     _isExport = true;
     setTitle(tr("Export"));
+
+    if (!_store_session->validateExportFormat()) {
+        show_error();
+        close();
+        return;
+    }
+
     QString file = _store_session->MakeExportFile(false);
-    _fileLab->setText(file); 
+    _fileLab->setText(file);
 
     if (_ckOrigin != NULL){
         bool bFlag = file.endsWith(".csv");
@@ -431,10 +445,15 @@ void StoreProgress::on_progress_updated()
 void StoreProgress::on_change_file()
 {
     QString file  = "";
-    if (_isExport)
+    if (_isExport) {
+        if (!_store_session->validateExportFormat()) {
+            show_error();
+            return;
+        }
         file = _store_session->MakeExportFile(true);
-    else
+    } else {
         file = _store_session->MakeSaveFile(true);
+    }
 
     if (file != ""){
         _fileLab->setText(file); 

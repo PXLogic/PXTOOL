@@ -31,6 +31,7 @@
 #include <libsigrok.h>
 
 #include "interface/icallbacks.h"
+#include "data/iooptions.h"
 
 #include "ZipMaker.h"
 
@@ -62,6 +63,7 @@ public:
 	const QString& error();
     bool save_start();
     bool export_start();
+    bool validateExportFormat();
 	void wait();
 	void cancel();
 
@@ -82,6 +84,7 @@ public:
     QString MakeSaveFile(bool bDlg);
     QString MakeExportFile(bool bDlg);
     void setSelectedOutputFormatId(const QString &format_id);
+    void setSelectedOutputOptions(const data::IoOptions &options);
 
     inline QString GetFileName(){
         return _file_name;
@@ -116,6 +119,9 @@ private:
 	std::thread     _thread;
     const struct sr_output_module* _outModule;
     QString         _selectedOutputFormatId;
+    QString         _selectedOptionsFormatId;
+    data::IoOptions _selectedOutputOptions{nullptr};
+    bool            _hasSelectedOutputOptions = false;
  
 	uint64_t        _units_stored;
 	uint64_t        _unit_count;

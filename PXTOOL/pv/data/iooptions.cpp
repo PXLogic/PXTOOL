@@ -47,74 +47,66 @@ QVariant variantToQVariant(GVariant *value)
     throw std::invalid_argument("Unsupported libsigrok option type");
 }
 
-bool matchesType(GVariant *definition, const QVariant &value)
+bool matchesType(const QByteArray &typeSignature, const QVariant &value)
 {
     const int type = value.metaType().id();
 
-    if (g_variant_is_of_type(definition, G_VARIANT_TYPE_BOOLEAN))
+    if (typeSignature == "b")
         return type == QMetaType::Bool;
-    if (g_variant_is_of_type(definition, G_VARIANT_TYPE_BYTE))
+    if (typeSignature == "y")
         return type == QMetaType::UChar;
-    if (g_variant_is_of_type(definition, G_VARIANT_TYPE_INT16))
+    if (typeSignature == "n")
         return type == QMetaType::Short;
-    if (g_variant_is_of_type(definition, G_VARIANT_TYPE_UINT16))
+    if (typeSignature == "q")
         return type == QMetaType::UShort;
-    if (g_variant_is_of_type(definition, G_VARIANT_TYPE_INT32))
+    if (typeSignature == "i")
         return type == QMetaType::Int;
-    if (g_variant_is_of_type(definition, G_VARIANT_TYPE_UINT32))
+    if (typeSignature == "u")
         return type == QMetaType::UInt;
-    if (g_variant_is_of_type(definition, G_VARIANT_TYPE_INT64))
+    if (typeSignature == "x")
         return type == QMetaType::LongLong;
-    if (g_variant_is_of_type(definition, G_VARIANT_TYPE_UINT64))
+    if (typeSignature == "t")
         return type == QMetaType::ULongLong;
-    if (g_variant_is_of_type(definition, G_VARIANT_TYPE_DOUBLE))
+    if (typeSignature == "d")
         return type == QMetaType::Double;
-    if (g_variant_is_of_type(definition, G_VARIANT_TYPE_STRING))
+    if (typeSignature == "s")
         return type == QMetaType::QString;
 
     throw std::invalid_argument("Unsupported libsigrok option type");
 }
 
-GVariant *qVariantToVariant(GVariant *definition, const QVariant &value)
+GVariant *qVariantToVariant(const QByteArray &typeSignature, const QVariant &value)
 {
-    if (g_variant_is_of_type(definition, G_VARIANT_TYPE_BOOLEAN))
+    if (typeSignature == "b")
         return g_variant_new_boolean(value.toBool());
-    if (g_variant_is_of_type(definition, G_VARIANT_TYPE_BYTE))
+    if (typeSignature == "y")
         return g_variant_new_byte(value.value<guchar>());
-    if (g_variant_is_of_type(definition, G_VARIANT_TYPE_INT16))
+    if (typeSignature == "n")
         return g_variant_new_int16(value.value<gint16>());
-    if (g_variant_is_of_type(definition, G_VARIANT_TYPE_UINT16))
+    if (typeSignature == "q")
         return g_variant_new_uint16(value.value<guint16>());
-    if (g_variant_is_of_type(definition, G_VARIANT_TYPE_INT32))
+    if (typeSignature == "i")
         return g_variant_new_int32(value.toInt());
-    if (g_variant_is_of_type(definition, G_VARIANT_TYPE_UINT32))
+    if (typeSignature == "u")
         return g_variant_new_uint32(value.toUInt());
-    if (g_variant_is_of_type(definition, G_VARIANT_TYPE_INT64))
+    if (typeSignature == "x")
         return g_variant_new_int64(value.toLongLong());
-    if (g_variant_is_of_type(definition, G_VARIANT_TYPE_UINT64))
+    if (typeSignature == "t")
         return g_variant_new_uint64(value.toULongLong());
-    if (g_variant_is_of_type(definition, G_VARIANT_TYPE_DOUBLE))
+    if (typeSignature == "d")
         return g_variant_new_double(value.toDouble());
-    if (g_variant_is_of_type(definition, G_VARIANT_TYPE_STRING))
+    if (typeSignature == "s")
         return g_variant_new_string(value.toString().toUtf8().constData());
 
     throw std::invalid_argument("Unsupported libsigrok option type");
 }
 
-gint compareVariant(gconstpointer left, gconstpointer right)
+bool isEnumeratedValue(const QList<QVariant> &allowedValues,
+                       const QVariant &value)
 {
-    return g_variant_equal((GVariant *)left, (GVariant *)right) ? 0 : 1;
-}
-
-bool isEnumeratedValue(const sr_option *option, const QVariant &value)
-{
-    if (!option->values)
+    if (allowedValues.isEmpty())
         return true;
-
-    GVariant *candidate = g_variant_ref_sink(qVariantToVariant(option->def, value));
-    const bool found = g_slist_find_custom(option->values, candidate, compareVariant) != nullptr;
-    g_variant_unref(candidate);
-    return found;
+    return allowedValues.contains(value);
 }
 
 } // namespace
@@ -133,7 +125,13 @@ IoOptions::IoOptions(const sr_option *const *options)
         if (id.isEmpty() || entries_.contains(id))
             throw std::invalid_argument("Duplicate libsigrok option ID");
 
-        entries_.insert(id, Entry{ option, variantToQVariant(option->def) });
+        Entry entry;
+        entry.typeSignature = QByteArray(g_variant_get_type_string(option->def));
+        entry.value = variantToQVariant(option->def);
+        for (const GSList *allowed = option->values; allowed; allowed = allowed->next)
+            entry.allowedValues.append(
+                variantToQVariant(static_cast<GVariant *>(allowed->data)));
+        entries_.insert(id, entry);
     }
 }
 
@@ -150,9 +148,9 @@ void IoOptions::set(const QString &id, const QVariant &value)
     auto entry = entries_.find(id);
     if (entry == entries_.end())
         throw std::invalid_argument("Unknown libsigrok option ID");
-    if (!matchesType(entry->definition->def, value))
+    if (!matchesType(entry->typeSignature, value))
         throw std::invalid_argument("Invalid libsigrok option value type");
-    if (!isEnumeratedValue(entry->definition, value))
+    if (!isEnumeratedValue(entry->allowedValues, value))
         throw std::invalid_argument("Invalid libsigrok option value");
 
     entry->value = value;
@@ -170,7 +168,7 @@ GHashTable *IoOptions::toGHashTable() const
 
     try {
         for (auto entry = entries_.cbegin(); entry != entries_.cend(); ++entry) {
-            GVariant *value = qVariantToVariant(entry->definition->def, entry->value);
+            GVariant *value = qVariantToVariant(entry->typeSignature, entry->value);
             g_hash_table_insert(options, g_strdup(entry.key().toUtf8().constData()),
                 g_variant_ref_sink(value));
         }

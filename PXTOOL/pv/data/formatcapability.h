@@ -34,6 +34,12 @@ enum class FormatKind {
     Export
 };
 
+enum class ExportDataType {
+    Logic,
+    Analog,
+    Dso
+};
+
 struct FormatCapability {
     FormatKind kind;
     QString id;
@@ -49,6 +55,10 @@ struct FormatCapability {
 
 QVector<FormatCapability> importFormats();
 QVector<FormatCapability> exportFormats();
+QStringList exportMenuIds();
+bool formatRequiresOptions(const QString &id);
+QString exportCompatibilityError(const FormatCapability &format,
+                                 ExportDataType dataType);
 QString openDialogFilter();
 QString saveDialogFilter(const QVector<FormatCapability> &formats);
 const FormatCapability *findFormatById(const QVector<FormatCapability> &formats,

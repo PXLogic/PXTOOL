@@ -65,6 +65,7 @@
 #include "data/dsosnapshot.h"
 #include "data/analogsnapshot.h"
 #include "data/formatcapability.h"
+#include "data/iooptions.h"
 
 #include "dialogs/about.h"
 #include "dialogs/deviceoptions.h"
@@ -74,6 +75,7 @@
 #include "dialogs/applicationpardlg.h"
 #include "dialogs/shortcutdlg.h"
 #include "dialogs/diskcachedialog.h"
+#include "dialogs/inputoutputoptionsdlg.h"
 
 #include "toolbars/samplingbar.h"
 #include "toolbars/trigbar.h"
@@ -1613,16 +1615,49 @@ namespace pv
 
         StoreProgress *dlg = new StoreProgress(_session, this);
         dlg->SetView(_view);
-        if (!_selected_export_format_id.isEmpty())
+        if (!_selected_export_format_id.isEmpty()) {
             dlg->setSelectedOutputFormatId(_selected_export_format_id);
+            dlg->setSelectedOutputOptions(_selected_export_options);
+        }
         _selected_export_format_id.clear();
+        _selected_export_options = pv::data::IoOptions(nullptr);
         dlg->export_run();
     }
 
     void MainWindow::on_export_format(QString format_id)
     {
+        const QVector<pv::data::FormatCapability> formats =
+            pv::data::exportFormats();
+        const pv::data::FormatCapability *format =
+            pv::data::findFormatById(formats, format_id);
+        if (!format)
+            return;
+
+        const bool requires_options =
+            pv::data::formatRequiresOptions(format_id);
+        const sr_output_module *module =
+            sr_output_find(format_id.toUtf8().data());
+        if (!module)
+            return;
+
+        const sr_option **definitions = sr_output_options_get(module);
+        pv::data::IoOptions options(definitions);
+        bool accepted = true;
+        if (requires_options) {
+            dialogs::InputOutputOptionsDlg dlg(
+                tr("Export %1").arg(format->description), definitions, this);
+            accepted = dlg.exec() == QDialog::Accepted;
+            if (accepted)
+                options = dlg.options();
+        }
+        sr_output_options_free(definitions);
+
+        if (!accepted)
+            return;
+
         dsv_info("Export data: selected format=%s", format_id.toUtf8().constData());
         _selected_export_format_id = format_id;
+        _selected_export_options = options;
         on_export();
     }
 

@@ -119,6 +119,77 @@ BOOST_AUTO_TEST_CASE(export_menu_labels_are_stable)
                       "Export Value Change Dump...");
 }
 
+BOOST_AUTO_TEST_CASE(export_menu_order_keeps_dsview_formats_first)
+{
+    const QStringList expected = {
+        "csv", "vcd", "gnuplot", "srzip", "analog", "ascii", "binary",
+        "bits", "chronovu-la8", "hex", "null", "ols", "wav", "wavedrom"
+    };
+
+    const QStringList actual = pv::data::exportMenuIds();
+    BOOST_CHECK(actual == expected);
+}
+
+BOOST_AUTO_TEST_CASE(option_dialog_is_required_only_for_optioned_formats)
+{
+    BOOST_CHECK(pv::data::formatRequiresOptions("ascii"));
+    BOOST_CHECK(pv::data::formatRequiresOptions("bits"));
+    BOOST_CHECK(pv::data::formatRequiresOptions("hex"));
+    BOOST_CHECK(pv::data::formatRequiresOptions("analog"));
+    BOOST_CHECK(pv::data::formatRequiresOptions("wav"));
+    BOOST_CHECK(!pv::data::formatRequiresOptions("csv"));
+    BOOST_CHECK(!pv::data::formatRequiresOptions("srzip"));
+    BOOST_CHECK(!pv::data::formatRequiresOptions("binary"));
+    BOOST_CHECK(!pv::data::formatRequiresOptions("null"));
+}
+
+BOOST_AUTO_TEST_CASE(export_capabilities_describe_data_compatibility)
+{
+    const QVector<FormatCapability> outputs = pv::data::exportFormats();
+
+    const FormatCapability csv = find_id(outputs, "csv");
+    BOOST_CHECK(csv.supportsLogic);
+    BOOST_CHECK(csv.supportsAnalog);
+    BOOST_CHECK(!csv.acceptsAnyData);
+
+    const FormatCapability vcd = find_id(outputs, "vcd");
+    BOOST_CHECK(vcd.supportsLogic);
+    BOOST_CHECK(!vcd.supportsAnalog);
+
+    const FormatCapability wav = find_id(outputs, "wav");
+    BOOST_CHECK(!wav.supportsLogic);
+    BOOST_CHECK(wav.supportsAnalog);
+
+    const FormatCapability null_output = find_id(outputs, "null");
+    BOOST_CHECK(null_output.acceptsAnyData);
+}
+
+BOOST_AUTO_TEST_CASE(export_compatibility_errors_name_format_and_data_type)
+{
+    const QVector<FormatCapability> outputs = pv::data::exportFormats();
+    const FormatCapability vcd = find_id(outputs, "vcd");
+    const FormatCapability wav = find_id(outputs, "wav");
+    const FormatCapability null_output = find_id(outputs, "null");
+
+    const QString analog_error = pv::data::exportCompatibilityError(
+        vcd, pv::data::ExportDataType::Analog);
+    BOOST_CHECK(analog_error.contains(vcd.description));
+    BOOST_CHECK(analog_error.contains("analog", Qt::CaseInsensitive));
+
+    const QString logic_error = pv::data::exportCompatibilityError(
+        wav, pv::data::ExportDataType::Logic);
+    BOOST_CHECK(logic_error.contains(wav.description));
+    BOOST_CHECK(logic_error.contains("logic", Qt::CaseInsensitive));
+
+    const QString dso_error = pv::data::exportCompatibilityError(
+        wav, pv::data::ExportDataType::Dso);
+    BOOST_CHECK(dso_error.contains(wav.description));
+    BOOST_CHECK(dso_error.contains("DSO"));
+
+    BOOST_CHECK(pv::data::exportCompatibilityError(
+        null_output, pv::data::ExportDataType::Dso).isEmpty());
+}
+
 BOOST_AUTO_TEST_CASE(export_capabilities_keep_declared_extensions)
 {
     const QVector<FormatCapability> outputs = pv::data::exportFormats();

@@ -156,6 +156,13 @@ void StoreSession::setSelectedOutputFormatId(const QString &format_id)
     _selectedOutputFormatId = format_id;
 }
 
+void StoreSession::setSelectedOutputOptions(const data::IoOptions &options)
+{
+    _selectedOutputOptions = options;
+    _selectedOptionsFormatId = _selectedOutputFormatId;
+    _hasSelectedOutputOptions = true;
+}
+
 bool StoreSession::append_output(QFile &file, GString *chunk)
 {
     if (!chunk)
@@ -819,40 +826,33 @@ bool StoreSession::meta_gen(data::Snapshot *snapshot, std::string &str)
     return true;
 }
 
-//export as csv file
-bool StoreSession::export_start()
+bool StoreSession::validateExportFormat()
 {
+    _has_error = false;
+    _error.clear();
+
     std::set<int> type_set;
-    for(auto s : _session->get_signals()) {
-        int _tp = s->get_type();
-        type_set.insert(_tp);
-    }
+    for (auto signal : _session->get_signals())
+        type_set.insert(signal->get_type());
 
     if (type_set.size() > 1) {
         _error = tr("DSView does not currently support\nfile export for multiple data types.");
         return false;
-    } else if (type_set.size() == 0) {
+    }
+    if (type_set.empty()) {
         _error = tr("No data to save.");
         return false;
     }
 
     const auto snapshot = _session->get_snapshot(*type_set.begin());
-    assert(snapshot);
-    // Check we have data
-    if (snapshot->empty()) {
+    if (!snapshot) {
         _error = tr("No data to save.");
         return false;
     }
 
-    if (_file_name == ""){
-        _error = tr("No set file name.");
-        return false;
-    }
-
     _outModule = NULL;
-    if (!_selectedOutputFormatId.isEmpty()) {
+    if (!_selectedOutputFormatId.isEmpty())
         _outModule = sr_output_find(_selectedOutputFormatId.toUtf8().data());
-    }
 
     if (_outModule == NULL) {
         const QVector<data::FormatCapability> formats = data::exportFormats();
@@ -864,83 +864,123 @@ bool StoreSession::export_start()
         }
     }
 
-    if (_outModule == NULL)
-    {
+    if (_outModule == NULL) {
         _error = tr("Invalid export format.");
+        return false;
     }
-    else
-    {
-        if (format_requires_standard_analog(_outModule)) {
-            auto *analog_snapshot =
-                dynamic_cast<data::AnalogSnapshot *>(snapshot);
-            QString reason;
-            uint32_t ref_min = 0;
-            uint32_t ref_max = 0;
-            int enabled_channels = 0;
 
-            if (!analog_snapshot) {
-                reason = tr("the active capture is not analog data");
-            } else if (analog_snapshot->get_unit_bytes() != 1) {
-                reason = tr("only 8-bit analog snapshots can be converted safely");
-            } else if (_session->cur_snap_samplerate() == 0) {
-                reason = tr("the sample rate is unavailable");
-            } else if (!_session->get_device()->get_config_uint32(
-                           SR_CONF_REF_MIN, ref_min) ||
-                       !_session->get_device()->get_config_uint32(
-                           SR_CONF_REF_MAX, ref_max) || ref_max <= ref_min) {
-                reason = tr("the capture reference range is unavailable");
-            } else {
-                for (const GSList *item =
-                         _session->get_device()->get_channels();
-                     item; item = item->next) {
-                    const auto *channel =
-                        static_cast<const sr_channel *>(item->data);
-                    if (!channel || channel->type != SR_CHANNEL_ANALOG ||
-                        !channel->enabled)
-                        continue;
+    const QVector<data::FormatCapability> formats = data::exportFormats();
+    const data::FormatCapability *format = data::findFormatById(
+        formats, QString::fromUtf8(_outModule->id));
+    if (!format) {
+        _error = tr("Invalid export format.");
+        return false;
+    }
 
-                    ++enabled_channels;
-                    if (!channel->name || !channel->map_unit ||
-                        strcmp(channel->map_unit, "V") ||
-                        !analog_snapshot->has_data(channel->index) ||
-                        analog_snapshot->get_ch_order(channel->index) < 0 ||
-                        !std::isfinite(channel->map_min) ||
-                        !std::isfinite(channel->map_max) ||
-                        channel->map_max <= channel->map_min) {
-                        reason = tr("an enabled channel lacks a valid voltage mapping");
-                        break;
-                    }
-                }
-                if (reason.isEmpty() && enabled_channels == 0)
-                    reason = tr("no enabled analog channels are available");
-                if (reason.isEmpty() && !strcmp(_outModule->id, "wav")) {
-                    const uint64_t bytes_per_frame =
-                        static_cast<uint64_t>(enabled_channels) * sizeof(float);
-                    if (bytes_per_frame >
-                            (std::numeric_limits<uint16_t>::max)() ||
-                        _session->cur_snap_samplerate() >
-                            (std::numeric_limits<uint32_t>::max)() /
-                                bytes_per_frame) {
-                        reason = tr("the sample rate or channel count exceeds the WAV format limits");
-                    }
-                }
-            }
+    data::ExportDataType data_type;
+    if (dynamic_cast<data::LogicSnapshot *>(snapshot))
+        data_type = data::ExportDataType::Logic;
+    else if (dynamic_cast<data::AnalogSnapshot *>(snapshot))
+        data_type = data::ExportDataType::Analog;
+    else if (dynamic_cast<data::DsoSnapshot *>(snapshot))
+        data_type = data::ExportDataType::Dso;
+    else {
+        _error = tr("The active data type is not supported for export.");
+        return false;
+    }
 
-            if (!reason.isEmpty()) {
-                _has_error = true;
-                _error = tr("%1 requires standard analog samples: %2.")
-                    .arg(QString::fromUtf8(_outModule->desc), reason);
-                return false;
+    _error = data::exportCompatibilityError(*format, data_type);
+    if (!_error.isEmpty())
+        return false;
+
+    if (!format_requires_standard_analog(_outModule))
+        return true;
+
+    auto *analog_snapshot = dynamic_cast<data::AnalogSnapshot *>(snapshot);
+    QString reason;
+    uint32_t ref_min = 0;
+    uint32_t ref_max = 0;
+    int enabled_channels = 0;
+
+    if (!analog_snapshot) {
+        reason = tr("the active capture is not analog data");
+    } else if (analog_snapshot->get_unit_bytes() != 1) {
+        reason = tr("only 8-bit analog snapshots can be converted safely");
+    } else if (_session->cur_snap_samplerate() == 0) {
+        reason = tr("the sample rate is unavailable");
+    } else if (!_session->get_device()->get_config_uint32(
+                   SR_CONF_REF_MIN, ref_min) ||
+               !_session->get_device()->get_config_uint32(
+                   SR_CONF_REF_MAX, ref_max) || ref_max <= ref_min) {
+        reason = tr("the capture reference range is unavailable");
+    } else {
+        for (const GSList *item = _session->get_device()->get_channels();
+             item; item = item->next) {
+            const auto *channel = static_cast<const sr_channel *>(item->data);
+            if (!channel || channel->type != SR_CHANNEL_ANALOG ||
+                !channel->enabled)
+                continue;
+
+            ++enabled_channels;
+            if (!channel->name || !channel->map_unit ||
+                strcmp(channel->map_unit, "V") ||
+                !analog_snapshot->has_data(channel->index) ||
+                analog_snapshot->get_ch_order(channel->index) < 0 ||
+                !std::isfinite(channel->map_min) ||
+                !std::isfinite(channel->map_max) ||
+                channel->map_max <= channel->map_min) {
+                reason = tr("an enabled channel lacks a valid voltage mapping");
+                break;
             }
         }
-
-        if (_thread.joinable()) _thread.join();
-        _thread = std::thread(&StoreSession::export_proc, this, snapshot);
-        return !_has_error;
+        if (reason.isEmpty() && enabled_channels == 0)
+            reason = tr("no enabled analog channels are available");
+        if (reason.isEmpty() && !strcmp(_outModule->id, "wav")) {
+            const uint64_t bytes_per_frame =
+                static_cast<uint64_t>(enabled_channels) * sizeof(float);
+            if (bytes_per_frame > (std::numeric_limits<uint16_t>::max)() ||
+                _session->cur_snap_samplerate() >
+                    (std::numeric_limits<uint32_t>::max)() / bytes_per_frame) {
+                reason = tr("the sample rate or channel count exceeds the WAV format limits");
+            }
+        }
     }
 
-    _error.clear();
-    return false;
+    if (!reason.isEmpty()) {
+        _error = tr("%1 requires standard analog samples: %2.")
+            .arg(format->description, reason);
+        return false;
+    }
+
+    return true;
+}
+
+//export as csv file
+bool StoreSession::export_start()
+{
+    if (!validateExportFormat())
+        return false;
+
+    std::set<int> type_set;
+    for (auto signal : _session->get_signals())
+        type_set.insert(signal->get_type());
+
+    const auto snapshot = _session->get_snapshot(*type_set.begin());
+    assert(snapshot);
+    if (snapshot->empty()) {
+        _error = tr("No data to save.");
+        return false;
+    }
+
+    if (_file_name.isEmpty()) {
+        _error = tr("No set file name.");
+        return false;
+    }
+
+    if (_thread.joinable())
+        _thread.join();
+    _thread = std::thread(&StoreSession::export_proc, this, snapshot);
+    return !_has_error;
 }
 
 void StoreSession::export_proc(data::Snapshot *snapshot)
@@ -986,6 +1026,14 @@ void StoreSession::export_exec(data::Snapshot *snapshot)
     data::IoOptions output_options(module_options);
     if (module_options)
         sr_output_options_free(module_options);
+
+    if (_hasSelectedOutputOptions &&
+        _selectedOptionsFormatId == QString::fromUtf8(_outModule->id)) {
+        output_options = _selectedOutputOptions;
+    }
+    _selectedOutputOptions = data::IoOptions(nullptr);
+    _selectedOptionsFormatId.clear();
+    _hasSelectedOutputOptions = false;
 
     if (!strcmp(_outModule->id, "csv"))
         output_options.set("type",

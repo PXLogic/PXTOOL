@@ -14,6 +14,8 @@
 #define DSVIEW_PV_DATA_IOOPTIONS_H
 
 #include <QMap>
+#include <QByteArray>
+#include <QList>
 #include <QString>
 #include <QVariant>
 
@@ -35,7 +37,8 @@ public:
 
 private:
     struct Entry {
-        const sr_option *definition;
+        QByteArray typeSignature;
+        QList<QVariant> allowedValues;
         QVariant value;
     };
 

@@ -147,6 +147,30 @@ BOOST_AUTO_TEST_CASE(creates_and_frees_output_with_default_options)
     BOOST_CHECK_EQUAL(sr_output_free(output), SR_OK);
 }
 
+BOOST_AUTO_TEST_CASE(selected_output_options_survive_descriptor_cleanup)
+{
+    const sr_output_module *module = sr_output_find(const_cast<char *>("ascii"));
+    BOOST_REQUIRE(module != nullptr);
+
+    const sr_option **definitions = sr_output_options_get(module);
+    BOOST_REQUIRE(definitions != nullptr);
+
+    pv::data::IoOptions selected(definitions);
+    selected.set("width", QVariant::fromValue(static_cast<guint32>(123)));
+    sr_output_options_free(definitions);
+
+    pv::data::IoOptions routed = selected;
+    GHashTable *values = nullptr;
+    BOOST_CHECK_NO_THROW(values = routed.toGHashTable());
+    BOOST_REQUIRE(values != nullptr);
+
+    GVariant *width = static_cast<GVariant *>(
+        g_hash_table_lookup(values, "width"));
+    BOOST_REQUIRE(width != nullptr);
+    BOOST_CHECK_EQUAL(g_variant_get_uint32(width), 123U);
+    g_hash_table_destroy(values);
+}
+
 BOOST_AUTO_TEST_SUITE_END()
 
 BOOST_AUTO_TEST_CASE(option_values_use_module_defaults)

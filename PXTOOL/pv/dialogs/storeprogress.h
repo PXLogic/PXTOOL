@@ -64,6 +64,7 @@ public:
     }
 
     void setSelectedOutputFormatId(const QString &format_id);
+    void setSelectedOutputOptions(const pv::data::IoOptions &options);
 
     void save_run(ISessionDataGetter *getter);
     void export_run();

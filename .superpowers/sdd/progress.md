@@ -21,3 +21,10 @@ Task 7: complete (standard AnalogPacket owner and unsigned 8-bit conversion
 boundary added; upstream analog/wav outputs registered; final export manifest
 is 14/14; focused fixtures, full 85-test suite, and DSView build are green.
 StoreSession rejects unsupported standard analog exports before file creation.)
+
+Task 7: complete (commits 3104378..83e69c8, review clean)
+Task 8: complete (export UI now routes all 14 upstream-compatible output
+formats in final order, optioned formats use InputOutputOptionsDlg, selected
+options are carried into StoreSession, compatibility is validated before
+destination selection/opening, full DSView-test suite and macOS build/run are
+green; manual menu popup screenshot remains a human verification item.)
