@@ -21,6 +21,8 @@
 
 #include "libsigrok-internal.h"
 
+uint64_t test_sdi_samplerate_get(const struct sr_dev_inst *sdi);
+
 SR_PRIV struct sr_config *sr_config_new(int key, GVariant *data)
 {
     struct sr_config *src;
@@ -51,10 +53,19 @@ SR_PRIV int sr_config_get(const struct sr_dev_driver *driver,
                          int key, GVariant **data)
 {
     (void)driver;
-    (void)sdi;
     (void)ch;
     (void)cg;
-    (void)key;
-    (void)data;
+
+    if (data && key == SR_CONF_SAMPLERATE && test_sdi_samplerate_get(sdi)) {
+        *data = g_variant_ref_sink(g_variant_new_uint64(
+            test_sdi_samplerate_get(sdi)));
+        return SR_OK;
+    }
+
     return SR_ERR_ARG;
+}
+
+SR_PRIV int current_device_acquisition_stop(void)
+{
+    return SR_OK;
 }

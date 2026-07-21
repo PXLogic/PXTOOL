@@ -85,12 +85,11 @@ static GSList *hw_scan(GSList *options)
 		struct sr_channel *probe;
 
 		snprintf(name, sizeof(name), "D%d", i);
-		probe = sr_channel_new(i, SR_CHANNEL_LOGIC, TRUE, name);
+		probe = sr_channel_new(sdi, i, SR_CHANNEL_LOGIC, TRUE, name);
 		if (!probe) {
 			sr_dev_inst_free(sdi);
 			return NULL;
 		}
-		sdi->channels = g_slist_append(sdi->channels, probe);
 	}
 
 	return g_slist_append(NULL, sdi);

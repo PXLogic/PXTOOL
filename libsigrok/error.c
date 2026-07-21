@@ -90,6 +90,9 @@ SR_API const char *sr_error_str(int error_code)
 	case SR_ERR_HAVE_DONE:
 		str = "The Function have called";
 		break;
+	case SR_ERR_DATA:
+		str = "input data is unsupported or corrupt";
+		break;
 	default:
 		str = "unknown error";
 		break;
@@ -152,6 +155,9 @@ SR_API const char *sr_error_name(int error_code)
 		break;
 	case SR_ERR_CALL_STATUS:
 		str = "SR_ERR_CALL_STATUS";
+		break;
+	case SR_ERR_DATA:
+		str = "SR_ERR_DATA";
 		break;
 	case SR_ERR_HAVE_DONE:
 		str = "SR_ERR_HAVE_DONE";

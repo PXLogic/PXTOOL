@@ -1,11 +1,12 @@
 /*
- * This file is part of the libsigrok project.
+ * This file is part of the PXTOOL project.
+ * PXTOOL is based on PulseView.
  *
- * Copyright (C) 2014 Bert Vermeulen <bert@biot.com>
+ * Copyright (C) 2026 DreamSourceLab <support@dreamsourcelab.com>
  *
- * This program is free software: you can redistribute it and/or modify
+ * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
+ * the Free Software Foundation; either version 2 of the License, or
  * (at your option) any later version.
  *
  * This program is distributed in the hope that it will be useful,
@@ -14,18 +15,20 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
  */
 
- 
-#include "../libsigrok-internal.h"
+#include <config.h>
 #include <string.h>
+#include <libsigrok/libsigrok.h>
+#include "libsigrok-internal.h"
 #include "../log.h"
-#include <stdio.h>
- 
 
+/** @cond PRIVATE */
 #undef LOG_PREFIX
-#define LOG_PREFIX "output "
+#define LOG_PREFIX "output"
+/** @endcond */
 
 /**
  * @file
@@ -39,7 +42,7 @@
  * Output module handling.
  *
  * libsigrok supports several output modules for file formats such as binary,
- * VCD, gnuplot, and so on. It provides an output API that frontends can use.
+ * VCD, csv, and so on. It provides an output API that frontends can use.
  * New output modules can be added/implemented in libsigrok without having
  * to change the frontends at all.
  *
@@ -54,33 +57,37 @@
  */
 
 /** @cond PRIVATE */
-extern SR_PRIV struct sr_output_module output_bits;
-extern SR_PRIV struct sr_output_module output_hex;
+extern SR_PRIV struct sr_output_module output_vcd;
+extern SR_PRIV struct sr_output_module output_csv;
+extern SR_PRIV struct sr_output_module output_srzip;
+extern SR_PRIV struct sr_output_module output_analog;
+extern SR_PRIV struct sr_output_module output_wav;
 extern SR_PRIV struct sr_output_module output_ascii;
 extern SR_PRIV struct sr_output_module output_binary;
-extern SR_PRIV struct sr_output_module output_vcd;
-extern SR_PRIV struct sr_output_module output_ols;
-extern SR_PRIV struct sr_output_module output_gnuplot;
+extern SR_PRIV struct sr_output_module output_bits;
 extern SR_PRIV struct sr_output_module output_chronovu_la8;
-extern SR_PRIV struct sr_output_module output_csv;
-extern SR_PRIV struct sr_output_module output_analog;
-extern SR_PRIV struct sr_output_module output_srzip;
-extern SR_PRIV struct sr_output_module output_wav;
-/* @endcond */
+extern SR_PRIV struct sr_output_module output_hex;
+extern SR_PRIV struct sr_output_module output_ols;
+extern SR_PRIV struct sr_output_module output_wavedrom;
+extern SR_PRIV struct sr_output_module output_null;
+extern SR_PRIV struct sr_output_module output_gnuplot;
+/** @endcond */
 
 static const struct sr_output_module *output_module_list[] = {
 	&output_csv,
 	&output_vcd,
-	&output_gnuplot,
 	&output_srzip,
-	/*&output_ascii,
+	&output_analog,
+	&output_wav,
+	&output_ascii,
 	&output_binary,
 	&output_bits,
+	&output_chronovu_la8,
 	&output_hex,
 	&output_ols,
-	&output_chronovu_la8,
-	&output_analog,
-	&output_wav,*/
+	&output_wavedrom,
+	&output_null,
+	&output_gnuplot,
 	NULL,
 };
 
@@ -158,6 +165,18 @@ SR_API const char *const *sr_output_extensions_get(
 	return omod->exts;
 }
 
+/*
+ * Checks whether a given flag is set.
+ *
+ * @see sr_output_flag
+ * @since 0.4.0
+ */
+SR_API gboolean sr_output_test_flag(const struct sr_output_module *omod,
+		uint64_t flag)
+{
+	return (flag & omod->flags);
+}
+
 /**
  * Return the output module with the specified ID, or NULL if no module
  * with that id is found.
@@ -195,13 +214,9 @@ SR_API const struct sr_option **sr_output_options_get(const struct sr_output_mod
 
 	mod_opts = omod->options();
 
-	for (size = 0; mod_opts[size].id; size++);
-
-	opts = malloc((size + 1) * sizeof(struct sr_option *));
-	if (opts == NULL){
-		sr_err("%s,ERROR:failed to alloc memory.", __func__);
-		return NULL;
-	}
+	for (size = 0; mod_opts[size].id; size++)
+		;
+	opts = g_malloc((size + 1) * sizeof(struct sr_option *));
 
 	for (i = 0; i < size; i++)
 		opts[i] = &mod_opts[i];
@@ -250,8 +265,9 @@ SR_API void sr_output_options_free(const struct sr_option **options)
  *
  * @since 0.4.0
  */
-SR_API const struct sr_output* sr_output_new(const struct sr_output_module *omod,
-		GHashTable *options, const struct sr_dev_inst *sdi)
+static const struct sr_output *output_new(
+		const struct sr_output_module *omod, GHashTable *options,
+		const struct sr_dev_inst *sdi, uint64_t start_sample_index)
 {
 	struct sr_output *op;
 	const struct sr_option *mod_opts;
@@ -261,15 +277,13 @@ SR_API const struct sr_output* sr_output_new(const struct sr_output_module *omod
 	gpointer key, value;
 	int i;
 
-	op = malloc(sizeof(struct sr_output));
-	if (op == NULL){
-		sr_err("%s,ERROR:failed to alloc memory.", __func__);
+	if (!omod)
 		return NULL;
-	}
-    memset(op, 0, sizeof(struct sr_output));
 
+	op = g_malloc0(sizeof(struct sr_output));
 	op->module = omod;
 	op->sdi = sdi;
+	op->start_sample_index = start_sample_index;
 
 	new_opts = g_hash_table_new_full(g_str_hash, g_str_equal, g_free,
 			(GDestroyNotify)g_variant_unref);
@@ -281,7 +295,8 @@ SR_API const struct sr_output* sr_output_new(const struct sr_output_module *omod
 				/* Pass option along. */
 				gvt = g_variant_get_type(mod_opts[i].def);
 				if (!g_variant_is_of_type(value, gvt)) {
-					sr_err("Invalid type for '%s' option.", key);
+					sr_err("Invalid type for '%s' option.",
+						(char *)key);
 					g_free(op);
 					return NULL;
 				}
@@ -299,7 +314,8 @@ SR_API const struct sr_output* sr_output_new(const struct sr_output_module *omod
 			g_hash_table_iter_init(&iter, options);
 			while (g_hash_table_iter_next(&iter, &key, &value)) {
 				if (!g_hash_table_lookup(new_opts, key)) {
-					sr_err("Output module '%s' has no option '%s'", omod->id, key);
+					sr_err("Output module '%s' has no option '%s'",
+						omod->id, (char *)key);
 					g_hash_table_destroy(new_opts);
 					g_free(op);
 					return NULL;
@@ -316,6 +332,19 @@ SR_API const struct sr_output* sr_output_new(const struct sr_output_module *omod
 		g_hash_table_destroy(new_opts);
 
 	return op;
+}
+
+SR_API const struct sr_output *sr_output_new(const struct sr_output_module *omod,
+		GHashTable *options, const struct sr_dev_inst *sdi)
+{
+	return output_new(omod, options, sdi, 0);
+}
+
+SR_API const struct sr_output *sr_output_new_with_start_sample_index(
+		const struct sr_output_module *omod, GHashTable *options,
+		const struct sr_dev_inst *sdi, uint64_t start_sample_index)
+{
+	return output_new(omod, options, sdi, start_sample_index);
 }
 
 /**

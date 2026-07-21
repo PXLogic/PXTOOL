@@ -1,7 +1,8 @@
 /*
- * This file is part of the libsigrok project.
+ * This file is part of the PXTOOL project.
+ * PXTOOL is based on PulseView.
  *
- * Copyright (C) 2010 Uwe Hermann <uwe@hermann-uwe.de>
+ * Copyright (C) 2026 DreamSourceLab <support@dreamsourcelab.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,6 +24,8 @@
 #include <string.h>
 #include <strings.h>
 #include <stdio.h>
+#include <ctype.h>
+#include <errno.h>
 #include "log.h"
 
 #undef LOG_PREFIX
@@ -459,6 +462,202 @@ SR_API int sr_parse_voltage(const char *voltstr, uint64_t *p, uint64_t *q)
 	}
 
 	return SR_OK;
+}
+
+SR_PRIV int sr_atod_ascii(const char *str, double *ret)
+{
+    char *endptr = NULL;
+    double value;
+
+    if (!str || !ret)
+        return SR_ERR_ARG;
+
+    errno = 0;
+    value = g_ascii_strtod(str, &endptr);
+    if (!endptr || *endptr || errno) {
+        if (!errno)
+            errno = EINVAL;
+        return SR_ERR;
+    }
+
+    *ret = value;
+    return SR_OK;
+}
+
+SR_PRIV int sr_atof_ascii(const char *str, float *ret)
+{
+    double value;
+
+    if (!ret)
+        return SR_ERR_ARG;
+    if (sr_atod_ascii(str, &value) != SR_OK)
+        return SR_ERR;
+
+    *ret = (float)value;
+    return SR_OK;
+}
+
+SR_PRIV int sr_count_digits(const char *str, int *digits)
+{
+    const char *p;
+    char *exp_end;
+    int integer_digits = 0;
+    int decimal_digits = 0;
+    int exponent = 0;
+
+    if (!str || !digits)
+        return SR_ERR_ARG;
+
+    p = str;
+    while (*p && isspace((unsigned char)*p))
+        p++;
+    if (*p == '-' || *p == '+')
+        p++;
+    while (isdigit((unsigned char)*p)) {
+        integer_digits++;
+        p++;
+    }
+    if (*p == '.') {
+        p++;
+        while (isdigit((unsigned char)*p)) {
+            decimal_digits++;
+            p++;
+        }
+    }
+    if (toupper((unsigned char)*p) == 'E') {
+        p++;
+        errno = 0;
+        exponent = strtol(p, &exp_end, 10);
+        if (errno)
+            return SR_ERR;
+        p = exp_end;
+    }
+    if (*p || (!integer_digits && !decimal_digits))
+        return SR_ERR;
+
+    *digits = decimal_digits - exponent;
+    return SR_OK;
+}
+
+SR_PRIV int sr_atod_ascii_digits(const char *str, double *ret, int *digits)
+{
+    double value;
+    int precision;
+
+    if (sr_count_digits(str, &precision) != SR_OK ||
+        sr_atod_ascii(str, &value) != SR_OK)
+        return SR_ERR;
+    if (ret)
+        *ret = value;
+    if (digits)
+        *digits = precision;
+    return SR_OK;
+}
+
+SR_PRIV int sr_atof_ascii_digits(const char *str, float *ret, int *digits)
+{
+    float value;
+    int precision;
+
+    if (sr_count_digits(str, &precision) != SR_OK ||
+        sr_atof_ascii(str, &value) != SR_OK)
+        return SR_ERR;
+    if (ret)
+        *ret = value;
+    if (digits)
+        *digits = precision;
+    return SR_OK;
+}
+
+SR_PRIV GString *sr_hexdump_new(const uint8_t *data, size_t len)
+{
+    GString *text;
+    size_t i;
+
+    if (!data && len)
+        return NULL;
+
+    text = g_string_sized_new(3 * len + len / 8 + len / 16);
+    for (i = 0; i < len; i++) {
+        if (i)
+            g_string_append_c(text, ' ');
+        if (i && i % 8 == 0)
+            g_string_append_c(text, ' ');
+        if (i && i % 16 == 0)
+            g_string_append_c(text, ' ');
+        g_string_append_printf(text, "%02x", data[i]);
+    }
+
+    return text;
+}
+
+SR_PRIV void sr_hexdump_free(GString *text)
+{
+    if (text)
+        g_string_free(text, TRUE);
+}
+
+SR_API char *sr_text_trim_spaces(char *text)
+{
+    return text ? g_strstrip(text) : NULL;
+}
+
+SR_API char *sr_text_next_line(char *text, size_t len, char **next,
+        size_t *taken)
+{
+    char *line_end;
+
+    if (next)
+        *next = NULL;
+    if (!text || !*text)
+        return NULL;
+    if (!len)
+        len = strlen(text);
+    if (!len)
+        return NULL;
+
+    line_end = g_strstr_len(text, len, "\n");
+    if (!line_end)
+        return NULL;
+    *line_end++ = '\0';
+    if (taken)
+        *taken += line_end - text;
+    len -= line_end - text;
+    if (next)
+        *next = len ? line_end : NULL;
+
+    return sr_text_trim_spaces(text);
+}
+
+SR_API char *sr_text_next_word(char *text, char **next)
+{
+    char *word;
+    char *end;
+
+    if (next)
+        *next = NULL;
+    if (!text || !*text)
+        return NULL;
+
+    word = text;
+    while (isspace((unsigned char)*word))
+        word++;
+    if (!*word)
+        return NULL;
+
+    end = word;
+    while (*end && !isspace((unsigned char)*end))
+        end++;
+    if (!*end)
+        return word;
+
+    *end++ = '\0';
+    while (isspace((unsigned char)*end))
+        end++;
+    if (*end && next)
+        *next = end;
+
+    return word;
 }
 
 /** @} */

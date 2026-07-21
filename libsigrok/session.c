@@ -1,11 +1,12 @@
 /*
- * This file is part of the libsigrok project.
+ * This file is part of the PXTOOL project.
+ * PXTOOL is based on PulseView.
  *
- * Copyright (C) 2010-2012 Bert Vermeulen <bert@biot.com>
+ * Copyright (C) 2026 DreamSourceLab <support@dreamsourcelab.com>
  *
- * This program is free software: you can redistribute it and/or modify
+ * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
+ * the Free Software Foundation; either version 2 of the License, or
  * (at your option) any later version.
  *
  * This program is distributed in the hope that it will be useful,
@@ -14,7 +15,8 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
  */
 
 #include "libsigrok-internal.h"
@@ -122,6 +124,45 @@ SR_PRIV int sr_session_destroy(void)
 	session = NULL;
 
 	return SR_OK;
+}
+
+SR_PRIV int sr_session_send_meta(const struct sr_dev_inst *sdi,
+		uint32_t key, GVariant *var)
+{
+	struct sr_config *config;
+	struct sr_datafeed_packet packet;
+	struct sr_datafeed_meta meta;
+	int ret;
+
+	if (!var)
+		return SR_ERR_ARG;
+
+	config = sr_config_new(key, var);
+	if (!config)
+		return SR_ERR_MALLOC;
+
+	memset(&meta, 0, sizeof(meta));
+	memset(&packet, 0, sizeof(packet));
+	meta.config = g_slist_append(NULL, config);
+	packet.type = SR_DF_META;
+	packet.status = SR_PKT_OK;
+	packet.payload = &meta;
+
+	ret = sr_session_send(sdi, &packet);
+	g_slist_free(meta.config);
+	sr_config_free(config);
+
+	return ret;
+}
+
+SR_PRIV int sr_session_send(const struct sr_dev_inst *sdi,
+		const struct sr_datafeed_packet *packet)
+{
+	if (!sdi || !packet)
+		return SR_ERR_ARG;
+
+	/* DSView retains one installed datafeed boundary for native and file input. */
+	return ds_data_forward(sdi, packet);
 }
 
 

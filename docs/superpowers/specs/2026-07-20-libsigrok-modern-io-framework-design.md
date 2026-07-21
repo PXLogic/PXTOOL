@@ -78,10 +78,20 @@ direct helper APIs into DSView's `libsigrok` tree. Preserve the upstream
 public contracts for input and output callers inside DSView. Do not retain a
 second permanent old/new I/O API.
 
-Where DSView-specific types are required, place narrowly scoped adapters at
-the DSView boundary rather than changing imported module behavior. Every
-imported upstream source file must use the DSView/PXTOOL copyright and GPL
-header style required by `AGENTS.md`.
+The direct dependency set is part of this migration, not a local module shim:
+upstream channel construction, session datafeed send helpers, standard analog
+packet initialization, text parsing helpers used by VCD, and the related
+public/internal data structures are migrated together with input/output.
+DSView source that calls changed upstream contracts is updated to those
+contracts during the same stage. The migrated direct-core source set includes
+the relevant portions of upstream `device.c`, `session.c`, `std.c`,
+`analog.c`, `strutil.c`, and `log.c`.
+
+Where DSView-specific types are required, place narrowly scoped adapters only
+at the boundary between DSView's hardware/DSO workflow and the standard
+libsigrok datafeed model; do not retain compatibility wrappers that expose a
+second old/new input or output API. Every imported upstream source file must
+use the DSView/PXTOOL copyright and GPL header style required by `AGENTS.md`.
 
 The build must compile only one registration list for input modules and one
 registration list for output modules. CMake source lists, registration lists,

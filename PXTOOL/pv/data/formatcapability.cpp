@@ -21,6 +21,9 @@
 
 #include "formatcapability.h"
 
+#include <algorithm>
+
+#include <QObject>
 #include <QStringList>
 
 extern "C" {
@@ -32,9 +35,9 @@ namespace data {
 
 namespace {
 
-QString inputDescription(const sr_input_format *format)
+QString inputDescription(const sr_input_module *module)
 {
-    return QString::fromUtf8(format->description ? format->description : format->id);
+    return QString::fromUtf8(module->desc ? module->desc : module->id);
 }
 
 QString outputDescription(const sr_output_module *module)
@@ -42,24 +45,61 @@ QString outputDescription(const sr_output_module *module)
     return QString::fromUtf8(module->desc ? module->desc : module->id);
 }
 
-QString extensionFromId(const char *id)
+QStringList extensionsFrom(const char *const *extensions)
 {
-    if (!id || !*id)
-        return "*";
-    return QString("*.%1").arg(QString::fromUtf8(id));
+    QStringList result;
+    for (int i = 0; extensions && extensions[i]; ++i) {
+        if (*extensions[i])
+            result.append(QString::fromUtf8(extensions[i]));
+    }
+    return result;
 }
 
-FormatCapability makeImportCapability(const sr_input_format *format)
+QString dialogFilter(const QString &description, const QStringList &extensions)
 {
-    const QString id = QString::fromUtf8(format->id);
-    const QString description = inputDescription(format);
-    const QString extension = extensionFromId(format->id);
+    QStringList patterns;
+    for (const QString &extension : extensions)
+        patterns.append(QString("*.%1").arg(extension));
+
+    if (patterns.isEmpty())
+        patterns.append("*");
+
+    return QString("%1 (%2)").arg(description, patterns.join(' '));
+}
+
+bool hasOutputOptions(const sr_output_module *module)
+{
+    const sr_option **options = sr_output_options_get(module);
+    const bool has_options = options && options[0];
+    sr_output_options_free(options);
+    return has_options;
+}
+
+void setOutputCompatibility(FormatCapability &capability)
+{
+    if (capability.id == "null") {
+        capability.acceptsAnyData = true;
+    } else if (capability.id == "csv") {
+        capability.supportsLogic = true;
+        capability.supportsAnalog = true;
+    } else if (capability.id == "analog" || capability.id == "wav") {
+        capability.supportsAnalog = true;
+    } else {
+        capability.supportsLogic = true;
+    }
+}
+
+FormatCapability makeImportCapability(const sr_input_module *module)
+{
+    const QString id = QString::fromUtf8(module->id);
+    const QString description = inputDescription(module);
 
     FormatCapability capability;
     capability.kind = FormatKind::Import;
     capability.id = id;
     capability.description = description;
-    capability.dialogFilter = QString("%1 (%2)").arg(description, extension);
+    capability.extensions = extensionsFrom(module->exts);
+    capability.dialogFilter = dialogFilter(description, capability.extensions);
     capability.menuText = QString("Import %1...").arg(description);
     return capability;
 }
@@ -68,15 +108,28 @@ FormatCapability makeExportCapability(const sr_output_module *module)
 {
     const QString id = QString::fromUtf8(module->id);
     const QString description = outputDescription(module);
-    const QString extension = extensionFromId(module->id);
 
     FormatCapability capability;
     capability.kind = FormatKind::Export;
     capability.id = id;
     capability.description = description;
-    capability.dialogFilter = QString("%1 (%2)").arg(description, extension);
+    capability.extensions = extensionsFrom(sr_output_extensions_get(module));
+    capability.hasOptions = hasOutputOptions(module);
+    setOutputCompatibility(capability);
+    capability.dialogFilter = dialogFilter(description, capability.extensions);
     capability.menuText = QString("Export %1...").arg(description);
     return capability;
+}
+
+int exportRank(const FormatCapability &capability)
+{
+    static const QStringList kExportOrder = {
+        "csv", "vcd", "gnuplot", "srzip", "analog", "ascii", "binary",
+        "bits", "chronovu-la8", "hex", "null", "ols", "wav", "wavedrom"
+    };
+
+    const int rank = kExportOrder.indexOf(capability.id);
+    return rank < 0 ? kExportOrder.size() : rank;
 }
 
 } // namespace
@@ -84,7 +137,7 @@ FormatCapability makeExportCapability(const sr_output_module *module)
 QVector<FormatCapability> importFormats()
 {
     QVector<FormatCapability> formats;
-    sr_input_format **modules = sr_input_list();
+    const sr_input_module **modules = sr_input_list();
     for (int i = 0; modules && modules[i]; i++) {
         if (!modules[i]->id)
             continue;
@@ -102,7 +155,92 @@ QVector<FormatCapability> exportFormats()
             continue;
         formats.push_back(makeExportCapability(modules[i]));
     }
+    std::stable_sort(formats.begin(), formats.end(),
+        [](const FormatCapability &left, const FormatCapability &right) {
+            return exportRank(left) < exportRank(right);
+        });
     return formats;
+}
+
+QStringList exportMenuIds()
+{
+    QStringList ids;
+    const QVector<FormatCapability> formats = exportFormats();
+    for (const FormatCapability &format : formats)
+        ids.append(format.id);
+    return ids;
+}
+
+bool formatRequiresOptions(const QString &id)
+{
+    static const QStringList kUserOptionFormats = {
+        "analog", "ascii", "bits", "hex", "wav"
+    };
+
+    if (!kUserOptionFormats.contains(id))
+        return false;
+
+    const QVector<FormatCapability> formats = exportFormats();
+    const FormatCapability *format = findFormatById(formats, id);
+    return format && format->hasOptions;
+}
+
+QString exportCompatibilityError(const FormatCapability &format,
+                                 ExportDataType dataType)
+{
+    if (format.acceptsAnyData)
+        return {};
+
+    switch (dataType) {
+    case ExportDataType::Logic:
+        if (format.supportsLogic)
+            return {};
+        return QObject::tr("%1 does not support logic data.")
+            .arg(format.description);
+    case ExportDataType::Analog:
+        if (format.supportsAnalog)
+            return {};
+        return QObject::tr("%1 does not support analog data.")
+            .arg(format.description);
+    case ExportDataType::Dso:
+        return QObject::tr(
+            "%1 cannot export DSO data because DSO-to-analog conversion is not available.")
+            .arg(format.description);
+    }
+
+    return QObject::tr("%1 does not support the active data type.")
+        .arg(format.description);
+}
+
+const FormatCapability *resolveExportFormatSelection(
+    const QVector<FormatCapability> &formats, const QString &formatId,
+    const QString &dialogFilter, const QString &suffix)
+{
+    if (!formatId.isEmpty()) {
+        const FormatCapability *format = findFormatById(formats, formatId);
+        if (format)
+            return format;
+    }
+
+    if (!dialogFilter.isEmpty()) {
+        for (const FormatCapability &format : formats) {
+            if (format.dialogFilter == dialogFilter)
+                return &format;
+        }
+    }
+
+    QString normalized_suffix = suffix;
+    if (normalized_suffix.startsWith('.'))
+        normalized_suffix.remove(0, 1);
+    if (!normalized_suffix.isEmpty()) {
+        for (const FormatCapability &format : formats) {
+            if (format.extensions.contains(normalized_suffix,
+                                           Qt::CaseInsensitive))
+                return &format;
+        }
+    }
+
+    return nullptr;
 }
 
 QString openDialogFilter()

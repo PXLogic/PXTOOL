@@ -379,12 +379,26 @@ static int cleanup(struct sr_output *o)
 	return SR_OK;
 }
 
+static struct sr_option options[] = {
+	{ "type", "Channel type", "Data channel type", NULL, NULL },
+	{ 0, 0, 0, 0, 0 }
+};
+
+static const struct sr_option *get_options(void)
+{
+	if (!options[0].def)
+		options[0].def = g_variant_ref_sink(
+			g_variant_new_int16(SR_CHANNEL_LOGIC));
+
+	return options;
+}
+
 SR_PRIV struct sr_output_module output_csv = {
 	.id = "csv",
 	.name = "CSV",
 	.desc = "Comma-separated values",
 	.exts = (const char*[]){"csv", NULL},
-	.options = NULL,
+	.options = get_options,
 	.init = init,
 	.receive = receive,
 	.cleanup = cleanup,

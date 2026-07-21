@@ -23,6 +23,7 @@
 #define DSVIEW_PV_DATA_FORMATCAPABILITY_H
 
 #include <QString>
+#include <QStringList>
 #include <QVector>
 
 namespace pv {
@@ -33,16 +34,34 @@ enum class FormatKind {
     Export
 };
 
+enum class ExportDataType {
+    Logic,
+    Analog,
+    Dso
+};
+
 struct FormatCapability {
     FormatKind kind;
     QString id;
     QString description;
     QString dialogFilter;
     QString menuText;
+    QStringList extensions;
+    bool hasOptions = false;
+    bool supportsLogic = false;
+    bool supportsAnalog = false;
+    bool acceptsAnyData = false;
 };
 
 QVector<FormatCapability> importFormats();
 QVector<FormatCapability> exportFormats();
+QStringList exportMenuIds();
+bool formatRequiresOptions(const QString &id);
+QString exportCompatibilityError(const FormatCapability &format,
+                                 ExportDataType dataType);
+const FormatCapability *resolveExportFormatSelection(
+    const QVector<FormatCapability> &formats, const QString &formatId,
+    const QString &dialogFilter, const QString &suffix);
 QString openDialogFilter();
 QString saveDialogFilter(const QVector<FormatCapability> &formats);
 const FormatCapability *findFormatById(const QVector<FormatCapability> &formats,

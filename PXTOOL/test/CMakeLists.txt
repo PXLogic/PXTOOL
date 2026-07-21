@@ -25,6 +25,10 @@ add_executable(DSView-test
     test_device_source.cpp
     test_diskcachesettings.cpp
     test_formatcapability.cpp
+    test_io_options.cpp
+    test_output_fixtures.cpp
+    test_input_fixtures.cpp
+    test_analogpacketadapter.cpp
     test_logsearch.cpp
     test_theme_qss.cpp
     test_upstream_demo.cpp
@@ -32,19 +36,38 @@ add_executable(DSView-test
     ../pv/view/channeltint.cpp
     ../pv/dock/logsearch.cpp
     ../pv/data/formatcapability.cpp
+    ../pv/data/iooptions.cpp
+    ../pv/data/analogpacketadapter.cpp
+    ../pv/dialogs/inputoutputoptioneditor.cpp
     test_formatcapability_stubs.c
+    test_upstream_io_stubs.c
+    ../../libsigrok/analog.c
+    ../../libsigrok/keyinfo.c
     ../../libsigrok/device_source.c
     ../../libsigrok/dsdevice.c
+    ../../libsigrok/session.c
+    ../../libsigrok/std.c
     ../../libsigrok/input/input.c
-    ../../libsigrok/input/in_binary.c
-    ../../libsigrok/input/in_vcd.c
-    ../../libsigrok/input/in_wav.c
+    ../../libsigrok/input/binary.c
+    ../../libsigrok/input/feed_queue.c
+    ../../libsigrok/input/vcd.c
+    ../../libsigrok/input/wav.c
     ../../libsigrok/log.c
     ../../libsigrok/output/output.c
     ../../libsigrok/output/csv.c
+    ../../libsigrok/output/analog.c
+    ../../libsigrok/output/ascii.c
+    ../../libsigrok/output/binary.c
+    ../../libsigrok/output/bits.c
+    ../../libsigrok/output/chronovu_la8.c
     ../../libsigrok/output/gnuplot.c
+    ../../libsigrok/output/hex.c
+    ../../libsigrok/output/null.c
+    ../../libsigrok/output/ols.c
     ../../libsigrok/output/srzip.c
     ../../libsigrok/output/vcd.c
+    ../../libsigrok/output/wav.c
+    ../../libsigrok/output/wavedrom.c
     ../../libsigrok/strutil.c
     ../../common/log/xlog.c
     ../../common/minizip/ioapi.c
@@ -61,7 +84,6 @@ if(DSVIEW_ENABLE_UPSTREAM_FX2LAFW)
     target_sources(DSView-test PRIVATE
         ../../libsigrok/hardware/upstream-fx2lafw/fx2lafw.c
         ../../libsigrok/hardware/common/ezusb.c
-        ../../libsigrok/std.c
     )
 endif()
 
@@ -74,6 +96,10 @@ target_include_directories(DSView-test PRIVATE
     ${LIBUSB_1_INCLUDE_DIRS}
     ${QT_INCLUDE_DIRS}
     ${Boost_INCLUDE_DIRS}
+)
+
+target_compile_definitions(DSView-test PRIVATE
+    DSVIEW_TESTING
 )
 
 if(DSVIEW_ENABLE_UPSTREAM_FX2LAFW)

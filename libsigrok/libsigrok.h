@@ -81,6 +81,7 @@ enum {
 	SR_ERR_DEVICE_IS_EXCLUSIVE 	= 11, /**< The device is exclusive by other process.*/
 	SR_ERR_DEVICE_FIRMWARE_VERSION_LOW = 12, /**< The firmware version is too low.*/
 	SR_ERR_DEVICE_USB_IO_ERROR = 13, /**< THe use io error.*/
+	SR_ERR_DATA = 14, /**< Input data is recognized but unsupported/corrupt. */
 
 	/*
 	 * Note: When adding entries here, don't forget to also update the
@@ -186,7 +187,9 @@ enum {
 	SR_T_RATIONAL_VOLT,
 	SR_T_KEYVALUE,
 	SR_T_LIST,
-	SR_T_INT16
+	SR_T_INT16,
+	SR_T_STRING,
+	SR_T_UINT32
 };
 
 /** Value for sr_datafeed_packet.type. */
@@ -203,8 +206,8 @@ enum sr_datafeed_packet_type {
     SR_DF_OVERFLOW,
 };
 
-/** Values for sr_datafeed_analog.mq. */
-enum {
+/** Values for sr_datafeed_analog.meaning->mq. */
+enum sr_mq {
 	SR_MQ_VOLTAGE = 10000,
 	SR_MQ_CURRENT,
 	SR_MQ_RESISTANCE,
@@ -226,8 +229,8 @@ enum {
 	SR_MQ_RELATIVE_HUMIDITY,
 };
 
-/** Values for sr_datafeed_analog.unit. */
-enum {
+/** Values for sr_datafeed_analog.meaning->unit. */
+enum sr_unit {
 	SR_UNIT_VOLT = 10000,
 	SR_UNIT_AMPERE,
 	SR_UNIT_OHM,
@@ -264,8 +267,8 @@ enum {
 	SR_UNIT_CONCENTRATION,
 };
 
-/** Values for sr_datafeed_analog.flags. */
-enum {
+/** Values for sr_datafeed_analog.meaning->mqflags. */
+enum sr_mqflag {
 	/** Voltage measurement is alternating current (AC). */
 	SR_MQFLAG_AC = 0x01,
 	/** Voltage measurement is direct current (DC). */
@@ -359,6 +362,11 @@ struct sr_context; //hidden all field
 struct sr_dev_inst;
 struct sr_dev_driver;
 
+struct sr_rational {
+    int64_t p;
+    uint64_t q;
+};
+
 struct sr_datafeed_packet {
 	uint16_t type; //see enum sr_datafeed_packet_type
     uint16_t status;
@@ -393,6 +401,28 @@ struct sr_datafeed_logic {
 	void *data;
 };
 
+struct sr_analog_encoding {
+    uint8_t unitsize;
+    gboolean is_signed;
+    gboolean is_float;
+    gboolean is_bigendian;
+    int8_t digits;
+    gboolean is_digits_decimal;
+    struct sr_rational scale;
+    struct sr_rational offset;
+};
+
+struct sr_analog_meaning {
+    enum sr_mq mq;
+    enum sr_unit unit;
+    enum sr_mqflag mqflags;
+    GSList *channels;
+};
+
+struct sr_analog_spec {
+    int8_t spec_digits;
+};
+
 struct sr_datafeed_dso {
     /** The probes for which data is included in this packet. */
     GSList *probes;
@@ -415,9 +445,16 @@ struct sr_datafeed_dso {
 };
 
 struct sr_datafeed_analog {
+	/* Standard libsigrok packet representation. */
+	void *data;
+	uint32_t num_samples;
+	struct sr_analog_encoding *encoding;
+	struct sr_analog_meaning *meaning;
+	struct sr_analog_spec *spec;
+
+	/* DSView legacy acquisition fields retained for native hardware paths. */
 	/** The probes for which data is included in this packet. */
 	GSList *probes;
-	int num_samples;
     /** How many bits for each sample */
     uint8_t unit_bits;
     /** Interval between two valid samples */
@@ -428,99 +465,51 @@ struct sr_datafeed_analog {
 	int unit;
 	/** Bitmap with extra information about the MQ. */
 	uint64_t mqflags;
-	/** The analog value(s). The data is interleaved according to
-	 * the probes list. */
-    void *data;
 };
 
-/** Input (file) format struct. */
+/** Input module metadata keys. */
+enum sr_input_meta_keys {
+	SR_INPUT_META_FILENAME = 0x01,
+	SR_INPUT_META_FILESIZE = 0x02,
+	SR_INPUT_META_HEADER = 0x04,
+	SR_INPUT_META_REQUIRED = 0x80,
+};
+
+/** Input (file) module instance. */
 struct sr_input {
-	/**
-	 * A pointer to this input format's 'struct sr_input_format'.
-	 * The frontend can use this to call the module's callbacks.
-	 */
-	struct sr_input_format *format;
-
-	GHashTable *param;
-
+	const struct sr_input_module *module;
+	GString *buf;
 	struct sr_dev_inst *sdi;
-
-	void *internal;
+	gboolean sdi_ready;
+	gboolean finalizing;
+	void *priv;
 };
 
-struct sr_input_format {
-	/** The unique ID for this input format. Must not be NULL. */
-	char *id;
-
-	/**
-	 * A short description of the input format, which can (for example)
-	 * be displayed to the user by frontends. Must not be NULL.
-	 */
-	char *description;
-
-	/**
-	 * Check if this input module can load and parse the specified file.
-	 *
-	 * @param filename The name (and path) of the file to check.
-	 *
-	 * @return TRUE if this module knows the format, FALSE if it doesn't.
-	 */
-	int (*format_match) (const char *filename);
-
-	/**
-	 * Initialize the input module.
-	 *
-	 * @param in A pointer to a valid 'struct sr_input' that the caller
-	 *           has to allocate and provide to this function. It is also
-	 *           the responsibility of the caller to free it later.
-	 * @param filename The name (and path) of the file to use.
-	 *
-	 * @return SR_OK upon success, a negative error code upon failure.
-	 */
-	int (*init) (struct sr_input *in, const char *filename);
-
-	/**
-	 * Load a file, parsing the input according to the file's format.
-     *
-	 * This function will send datafeed packets to the session bus, so
-	 * the calling frontend must have registered its session callbacks
-	 * beforehand.
-	 *
-	 * The packet types sent across the session bus by this function must
-	 * include at least SR_DF_HEADER, SR_DF_END, and an appropriate data
-	 * type such as SR_DF_LOGIC. It may also send a SR_DF_TRIGGER packet
-	 * if appropriate.
-	 *
-	 * @param in A pointer to a valid 'struct sr_input' that the caller
-	 *           has to allocate and provide to this function. It is also
-	 *           the responsibility of the caller to free it later.
-	 * @param filename The name (and path) of the file to use.
-	 *
-     * @return SR_OK upon succcess, a negative error code upon failure.
-	 */
-	int (*loadfile) (struct sr_input *in, const char *filename);
+/** Input (file) module driver. */
+struct sr_input_module {
+	const char *id;
+	const char *name;
+	const char *desc;
+	const char *const *exts;
+	const uint8_t metadata[8];
+	const struct sr_option *(*options)(void);
+	int (*format_match)(GHashTable *metadata, unsigned int *confidence);
+	int (*init)(struct sr_input *in, GHashTable *options);
+	int (*receive)(struct sr_input *in, GString *buf);
+	int (*end)(struct sr_input *in);
+	int (*reset)(struct sr_input *in);
+	void (*cleanup)(struct sr_input *in);
 };
 
 /** Output (file) format struct. */
 struct sr_output {
-	/**
-	 * A pointer to this output format's 'struct sr_output_format'.
-	 * The frontend can use this to call the module's callbacks.
-	 */
-    const struct sr_output_module *module;
+	const struct sr_output_module *module;
 
 	/**
 	 * The device for which this output module is creating output. This
 	 * can be used by the module to find out probe names and numbers.
 	 */
     const struct sr_dev_inst *sdi;
-
-	/**
-	 * An optional parameter which the frontend can pass in to the
-	 * output module. How the string is interpreted is entirely up to
-	 * the module.
-	 */
-	char *param;
 
 	/**
 	 * A generic pointer which can be used by the module to keep internal
@@ -531,17 +520,19 @@ struct sr_output {
 	 */
 	void *priv;
 
+	/* DSView native export state retained for existing output paths. */
+	char *param;
 	uint64_t start_sample_index;
 };
 
 /** Generic option struct used by various subsystems. */
 struct sr_option {
 	/* Short name suitable for commandline usage, [a-z0-9-]. */
-	char *id;
+	const char *id;
 	/* Short name suitable for GUI usage, can contain UTF-8. */
-	char *name;
+	const char *name;
 	/* Description of the option, in a sentence. */
-	char *desc;
+	const char *desc;
 	/* Default value for this option. */
 	GVariant *def;
 	/* List of possible values, if this is an option with few values. */
@@ -554,7 +545,7 @@ struct sr_output_module {
 	 * A unique ID for this output module, suitable for use in command-line
 	 * clients, [a-z0-9-]. Must not be NULL.
 	 */
-	char *id;
+	const char *id;
 
 	/**
 	 * A unique name for this output module, suitable for use in GUI
@@ -568,7 +559,7 @@ struct sr_output_module {
 	 * This can be displayed by frontends, e.g. when selecting the output
 	 * module for saving a file.
 	 */
-	char *desc;
+	const char *desc;
 
 	/**
 	 * A NULL terminated array of strings containing a list of file name
@@ -576,6 +567,8 @@ struct sr_output_module {
 	 * no typical extension for this file format.
 	 */
 	const char *const *exts;
+
+	const uint64_t flags;
 
 	/**
 	 * Returns a NULL-terminated list of options this module can take.
@@ -633,7 +626,7 @@ struct sr_output_module {
 };
 
 
-enum CHANNEL_TYPE {
+enum sr_channeltype {
     SR_CHANNEL_DECODER = 9998,
     SR_CHANNEL_GROUP = 9999,
     SR_CHANNEL_LOGIC = 10000,
@@ -652,6 +645,8 @@ enum OPERATION_MODE {
 };
 
 struct sr_channel {
+    /** Device instance this channel belongs to. */
+    struct sr_dev_inst *sdi;
     /* The index field will go: use g_slist_length(sdi->channels) instead. */
     uint16_t index;
     int type;
@@ -701,6 +696,20 @@ struct sr_channel_group {
 struct sr_config {
 	int key;
 	GVariant *data;
+};
+
+enum sr_keytype {
+	SR_KEY_CONFIG,
+	SR_KEY_MQ,
+	SR_KEY_MQFLAGS,
+};
+
+struct sr_key_info {
+	uint32_t key;
+	int datatype;
+	const char *id;
+	const char *name;
+	const char *description;
 };
 
 struct sr_config_info {
@@ -1250,11 +1259,48 @@ enum DSL_CHANNEL_ID
 
 /*--- input/input.c ---------------------------------------------------------*/
 
-SR_API struct sr_input_format **sr_input_list(void);
+SR_API const struct sr_input_module **sr_input_list(void);
+SR_API const char *sr_input_id_get(const struct sr_input_module *imod);
+SR_API const char *sr_input_name_get(const struct sr_input_module *imod);
+SR_API const char *sr_input_description_get(const struct sr_input_module *imod);
+SR_API const char *const *sr_input_extensions_get(const struct sr_input_module *imod);
+SR_API const struct sr_input_module *sr_input_find(const char *id);
+SR_API const struct sr_option **sr_input_options_get(const struct sr_input_module *imod);
+SR_API void sr_input_options_free(const struct sr_option **options);
+SR_API struct sr_input *sr_input_new(const struct sr_input_module *imod,
+		GHashTable *options);
+SR_API int sr_input_scan_buffer(GString *buf, const struct sr_input **in);
+SR_API int sr_input_scan_file(const char *filename, const struct sr_input **in);
+SR_API const struct sr_input_module *sr_input_module_get(const struct sr_input *in);
+SR_API struct sr_dev_inst *sr_input_dev_inst_get(const struct sr_input *in);
+SR_API int sr_input_send(const struct sr_input *in, GString *buf);
+SR_API int sr_input_end(const struct sr_input *in);
+SR_API int sr_input_reset(const struct sr_input *in);
+SR_API void sr_input_free(const struct sr_input *in);
 
 /*--- output/output.c -------------------------------------------------------*/
 
 SR_API const struct sr_output_module **sr_output_list(void);
+SR_API const char *sr_output_id_get(const struct sr_output_module *omod);
+SR_API const char *sr_output_name_get(const struct sr_output_module *omod);
+SR_API const char *sr_output_description_get(const struct sr_output_module *omod);
+SR_API const char *const *sr_output_extensions_get(const struct sr_output_module *omod);
+SR_API gboolean sr_output_test_flag(const struct sr_output_module *omod,
+		uint64_t flag);
+SR_API const struct sr_output_module *sr_output_find(char *id);
+SR_API const struct sr_option **sr_output_options_get(const struct sr_output_module *omod);
+SR_API void sr_output_options_free(const struct sr_option **options);
+SR_API const struct sr_output *sr_output_new(const struct sr_output_module *omod,
+		GHashTable *options, const struct sr_dev_inst *sdi);
+/* DSView extension for exports that retain their original sample index. */
+SR_API const struct sr_output *sr_output_new_with_start_sample_index(
+		const struct sr_output_module *omod, GHashTable *options,
+		const struct sr_dev_inst *sdi, uint64_t start_sample_index);
+SR_API int sr_output_send(const struct sr_output *o,
+		const struct sr_datafeed_packet *packet, GString **out);
+SR_API int sr_output_free(const struct sr_output *o);
+
+SR_API const struct sr_key_info *sr_key_info_get(int keytype, uint32_t key);
 
 /*--- strutil.c -------------------------------------------------------------*/
 
@@ -1270,6 +1316,28 @@ SR_API uint64_t sr_parse_timestring(const char *timestring);
 SR_API gboolean sr_parse_boolstring(const char *boolstring);
 SR_API int sr_parse_period(const char *periodstr, uint64_t *p, uint64_t *q);
 SR_API int sr_parse_voltage(const char *voltstr, uint64_t *p, uint64_t *q);
+SR_API char *sr_text_trim_spaces(char *s);
+SR_API char *sr_text_next_line(char *s, size_t l, char **next, size_t *taken);
+SR_API char *sr_text_next_word(char *s, char **next);
+
+/*--- analog.c ------------------------------------------------------------*/
+
+SR_API int sr_analog_to_float(const struct sr_datafeed_analog *analog,
+                               float *outbuf);
+SR_API const char *sr_analog_si_prefix(float *value, int *digits);
+SR_API gboolean sr_analog_si_prefix_friendly(enum sr_unit unit);
+SR_API int sr_analog_unit_to_string(const struct sr_datafeed_analog *analog,
+                                    char **result);
+SR_API void sr_rational_set(struct sr_rational *r, int64_t p, uint64_t q);
+
+enum sr_loglevel {
+    SR_LOG_NONE = 0,
+    SR_LOG_ERR,
+    SR_LOG_WARN,
+    SR_LOG_INFO,
+    SR_LOG_DBG,
+    SR_LOG_SPEW,
+};
 
 /*--- version.c -------------------------------------------------------------*/
 
@@ -1305,6 +1373,7 @@ SR_API void ds_log_set_context(xlog_context *ctx);
  * Set the private log context level
  */
 SR_API void ds_log_level(int level);
+SR_API int sr_log_loglevel_get(void);
 
 
 // A new device attached, user need to call ds_get_device_list to get the list,

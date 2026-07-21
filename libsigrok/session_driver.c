@@ -1432,7 +1432,7 @@ static int dev_acquisition_start(struct sr_dev_inst *sdi, void *cb_data)
     }
 
     /* Send header packet to the session bus. */
-    std_session_send_df_header(sdi, LOG_PREFIX);
+    std_session_send_df_header(sdi);
 
     /* Send trigger packet to the session bus */
     if (vdev->trig_pos != 0)
@@ -1769,14 +1769,12 @@ static int sr_load_virtual_device_session(struct sr_dev_inst *sdi)
                         for (p = 0; p < total_probes; p++)
                         {
                             snprintf(probename, SR_MAX_PROBENAME_LEN, "%u", p);
-                            if (!(probe = sr_channel_new(p, channel_type, FALSE, probename)))
+                            if (!(probe = sr_channel_new(sdi, p, channel_type, FALSE, probename)))
                             {
                                 sr_err("%s: create channel failed", __func__);
                                 sr_dev_inst_free(sdi); 
                                 return SR_ERR;
                             }
-
-                            sdi->channels = g_slist_append(sdi->channels, probe);
                         }
                     }
                 }
@@ -1794,14 +1792,12 @@ static int sr_load_virtual_device_session(struct sr_dev_inst *sdi)
                     {
                         channel_type = (mode == DSO) ? SR_CHANNEL_DSO : (mode == ANALOG) ? SR_CHANNEL_ANALOG
                                                                                          : SR_CHANNEL_LOGIC;
-                        if (!(probe = sr_channel_new(tmp_u64, channel_type, TRUE, val)))
+                        if (!(probe = sr_channel_new(sdi, tmp_u64, channel_type, TRUE, val)))
                         {
                             sr_err("%s: create channel failed", __func__);
                             sr_dev_inst_free(sdi);
                             return SR_ERR;
                         }
-
-                        sdi->channels = g_slist_append(sdi->channels, probe);
                     }
                 }
                 else if (!strncmp(keys[j], "trigger", 7))

@@ -291,10 +291,15 @@ set(DSView_SOURCES
     PXTOOL/pv/data/snapshot.cpp
     PXTOOL/pv/data/signaldata.cpp
     PXTOOL/pv/data/formatcapability.cpp
+    PXTOOL/pv/data/iooptions.cpp
+    PXTOOL/pv/data/inputimporter.cpp
+    PXTOOL/pv/data/analogpacketadapter.cpp
     PXTOOL/pv/data/logicsnapshot.cpp
     PXTOOL/pv/data/spillmanager.cpp
     PXTOOL/pv/data/analogsnapshot.cpp
     PXTOOL/pv/dialogs/deviceoptions.cpp
+    PXTOOL/pv/dialogs/inputoutputoptioneditor.cpp
+    PXTOOL/pv/dialogs/inputoutputoptionsdlg.cpp
     PXTOOL/pv/prop/property.cpp
     PXTOOL/pv/prop/int.cpp
     PXTOOL/pv/prop/enum.cpp
@@ -440,7 +445,12 @@ set(DSView_HEADERS
     PXTOOL/pv/sigsession.h
     PXTOOL/pv/mainwindow.h
     PXTOOL/pv/dialogs/deviceoptions.h
+    PXTOOL/pv/dialogs/inputoutputoptioneditor.h
+    PXTOOL/pv/dialogs/inputoutputoptionsdlg.h
     PXTOOL/pv/data/formatcapability.h
+    PXTOOL/pv/data/iooptions.h
+    PXTOOL/pv/data/inputimporter.h
+    PXTOOL/pv/data/analogpacketadapter.h
     PXTOOL/pv/data/spillmanager.h
     PXTOOL/pv/utility/diskcachesettings.h
     PXTOOL/pv/prop/property.h
@@ -557,6 +567,8 @@ endif ()
 #-------------------------------------------------------------------------------
 set(libsigrok_SOURCES
     libsigrok/version.c
+    libsigrok/analog.c
+    libsigrok/keyinfo.c
     libsigrok/strutil.c
     libsigrok/std.c
     libsigrok/session_driver.c
@@ -568,13 +580,24 @@ set(libsigrok_SOURCES
     libsigrok/output/output.c
     libsigrok/input/input.c
     libsigrok/hardware/demo/demo.c
-    libsigrok/input/in_binary.c
-    libsigrok/input/in_vcd.c
-    libsigrok/input/in_wav.c
+    libsigrok/input/binary.c
+    libsigrok/input/feed_queue.c
+    libsigrok/input/vcd.c
+    libsigrok/input/wav.c
     libsigrok/output/csv.c
+    libsigrok/output/analog.c
+    libsigrok/output/ascii.c
+    libsigrok/output/binary.c
+    libsigrok/output/bits.c
+    libsigrok/output/chronovu_la8.c
     libsigrok/output/gnuplot.c
+    libsigrok/output/hex.c
+    libsigrok/output/null.c
+    libsigrok/output/ols.c
     libsigrok/output/srzip.c
     libsigrok/output/vcd.c
+    libsigrok/output/wav.c
+    libsigrok/output/wavedrom.c
     libsigrok/hardware/DSL/dslogic.c
     libsigrok/hardware/common/usb.c
     libsigrok/hardware/common/ezusb.c

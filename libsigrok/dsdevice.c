@@ -1,11 +1,12 @@
 /*
- * This file is part of the libsigrok project.
+ * This file is part of the PXTOOL project.
+ * PXTOOL is based on PulseView.
  *
- * Copyright (C) 2013 Bert Vermeulen <bert@biot.com>
+ * Copyright (C) 2026 DreamSourceLab <support@dreamsourcelab.com>
  *
- * This program is free software: you can redistribute it and/or modify
+ * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
+ * the Free Software Foundation; either version 2 of the License, or
  * (at your option) any later version.
  *
  * This program is distributed in the hope that it will be useful,
@@ -14,7 +15,8 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
  */
 
 #include "libsigrok-internal.h"
@@ -27,6 +29,27 @@
 
 #undef LOG_PREFIX
 #define LOG_PREFIX "device: "
+
+#ifdef DSVIEW_TESTING
+static unsigned int channel_free_count;
+static unsigned int channel_group_free_count;
+
+SR_PRIV void sr_test_channel_lifecycle_reset(void)
+{
+	channel_free_count = 0;
+	channel_group_free_count = 0;
+}
+
+SR_PRIV unsigned int sr_test_channel_free_count(void)
+{
+	return channel_free_count;
+}
+
+SR_PRIV unsigned int sr_test_channel_group_free_count(void)
+{
+	return channel_group_free_count;
+}
+#endif
 
 /**
  * @file
@@ -43,9 +66,13 @@
  */
 
 /** @private */
-SR_PRIV struct sr_channel *sr_channel_new(uint16_t index, int type, gboolean enabled, const char *name)
+SR_PRIV struct sr_channel *sr_channel_new(struct sr_dev_inst *sdi,
+        int index, int type, gboolean enabled, const char *name)
 {
 	struct sr_channel *probe;
+
+	if (!sdi)
+		return NULL;
 
 	probe = malloc(sizeof(struct sr_channel));
 	if (probe == NULL) {
@@ -54,14 +81,97 @@ SR_PRIV struct sr_channel *sr_channel_new(uint16_t index, int type, gboolean ena
 	}
 	memset(probe, 0, sizeof(struct sr_channel));
 
+	probe->sdi = sdi;
 	probe->index = index;
 	probe->type = type;
 	probe->enabled = enabled;
 	if (name)
 		probe->name = g_strdup(name);
     probe->vga_ptr = NULL;
+	sdi->channels = g_slist_append(sdi->channels, probe);
 
 	return probe;
+}
+
+SR_PRIV void sr_channel_free(struct sr_channel *channel)
+{
+	if (!channel)
+		return;
+
+#ifdef DSVIEW_TESTING
+	channel_free_count++;
+#endif
+	g_free(channel->name);
+	g_free(channel->trigger);
+	g_free(channel->vga_ptr);
+	g_free(channel);
+}
+
+SR_PRIV void sr_channel_free_cb(void *channel)
+{
+	sr_channel_free(channel);
+}
+
+SR_PRIV gboolean sr_channels_differ(struct sr_channel *ch1,
+        struct sr_channel *ch2)
+{
+    if (!ch1 || !ch2)
+        return TRUE;
+
+    return ch1->type != ch2->type || g_strcmp0(ch1->name, ch2->name) != 0;
+}
+
+SR_PRIV gboolean sr_channel_lists_differ(GSList *l1, GSList *l2)
+{
+    struct sr_channel *ch1;
+    struct sr_channel *ch2;
+
+    while (l1 && l2) {
+        ch1 = l1->data;
+        ch2 = l2->data;
+        if (!ch1 || !ch2 || sr_channels_differ(ch1, ch2) ||
+                ch1->index != ch2->index)
+            return TRUE;
+        l1 = l1->next;
+        l2 = l2->next;
+    }
+
+    return l1 || l2;
+}
+
+SR_PRIV struct sr_channel_group *sr_channel_group_new(struct sr_dev_inst *sdi,
+        const char *name, void *priv)
+{
+    struct sr_channel_group *group = g_malloc0(sizeof(*group));
+
+    if (!group)
+        return NULL;
+    if (name && *name)
+        group->name = g_strdup(name);
+    group->priv = priv;
+    if (sdi)
+        sdi->channel_groups = g_slist_append(sdi->channel_groups, group);
+
+    return group;
+}
+
+SR_PRIV void sr_channel_group_free(struct sr_channel_group *group)
+{
+    if (!group)
+        return;
+
+#ifdef DSVIEW_TESTING
+	channel_group_free_count++;
+#endif
+    g_free((gpointer)group->name);
+    g_slist_free(group->channels);
+    g_free(group->priv);
+    g_free(group);
+}
+
+SR_PRIV void sr_channel_group_free_cb(void *group)
+{
+    sr_channel_group_free(group);
 }
 
 /**
@@ -212,17 +322,13 @@ SR_PRIV struct sr_dev_inst *sr_dev_inst_new(int mode, int status,
 /** @private */
 SR_PRIV void sr_dev_probes_free(struct sr_dev_inst *sdi)
 {
-    struct sr_channel *probe;
-    GSList *l;
+    if (!sdi)
+        return;
 
-    for (l = sdi->channels; l; l = l->next) {
-        probe = l->data;
-        safe_free(probe->name);
-        safe_free(probe->trigger);
-		safe_free(probe->vga_ptr);
-        g_free(probe);
-    }
-	g_safe_free_list(sdi->channels);
+    g_slist_free_full(sdi->channels, sr_channel_free_cb);
+    sdi->channels = NULL;
+    g_slist_free_full(sdi->channel_groups, sr_channel_group_free_cb);
+    sdi->channel_groups = NULL;
 }
 
 SR_PRIV void sr_dev_inst_free(struct sr_dev_inst *sdi)

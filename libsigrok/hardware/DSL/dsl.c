@@ -141,10 +141,9 @@ SR_PRIV int dsl_setup_probes(struct sr_dev_inst *sdi, int num_probes)
     struct DSL_context *devc = sdi->priv;
 
     for (j = 0; j < num_probes; j++) {
-        if (!(probe = sr_channel_new(j, channel_modes[devc->ch_mode].type,
+        if (!(probe = sr_channel_new(sdi, j, channel_modes[devc->ch_mode].type,
                                    TRUE, probe_names[j])))
             return SR_ERR;
-        sdi->channels = g_slist_append(sdi->channels, probe);
     }
     dsl_probe_init(sdi);
     return SR_OK;
@@ -161,15 +160,16 @@ SR_PRIV int dsl_adjust_probes(struct sr_dev_inst *sdi, int num_probes)
 
     j = g_slist_length(sdi->channels);
     while(j < num_probes) {
-        if (!(probe = sr_channel_new(j, channel_modes[devc->ch_mode].type,
+        if (!(probe = sr_channel_new(sdi, j, channel_modes[devc->ch_mode].type,
                                    TRUE, probe_names[j])))
             return SR_ERR;
-        sdi->channels = g_slist_append(sdi->channels, probe);
         j++;
     }
 
     while(j > num_probes) {
-        sdi->channels = g_slist_delete_link(sdi->channels, g_slist_last(sdi->channels));
+        GSList *last = g_slist_last(sdi->channels);
+        sr_channel_free(last->data);
+        sdi->channels = g_slist_delete_link(sdi->channels, last);
         j--;
     }
 

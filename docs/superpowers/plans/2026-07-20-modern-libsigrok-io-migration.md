@@ -106,12 +106,131 @@ git add PXTOOL/test/test_formatcapability.cpp PXTOOL/test/test_io_options.cpp \
 git commit -m "test: define modern io format manifest"
 ```
 
-## Task 2: Import the Current Upstream I/O Contracts
+## Task 2A: Migrate Upstream I/O Direct-Core Dependencies
 
 **Files:**
 - Modify: `libsigrok/libsigrok.h`
 - Modify: `libsigrok/libsigrok-internal.h`
+- Modify: `libsigrok/dsdevice.c`
+- Modify: `libsigrok/session.c`
+- Modify: `libsigrok/std.c`
+- Modify: `libsigrok/strutil.c`
+- Modify: `libsigrok/log.c`
+- Create: `libsigrok/analog.c`
+- Modify: every DSView `libsigrok/**/*.c` caller of `sr_channel_new()` and
+  `std_session_send_df_header()` reported by `rg`
+- Modify: `CMakeLists.txt`
+- Modify: `PXTOOL/test/CMakeLists.txt`
+- Modify: `PXTOOL/test/test_upstream_io_stubs.c`
+- Modify: `PXTOOL/test/test_input_fixtures.cpp`
+- Modify: `PXTOOL/test/test_analogpacketadapter.cpp`
+
+- [ ] **Step 1: Write failing direct-core contract tests**
+
+Add tests that compile against the upstream signatures and verify the standard
+datafeed helpers forward a header, metadata, logic, analog, and end packet:
+
+```cpp
+BOOST_AUTO_TEST_CASE(upstream_direct_core_creates_channels_on_the_device)
+{
+    sr_dev_inst sdi{};
+    sr_channel *channel = sr_channel_new(&sdi, 3, SR_CHANNEL_LOGIC, TRUE, "D3");
+
+    BOOST_REQUIRE(channel != nullptr);
+    BOOST_CHECK_EQUAL(g_slist_length(sdi.channels), 1);
+    BOOST_CHECK_EQUAL(channel->index, 3);
+}
+
+BOOST_AUTO_TEST_CASE(upstream_direct_core_initializes_standard_analog_packet)
+{
+    sr_datafeed_analog analog{};
+    sr_analog_encoding encoding{};
+    sr_analog_meaning meaning{};
+    sr_analog_spec spec{};
+
+    BOOST_CHECK_EQUAL(sr_analog_init(&analog, &encoding, &meaning, &spec, 3), SR_OK);
+    BOOST_CHECK_EQUAL(analog.encoding, &encoding);
+    BOOST_CHECK_EQUAL(analog.meaning, &meaning);
+}
+```
+
+- [ ] **Step 2: Run the direct-core tests and verify they fail**
+
+Run:
+
+```bash
+cmake --build . --target DSView-test
+./build.macOS/DSView-test --run_test=upstream_direct_core_*
+```
+
+Expected: compile failure because DSView currently exposes the old
+four-argument `sr_channel_new` and simplified analog packet model.
+
+- [ ] **Step 3: Import the direct-core implementation**
+
+Port the required upstream code from:
+
+```text
+/Users/yuanji/Desktop/project/libsigrok/src/device.c
+/Users/yuanji/Desktop/project/libsigrok/src/session.c
+/Users/yuanji/Desktop/project/libsigrok/src/std.c
+/Users/yuanji/Desktop/project/libsigrok/src/analog.c
+/Users/yuanji/Desktop/project/libsigrok/src/strutil.c
+/Users/yuanji/Desktop/project/libsigrok/src/log.c
+```
+
+Replace copied source headers with the DSView/PXTOOL GPL header. Preserve
+DSView-only `sr_dev_inst`, DSO, device-handle, and event members in the
+merged headers; migrate all direct-core type and function definitions needed
+by the input/output source set.
+
+Update each DSView source caller of `sr_channel_new()` to pass its owning
+`sr_dev_inst *` as the first argument. Update each
+`std_session_send_df_header()` caller to its upstream signature. Do not add
+an overload, macro, or compatibility wrapper for the old signatures.
+
+Implement the upstream session-send helpers by forwarding standard packets to
+DSView's installed datafeed callback. Keep DSView hardware session loops and
+DSO-specific packet handling unchanged outside this forwarding boundary.
+
+- [ ] **Step 4: Register the direct-core sources in production and tests**
+
+Add the migrated sources to both `libsigrok_SOURCES` and `DSView-test`.
+Replace test-only implementations only where a source would otherwise require
+hardware. The test target must link the same direct-core APIs as production.
+
+- [ ] **Step 5: Run direct-core and existing hardware compatibility tests**
+
+Run:
+
+```bash
+cmake . -DDSVIEW_ENABLE_UPSTREAM_COMPAT_DEMO=ON -DENABLE_TESTS=ON
+cmake --build . --target DSView-test
+./build.macOS/DSView-test --run_test=upstream_direct_core_*
+./build.macOS/DSView-test --run_test=upstream_fx2lafw
+./build.macOS/DSView-test --run_test=formatcapability
+```
+
+Expected: all commands exit 0. Existing compiler warnings are recorded but
+must not become new errors.
+
+- [ ] **Step 6: Commit the direct-core migration**
+
+```bash
+git add libsigrok PXTOOL/test CMakeLists.txt
+git commit -m "feat: migrate libsigrok io direct core"
+```
+
+## Task 2B: Import the Current Upstream I/O Contracts
+
+**Files:**
 - Modify: `libsigrok/input/input.c`
+- Delete: `libsigrok/input/in_binary.c`
+- Delete: `libsigrok/input/in_vcd.c`
+- Delete: `libsigrok/input/in_wav.c`
+- Create: `libsigrok/input/binary.c`
+- Create: `libsigrok/input/vcd.c`
+- Create: `libsigrok/input/wav.c`
 - Modify: `libsigrok/output/output.c`
 - Modify: `CMakeLists.txt`
 - Modify: `PXTOOL/test/CMakeLists.txt`
@@ -145,7 +264,7 @@ cmake --build . --target DSView-test
 ./build.macOS/DSView-test --run_test=creates_and_frees_output_with_default_options
 ```
 
-Expected: compilation failure or link failure because `null` is not registered and the modern lifecycle is not available from the current build.
+Expected: failure because `null` is not registered in the current output list.
 
 - [ ] **Step 3: Port the upstream contract without replacing DSView-only declarations**
 
@@ -175,7 +294,12 @@ int sr_output_free(const struct sr_output *o);
 ```
 
 Import `sr_output_module::flags`, `sr_output_module::exts`, and the current
-input-module streaming callbacks. Do not leave old `sr_input_format` and new
+input-module streaming callbacks. The direct-core APIs required by these
+contracts are supplied by Task 2A. In the same change, replace the existing
+`in_binary.c`, `in_vcd.c`, and `in_wav.c` modules with their current upstream
+streaming counterparts from `src/input/binary.c`, `src/input/vcd.c`, and
+`src/input/wav.c`. Replace each imported upstream file header with the
+DSView/PXTOOL GPL header style. Do not leave old `sr_input_format` and new
 `sr_input_module` registrations active at the same time.
 
 Keep `gnuplot` in DSView's output registration after the upstream module
@@ -192,6 +316,9 @@ test stubs in place of hardware-only services.
 
 ```cmake
     libsigrok/input/input.c
+    libsigrok/input/binary.c
+    libsigrok/input/vcd.c
+    libsigrok/input/wav.c
     libsigrok/output/output.c
     libsigrok/output/null.c
 ```
@@ -213,7 +340,8 @@ red until all modules are added.
 
 ```bash
 git add libsigrok/libsigrok.h libsigrok/libsigrok-internal.h \
-  libsigrok/input/input.c libsigrok/output/output.c \
+  libsigrok/input/input.c libsigrok/input/binary.c libsigrok/input/vcd.c \
+  libsigrok/input/wav.c libsigrok/output/output.c \
   libsigrok/output/null.c CMakeLists.txt PXTOOL/test/CMakeLists.txt \
   PXTOOL/test/test_io_options.cpp PXTOOL/test/test_upstream_io_stubs.c
 git commit -m "feat: migrate libsigrok io lifecycle contracts"
@@ -372,7 +500,8 @@ Run:
 
 ```bash
 cmake --build . --target DSView-test
-./build.macOS/DSView-test --run_test=binary_output_preserves_nul_bytes,null_output_writes_no_payload
+./build.macOS/DSView-test --run_test=io_migration_output_fixtures/binary_output_preserves_nul_bytes
+./build.macOS/DSView-test --run_test=io_migration_output_fixtures/null_output_writes_no_payload
 ```
 
 Expected: failure because the binary module is not registered and the current
@@ -427,12 +556,16 @@ Run:
 
 ```bash
 cmake --build . --target DSView-test
-./build.macOS/DSView-test --run_test=binary_output_preserves_nul_bytes,null_output_writes_no_payload
+./build.macOS/DSView-test --run_test=io_migration_output_fixtures/binary_output_preserves_nul_bytes
+./build.macOS/DSView-test --run_test=io_migration_output_fixtures/null_output_writes_no_payload
 ./build.macOS/DSView-test --run_test=formatcapability
 ```
 
-Expected: writer tests pass once `binary` and `null` are registered; existing
-format capability tests remain green.
+Expected: the `null` lifecycle assertion and existing format capability tests
+pass. Keep the binary assertion red until Task 6 imports and registers the
+upstream binary module; Task 6 runs this same assertion as part of its
+fixture suite. This avoids registering a Task 6 output module before the
+standard StoreSession lifecycle is in place.
 
 - [ ] **Step 6: Commit the output lifecycle conversion**
 
@@ -894,17 +1027,11 @@ git add PXTOOL/pv/mainwindow.cpp PXTOOL/pv/mainwindow.h \
 git commit -m "feat: complete upstream export format integration"
 ```
 
-## Task 9: Migrate Input Modules to the Streaming API Without Enabling Import UI
+## Task 9: Verify Streaming Input Modules Before Enabling Import UI
 
 **Files:**
-- Create: `libsigrok/input/binary.c`
-- Create: `libsigrok/input/vcd.c`
-- Create: `libsigrok/input/wav.c`
-- Modify: `libsigrok/input/input.c`
-- Modify: `libsigrok/output/output.c`
-- Modify: `CMakeLists.txt`
-- Modify: `PXTOOL/test/CMakeLists.txt`
 - Modify: `PXTOOL/test/test_input_fixtures.cpp`
+- Modify: `PXTOOL/test/test_upstream_io_stubs.c`
 
 - [ ] **Step 1: Write a failing streaming-input test**
 
@@ -934,24 +1061,10 @@ cmake --build . --target DSView-test
 ./build.macOS/DSView-test --run_test=binary_input_streams_logic_packets
 ```
 
-Expected: compile failure because DSView still compiles old `in_binary.c`.
+Expected: test failure because the migrated streaming modules are not yet
+covered by a datafeed observer.
 
-- [ ] **Step 3: Import upstream streaming input modules**
-
-Import from:
-
-```text
-/Users/yuanji/Desktop/project/libsigrok/src/input/binary.c
-/Users/yuanji/Desktop/project/libsigrok/src/input/vcd.c
-/Users/yuanji/Desktop/project/libsigrok/src/input/wav.c
-```
-
-Replace headers with the DSView/PXTOOL GPL header. Replace old
-`in_binary.c`, `in_vcd.c`, and `in_wav.c` registrations rather than compiling
-both APIs. Register only `binary`, `vcd`, and `wav`; do not add additional
-upstream input formats in this task.
-
-- [ ] **Step 4: Add a test input observer**
+- [ ] **Step 3: Add a test input observer**
 
 In `test_upstream_io_stubs.c`, register a test datafeed callback that records
 header/meta/logic/analog/end packets. Expose C accessors consumed by
@@ -966,7 +1079,7 @@ uint64_t test_input_observer_samplerate(void);
 bool test_input_observer_saw_end(void);
 ```
 
-- [ ] **Step 5: Run binary, VCD, and WAV parser tests**
+- [ ] **Step 4: Run binary, VCD, and WAV parser tests**
 
 Run:
 
@@ -980,13 +1093,11 @@ cmake --build . --target DSView-test
 Expected: all tests pass while MainWindow still retains the placeholder
 non-DSL import behavior.
 
-- [ ] **Step 6: Commit the streaming input framework**
+- [ ] **Step 5: Commit streaming input verification**
 
 ```bash
-git add libsigrok/input/binary.c libsigrok/input/vcd.c libsigrok/input/wav.c \
-  libsigrok/input/input.c CMakeLists.txt PXTOOL/test/CMakeLists.txt \
-  PXTOOL/test/test_input_fixtures.cpp PXTOOL/test/test_upstream_io_stubs.c
-git commit -m "feat: migrate current input formats to streaming api"
+git add PXTOOL/test/test_input_fixtures.cpp PXTOOL/test/test_upstream_io_stubs.c
+git commit -m "test: cover streaming input formats"
 ```
 
 ## Task 10: Connect VCD, WAV, and Raw Binary Import to Waveforms

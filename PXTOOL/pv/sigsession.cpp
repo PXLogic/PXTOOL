@@ -1197,8 +1197,18 @@ namespace pv
             switch (src->key)
             {
             case SR_CONF_SAMPLERATE:
-                /// @todo handle samplerate changes
-                /// samplerate = (uint64_t *)src->value;
+                if (src->data != nullptr) {
+                    uint64_t samplerate = g_variant_get_uint64(src->data);
+                    if (samplerate != 0)
+                        set_cur_snap_samplerate(samplerate);
+                }
+                break;
+            case SR_CONF_LIMIT_SAMPLES:
+                if (src->data != nullptr) {
+                    uint64_t samplelimits = g_variant_get_uint64(src->data);
+                    if (samplelimits != 0)
+                        set_cur_samplelimits(samplelimits);
+                }
                 break;
             }
         }
@@ -2170,6 +2180,8 @@ namespace pv
         // while retaining whatever was already visible in the waveform view.
         if (handle == NULL_HANDLE)
             return;
+        if (_device_agent.is_custom_device() && handle == _device_agent.handle())
+            return;
         dsv_info("rebind_device: session@%p has_data=%d handle=%p",
             (void*)this, (int)have_view_data(), handle);
 
@@ -2181,6 +2193,40 @@ namespace pv
         }
         dsv_info("rebind_device done: session@%p has_data=%d",
             (void*)this, (int)have_view_data());
+    }
+
+    void SigSession::bind_imported_device(struct sr_dev_inst *sdi,
+                                          int work_mode,
+                                          uint64_t sample_rate,
+                                          uint64_t sample_limit,
+                                          const QString &name,
+                                          const QString &path)
+    {
+        assert(sdi);
+        assert(_callback);
+
+        _device_agent.bind_custom_device(sdi,
+                                         DEV_TYPE_FILELOG,
+                                         work_mode,
+                                         name,
+                                         path,
+                                         QStringLiteral("input"),
+                                         sample_rate == 0 ? 1 : sample_rate,
+                                         sample_limit == 0 ? 1 : sample_limit);
+
+        set_collect_mode(COLLECT_SINGLE);
+        clear_all_decoder();
+        _view_data->clear();
+        _capture_data->clear();
+        _capture_data = _view_data;
+        invalidate_glitch_filter_state();
+
+        enable_all_channels();
+        init_signals();
+
+        set_cur_snap_samplerate(sample_rate == 0 ? 1 : sample_rate);
+        set_cur_samplelimits(sample_limit == 0 ? 1 : sample_limit);
+        _callback->trigger_message(DSV_MSG_CURRENT_DEVICE_CHANGED);
     }
 
     void SigSession::refresh_signal_probes()
