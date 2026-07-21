@@ -154,6 +154,7 @@ void StoreSession::cancel()
 void StoreSession::setSelectedOutputFormatId(const QString &format_id)
 {
     _selectedOutputFormatId = format_id;
+    _selectedOutputFormatExplicit = !format_id.isEmpty();
 }
 
 void StoreSession::setSelectedOutputOptions(const data::IoOptions &options)
@@ -161,6 +162,11 @@ void StoreSession::setSelectedOutputOptions(const data::IoOptions &options)
     _selectedOutputOptions = options;
     _selectedOptionsFormatId = _selectedOutputFormatId;
     _hasSelectedOutputOptions = true;
+}
+
+bool StoreSession::hasExplicitSelectedOutputFormat() const
+{
+    return _selectedOutputFormatExplicit;
 }
 
 bool StoreSession::append_output(QFile &file, GString *chunk)
@@ -850,29 +856,16 @@ bool StoreSession::validateExportFormat()
         return false;
     }
 
-    _outModule = NULL;
-    if (!_selectedOutputFormatId.isEmpty())
-        _outModule = sr_output_find(_selectedOutputFormatId.toUtf8().data());
-
-    if (_outModule == NULL) {
-        const QVector<data::FormatCapability> formats = data::exportFormats();
-        for (const data::FormatCapability &format : formats) {
-            if (format.extensions.contains(_suffix, Qt::CaseInsensitive)) {
-                _outModule = sr_output_find(format.id.toUtf8().data());
-                break;
-            }
-        }
-    }
-
-    if (_outModule == NULL) {
+    const QVector<data::FormatCapability> formats = data::exportFormats();
+    const data::FormatCapability *format = data::resolveExportFormatSelection(
+        formats, _selectedOutputFormatId, QString(), _suffix);
+    if (!format) {
         _error = tr("Invalid export format.");
         return false;
     }
 
-    const QVector<data::FormatCapability> formats = data::exportFormats();
-    const data::FormatCapability *format = data::findFormatById(
-        formats, QString::fromUtf8(_outModule->id));
-    if (!format) {
+    _outModule = sr_output_find(format->id.toUtf8().data());
+    if (_outModule == NULL) {
         _error = tr("Invalid export format.");
         return false;
     }
@@ -1950,6 +1943,7 @@ QString StoreSession::MakeExportFile(bool bDlg)
             if (format.dialogFilter == app.userHistory.exportFormat) {
                 selected_format = &format;
                 _selectedOutputFormatId = format.id;
+                _selectedOutputFormatExplicit = false;
                 selfilter = format.dialogFilter;
                 break;
             }
@@ -1961,6 +1955,7 @@ QString StoreSession::MakeExportFile(bool bDlg)
         if (selected_format) {
             selfilter = selected_format->dialogFilter;
             _selectedOutputFormatId = selected_format->id;
+            _selectedOutputFormatExplicit = false;
         }
     }
 
@@ -1982,6 +1977,7 @@ QString StoreSession::MakeExportFile(bool bDlg)
             if (format.dialogFilter == selfilter) {
                 selected_format = &format;
                 _selectedOutputFormatId = format.id;
+                _selectedOutputFormatExplicit = false;
                 break;
             }
         }

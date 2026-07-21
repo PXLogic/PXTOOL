@@ -396,7 +396,8 @@ void StoreProgress::export_run()
     _isExport = true;
     setTitle(tr("Export"));
 
-    if (!_store_session->validateExportFormat()) {
+    if (_store_session->hasExplicitSelectedOutputFormat() &&
+        !_store_session->validateExportFormat()) {
         show_error();
         close();
         return;
@@ -446,11 +447,16 @@ void StoreProgress::on_change_file()
 {
     QString file  = "";
     if (_isExport) {
-        if (!_store_session->validateExportFormat()) {
+        if (_store_session->hasExplicitSelectedOutputFormat() &&
+            !_store_session->validateExportFormat()) {
             show_error();
             return;
         }
         file = _store_session->MakeExportFile(true);
+        if (!file.isEmpty() && !_store_session->validateExportFormat()) {
+            show_error();
+            return;
+        }
     } else {
         file = _store_session->MakeSaveFile(true);
     }

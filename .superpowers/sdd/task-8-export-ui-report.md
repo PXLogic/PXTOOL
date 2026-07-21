@@ -98,3 +98,43 @@ Code-quality review:
 - CSV, VCD, Gnuplot, srzip, binary, ChronoVu LA8, null, OLS, and WaveDrom
   should proceed directly to the export dialog/progress path.
 - `.dsl` Open/Save remains unchanged.
+
+## Follow-up: Generic Export Review Fix
+
+Review finding addressed:
+
+- Generic `Export Data...` no longer validates before `MakeExportFile(false)`
+  when no menu-selected format exists.
+- Menu-selected export formats still perform early validation because their
+  format is already known.
+- `Change file...` now lets the save dialog determine the final selected
+  filter/format, then validates that final format before export can open or
+  truncate the destination.
+- `StoreSession::export_start()` remains the final guard before file
+  open/truncation.
+
+Added focused lower-level tests because `QFileDialog` is not suitable for
+headless driving:
+
+- generic export resolves the final format from the selected dialog filter.
+- generic export resolves the final format from the final suffix.
+- compatibility validation uses the final resolved dialog-filter format.
+
+Fresh follow-up verification:
+
+```bash
+cmake --build . --target DSView-test
+./build.macOS/DSView-test --run_test=formatcapability
+./build.macOS/DSView-test --run_test=io_migration_options/selected_output_options_survive_descriptor_cleanup
+QT_QPA_PLATFORM=offscreen ./build.macOS/DSView-test --report_level=short
+cmake --build . --target DSView -j4
+git diff --check
+```
+
+Results:
+
+- `formatcapability`: 15 test cases, no errors.
+- selected output options cleanup regression: 1 test case, no errors.
+- Full offscreen suite: 94/94 test cases passed, 713/713 assertions passed.
+- `DSView` target built successfully.
+- `git diff --check`: clean.

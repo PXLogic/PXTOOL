@@ -85,6 +85,7 @@ public:
     QString MakeExportFile(bool bDlg);
     void setSelectedOutputFormatId(const QString &format_id);
     void setSelectedOutputOptions(const data::IoOptions &options);
+    bool hasExplicitSelectedOutputFormat() const;
 
     inline QString GetFileName(){
         return _file_name;
@@ -119,6 +120,7 @@ private:
 	std::thread     _thread;
     const struct sr_output_module* _outModule;
     QString         _selectedOutputFormatId;
+    bool            _selectedOutputFormatExplicit = false;
     QString         _selectedOptionsFormatId;
     data::IoOptions _selectedOutputOptions{nullptr};
     bool            _hasSelectedOutputOptions = false;

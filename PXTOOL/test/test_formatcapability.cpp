@@ -190,6 +190,45 @@ BOOST_AUTO_TEST_CASE(export_compatibility_errors_name_format_and_data_type)
         null_output, pv::data::ExportDataType::Dso).isEmpty());
 }
 
+BOOST_AUTO_TEST_CASE(generic_export_resolves_format_from_final_dialog_filter)
+{
+    const QVector<FormatCapability> outputs = pv::data::exportFormats();
+    const FormatCapability wav = find_id(outputs, "wav");
+
+    const FormatCapability *resolved = pv::data::resolveExportFormatSelection(
+        outputs, QString(), wav.dialogFilter, QString());
+
+    BOOST_REQUIRE(resolved != nullptr);
+    BOOST_CHECK_EQUAL(resolved->id.toStdString(), "wav");
+}
+
+BOOST_AUTO_TEST_CASE(generic_export_resolves_format_from_final_suffix)
+{
+    const QVector<FormatCapability> outputs = pv::data::exportFormats();
+
+    const FormatCapability *resolved = pv::data::resolveExportFormatSelection(
+        outputs, QString(), QString(), QString("vcd"));
+
+    BOOST_REQUIRE(resolved != nullptr);
+    BOOST_CHECK_EQUAL(resolved->id.toStdString(), "vcd");
+}
+
+BOOST_AUTO_TEST_CASE(final_dialog_filter_controls_compatibility_validation)
+{
+    const QVector<FormatCapability> outputs = pv::data::exportFormats();
+    const FormatCapability wav = find_id(outputs, "wav");
+
+    const FormatCapability *resolved = pv::data::resolveExportFormatSelection(
+        outputs, QString(), wav.dialogFilter, QString());
+    BOOST_REQUIRE(resolved != nullptr);
+
+    const QString error = pv::data::exportCompatibilityError(
+        *resolved, pv::data::ExportDataType::Logic);
+
+    BOOST_CHECK(error.contains(wav.description));
+    BOOST_CHECK(error.contains("logic", Qt::CaseInsensitive));
+}
+
 BOOST_AUTO_TEST_CASE(export_capabilities_keep_declared_extensions)
 {
     const QVector<FormatCapability> outputs = pv::data::exportFormats();

@@ -212,6 +212,37 @@ QString exportCompatibilityError(const FormatCapability &format,
         .arg(format.description);
 }
 
+const FormatCapability *resolveExportFormatSelection(
+    const QVector<FormatCapability> &formats, const QString &formatId,
+    const QString &dialogFilter, const QString &suffix)
+{
+    if (!formatId.isEmpty()) {
+        const FormatCapability *format = findFormatById(formats, formatId);
+        if (format)
+            return format;
+    }
+
+    if (!dialogFilter.isEmpty()) {
+        for (const FormatCapability &format : formats) {
+            if (format.dialogFilter == dialogFilter)
+                return &format;
+        }
+    }
+
+    QString normalized_suffix = suffix;
+    if (normalized_suffix.startsWith('.'))
+        normalized_suffix.remove(0, 1);
+    if (!normalized_suffix.isEmpty()) {
+        for (const FormatCapability &format : formats) {
+            if (format.extensions.contains(normalized_suffix,
+                                           Qt::CaseInsensitive))
+                return &format;
+        }
+    }
+
+    return nullptr;
+}
+
 QString openDialogFilter()
 {
     QStringList filters;
