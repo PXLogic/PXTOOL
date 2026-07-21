@@ -18,6 +18,7 @@ static uint64_t test_samplerate;
 
 static struct {
     unsigned int header_packets;
+    unsigned int meta_packets;
     unsigned int logic_packets;
     uint64_t logic_samples;
     unsigned int analog_packets;
@@ -84,6 +85,7 @@ void test_input_observer_record_packet(const struct sr_datafeed_packet *packet)
         test_input_observer.header_packets++;
         break;
     case SR_DF_META:
+        test_input_observer.meta_packets++;
         meta = packet->payload;
         if (!meta)
             break;
@@ -119,6 +121,16 @@ unsigned int test_input_observer_logic_packets(void)
     return test_input_observer.logic_packets;
 }
 
+unsigned int test_input_observer_header_packets(void)
+{
+    return test_input_observer.header_packets;
+}
+
+unsigned int test_input_observer_meta_packets(void)
+{
+    return test_input_observer.meta_packets;
+}
+
 uint64_t test_input_observer_logic_samples(void)
 {
     return test_input_observer.logic_samples;
@@ -127,6 +139,11 @@ uint64_t test_input_observer_logic_samples(void)
 unsigned int test_input_observer_analog_packets(void)
 {
     return test_input_observer.analog_packets;
+}
+
+uint64_t test_input_observer_analog_samples(void)
+{
+    return test_input_observer.analog_samples;
 }
 
 uint64_t test_input_observer_samplerate(void)

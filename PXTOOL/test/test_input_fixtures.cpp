@@ -22,9 +22,12 @@ extern "C" {
 #include "libsigrok-internal.h"
 
 void test_input_observer_reset(void);
+unsigned int test_input_observer_header_packets(void);
+unsigned int test_input_observer_meta_packets(void);
 unsigned int test_input_observer_logic_packets(void);
 uint64_t test_input_observer_logic_samples(void);
 unsigned int test_input_observer_analog_packets(void);
+uint64_t test_input_observer_analog_samples(void);
 uint64_t test_input_observer_samplerate(void);
 bool test_input_observer_saw_end(void);
 }
@@ -80,9 +83,12 @@ public:
         BOOST_REQUIRE_EQUAL(sr_input_end(input_), SR_OK);
     }
 
+    unsigned int headerPackets() const { return test_input_observer_header_packets(); }
+    unsigned int metaPackets() const { return test_input_observer_meta_packets(); }
     unsigned int logicPackets() const { return test_input_observer_logic_packets(); }
     uint64_t logicSamples() const { return test_input_observer_logic_samples(); }
     unsigned int analogPackets() const { return test_input_observer_analog_packets(); }
+    uint64_t analogSamples() const { return test_input_observer_analog_samples(); }
     uint64_t samplerate() const { return test_input_observer_samplerate(); }
     bool sawEnd() const { return test_input_observer_saw_end(); }
 
@@ -217,6 +223,8 @@ BOOST_AUTO_TEST_CASE(binary_input_streams_logic_packets)
     input.send(QByteArray::fromHex("00010302"));
     input.end();
 
+    BOOST_CHECK_EQUAL(input.headerPackets(), 1);
+    BOOST_CHECK_EQUAL(input.metaPackets(), 1);
     BOOST_CHECK_EQUAL(input.logicPackets(), 1);
     BOOST_CHECK_EQUAL(input.logicSamples(), 4);
     BOOST_CHECK_EQUAL(input.samplerate(), 1000000);
@@ -248,6 +256,8 @@ BOOST_AUTO_TEST_CASE(vcd_input_streams_logic_packets)
     input.send(QByteArray(vcd, sizeof(vcd) - 1));
     input.end();
 
+    BOOST_CHECK_EQUAL(input.headerPackets(), 1);
+    BOOST_CHECK_EQUAL(input.metaPackets(), 1);
     BOOST_CHECK_GE(input.logicPackets(), 1);
     BOOST_CHECK_GE(input.logicSamples(), 2);
     BOOST_CHECK_EQUAL(input.samplerate(), 1000000);
@@ -261,7 +271,10 @@ BOOST_AUTO_TEST_CASE(wav_input_streams_analog_packets)
     input.send(makeWavFixture());
     input.end();
 
+    BOOST_CHECK_EQUAL(input.headerPackets(), 1);
+    BOOST_CHECK_EQUAL(input.metaPackets(), 1);
     BOOST_CHECK_EQUAL(input.analogPackets(), 1);
+    BOOST_CHECK_EQUAL(input.analogSamples(), 4);
     BOOST_CHECK_EQUAL(input.samplerate(), 8000);
     BOOST_CHECK(input.sawEnd());
 }
