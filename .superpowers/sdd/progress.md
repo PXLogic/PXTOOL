@@ -28,3 +28,11 @@ formats in final order, optioned formats use InputOutputOptionsDlg, selected
 options are carried into StoreSession, compatibility is validated before
 destination selection/opening, full DSView-test suite and macOS build/run are
 green; manual menu popup screenshot remains a human verification item.)
+
+Task 8: complete (commits bdfa379..45cb123, review clean)
+
+Task 9: complete (streaming input parser fixtures cover binary logic,
+VCD logic, and WAV analog through sr_input_send/sr_input_end; observer
+records header/meta/logic/analog/end packets at the test datafeed boundary;
+production import UI remains untouched. Focused input tests, full
+DSView-test, and git diff --check are green.)

@@ -12,11 +12,107 @@
 
 #include <boost/test/unit_test.hpp>
 
+#include <cstdint>
+
+#include <QByteArray>
+
 #include "test_datafeed_stub.h"
 
 extern "C" {
 #include "libsigrok-internal.h"
+
+void test_input_observer_reset(void);
+unsigned int test_input_observer_logic_packets(void);
+uint64_t test_input_observer_logic_samples(void);
+unsigned int test_input_observer_analog_packets(void);
+uint64_t test_input_observer_samplerate(void);
+bool test_input_observer_saw_end(void);
 }
+
+namespace {
+
+GHashTable *options(std::initializer_list<std::pair<const char *, GVariant *>> values)
+{
+    GHashTable *table = g_hash_table_new_full(g_str_hash, g_str_equal, nullptr,
+        reinterpret_cast<GDestroyNotify>(g_variant_unref));
+
+    for (const auto &value : values)
+        g_hash_table_insert(table, const_cast<char *>(value.first), g_variant_ref_sink(value.second));
+
+    return table;
+}
+
+class StreamingInput
+{
+public:
+    StreamingInput(const char *module_id, GHashTable *options = nullptr)
+    {
+        const sr_input_module *module = sr_input_find(module_id);
+        BOOST_REQUIRE(module != nullptr);
+
+        input_ = sr_input_new(module, options);
+        if (options)
+            g_hash_table_unref(options);
+        BOOST_REQUIRE(input_ != nullptr);
+
+        test_input_observer_reset();
+    }
+
+    ~StreamingInput()
+    {
+        sr_input_free(input_);
+    }
+
+    void send(const QByteArray &data)
+    {
+        GString *buffer = g_string_new_len(data.constData(), data.size());
+        BOOST_REQUIRE_EQUAL(sr_input_send(input_, buffer), SR_OK);
+        g_string_free(buffer, TRUE);
+    }
+
+    void send(const char *data)
+    {
+        send(QByteArray(data));
+    }
+
+    void end()
+    {
+        BOOST_REQUIRE_EQUAL(sr_input_end(input_), SR_OK);
+    }
+
+    unsigned int logicPackets() const { return test_input_observer_logic_packets(); }
+    uint64_t logicSamples() const { return test_input_observer_logic_samples(); }
+    unsigned int analogPackets() const { return test_input_observer_analog_packets(); }
+    uint64_t samplerate() const { return test_input_observer_samplerate(); }
+    bool sawEnd() const { return test_input_observer_saw_end(); }
+
+private:
+    sr_input *input_ = nullptr;
+};
+
+QByteArray makeWavFixture()
+{
+    const char wav[] = {
+        'R', 'I', 'F', 'F',
+        40, 0, 0, 0,
+        'W', 'A', 'V', 'E',
+        'f', 'm', 't', ' ',
+        16, 0, 0, 0,
+        1, 0,
+        1, 0,
+        0x40, 0x1f, 0, 0,
+        0x40, 0x1f, 0, 0,
+        1, 0,
+        8, 0,
+        'd', 'a', 't', 'a',
+        4, 0, 0, 0,
+        0, 64, static_cast<char>(128), static_cast<char>(255),
+    };
+
+    return QByteArray(wav, sizeof(wav));
+}
+
+} // namespace
 
 BOOST_AUTO_TEST_CASE(upstream_direct_core_creates_channels_on_the_device)
 {
@@ -109,4 +205,63 @@ BOOST_AUTO_TEST_CASE(vcd_free_releases_cached_header_channels_and_groups)
 
     BOOST_CHECK_EQUAL(sr_test_channel_free_count(), 3);
     BOOST_CHECK_EQUAL(sr_test_channel_group_free_count(), 1);
+}
+
+BOOST_AUTO_TEST_CASE(binary_input_streams_logic_packets)
+{
+    StreamingInput input("binary", options({
+        {"numchannels", g_variant_new_int32(2)},
+        {"samplerate", g_variant_new_uint64(1000000)},
+    }));
+
+    input.send(QByteArray::fromHex("00010302"));
+    input.end();
+
+    BOOST_CHECK_EQUAL(input.logicPackets(), 1);
+    BOOST_CHECK_EQUAL(input.logicSamples(), 4);
+    BOOST_CHECK_EQUAL(input.samplerate(), 1000000);
+    BOOST_CHECK(input.sawEnd());
+}
+
+BOOST_AUTO_TEST_CASE(vcd_input_streams_logic_packets)
+{
+    static const char vcd[] =
+        "$timescale 1 us $end\n"
+        "$scope module test $end\n"
+        "$var wire 1 ! flag $end\n"
+        "$upscope $end\n"
+        "$enddefinitions $end\n"
+        "#0\n"
+        "0!\n"
+        "#1\n"
+        "1!\n"
+        "#2\n"
+        "0!\n";
+    StreamingInput input("vcd", options({
+        {"numchannels", g_variant_new_uint32(1)},
+        {"skip", g_variant_new_uint64(0)},
+        {"samplerate_overwrite", g_variant_new_uint64(1000000)},
+        {"downsample", g_variant_new_uint64(1)},
+        {"compress", g_variant_new_uint64(0)},
+    }));
+
+    input.send(QByteArray(vcd, sizeof(vcd) - 1));
+    input.end();
+
+    BOOST_CHECK_GE(input.logicPackets(), 1);
+    BOOST_CHECK_GE(input.logicSamples(), 2);
+    BOOST_CHECK_EQUAL(input.samplerate(), 1000000);
+    BOOST_CHECK(input.sawEnd());
+}
+
+BOOST_AUTO_TEST_CASE(wav_input_streams_analog_packets)
+{
+    StreamingInput input("wav");
+
+    input.send(makeWavFixture());
+    input.end();
+
+    BOOST_CHECK_EQUAL(input.analogPackets(), 1);
+    BOOST_CHECK_EQUAL(input.samplerate(), 8000);
+    BOOST_CHECK(input.sawEnd());
 }
