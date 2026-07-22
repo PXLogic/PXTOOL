@@ -1,3 +1,24 @@
+# VCS and local agent/index caches
+.git/
+.codegraph/
+.codex/
+
+# Build and packaging output
+build/
+build.dir/
+build.linux/
+build.macOS/
+build.windows/
+dist/
+package-root/
+share/
+logo/
+_CPack_Packages/
+CPackConfig.cmake
+CPackSourceConfig.cmake
+*.dmg
+*.zip
+
 # Local build directories and generated CMake state.
 /build/
 /build.dir/
@@ -15,6 +36,7 @@
 /.ninja_deps
 /.ninja_log
 /install_manifest.txt
+
 /PXTOOL/test/CMakeFiles/
 /PXTOOL/test/CTestTestfile.cmake
 /PXTOOL/test/Makefile
@@ -39,6 +61,14 @@
 **/moc_*.cpp
 **/moc_*.cpp_parameters
 /qrc_*.cpp
+qrc_*.cpp
+
+# Web dependencies and output
+web/node_modules/
+web/dist/
+web/dist-ssr/
+web/logs/
+web/*.local
 
 # Example decoder build outputs.
 /pv/cdecoders/example_*/build/
@@ -52,5 +82,8 @@ __pycache__/
 *.py[cod]
 /.venv*/
 
-# macOS Finder metadata.
+# Logs and temporary/editor files
+*.log
 .DS_Store
+*.sw?
+*~
