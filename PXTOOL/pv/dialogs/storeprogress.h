@@ -35,7 +35,7 @@ class QRadioButton;
 class QGridLayout;
 class QPushButton;
 class QWidget;
-class QComboBox;
+class DsComboBox;
 
 namespace pv {
     namespace view {
@@ -94,8 +94,8 @@ private:
     QPushButton         *_openButton;
     QGridLayout         *_grid;
     QWidget             *_space;
-    QComboBox           *_start_cursor;
-    QComboBox           *_end_cursor;
+    DsComboBox          *_start_cursor;
+    DsComboBox          *_end_cursor;
     view::View          *_view; 
     bool                _is_done;
     QTimer              m_timer; 

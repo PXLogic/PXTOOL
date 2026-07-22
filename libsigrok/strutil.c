@@ -464,6 +464,127 @@ SR_API int sr_parse_voltage(const char *voltstr, uint64_t *p, uint64_t *q)
 	return SR_OK;
 }
 
+SR_PRIV int sr_atol(const char *str, long *ret)
+{
+	long tmp;
+	char *endptr = NULL;
+
+	errno = 0;
+	tmp = strtol(str, &endptr, 10);
+
+	while (endptr && isspace((unsigned char)*endptr))
+		endptr++;
+
+	if (!endptr || *endptr || errno) {
+		if (!errno)
+			errno = EINVAL;
+		return SR_ERR;
+	}
+
+	*ret = tmp;
+	return SR_OK;
+}
+
+SR_PRIV int sr_atol_base(const char *str, long *ret, char **end, int base)
+{
+	long num;
+	char *endptr;
+
+	while (str && isspace((unsigned char)*str))
+		str++;
+	if (!base && strncmp(str, "0b", strlen("0b")) == 0) {
+		str += strlen("0b");
+		base = 2;
+	}
+
+	errno = 0;
+	endptr = NULL;
+	num = strtol(str, &endptr, base);
+	if (!endptr || errno) {
+		if (!errno)
+			errno = EINVAL;
+		return SR_ERR;
+	}
+	*ret = num;
+
+	while (endptr && isspace((unsigned char)*endptr))
+		endptr++;
+	if (end)
+		*end = endptr;
+
+	return SR_OK;
+}
+
+SR_PRIV int sr_atoul_base(const char *str, unsigned long *ret, char **end,
+		int base)
+{
+	unsigned long num;
+	char *endptr;
+
+	while (str && isspace((unsigned char)*str))
+		str++;
+	if ((!base || base == 2) && strncmp(str, "0b", strlen("0b")) == 0) {
+		str += strlen("0b");
+		base = 2;
+	}
+
+	errno = 0;
+	endptr = NULL;
+	num = strtoul(str, &endptr, base);
+	if (!endptr || errno) {
+		if (!errno)
+			errno = EINVAL;
+		return SR_ERR;
+	}
+	*ret = num;
+
+	while (endptr && isspace((unsigned char)*endptr))
+		endptr++;
+	if (end)
+		*end = endptr;
+
+	return SR_OK;
+}
+
+SR_PRIV int sr_atoi(const char *str, int *ret)
+{
+	long tmp;
+
+	if (sr_atol(str, &tmp) != SR_OK)
+		return SR_ERR;
+
+	if ((int)tmp != tmp) {
+		errno = ERANGE;
+		return SR_ERR;
+	}
+
+	*ret = (int)tmp;
+	return SR_OK;
+}
+
+SR_PRIV int sr_atod(const char *str, double *ret)
+{
+	double value;
+	char *endptr = NULL;
+
+	if (!str || !ret)
+		return SR_ERR_ARG;
+
+	errno = 0;
+	value = strtod(str, &endptr);
+	while (endptr && isspace((unsigned char)*endptr))
+		endptr++;
+
+	if (!endptr || *endptr || errno) {
+		if (!errno)
+			errno = EINVAL;
+		return SR_ERR;
+	}
+
+	*ret = value;
+	return SR_OK;
+}
+
 SR_PRIV int sr_atod_ascii(const char *str, double *ret)
 {
     char *endptr = NULL;

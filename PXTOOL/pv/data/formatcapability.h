@@ -62,6 +62,9 @@ QString exportCompatibilityError(const FormatCapability &format,
 const FormatCapability *resolveExportFormatSelection(
     const QVector<FormatCapability> &formats, const QString &formatId,
     const QString &dialogFilter, const QString &suffix);
+const FormatCapability *resolveImportFormatSelection(
+    const QVector<FormatCapability> &formats, const QString &formatId,
+    const QString &dialogFilter, const QString &suffix);
 QString openDialogFilter();
 QString saveDialogFilter(const QVector<FormatCapability> &formats);
 const FormatCapability *findFormatById(const QVector<FormatCapability> &formats,

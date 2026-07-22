@@ -75,6 +75,14 @@ bool hasOutputOptions(const sr_output_module *module)
     return has_options;
 }
 
+bool hasInputOptions(const sr_input_module *module)
+{
+    const sr_option **options = sr_input_options_get(module);
+    const bool has_options = options && options[0];
+    sr_input_options_free(options);
+    return has_options;
+}
+
 void setOutputCompatibility(FormatCapability &capability)
 {
     if (capability.id == "null") {
@@ -99,6 +107,7 @@ FormatCapability makeImportCapability(const sr_input_module *module)
     capability.id = id;
     capability.description = description;
     capability.extensions = extensionsFrom(module->exts);
+    capability.hasOptions = hasInputOptions(module);
     capability.dialogFilter = dialogFilter(description, capability.extensions);
     capability.menuText = QString("Import %1...").arg(description);
     return capability;
@@ -236,6 +245,37 @@ const FormatCapability *resolveExportFormatSelection(
         for (const FormatCapability &format : formats) {
             if (format.extensions.contains(normalized_suffix,
                                            Qt::CaseInsensitive))
+                return &format;
+        }
+    }
+
+    return nullptr;
+}
+
+const FormatCapability *resolveImportFormatSelection(
+    const QVector<FormatCapability> &formats, const QString &formatId,
+    const QString &dialogFilter, const QString &suffix)
+{
+    if (!formatId.isEmpty()) {
+        const FormatCapability *format = findFormatById(formats, formatId);
+        if (format)
+            return format;
+    }
+
+    QString normalized_suffix = suffix;
+    if (normalized_suffix.startsWith('.'))
+        normalized_suffix.remove(0, 1);
+    if (!normalized_suffix.isEmpty()) {
+        for (const FormatCapability &format : formats) {
+            if (format.extensions.contains(normalized_suffix,
+                                           Qt::CaseInsensitive))
+                return &format;
+        }
+    }
+
+    if (!dialogFilter.isEmpty()) {
+        for (const FormatCapability &format : formats) {
+            if (format.dialogFilter == dialogFilter)
                 return &format;
         }
     }

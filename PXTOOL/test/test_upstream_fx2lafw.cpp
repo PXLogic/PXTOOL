@@ -47,21 +47,9 @@ void ds_set_last_error(int error)
 }
 
 int sr_session_source_add(gintptr poll_object, int events, int timeout,
-    sr_receive_data_callback_t cb, const struct sr_dev_inst *sdi)
-{
-    (void)poll_object;
-    (void)events;
-    (void)timeout;
-    (void)cb;
-    (void)sdi;
-    return SR_OK;
-}
+    sr_receive_data_callback_t cb, const struct sr_dev_inst *sdi);
 
-int sr_session_source_remove(gintptr poll_object)
-{
-    (void)poll_object;
-    return SR_OK;
-}
+int sr_session_source_remove(gintptr poll_object);
 }
 #endif
 

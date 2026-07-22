@@ -581,9 +581,21 @@ set(libsigrok_SOURCES
     libsigrok/input/input.c
     libsigrok/hardware/demo/demo.c
     libsigrok/input/binary.c
+    libsigrok/input/chronovu_la8.c
+    libsigrok/input/csv.c
     libsigrok/input/feed_queue.c
+    libsigrok/input/isf.c
+    libsigrok/input/logicport.c
+    libsigrok/input/null.c
+    libsigrok/input/protocoldata.c
+    libsigrok/input/raw_analog.c
+    libsigrok/input/saleae.c
+    libsigrok/input/scpi.c
+    libsigrok/input/stf.c
+    libsigrok/input/trace32_ad.c
     libsigrok/input/vcd.c
     libsigrok/input/wav.c
+    libsigrok/minilzo/minilzo.c
     libsigrok/output/csv.c
     libsigrok/output/analog.c
     libsigrok/output/ascii.c

@@ -19,6 +19,7 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
  */
 
+
 #include <config.h>
 #include <string.h>
 #include <errno.h>
@@ -69,12 +70,32 @@
 
 /** @cond PRIVATE */
 extern SR_PRIV struct sr_input_module input_binary;
+extern SR_PRIV struct sr_input_module input_chronovu_la8;
+extern SR_PRIV struct sr_input_module input_csv;
+extern SR_PRIV struct sr_input_module input_isf;
+extern SR_PRIV struct sr_input_module input_logicport;
+extern SR_PRIV struct sr_input_module input_null;
+extern SR_PRIV struct sr_input_module input_protocoldata;
+extern SR_PRIV struct sr_input_module input_raw_analog;
+extern SR_PRIV struct sr_input_module input_saleae;
+extern SR_PRIV struct sr_input_module input_stf;
+extern SR_PRIV struct sr_input_module input_trace32_ad;
 extern SR_PRIV struct sr_input_module input_vcd;
 extern SR_PRIV struct sr_input_module input_wav;
 /** @endcond */
 
 static const struct sr_input_module *input_module_list[] = {
 	&input_binary,
+	&input_chronovu_la8,
+	&input_csv,
+	&input_isf,
+	&input_logicport,
+	&input_null,
+	&input_protocoldata,
+	&input_raw_analog,
+	&input_saleae,
+	&input_stf,
+	&input_trace32_ad,
 	&input_vcd,
 	&input_wav,
 	NULL,

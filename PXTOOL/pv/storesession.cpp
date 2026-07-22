@@ -1015,6 +1015,46 @@ void StoreSession::export_exec(data::Snapshot *snapshot)
         return;
     }
 
+    const uint64_t snapshot_samples = snapshot->get_sample_count();
+    const uint64_t snapshot_ring_samples = snapshot->get_ring_sample_count();
+    uint64_t export_limit_samples = snapshot_samples;
+
+    if (logic_snapshot) {
+        const uint64_t session_limit_samples = _session->cur_samplelimits();
+
+        if (_start_index > 0 && _end_index > 0 && _end_index > _start_index) {
+            export_limit_samples = _end_index - _start_index;
+        } else if (_end_index > 0) {
+            export_limit_samples = _end_index;
+        } else if (_start_index > 0) {
+            export_limit_samples =
+                snapshot_ring_samples > _start_index
+                    ? snapshot_ring_samples - _start_index
+                    : 0;
+        } else if (session_limit_samples != 0) {
+            export_limit_samples = session_limit_samples;
+        } else {
+            export_limit_samples = snapshot_ring_samples;
+        }
+
+        dsv_info("StoreSession::export_exec logic meta: samplerate=%llu session_limit=%llu snapshot_samples=%llu ring_samples=%llu range=[%llu,%llu] metadata_samples=%llu original=%d",
+                 (unsigned long long)_session->cur_snap_samplerate(),
+                 (unsigned long long)session_limit_samples,
+                 (unsigned long long)snapshot_samples,
+                 (unsigned long long)snapshot_ring_samples,
+                 (unsigned long long)_start_index,
+                 (unsigned long long)_end_index,
+                 (unsigned long long)export_limit_samples,
+                 origin_flag);
+    } else {
+        dsv_info("StoreSession::export_exec meta: type=%d samplerate=%llu snapshot_samples=%llu ring_samples=%llu metadata_samples=%llu",
+                 channel_type,
+                 (unsigned long long)_session->cur_snap_samplerate(),
+                 (unsigned long long)snapshot_samples,
+                 (unsigned long long)snapshot_ring_samples,
+                 (unsigned long long)export_limit_samples);
+    }
+
     const sr_option **module_options = sr_output_options_get(_outModule);
     data::IoOptions output_options(module_options);
     if (module_options)
@@ -1120,7 +1160,7 @@ void StoreSession::export_exec(data::Snapshot *snapshot)
         format_requires_standard_analog(_outModule);
     if (!standard_analog_output) {
         src = _session->get_device()->new_config(SR_CONF_LIMIT_SAMPLES,
-                    g_variant_new_uint64(snapshot->get_sample_count()));
+                    g_variant_new_uint64(export_limit_samples));
 
         meta.config = g_slist_append(meta.config, src);
 
@@ -1208,6 +1248,14 @@ void StoreSession::export_exec(data::Snapshot *snapshot)
         else if (end_index > 0){
             _unit_count = end_index;
         }
+
+        dsv_info("StoreSession::export_exec logic data: blocks=%d ring_samples=%llu start=%llu end=%llu rows_to_send=%llu metadata_samples=%llu",
+                 blk_num,
+                 (unsigned long long)logic_snapshot->get_ring_sample_count(),
+                 (unsigned long long)start_index,
+                 (unsigned long long)end_index,
+                 (unsigned long long)_unit_count,
+                 (unsigned long long)export_limit_samples);
 
         for (int blk = 0; !_canceled  &&  blk < blk_num; blk++) {
             uint64_t buf_sample_num = logic_snapshot->get_block_size(blk) * 8;
@@ -1845,16 +1893,18 @@ double StoreSession::get_integer(GVariant *var)
 QString StoreSession::MakeSaveFile(bool bDlg)
 {
     QString default_name;
+    QString device_name = _session->get_device()->name().trimmed();
+    device_name.replace(QRegularExpression("\\s+"), "-");
 
     AppConfig &app = AppConfig::Instance(); 
     if (app.userHistory.saveDir != "")
     {
-        default_name = app.userHistory.saveDir + "/"  + _session->get_device()->name() + "-";
+        default_name = app.userHistory.saveDir + "/"  + device_name + "-";
     } 
     else{
         QDir _dir;
         QString _root = _dir.home().path();                
-        default_name =  _root + "/" + _session->get_device()->name() + "-";
+        default_name =  _root + "/" + device_name + "-";
     } 
 
     for (const GSList *l = _session->get_device()->get_device_mode_list(); l; l = l->next) 
@@ -1905,16 +1955,18 @@ QString StoreSession::MakeSaveFile(bool bDlg)
 QString StoreSession::MakeExportFile(bool bDlg)
 {
     QString default_name;
+    QString device_name = _session->get_device()->name().trimmed();
+    device_name.replace(QRegularExpression("\\s+"), "-");
     AppConfig &app = AppConfig::Instance();  
     
     if (app.userHistory.exportDir != "")
     {
-        default_name = app.userHistory.exportDir  + "/"  + _session->get_device()->name() + "-";
+        default_name = app.userHistory.exportDir  + "/"  + device_name + "-";
     } 
     else{
         QDir _dir;
         QString _root = _dir.home().path();    
-        default_name =  _root + "/" + _session->get_device()->name() + "-";
+        default_name =  _root + "/" + device_name + "-";
     }  
 
     for (const GSList *l = _session->get_device()->get_device_mode_list(); l; l = l->next) {

@@ -67,6 +67,7 @@ class LogicSnapshot;
 class DecoderModel;
 class MathStack;
 class DecoderStack;
+class InputImporter;
 
 namespace decode {
     class Decoder;
@@ -133,6 +134,7 @@ class SigSession:
     public IMessageListener,
     public IDeviceAgentCallback
 {
+    friend class pv::data::InputImporter;
 private:
     static constexpr float Oversampling = 2.0f;
 
@@ -436,6 +438,7 @@ public:
                               uint64_t sample_limit,
                               const QString &name,
                               const QString &path);
+    void finish_imported_capture(uint64_t sample_limit_override = 0);
     void refresh_signal_probes();
     void save_channel_enabled_states();
     void restore_channel_enabled_states();

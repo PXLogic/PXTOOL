@@ -55,6 +55,12 @@ static inline uint16_t read_u16le(const uint8_t *p)
 }
 #define RL16(x) read_u16le((const uint8_t *)(x))
 
+static inline uint8_t read_u8(const uint8_t *p)
+{
+    return p[0];
+}
+#define R8(x) read_u8((const uint8_t *)(x))
+
 static inline int16_t read_i16le(const uint8_t *p)
 {
     return (int16_t)read_u16le(p);
@@ -68,6 +74,11 @@ static inline void write_u16le(uint8_t *p, uint16_t x)
     p[1] = x & 0xff;
 }
 #define WL16(p, x) write_u16le((uint8_t *)(p), (uint16_t)(x))
+
+static inline void write_u8(uint8_t *p, uint8_t x)
+{
+    p[0] = x;
+}
 
 static inline uint32_t read_u32le(const uint8_t *p)
 {
@@ -93,6 +104,197 @@ static inline void write_u32le(uint8_t *p, uint32_t x)
     p[3] = x & 0xff;
 }
 #define WL32(p, x) write_u32le((uint8_t *)(p), (uint32_t)(x))
+
+static inline uint64_t read_u64le(const uint8_t *p)
+{
+    return (uint64_t)p[0] |
+        ((uint64_t)p[1] << 8) |
+        ((uint64_t)p[2] << 16) |
+        ((uint64_t)p[3] << 24) |
+        ((uint64_t)p[4] << 32) |
+        ((uint64_t)p[5] << 40) |
+        ((uint64_t)p[6] << 48) |
+        ((uint64_t)p[7] << 56);
+}
+#define RL64(x) read_u64le((const uint8_t *)(x))
+
+static inline void write_u64le(uint8_t *p, uint64_t x)
+{
+    p[0] = x & 0xff;
+    x >>= 8;
+    p[1] = x & 0xff;
+    x >>= 8;
+    p[2] = x & 0xff;
+    x >>= 8;
+    p[3] = x & 0xff;
+    x >>= 8;
+    p[4] = x & 0xff;
+    x >>= 8;
+    p[5] = x & 0xff;
+    x >>= 8;
+    p[6] = x & 0xff;
+    x >>= 8;
+    p[7] = x & 0xff;
+}
+#define WL64(p, x) write_u64le((uint8_t *)(p), (uint64_t)(x))
+
+static inline float read_fltle(const uint8_t *p)
+{
+    union {
+        uint32_t u;
+        float f;
+    } value;
+
+    value.u = read_u32le(p);
+    return value.f;
+}
+
+static inline double read_dblle(const uint8_t *p)
+{
+    union {
+        uint64_t u;
+        double d;
+    } value;
+
+    value.u = read_u64le(p);
+    return value.d;
+}
+
+static inline void write_fltle(uint8_t *p, float x)
+{
+    union {
+        uint32_t u;
+        float f;
+    } value;
+
+    value.f = x;
+    write_u32le(p, value.u);
+}
+
+static inline void write_dblle(uint8_t *p, double x)
+{
+    union {
+        uint64_t u;
+        double d;
+    } value;
+
+    value.d = x;
+    write_u64le(p, value.u);
+}
+
+static inline uint16_t read_u16le_inc(const uint8_t **p)
+{
+    uint16_t v;
+
+    if (!p || !*p)
+        return 0;
+    v = read_u16le(*p);
+    *p += sizeof(v);
+    return v;
+}
+
+static inline uint8_t read_u8_inc(const uint8_t **p)
+{
+    uint8_t v;
+
+    if (!p || !*p)
+        return 0;
+    v = read_u8(*p);
+    *p += sizeof(v);
+    return v;
+}
+
+static inline uint32_t read_u32le_inc(const uint8_t **p)
+{
+    uint32_t v;
+
+    if (!p || !*p)
+        return 0;
+    v = read_u32le(*p);
+    *p += sizeof(v);
+    return v;
+}
+
+static inline uint64_t read_u64le_inc(const uint8_t **p)
+{
+    uint64_t v;
+
+    if (!p || !*p)
+        return 0;
+    v = read_u64le(*p);
+    *p += sizeof(v);
+    return v;
+}
+
+static inline float read_fltle_inc(const uint8_t **p)
+{
+    float v;
+
+    if (!p || !*p)
+        return 0;
+    v = read_fltle(*p);
+    *p += sizeof(v);
+    return v;
+}
+
+static inline double read_dblle_inc(const uint8_t **p)
+{
+    double v;
+
+    if (!p || !*p)
+        return 0;
+    v = read_dblle(*p);
+    *p += sizeof(v);
+    return v;
+}
+
+static inline void write_u8_inc(uint8_t **p, uint8_t x)
+{
+    if (!p || !*p)
+        return;
+    write_u8(*p, x);
+    *p += sizeof(x);
+}
+
+static inline void write_u16le_inc(uint8_t **p, uint16_t x)
+{
+    if (!p || !*p)
+        return;
+    write_u16le(*p, x);
+    *p += sizeof(x);
+}
+
+static inline void write_u32le_inc(uint8_t **p, uint32_t x)
+{
+    if (!p || !*p)
+        return;
+    write_u32le(*p, x);
+    *p += sizeof(x);
+}
+
+static inline void write_u64le_inc(uint8_t **p, uint64_t x)
+{
+    if (!p || !*p)
+        return;
+    write_u64le(*p, x);
+    *p += sizeof(x);
+}
+
+static inline void write_fltle_inc(uint8_t **p, float x)
+{
+    if (!p || !*p)
+        return;
+    write_fltle(*p, x);
+    *p += sizeof(x);
+}
+
+static inline void write_dblle_inc(uint8_t **p, double x)
+{
+    if (!p || !*p)
+        return;
+    write_dblle(*p, x);
+    *p += sizeof(x);
+}
 
 #undef min
 #define min(a,b) ((a)<(b)?(a):(b))
@@ -325,6 +527,8 @@ SR_PRIV void sr_channel_free_cb(void *channel);
 SR_PRIV gboolean sr_channels_differ(struct sr_channel *ch1,
         struct sr_channel *ch2);
 SR_PRIV gboolean sr_channel_lists_differ(GSList *l1, GSList *l2);
+SR_PRIV int sr_dev_channel_name_set(struct sr_channel *channel,
+    const char *name);
 SR_PRIV struct sr_channel_group *sr_channel_group_new(struct sr_dev_inst *sdi,
         const char *name, void *priv);
 SR_PRIV void sr_channel_group_free(struct sr_channel_group *cg);
@@ -407,6 +611,12 @@ SR_PRIV int sr_analog_init(struct sr_datafeed_analog *analog,
 
 /*--- strutil.c ------------------------------------------------------------*/
 
+SR_PRIV int sr_atol(const char *str, long *ret);
+SR_PRIV int sr_atol_base(const char *str, long *ret, char **end, int base);
+SR_PRIV int sr_atoul_base(const char *str, unsigned long *ret, char **end,
+        int base);
+SR_PRIV int sr_atoi(const char *str, int *ret);
+SR_PRIV int sr_atod(const char *str, double *ret);
 SR_PRIV int sr_atod_ascii(const char *str, double *ret);
 SR_PRIV int sr_atod_ascii_digits(const char *str, double *ret, int *digits);
 SR_PRIV int sr_atof_ascii(const char *str, float *ret);

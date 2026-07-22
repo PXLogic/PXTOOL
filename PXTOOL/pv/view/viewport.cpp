@@ -23,6 +23,7 @@
 #include "viewport.h"
 #include "channeltint.h"
 #include "ruler.h"
+#include "sampleconversion.h"
 
 #include "signal.h"
 #include "trace.h"
@@ -2296,7 +2297,9 @@ void Viewport::update_edge_nav_buttons()
             : end + 1)
         : rightIndex;
     if (searchIdx <= end && searchIdx < end) {
-        const bool sample = snapshot->get_sample(searchIdx, sigIndex);
+        const uint64_t sampleIndex = edge_nav_next_reference_sample_index(
+            hasAnchor, _view.get_search_cursor()->index(), searchIdx);
+        const bool sample = snapshot->get_sample(sampleIndex, sigIndex);
         hasNext = snapshot->get_nxt_edge(searchIdx, sample, end, 1, sigIndex);
     }
 
@@ -2331,7 +2334,10 @@ void Viewport::navigate_to_edge(EdgeNavButton::Direction dir)
     if (searchIdx > end)
         return;
 
-    const bool sample = snapshot->get_sample(searchIdx, sigIndex);
+    const uint64_t sampleIndex = (dir == EdgeNavButton::Next)
+        ? edge_nav_next_reference_sample_index(hasAnchor, searchIdxAnchor, searchIdx)
+        : searchIdx;
+    const bool sample = snapshot->get_sample(sampleIndex, sigIndex);
     const bool found = (dir == EdgeNavButton::Next)
         ? snapshot->get_nxt_edge(searchIdx, sample, end, 1, sigIndex)
         : snapshot->get_pre_edge(searchIdx, sample, 1, sigIndex);
@@ -2343,17 +2349,18 @@ void Viewport::navigate_to_edge(EdgeNavButton::Direction dir)
     if (sampleRate == 0)
         return;
 
-    _view.show_search_cursor(true);
-    _view.get_search_cursor()->set_index(searchIdx);
+    _view.set_search_marker(searchIdx, true);
 
     const double time = searchIdx * 1.0 / sampleRate;
     const int viewWidth = _view.get_view_width();
     const double scale = _view.scale();
-    const int64_t newOffset = (dir == EdgeNavButton::Next)
-        ? (int64_t)(time / scale - viewWidth * 0.25)
-        : (int64_t)(time / scale - viewWidth * 0.75);
-
-    _view.set_scale_offset(scale, newOffset);
+    const double targetPixel = _view.index2pixel(searchIdx);
+    if (edge_nav_target_requires_scroll(targetPixel, viewWidth)) {
+        const int64_t newOffset = (dir == EdgeNavButton::Next)
+            ? (int64_t)(time / scale - viewWidth * 0.25)
+            : (int64_t)(time / scale - viewWidth * 0.75);
+        _view.set_scale_offset(scale, newOffset);
+    }
     update_edge_nav_buttons();
 }
 

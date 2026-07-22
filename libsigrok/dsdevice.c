@@ -139,6 +139,18 @@ SR_PRIV gboolean sr_channel_lists_differ(GSList *l1, GSList *l2)
     return l1 || l2;
 }
 
+SR_PRIV int sr_dev_channel_name_set(struct sr_channel *channel,
+	const char *name)
+{
+	if (!channel || !name)
+		return SR_ERR_ARG;
+
+	g_free(channel->name);
+	channel->name = g_strdup(name);
+
+	return SR_OK;
+}
+
 SR_PRIV struct sr_channel_group *sr_channel_group_new(struct sr_dev_inst *sdi,
         const char *name, void *priv)
 {

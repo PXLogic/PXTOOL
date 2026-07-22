@@ -30,6 +30,7 @@
 #include <QIcon>
 #include <QVBoxLayout>
 #include <QAbstractButton>
+#include <QPushButton>
 #include "../dsvdef.h"
 #include "../config/appconfig.h"
 #include "../ui/fn.h"
@@ -105,6 +106,46 @@ void DSDialog::slotReject()
     reject();
 }
 
+void DSDialog::normalize_button_box(QDialogButtonBox *button_box)
+{
+    if (!button_box || !button_box->layout())
+        return;
+
+    QPushButton *cancel_btn = button_box->button(QDialogButtonBox::Cancel);
+    QPushButton *ok_btn = button_box->button(QDialogButtonBox::Ok);
+    QPushButton *save_btn = button_box->button(QDialogButtonBox::Save);
+    QPushButton *yes_btn = button_box->button(QDialogButtonBox::Yes);
+    QPushButton *no_btn = button_box->button(QDialogButtonBox::No);
+    if (!cancel_btn && !ok_btn && !save_btn && !yes_btn && !no_btn)
+        return;
+
+    auto *btn_layout = qobject_cast<QBoxLayout *>(button_box->layout());
+    if (!btn_layout)
+        return;
+
+    if (cancel_btn)
+        btn_layout->removeWidget(cancel_btn);
+    if (no_btn)
+        btn_layout->removeWidget(no_btn);
+    if (save_btn)
+        btn_layout->removeWidget(save_btn);
+    if (ok_btn)
+        btn_layout->removeWidget(ok_btn);
+    if (yes_btn)
+        btn_layout->removeWidget(yes_btn);
+
+    if (cancel_btn)
+        btn_layout->addWidget(cancel_btn);
+    if (no_btn)
+        btn_layout->addWidget(no_btn);
+    if (save_btn)
+        btn_layout->addWidget(save_btn);
+    if (ok_btn)
+        btn_layout->addWidget(ok_btn);
+    if (yes_btn)
+        btn_layout->addWidget(yes_btn);
+}
+
 void DSDialog::accept()
 {  
     _clickYes = true;
@@ -150,6 +191,7 @@ int DSDialog::exec()
       //ok,cancel
     if (m_bBaseButton){
         _base_button = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel,Qt::Horizontal, this);
+        normalize_button_box(_base_button);
          _main_layout->addWidget(_base_button);//, 5, 1, 1, 1, Qt::AlignHCenter | Qt::AlignBottom);
         //_main_layout->addWidget(_base_button,0, Qt::AlignHCenter | Qt::AlignBottom);
         connect(_base_button, SIGNAL(rejected()), this, SLOT(reject()));
@@ -157,6 +199,9 @@ int DSDialog::exec()
     }
 
     update_font();
+    const auto boxes = findChildren<QDialogButtonBox *>();
+    for (QDialogButtonBox *box : boxes)
+        normalize_button_box(box);
 
     PopupDlgList::AddDlgTolist(this);
  
@@ -219,6 +264,9 @@ void DSDialog::update_font()
 void DSDialog::show()
 {
     update_font();
+    const auto boxes = findChildren<QDialogButtonBox *>();
+    for (QDialogButtonBox *box : boxes)
+        normalize_button_box(box);
     PopupDlgList::AddDlgTolist(this);
     QWidget::show();
 }

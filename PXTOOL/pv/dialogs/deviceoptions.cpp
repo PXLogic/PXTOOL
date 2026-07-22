@@ -125,7 +125,9 @@ namespace pv {
 namespace dialogs {
 
 DeviceOptions::DeviceOptions(QWidget *parent) :
-    DSDialog(parent)
+    DSDialog(parent),
+    _device_agent(AppControl::Instance()->GetSession()->get_device()),
+    _device_options_binding(_device_agent)
 {
     _scroll_panel = NULL;
     _container_panel = NULL;   
@@ -137,9 +139,6 @@ DeviceOptions::DeviceOptions(QWidget *parent) :
     _container_lay = NULL;
     _isBuilding = false;
     _cur_analog_tag_index = 0;
-
-    SigSession *session = AppControl::Instance()->GetSession();
-    _device_agent = session->get_device();
 
     this->setTitle(tr("Device Options"));
     setObjectName("deviceOptionsDialog");

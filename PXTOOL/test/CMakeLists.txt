@@ -20,6 +20,7 @@
 add_executable(DSView-test
     test.cpp
     test_channeltint.cpp
+    test_channelvisibility.cpp
     test_datafeed_stub.cpp
     test_deviceagent_capability.cpp
     test_device_source.cpp
@@ -30,6 +31,7 @@ add_executable(DSView-test
     test_input_fixtures.cpp
     test_analogpacketadapter.cpp
     test_logsearch.cpp
+    test_view_sampleconversion.cpp
     test_theme_qss.cpp
     test_upstream_demo.cpp
     test_upstream_fx2lafw.cpp
@@ -49,9 +51,21 @@ add_executable(DSView-test
     ../../libsigrok/std.c
     ../../libsigrok/input/input.c
     ../../libsigrok/input/binary.c
+    ../../libsigrok/input/chronovu_la8.c
+    ../../libsigrok/input/csv.c
     ../../libsigrok/input/feed_queue.c
+    ../../libsigrok/input/isf.c
+    ../../libsigrok/input/logicport.c
+    ../../libsigrok/input/null.c
+    ../../libsigrok/input/protocoldata.c
+    ../../libsigrok/input/raw_analog.c
+    ../../libsigrok/input/saleae.c
+    ../../libsigrok/input/scpi.c
+    ../../libsigrok/input/stf.c
+    ../../libsigrok/input/trace32_ad.c
     ../../libsigrok/input/vcd.c
     ../../libsigrok/input/wav.c
+    ../../libsigrok/minilzo/minilzo.c
     ../../libsigrok/log.c
     ../../libsigrok/output/output.c
     ../../libsigrok/output/csv.c

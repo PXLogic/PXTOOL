@@ -21,6 +21,7 @@
 
 
 #include "dsmessagebox.h"
+#include "dsdialog.h"
 #include "shadow.h"
 
 #include <QObject>
@@ -29,6 +30,10 @@
 #include <QVBoxLayout>
 #include <QAbstractButton>
 #include <QPushButton>
+#include <QDialogButtonBox>
+#include <QBoxLayout>
+#include <QStringList>
+#include <QStyle>
 #include "../dsvdef.h"
 #include "../config/appconfig.h"
 #include "../ui/fn.h"
@@ -51,6 +56,7 @@ DSMessageBox::DSMessageBox(QWidget *parent,const QString title) :
     _titlebar = NULL;
     _shadow = NULL;  
     _main_layout = NULL;
+    _footer_divider = NULL;
 
     _bClickYes = false;
 
@@ -176,12 +182,64 @@ void DSMessageBox::update_button_style()
 
     if (cancel_btn != NULL)
         cancel_btn->setObjectName("device_cancel_btn");
+
+    const QList<QPushButton *> buttons = {ok_btn, yes_btn, no_btn, cancel_btn};
+    for (QPushButton *button : buttons) {
+        if (!button)
+            continue;
+        button->style()->unpolish(button);
+        button->style()->polish(button);
+        button->update();
+    }
+}
+
+void DSMessageBox::ensure_footer_divider()
+{
+    const auto boxes = _msg->findChildren<QDialogButtonBox *>();
+    for (QDialogButtonBox *box : boxes) {
+        if (!box || !box->parentWidget())
+            continue;
+
+        box->setObjectName("dsMessageBoxButtonBox");
+        QStringList rules;
+        rules << QStringLiteral("QDialogButtonBox#dsMessageBoxButtonBox {")
+              << QStringLiteral("border-top: 1px solid %1;").arg(
+                     AppConfig::Instance().IsDarkStyle()
+                         ? QStringLiteral("#333333")
+                         : QStringLiteral("#dddddd"))
+              << QStringLiteral("padding: 10px 12px;")
+              << QStringLiteral("}");
+        box->setStyleSheet(rules.join(QString()));
+        box->style()->unpolish(box);
+        box->style()->polish(box);
+        box->update();
+
+        if (!_footer_divider) {
+            _footer_divider = new QWidget(box->parentWidget());
+            _footer_divider->setObjectName("device_options_divider");
+            _footer_divider->setFixedHeight(1);
+        }
+
+        if (QBoxLayout *layout = qobject_cast<QBoxLayout *>(box->parentWidget()->layout())) {
+            if (layout->indexOf(_footer_divider) == -1) {
+                const int boxIndex = layout->indexOf(box);
+                if (boxIndex >= 0)
+                    layout->insertWidget(boxIndex, _footer_divider);
+                else
+                    layout->addWidget(_footer_divider);
+            }
+        }
+    }
 }
 
 int DSMessageBox::exec()
 {
     update_font();
     update_button_style();
+    ensure_footer_divider();
+    const auto boxes = _msg->findChildren<QDialogButtonBox *>();
+    for (QDialogButtonBox *box : boxes)
+        DSDialog::normalize_button_box(box);
 
     PopupDlgList::AddDlgTolist(this);
 

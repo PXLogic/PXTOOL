@@ -23,6 +23,7 @@
 #include <type_traits>
 
 #include "pv/deviceagent.h"
+#include "pv/deviceagentcustomconfig.h"
 
 BOOST_AUTO_TEST_SUITE(deviceagent_capability)
 
@@ -47,6 +48,24 @@ BOOST_AUTO_TEST_CASE(capability_methods_are_available)
     static_assert(std::is_same<bool (DeviceAgent::*)(),
         decltype(&DeviceAgent::supports_advanced_trigger)>::value,
         "supports_advanced_trigger must return bool");
+}
+
+BOOST_AUTO_TEST_CASE(custom_samplerate_list_exposes_single_imported_value)
+{
+    GVariant *dict = custom_samplerate_list_variant(1000000);
+    BOOST_REQUIRE(dict != nullptr);
+
+    GVariant *rates = g_variant_lookup_value(dict, "samplerates", G_VARIANT_TYPE("at"));
+    BOOST_REQUIRE(rates != nullptr);
+
+    gsize count = 0;
+    const uint64_t *values = static_cast<const uint64_t *>(
+        g_variant_get_fixed_array(rates, &count, sizeof(uint64_t)));
+    BOOST_REQUIRE_EQUAL(count, 1U);
+    BOOST_CHECK_EQUAL(values[0], 1000000ULL);
+
+    g_variant_unref(rates);
+    g_variant_unref(dict);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

@@ -170,9 +170,8 @@ static GString *gen_header(const struct sr_output *o)
     g_string_append_printf(header, "; Sample rate: %s\n", samplerate_s);
     g_free(samplerate_s);
 
-    char *depth_s = sr_samplecount_string(ctx->limit_samples);
-    g_string_append_printf(header, "; Sample count: %s\n", depth_s);
-    g_free(depth_s);
+    g_string_append_printf(header, "; Sample count: %" PRIu64 " Samples\n",
+            ctx->limit_samples);
 
     if (ctx->type == SR_CHANNEL_LOGIC)
         g_string_append_printf(header, "Time(s),");

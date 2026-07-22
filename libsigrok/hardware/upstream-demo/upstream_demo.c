@@ -21,7 +21,9 @@
 
 #include "upstream_demo.h"
 #include "device_source.h"
+#include "../../log.h"
 
+#include <inttypes.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
@@ -226,33 +228,62 @@ static int hw_dev_destroy(struct sr_dev_inst *sdi)
 
 static int hw_dev_acquisition_start(struct sr_dev_inst *sdi, void *cb_data)
 {
-	uint8_t sample_data[128];
+	struct upstream_demo_context *devc;
+	uint8_t *sample_data;
+	uint64_t remaining_samples;
 	struct sr_datafeed_logic logic;
 	struct sr_datafeed_packet packet;
+	int ret;
+
+	const uint64_t chunk_samples = 8192;
+	const uint16_t unitsize = 1;
 
 	(void)cb_data;
 
 	if (!sdi || !sdi->priv)
 		return SR_ERR_ARG;
 
-	memset(sample_data, 0xaa, sizeof(sample_data));
+	devc = sdi->priv;
+	sample_data = g_malloc(chunk_samples * unitsize);
+	if (!sample_data)
+		return SR_ERR_MALLOC;
+	memset(sample_data, 0xaa, chunk_samples * unitsize);
+
 	memset(&logic, 0, sizeof(logic));
 	memset(&packet, 0, sizeof(packet));
 
-	logic.length = sizeof(sample_data);
 	logic.format = LA_CROSS_DATA;
-	logic.unitsize = 1;
+	logic.unitsize = unitsize;
 	logic.data = sample_data;
 
 	packet.type = SR_DF_LOGIC;
 	packet.status = SR_PKT_OK;
 	packet.payload = &logic;
-	ds_data_forward(sdi, &packet);
+
+	sr_info("Acquisition start: samplerate=%" PRIu64
+		" limit_samples=%" PRIu64 " unitsize=%u.",
+		devc->samplerate, devc->limit_samples, logic.unitsize);
+
+	remaining_samples = devc->limit_samples;
+	while (remaining_samples > 0) {
+		uint64_t samples = MIN(remaining_samples, chunk_samples);
+		logic.length = samples * unitsize;
+		ret = ds_data_forward(sdi, &packet);
+		if (ret != SR_OK) {
+			g_free(sample_data);
+			return ret;
+		}
+		remaining_samples -= samples;
+	}
+
+	g_free(sample_data);
 
 	packet.type = SR_DF_END;
 	packet.status = SR_PKT_OK;
 	packet.payload = NULL;
-	ds_data_forward(sdi, &packet);
+	ret = ds_data_forward(sdi, &packet);
+	if (ret != SR_OK)
+		return ret;
 
 	return SR_OK;
 }

@@ -165,6 +165,7 @@ private:
 #include "../log.h"
 #include "../ui/msgbox.h"
 #include "../utility/diskcachesettings.h"
+#include "channelvisibility.h"
 
 using namespace std;
 
@@ -349,7 +350,7 @@ void DeviceOptionsDock::build_content()
 
     // (Re-)create the device options binding now that the device is ready
     delete _device_options_binding;
-    _device_options_binding = new pv::prop::binding::DeviceOptions();
+    _device_options_binding = new pv::prop::binding::DeviceOptions(_device_agent);
 
     QFont font = this->font();
     font.setPixelSize(qRound(AppConfig::Instance().appOptions.fontSize));
@@ -533,11 +534,17 @@ QLayout *DeviceOptionsDock::get_property_form(QWidget *parent)
             label_text = QString(lang_str);
         }
 
+        QWidget *wid = p->get_widget(parent, true);
+        if (!wid) {
+            dsv_warn("DeviceOptionsDock::get_property_form: skip option without widget: %s",
+                     p->name().toUtf8().constData());
+            continue;
+        }
+
         QLabel *lb = new QLabel(label_text, parent);
         lb->setFont(font);
         layout->addWidget(lb, i, 0);
 
-        QWidget *wid = p->get_widget(parent, true);
         wid->setFont(font);
         layout->addWidget(wid, i, 1);
         layout->setRowMinimumHeight(i, 22);
@@ -739,8 +746,10 @@ void DeviceOptionsDock::logic_probes(QVBoxLayout &layout)
 
     int row1 = 0;
     int row2 = 0;
-    int vld_ch_num = 0;
+    int configured_vld_ch_num = 0;
     int cur_ch_num = 0;
+    int channel_count = 0;
+    int disabled_by_limit = 0;
     int contentHeight = 0;
 
     _probes_checkBox_list.clear();
@@ -779,7 +788,18 @@ void DeviceOptionsDock::logic_probes(QVBoxLayout &layout)
         }
     }
 
-    _device_agent->get_config_int16(SR_CONF_VLD_CH_NUM, vld_ch_num);
+    const bool has_vld_ch_num =
+        _device_agent->get_config_int16(SR_CONF_VLD_CH_NUM, configured_vld_ch_num);
+    for (const GSList *l = _device_agent->get_channels(); l; l = l->next)
+        channel_count++;
+    const int vld_ch_num = effective_valid_channel_limit(
+        has_vld_ch_num, configured_vld_ch_num, channel_count);
+    dsv_info("DeviceOptionsDock::logic_probes channel limit custom=%d has_vld=%d configured=%d effective=%d channels=%d",
+             _device_agent->is_custom_device() ? 1 : 0,
+             has_vld_ch_num ? 1 : 0,
+             configured_vld_ch_num,
+             vld_ch_num,
+             channel_count);
 
     // Equal-column adaptive grid: column count is always a divisor of the
     // channel count; horizontal gap grows with panel width up to CH_MAX_GAP.
@@ -794,8 +814,10 @@ void DeviceOptionsDock::logic_probes(QVBoxLayout &layout)
         sr_channel *const probe = (sr_channel*)l->data;
         if (probe->enabled)
             cur_ch_num++;
-        if (cur_ch_num > vld_ch_num)
+        if (cur_ch_num > vld_ch_num) {
             probe->enabled = false;
+            disabled_by_limit++;
+        }
 
         ChannelLabel *ch_item = new ChannelLabel(this, NULL, probe->index);
         channel_pannel->addItem(ch_item);
@@ -808,6 +830,11 @@ void DeviceOptionsDock::logic_probes(QVBoxLayout &layout)
     contentHeight += CH_MODE_GRID_GAP;
 
     layout.addWidget(channel_pannel);
+    if (disabled_by_limit > 0)
+        dsv_info("DeviceOptionsDock::logic_probes disabled_by_limit=%d effective=%d channels=%d",
+                 disabled_by_limit,
+                 vld_ch_num,
+                 channel_count);
 
     QWidget *space = new QWidget();
     space->setFixedHeight(10);

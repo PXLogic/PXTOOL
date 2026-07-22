@@ -43,6 +43,7 @@ struct ImportPlan {
     int workMode = LOGIC;
     uint64_t sampleRate = 1;
     uint64_t sampleLimit = 1;
+    bool preserveHeaderSampleLimit = false;
 };
 
 sr_dev_inst *cloneImportedDevice(const sr_dev_inst *source)
@@ -121,6 +122,29 @@ sr_dev_inst *cloneImportedDevice(const sr_dev_inst *source)
     }
 
     return clone;
+}
+
+void discard_datafeed_callback(const struct sr_dev_inst *, const struct sr_datafeed_packet *)
+{
+}
+
+unsigned int channelCount(const sr_dev_inst *sdi)
+{
+    return sdi ? static_cast<unsigned int>(g_slist_length(sdi->channels)) : 0U;
+}
+
+unsigned int enabledChannelCount(const sr_dev_inst *sdi)
+{
+    unsigned int count = 0;
+    if (!sdi)
+        return count;
+
+    for (const GSList *l = sdi->channels; l; l = l->next) {
+        const sr_channel *channel = static_cast<const sr_channel *>(l->data);
+        if (channel && channel->enabled)
+            count++;
+    }
+    return count;
 }
 
 QVariant explicitOptionValue(const IoOptions &options, const QString &id)
@@ -439,6 +463,17 @@ ImportPlan makeImportPlan(const QString &formatId,
                           const sr_input_module *module,
                           const IoOptions &options)
 {
+    if (formatId == QLatin1String("csv")) {
+        CsvImportPlan csv_plan;
+        if (estimateDsViewCsvImportPlan(fileName, csv_plan)) {
+            ImportPlan plan;
+            plan.workMode = LOGIC;
+            plan.sampleRate = csv_plan.sampleRate;
+            plan.sampleLimit = csv_plan.sampleLimit;
+            plan.preserveHeaderSampleLimit = true;
+            return plan;
+        }
+    }
     if (formatId == QLatin1String("binary"))
         return estimateBinaryImport(fileName, module, options);
     if (formatId == QLatin1String("wav"))
@@ -474,106 +509,135 @@ ImportResult InputImporter::importFile(SigSession &session,
         return result;
     }
 
-    GHashTable *option_table = nullptr;
-    if (!options.empty())
-        option_table = options.toGHashTable();
-
-    sr_input *input = sr_input_new(module, option_table);
-    if (option_table)
-        g_hash_table_destroy(option_table);
-    if (!input) {
-        result.error = QStringLiteral("Failed to initialize import format %1.").arg(formatId);
-        return result;
-    }
-
     QFile file(fileName);
     if (!file.open(QIODevice::ReadOnly)) {
-        sr_input_free(input);
         result.error = QStringLiteral("Failed to open %1 for import.").arg(fileName);
         return result;
     }
 
     const ImportPlan plan = makeImportPlan(formatId, fileName, module, options);
+    dsv_info("InputImporter: plan format=%s file=%s work_mode=%d samplerate=%llu samplelimit=%llu",
+             formatId.toUtf8().constData(),
+             fileName.toUtf8().constData(),
+             plan.workMode,
+             (unsigned long long)plan.sampleRate,
+             (unsigned long long)plan.sampleLimit);
+    if (formatId == QLatin1String("csv")) {
+        result.sampleRate = plan.sampleRate;
+        result.sampleLimit = plan.sampleLimit;
+    }
     const QString displayName = QFileInfo(fileName).completeBaseName();
-    bool boundToSession = false;
+    auto make_input = [&]() -> sr_input * {
+        GHashTable *option_table = nullptr;
+        if (!options.empty())
+            option_table = options.toGHashTable();
 
-    while (!file.atEnd()) {
-        const QByteArray chunk = file.read(kChunkSize);
-        if (chunk.isEmpty() && file.error() != QFileDevice::NoError) {
-            sr_input_free(input);
-            result.error = QStringLiteral("Failed to read %1 during import.").arg(fileName);
-            return result;
-        }
-
-        GString *buffer = g_string_new_len(chunk.constData(), chunk.size());
-        const int rc = sr_input_send(input, buffer);
-        g_string_free(buffer, TRUE);
-        if (rc != SR_OK) {
-            sr_input_free(input);
-            result.error = QStringLiteral("Failed while parsing %1.").arg(fileName);
-            return result;
-        }
-
-        if (!boundToSession && input->sdi_ready) {
-            sr_dev_inst *sdi = sr_input_dev_inst_get(input);
-            if (!sdi) {
-                sr_input_free(input);
-                result.error = QStringLiteral("Import format %1 could not create a device.").arg(formatId);
-                return result;
+        sr_input *input = sr_input_new(module, option_table);
+        if (option_table)
+            g_hash_table_destroy(option_table);
+        return input;
+    };
+    auto send_file = [&](sr_input *input) -> bool {
+        file.seek(0);
+        while (!file.atEnd()) {
+            const QByteArray chunk = file.read(kChunkSize);
+            if (chunk.isEmpty() && file.error() != QFileDevice::NoError) {
+                result.error = QStringLiteral("Failed to read %1 during import.").arg(fileName);
+                return false;
             }
 
-            session.set_as_current();
-            sr_dev_inst *ownedDevice = cloneImportedDevice(sdi);
-            if (!ownedDevice) {
-                sr_input_free(input);
-                result.error = QStringLiteral("Failed to preserve imported device state for %1.").arg(fileName);
-                return result;
+            GString *buffer = g_string_new_len(chunk.constData(), chunk.size());
+            const int rc = sr_input_send(input, buffer);
+            g_string_free(buffer, TRUE);
+            if (rc != SR_OK) {
+                result.error = QStringLiteral("Failed while parsing %1.").arg(fileName);
+                return false;
             }
-
-            session.bind_imported_device(ownedDevice,
-                                         inferWorkMode(ownedDevice, plan.workMode),
-                                         clampSampleLimit(plan.sampleRate),
-                                         clampSampleLimit(plan.sampleLimit),
-                                         displayName.isEmpty() ? fileName : displayName,
-                                         fileName);
-            boundToSession = true;
         }
-    }
 
-    if (sr_input_end(input) != SR_OK) {
-        sr_input_free(input);
-        result.error = QStringLiteral("Failed to finish importing %1.").arg(fileName);
+        if (sr_input_end(input) != SR_OK) {
+            result.error = QStringLiteral("Failed to finish importing %1.").arg(fileName);
+            return false;
+        }
+
+        return true;
+    };
+
+    sr_input *probe_input = make_input();
+    if (!probe_input) {
+        result.error = QStringLiteral("Failed to initialize import format %1.").arg(formatId);
         return result;
     }
 
-    if (!boundToSession && input->sdi_ready) {
-        sr_dev_inst *sdi = sr_input_dev_inst_get(input);
-        if (sdi) {
-            sr_dev_inst *ownedDevice = cloneImportedDevice(sdi);
-            if (!ownedDevice) {
-                sr_input_free(input);
-                result.error = QStringLiteral("Failed to preserve imported device state for %1.").arg(fileName);
-                return result;
-            }
-
-            session.set_as_current();
-            session.bind_imported_device(ownedDevice,
-                                         inferWorkMode(ownedDevice, plan.workMode),
-                                         clampSampleLimit(plan.sampleRate),
-                                         clampSampleLimit(plan.sampleLimit),
-                                         displayName.isEmpty() ? fileName : displayName,
-                                         fileName);
-            boundToSession = true;
-        }
+    ds_set_datafeed_callback(discard_datafeed_callback);
+    if (!send_file(probe_input)) {
+        dsv_info("InputImporter: probe pass failed error=%s",
+                 result.error.toUtf8().constData());
+        sr_input_free(probe_input);
+        ds_set_datafeed_callback(SigSession::data_feed_callback);
+        return result;
     }
+    dsv_info("InputImporter: probe pass done sdi_ready=%d channels=%u enabled=%u",
+             probe_input->sdi_ready ? 1 : 0,
+             channelCount(sr_input_dev_inst_get(probe_input)),
+             enabledChannelCount(sr_input_dev_inst_get(probe_input)));
 
-    if (!boundToSession) {
-        sr_input_free(input);
-        result.error = QStringLiteral("Import format %1 never exposed any channels.").arg(formatId);
+    if (!probe_input->sdi_ready) {
+        sr_input_free(probe_input);
+        ds_set_datafeed_callback(SigSession::data_feed_callback);
+        result.error = QStringLiteral("Import format %1 did not produce a usable device.").arg(formatId);
         return result;
     }
 
-    sr_input_free(input);
+    sr_dev_inst *ownedDevice = cloneImportedDevice(sr_input_dev_inst_get(probe_input));
+    sr_input_free(probe_input);
+    ds_set_datafeed_callback(SigSession::data_feed_callback);
+
+    if (!ownedDevice) {
+        result.error = QStringLiteral("Failed to preserve imported device state for %1.").arg(fileName);
+        return result;
+    }
+
+    session.set_as_current();
+    session.bind_imported_device(ownedDevice,
+                                 inferWorkMode(ownedDevice, plan.workMode),
+                                 clampSampleLimit(plan.sampleRate),
+                                 clampSampleLimit(plan.sampleLimit),
+                                 displayName.isEmpty() ? fileName : displayName,
+                                 fileName);
+    dsv_info("InputImporter: bound imported device session=%p channels=%u enabled=%u samplerate=%llu samplelimit=%llu",
+             (void *)&session,
+             channelCount(ownedDevice),
+             enabledChannelCount(ownedDevice),
+             (unsigned long long)plan.sampleRate,
+             (unsigned long long)plan.sampleLimit);
+
+    sr_input *real_input = make_input();
+    if (!real_input) {
+        result.error = QStringLiteral("Failed to initialize import format %1.").arg(formatId);
+        return result;
+    }
+
+    if (!send_file(real_input)) {
+        dsv_info("InputImporter: real pass failed error=%s",
+                 result.error.toUtf8().constData());
+        sr_input_free(real_input);
+        return result;
+    }
+    dsv_info("InputImporter: real pass done sdi_ready=%d channels=%u enabled=%u",
+             real_input->sdi_ready ? 1 : 0,
+             channelCount(sr_input_dev_inst_get(real_input)),
+             enabledChannelCount(sr_input_dev_inst_get(real_input)));
+
+    sr_input_free(real_input);
+    const uint64_t sample_limit_override =
+        plan.preserveHeaderSampleLimit ? plan.sampleLimit : 0;
+    if (sample_limit_override != 0) {
+        dsv_info("InputImporter: finish imported capture samplelimit_override=%llu current=%llu",
+                 (unsigned long long)sample_limit_override,
+                 (unsigned long long)session.cur_samplelimits());
+    }
+    session.finish_imported_capture(sample_limit_override);
     result.ok = true;
     return result;
 }

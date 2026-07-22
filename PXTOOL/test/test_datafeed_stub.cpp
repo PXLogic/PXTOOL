@@ -27,7 +27,8 @@
 extern "C" {
 #include "libsigrok-internal.h"
 
-void test_input_observer_record_packet(const struct sr_datafeed_packet *packet);
+void test_input_observer_record_packet(const struct sr_dev_inst *sdi,
+    const struct sr_datafeed_packet *packet);
 }
 
 static test_captured_datafeed_packet g_captured_packet;
@@ -51,7 +52,7 @@ extern "C" int ds_data_forward(const struct sr_dev_inst *sdi,
     if (!packet)
         return SR_ERR_ARG;
 
-    test_input_observer_record_packet(packet);
+    test_input_observer_record_packet(sdi, packet);
 
     g_captured_packet.type = packet->type;
     g_captured_packet.status = packet->status;

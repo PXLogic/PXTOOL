@@ -18,6 +18,8 @@
 #include <QFormLayout>
 #include <QHBoxLayout>
 #include <QMessageBox>
+#include <QPushButton>
+#include <QWidget>
 
 #include "inputoutputoptioneditor.h"
 
@@ -27,17 +29,36 @@ namespace dialogs {
 InputOutputOptionsDlg::InputOutputOptionsDlg(const QString &title,
                                              const sr_option *const *options,
                                              QWidget *parent) :
+    InputOutputOptionsDlg(title, options, pv::data::IoOptions(options), parent)
+{
+}
+
+InputOutputOptionsDlg::InputOutputOptionsDlg(const QString &title,
+                                             const sr_option *const *options,
+                                             const pv::data::IoOptions &initialOptions,
+                                             QWidget *parent) :
     DSDialog(parent),
-    options_(options),
+    options_(initialOptions),
     button_box_(new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel,
                                      Qt::Horizontal, this))
 {
+    setObjectName("inputOutputOptionsDialog");
     setTitle(title);
     setTitleTextAlignment(Qt::AlignHCenter | Qt::AlignVCenter);
     SetTitleSpace(8);
+    layout()->setSpacing(0);
     layout()->setAlignment(Qt::AlignTop);
+    layout()->setContentsMargins(0, 5, 0, 0);
+
+    auto *top_sep = new QWidget(this);
+    top_sep->setObjectName("device_options_divider");
+    top_sep->setFixedHeight(1);
+    layout()->addWidget(top_sep);
 
     auto *form = new QFormLayout;
+    form->setContentsMargins(16, 12, 16, 20);
+    form->setHorizontalSpacing(8);
+    form->setVerticalSpacing(10);
     form->setFieldGrowthPolicy(QFormLayout::AllNonFixedFieldsGrow);
     for (int index = 0; options && options[index]; index++) {
         const sr_option *option = options[index];
@@ -50,7 +71,19 @@ InputOutputOptionsDlg::InputOutputOptionsDlg(const QString &title,
     }
     layout()->addLayout(form);
 
+    auto *bot_sep = new QWidget(this);
+    bot_sep->setObjectName("device_options_divider");
+    bot_sep->setFixedHeight(1);
+    layout()->addWidget(bot_sep);
+
+    if (QPushButton *ok = button_box_->button(QDialogButtonBox::Ok))
+        ok->setObjectName("device_ok_btn");
+    if (QPushButton *cancel = button_box_->button(QDialogButtonBox::Cancel))
+        cancel->setObjectName("device_cancel_btn");
+
     auto *footer = new QHBoxLayout;
+    footer->setContentsMargins(12, 10, 12, 10);
+    footer->setSpacing(6);
     footer->addStretch();
     footer->addWidget(button_box_);
     layout()->addLayout(footer);

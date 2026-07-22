@@ -269,6 +269,7 @@ private:
 	QMenuBar                *_menu_bar;
 	QMenu                   *_menu_file;
 	QAction                 *_action_open;
+    QAction                 *_action_import = nullptr;
     QMenu                   *_menu_import = nullptr;
     QMap<QAction *, QString> _import_format_ids;
     QMenu                   *_menu_export = nullptr;
@@ -379,6 +380,7 @@ private:
     DeviceGroup       *group_owning_session(int uid);
     int                index_of_group(DeviceGroup *g) const;
     int                active_session_global_index_of_group(DeviceGroup *g);
+    int                current_session_global_index() const;
     DeviceGroup       *create_group(ds_device_handle handle);
     int                create_session_in_group(DeviceGroup *grp);
     void               register_groups_from_device_list();

@@ -22,6 +22,7 @@
 #include "deviceagent.h"
 #include <assert.h>
 #include "log.h"
+#include "deviceagentcustomconfig.h"
 extern "C" {
 #include "libsigrok-internal.h"
 }
@@ -308,7 +309,25 @@ void DeviceAgent::release()
         _custom_mode_list = nullptr;
         return;
     }
-    ds_release_actived_device();
+
+    if (_dev_handle == NULL_HANDLE)
+        return;
+
+    struct ds_device_full_info active_info;
+    if (ds_get_actived_device_info(&active_info) == SR_OK &&
+        active_info.handle == _dev_handle) {
+        ds_release_actived_device();
+    }
+
+    _dev_handle = NULL_HANDLE;
+    _di = NULL;
+    _dev_name.clear();
+    _driver_name.clear();
+    _path.clear();
+    _dev_type = 0;
+    _is_new_device = false;
+    _custom_sample_rate = 0;
+    _custom_sample_limit = 0;
 }
 
 void DeviceAgent::bind_custom_device(struct sr_dev_inst *di,
@@ -527,7 +546,11 @@ GVariant* DeviceAgent::get_config_list(const sr_channel_group *group, int key)
 
     if (_custom_device) {
         (void)group;
-        (void)key;
+        if (key == SR_CONF_SAMPLERATE) {
+            dsv_info("DeviceAgent::get_config_list custom samplerate=%llu",
+                     (unsigned long long)_custom_sample_rate);
+            return custom_samplerate_list_variant(_custom_sample_rate);
+        }
         return NULL;
     }
 
@@ -549,12 +572,23 @@ GVariant* DeviceAgent::get_config_list(const sr_channel_group *group, int key)
 
 GVariant* DeviceAgent::get_config(int key, const sr_channel *ch, const sr_channel_group *cg)
 {
-    assert(_dev_handle); 
+    if (_dev_handle == NULL_HANDLE)
+        return NULL;
+
     if (_custom_device) {
         (void)ch;
         (void)cg;
         return custom_config_variant(key);
     }
+
+    struct ds_device_full_info active_info;
+    if (ds_get_actived_device_info(&active_info) != SR_OK ||
+        active_info.handle != _dev_handle) {
+        dsv_warn("DeviceAgent::get_config ignored inactive device handle=%p key=%d",
+                 (void*)_dev_handle, key);
+        return NULL;
+    }
+
     GVariant *data = NULL;
     
     int ret = ds_get_actived_device_config(ch, cg, key, &data);

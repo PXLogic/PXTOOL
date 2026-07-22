@@ -31,13 +31,6 @@ using pv::data::FormatCapability;
 using pv::data::FormatKind;
 
 namespace {
-
-bool contains_id(const QVector<FormatCapability> &formats, const QString &id)
-{
-    return std::any_of(formats.begin(), formats.end(),
-        [&](const FormatCapability &format) { return format.id == id; });
-}
-
 QStringList ids(const QVector<FormatCapability> &formats)
 {
     QStringList result;
@@ -61,10 +54,13 @@ BOOST_AUTO_TEST_SUITE(formatcapability)
 BOOST_AUTO_TEST_CASE(enumerates_current_input_formats)
 {
     const QVector<FormatCapability> inputs = pv::data::importFormats();
+    const QStringList expected = {
+        "binary", "chronovu-la8", "csv", "isf", "logicport", "null",
+        "protocoldata", "raw_analog", "saleae", "stf", "trace32_ad",
+        "vcd", "wav"
+    };
 
-    BOOST_CHECK(contains_id(inputs, "vcd"));
-    BOOST_CHECK(contains_id(inputs, "wav"));
-    BOOST_CHECK(contains_id(inputs, "binary"));
+    BOOST_CHECK(ids(inputs) == expected);
 
     const FormatCapability vcd = find_id(inputs, "vcd");
     BOOST_CHECK(vcd.kind == FormatKind::Import);
@@ -77,10 +73,10 @@ BOOST_AUTO_TEST_CASE(enumerates_current_output_formats)
 {
     const QVector<FormatCapability> outputs = pv::data::exportFormats();
 
-    BOOST_CHECK(contains_id(outputs, "csv"));
-    BOOST_CHECK(contains_id(outputs, "vcd"));
-    BOOST_CHECK(contains_id(outputs, "gnuplot"));
-    BOOST_CHECK(contains_id(outputs, "srzip"));
+    BOOST_CHECK(find_id(outputs, "csv").id == "csv");
+    BOOST_CHECK(find_id(outputs, "vcd").id == "vcd");
+    BOOST_CHECK(find_id(outputs, "gnuplot").id == "gnuplot");
+    BOOST_CHECK(find_id(outputs, "srzip").id == "srzip");
 
     const FormatCapability csv = find_id(outputs, "csv");
     BOOST_CHECK(csv.kind == FormatKind::Export);
@@ -94,8 +90,19 @@ BOOST_AUTO_TEST_CASE(native_open_filter_precedes_import_filters)
     const QString filter = pv::data::openDialogFilter();
 
     BOOST_CHECK(filter.startsWith("DSView Data (*.dsl)"));
+    BOOST_CHECK(filter.contains("Comma-separated values"));
     BOOST_CHECK(filter.contains("Value Change Dump data (*.vcd)"));
     BOOST_CHECK(filter.contains("Microsoft WAV file format data (*.wav)"));
+}
+
+BOOST_AUTO_TEST_CASE(import_capabilities_report_option_availability)
+{
+    const QVector<FormatCapability> inputs = pv::data::importFormats();
+
+    BOOST_CHECK(find_id(inputs, "csv").hasOptions);
+    BOOST_CHECK(find_id(inputs, "vcd").hasOptions);
+    BOOST_CHECK(find_id(inputs, "binary").hasOptions);
+    BOOST_CHECK(!find_id(inputs, "null").hasOptions);
 }
 
 BOOST_AUTO_TEST_CASE(import_menu_labels_are_stable)
@@ -211,6 +218,30 @@ BOOST_AUTO_TEST_CASE(generic_export_resolves_format_from_final_suffix)
 
     BOOST_REQUIRE(resolved != nullptr);
     BOOST_CHECK_EQUAL(resolved->id.toStdString(), "vcd");
+}
+
+BOOST_AUTO_TEST_CASE(generic_import_prefers_suffix_over_dialog_filter)
+{
+    const QVector<FormatCapability> inputs = pv::data::importFormats();
+    const FormatCapability binary = find_id(inputs, "binary");
+
+    const FormatCapability *resolved = pv::data::resolveImportFormatSelection(
+        inputs, QString(), binary.dialogFilter, QString("csv"));
+
+    BOOST_REQUIRE(resolved != nullptr);
+    BOOST_CHECK_EQUAL(resolved->id.toStdString(), "csv");
+}
+
+BOOST_AUTO_TEST_CASE(generic_import_falls_back_to_dialog_filter)
+{
+    const QVector<FormatCapability> inputs = pv::data::importFormats();
+    const FormatCapability csv = find_id(inputs, "csv");
+
+    const FormatCapability *resolved = pv::data::resolveImportFormatSelection(
+        inputs, QString(), csv.dialogFilter, QString());
+
+    BOOST_REQUIRE(resolved != nullptr);
+    BOOST_CHECK_EQUAL(resolved->id.toStdString(), "csv");
 }
 
 BOOST_AUTO_TEST_CASE(final_dialog_filter_controls_compatibility_validation)

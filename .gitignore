@@ -41,6 +41,8 @@
 /build.linux/
 /build.windows/
 /build/
+/build.local/
+/build.tests/
 /logo/
 /share/
 
@@ -67,3 +69,8 @@ __pycache__/
 
 # Local Python environments
 /.venv*/
+
+/build.test
+
+# CTest temporary output
+/Testing/Temporary/

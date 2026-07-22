@@ -1008,7 +1008,15 @@ namespace pv
 
         if (_signals.empty()){
             dsv_info("ERROR: Unable to create any channel.");
-        }        
+        }
+        dsv_info("SigSession::init_signals() done session@%p mode=%d enabled_logic=%u enabled_analog=%u signals=%llu samplerate=%llu samplelimit=%llu",
+                 (void*)this,
+                 mode,
+                 logic_probe_count,
+                 analog_probe_count,
+                 (unsigned long long)_signals.size(),
+                 (unsigned long long)cur_snap_samplerate(),
+                 (unsigned long long)cur_samplelimits());
     }
 
     void SigSession::reload()
@@ -1199,6 +1207,9 @@ namespace pv
             case SR_CONF_SAMPLERATE:
                 if (src->data != nullptr) {
                     uint64_t samplerate = g_variant_get_uint64(src->data);
+                    dsv_info("SigSession::feed_in_meta samplerate=%llu session@%p",
+                             (unsigned long long)samplerate,
+                             (void*)this);
                     if (samplerate != 0)
                         set_cur_snap_samplerate(samplerate);
                 }
@@ -1206,6 +1217,9 @@ namespace pv
             case SR_CONF_LIMIT_SAMPLES:
                 if (src->data != nullptr) {
                     uint64_t samplelimits = g_variant_get_uint64(src->data);
+                    dsv_info("SigSession::feed_in_meta samplelimits=%llu session@%p",
+                             (unsigned long long)samplelimits,
+                             (void*)this);
                     if (samplelimits != 0)
                         set_cur_samplelimits(samplelimits);
                 }
@@ -1253,7 +1267,17 @@ namespace pv
     }
 
     void SigSession::feed_in_logic(const sr_datafeed_logic &o)
-    {  
+    {
+        dsv_info("SigSession::feed_in_logic begin session@%p len=%llu unitsize=%u format=%d ch=%u have_data_before=%d last_ended=%d samplelimit=%llu samplerate=%llu",
+                 (void*)this,
+                 (unsigned long long)o.length,
+                 o.unitsize,
+                 o.format,
+                 get_ch_num(SR_CHANNEL_LOGIC),
+                 have_view_data() ? 1 : 0,
+                 _capture_data->get_logic()->last_ended() ? 1 : 0,
+                 (unsigned long long)cur_samplelimits(),
+                 (unsigned long long)cur_snap_samplerate());
         if (_capture_data->get_logic()->memory_failed())
         {
             dsv_err("Unexpected logic packet");
@@ -1314,9 +1338,14 @@ namespace pv
             return;
         }
 
-        set_receive_data_len(o.length * 8 / get_ch_num(SR_CHANNEL_LOGIC));
+        const uint64_t received_samples = o.length * 8 / get_ch_num(SR_CHANNEL_LOGIC);
+        set_receive_data_len(received_samples);
 
         _data_updated = true;
+        dsv_info("SigSession::feed_in_logic end session@%p recv_len=%llu have_data_after=%d",
+                 (void*)this,
+                 (unsigned long long)received_samples,
+                 have_view_data() ? 1 : 0);
     }
 
     void SigSession::feed_in_dso(const sr_datafeed_dso &o)
@@ -1517,7 +1546,12 @@ namespace pv
         }
         case SR_DF_END:
         {
-            dsv_info("------------SR_DF_END packet.");
+            dsv_info("SigSession::data_feed_in SR_DF_END session@%p status=%d have_data_before=%d samplerate=%llu samplelimit=%llu",
+                     (void*)this,
+                     packet->status,
+                     have_view_data() ? 1 : 0,
+                     (unsigned long long)cur_snap_samplerate(),
+                     (unsigned long long)cur_samplelimits());
 
             _capture_data->get_logic()->capture_ended();
             _capture_data->get_dso()->capture_ended();
@@ -1550,8 +1584,11 @@ namespace pv
                     }
 
                     _callback->frame_ended();
-                }                     
+                }
             }
+            dsv_info("SigSession::data_feed_in SR_DF_END done session@%p have_data_after=%d",
+                     (void*)this,
+                     have_view_data() ? 1 : 0);
 
             break;
         }
@@ -2204,6 +2241,12 @@ namespace pv
     {
         assert(sdi);
         assert(_callback);
+        dsv_info("SigSession::bind_imported_device begin session@%p sdi=%p work_mode=%d sample_rate=%llu sample_limit=%llu",
+                 (void*)this,
+                 (void*)sdi,
+                 work_mode,
+                 (unsigned long long)sample_rate,
+                 (unsigned long long)sample_limit);
 
         _device_agent.bind_custom_device(sdi,
                                          DEV_TYPE_FILELOG,
@@ -2226,7 +2269,48 @@ namespace pv
 
         set_cur_snap_samplerate(sample_rate == 0 ? 1 : sample_rate);
         set_cur_samplelimits(sample_limit == 0 ? 1 : sample_limit);
+        dsv_info("SigSession::bind_imported_device end session@%p have_data=%d samplerate=%llu samplelimit=%llu ch=%u",
+                 (void*)this,
+                 have_view_data() ? 1 : 0,
+                 (unsigned long long)cur_snap_samplerate(),
+                 (unsigned long long)cur_samplelimits(),
+                 get_ch_num(SR_CHANNEL_LOGIC));
         _callback->trigger_message(DSV_MSG_CURRENT_DEVICE_CHANGED);
+    }
+
+    void SigSession::finish_imported_capture(uint64_t sample_limit_override)
+    {
+        const int mode = _device_agent.get_work_mode();
+        dsv_info("SigSession::finish_imported_capture begin session@%p mode=%d status=%d have_data=%d samplerate=%llu samplelimit=%llu",
+                 (void*)this,
+                 mode,
+                 _device_status,
+                 have_view_data() ? 1 : 0,
+                 (unsigned long long)cur_snap_samplerate(),
+                 (unsigned long long)cur_samplelimits());
+
+        if (sample_limit_override != 0 &&
+            sample_limit_override != cur_samplelimits()) {
+            dsv_info("SigSession::finish_imported_capture restore samplelimit=%llu previous=%llu",
+                     (unsigned long long)sample_limit_override,
+                     (unsigned long long)cur_samplelimits());
+            set_cur_samplelimits(sample_limit_override);
+        }
+
+        _device_status = ST_STOPPED;
+        _is_working = false;
+
+        if (mode == LOGIC)
+            OnMessage(DSV_MSG_REV_END_PACKET);
+        else if (_callback)
+            _callback->frame_ended();
+
+        dsv_info("SigSession::finish_imported_capture end session@%p mode=%d status=%d stopped=%d have_data=%d",
+                 (void*)this,
+                 mode,
+                 _device_status,
+                 is_stopped_status() ? 1 : 0,
+                 have_view_data() ? 1 : 0);
     }
 
     void SigSession::refresh_signal_probes()
@@ -2268,6 +2352,8 @@ namespace pv
     void SigSession::save_channel_enabled_states()
     {
         _channel_enabled_cache.clear();
+        if (!_device_agent.have_instance())
+            return;
         for (const GSList *l = _device_agent.get_channels(); l; l = l->next) {
             const sr_channel *ch = (const sr_channel *)l->data;
             _channel_enabled_cache[ch->index] = ch->enabled;
@@ -2491,13 +2577,16 @@ namespace pv
                     {
                         de->decoder()->set_capture_end_flag(true);
 
-                        if (bAddDecoder){ 
+                        if (bAddDecoder){
                             de->frame_ended();
                             add_decode_task(de);
                         }
                     }
 
                     _callback->frame_ended();
+                    // File/imported logic captures rely on this final repaint
+                    // because they do not keep a live update loop running.
+                    _callback->data_updated();
                 }
             }
             break;

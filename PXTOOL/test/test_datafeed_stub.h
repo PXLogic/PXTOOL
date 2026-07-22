@@ -33,7 +33,16 @@ struct test_captured_datafeed_packet {
     const void *logic_data;
 };
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 void test_datafeed_reset(void);
 const test_captured_datafeed_packet *test_datafeed_last_packet(void);
+uint64_t test_input_observer_sample_limit(void);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

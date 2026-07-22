@@ -31,6 +31,10 @@ public:
     InputOutputOptionsDlg(const QString &title,
                           const sr_option *const *options,
                           QWidget *parent = nullptr);
+    InputOutputOptionsDlg(const QString &title,
+                          const sr_option *const *definitions,
+                          const pv::data::IoOptions &initialOptions,
+                          QWidget *parent = nullptr);
 
     const pv::data::IoOptions &options() const;
 
