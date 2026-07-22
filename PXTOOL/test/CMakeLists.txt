@@ -43,6 +43,8 @@ add_executable(DSView-test
     ../pv/dialogs/inputoutputoptioneditor.cpp
     test_formatcapability_stubs.c
     test_upstream_io_stubs.c
+    test_deviceagent_stubs.cpp
+    ../pv/deviceagent.cpp
     ../../libsigrok/analog.c
     ../../libsigrok/keyinfo.c
     ../../libsigrok/device_source.c

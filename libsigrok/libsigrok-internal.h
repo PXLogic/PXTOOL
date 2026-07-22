@@ -629,6 +629,9 @@ struct feed_queue_analog;
 
 SR_API struct feed_queue_logic *feed_queue_logic_alloc(
         const struct sr_dev_inst *sdi, size_t sample_count, size_t unit_size);
+SR_API struct feed_queue_logic *feed_queue_logic_alloc_cross_data(
+        const struct sr_dev_inst *sdi, size_t sample_count, size_t unit_size,
+        size_t channel_count);
 SR_API int feed_queue_logic_submit_one(struct feed_queue_logic *q,
         const uint8_t *data, size_t repeat_count);
 SR_API int feed_queue_logic_submit_many(struct feed_queue_logic *q,

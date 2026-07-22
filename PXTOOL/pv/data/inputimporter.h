@@ -151,6 +151,27 @@ inline void applyDsViewCsvImportPlan(IoOptions &options,
     }
 }
 
+inline bool parseVcdTimestampLine(const QString &line, uint64_t &timestamp)
+{
+    const QString trimmed = line.trimmed();
+    if (!trimmed.startsWith(QLatin1Char('#')))
+        return false;
+
+    int pos = 1;
+    while (pos < trimmed.size() && trimmed.at(pos).isDigit())
+        ++pos;
+    if (pos == 1)
+        return false;
+
+    bool ok = false;
+    const uint64_t parsed = trimmed.mid(1, pos - 1).toULongLong(&ok);
+    if (!ok)
+        return false;
+
+    timestamp = parsed;
+    return true;
+}
+
 class InputImporter final {
 public:
     static ImportResult importFile(SigSession &session,

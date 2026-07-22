@@ -363,6 +363,44 @@ QByteArray makeDsViewAlternatingCsvFixture(int sampleCount)
     return csv;
 }
 
+QByteArray makeDsViewAlternatingVcdFixture(int sampleCount)
+{
+    QByteArray vcd =
+        "$date Wed Jul 22 22:20:21 2026 $end\n"
+        "$version libsigrok 0.2.0 $end\n"
+        "$comment\n"
+        "  Acquisition with 8/8 channels at 1 MHz\n"
+        "$end\n"
+        "$timescale 1 us $end\n"
+        "$scope module libsigrok $end\n"
+        "$var wire 1 ! D0 $end\n"
+        "$var wire 1 \" D1 $end\n"
+        "$var wire 1 # D2 $end\n"
+        "$var wire 1 $ D3 $end\n"
+        "$var wire 1 % D4 $end\n"
+        "$var wire 1 & D5 $end\n"
+        "$var wire 1 ' D6 $end\n"
+        "$var wire 1 ( D7 $end\n"
+        "$upscope $end\n"
+        "$enddefinitions $end\n";
+
+    for (int i = 0; i < sampleCount; i++) {
+        vcd += '#';
+        vcd += QByteArray::number(i);
+        for (int ch = 0; ch < 8; ch++) {
+            vcd += ' ';
+            vcd += (i % 2) ? '1' : '0';
+            vcd += static_cast<char>('!' + ch);
+        }
+        vcd += '\n';
+    }
+    vcd += '#';
+    vcd += QByteArray::number(sampleCount);
+    vcd += '\n';
+
+    return vcd;
+}
+
 } // namespace
 
 BOOST_AUTO_TEST_CASE(upstream_direct_core_creates_channels_on_the_device)
@@ -525,6 +563,36 @@ BOOST_AUTO_TEST_CASE(vcd_input_streams_logic_packets)
     BOOST_CHECK_GE(input.logicSamples(), 2);
     BOOST_CHECK_EQUAL(input.samplerate(), 1000000);
     BOOST_CHECK(input.sawEnd());
+}
+
+BOOST_AUTO_TEST_CASE(vcd_import_timestamp_parser_accepts_inline_value_changes)
+{
+    uint64_t timestamp = 0;
+
+    BOOST_REQUIRE(pv::data::parseVcdTimestampLine(QStringLiteral("#1024 0! 1\""), timestamp));
+    BOOST_CHECK_EQUAL(timestamp, 1024ULL);
+}
+
+BOOST_AUTO_TEST_CASE(vcd_import_streams_dsview_export_waveform_as_cross_data)
+{
+    StreamingInput input("vcd");
+
+    input.send(makeDsViewAlternatingVcdFixture(1024));
+    input.end();
+
+    BOOST_CHECK_EQUAL(input.headerPackets(), 1);
+    BOOST_CHECK_EQUAL(input.metaPackets(), 1);
+    BOOST_CHECK_GE(input.logicPackets(), 1);
+    BOOST_CHECK_EQUAL(input.logicSamples(), 1024);
+    BOOST_CHECK_EQUAL(input.samplerate(), 1000000);
+    BOOST_CHECK_EQUAL(input.channelCount(), 8);
+    BOOST_CHECK_EQUAL(input.enabledChannelCount(), 8);
+    BOOST_CHECK(input.sawEnd());
+
+    BOOST_REQUIRE_GE(test_input_observer_logic_prefix_len(), 256U);
+    const uint8_t *samples = test_input_observer_logic_prefix();
+    for (size_t i = 0; i < 256; i++)
+        BOOST_CHECK_EQUAL(samples[i], 0xaa);
 }
 
 BOOST_AUTO_TEST_CASE(wav_input_streams_analog_packets)

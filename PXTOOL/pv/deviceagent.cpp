@@ -533,10 +533,11 @@ GSList *DeviceAgent::get_channels()
     }        
     
     QString pattern_mode;
-    if(get_config_string(SR_CONF_PATTERN_MODE, pattern_mode) == false)
-    {
-        assert(false);
-    }
+    if(!supports_config(SR_CONF_PATTERN_MODE) ||
+       get_config_string(SR_CONF_PATTERN_MODE, pattern_mode) == false ||
+       pattern_mode.isEmpty())
+        return QStringLiteral("random");
+
     return pattern_mode;
  }
 

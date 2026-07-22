@@ -25,6 +25,10 @@
 #include "pv/deviceagent.h"
 #include "pv/deviceagentcustomconfig.h"
 
+extern "C" {
+#include "libsigrok-internal.h"
+}
+
 BOOST_AUTO_TEST_SUITE(deviceagent_capability)
 
 BOOST_AUTO_TEST_CASE(capability_methods_are_available)
@@ -66,6 +70,29 @@ BOOST_AUTO_TEST_CASE(custom_samplerate_list_exposes_single_imported_value)
 
     g_variant_unref(rates);
     g_variant_unref(dict);
+}
+
+BOOST_AUTO_TEST_CASE(demo_operation_mode_defaults_to_random_without_pattern_config)
+{
+    sr_dev_inst *sdi = sr_dev_inst_new(LOGIC, SR_ST_INACTIVE,
+        "DSView", "Custom Demo", "0.1");
+    BOOST_REQUIRE(sdi != nullptr);
+
+    DeviceAgent agent;
+    agent.bind_custom_device(sdi,
+                             DEV_TYPE_DEMO,
+                             LOGIC,
+                             QStringLiteral("Custom Demo"),
+                             QString(),
+                             QStringLiteral("custom"),
+                             1000000,
+                             1024);
+
+    BOOST_CHECK(agent.is_demo());
+    BOOST_CHECK(!agent.supports_config(SR_CONF_PATTERN_MODE));
+    BOOST_CHECK_EQUAL(agent.get_demo_operation_mode().toStdString(), "random");
+
+    agent.release();
 }
 
 BOOST_AUTO_TEST_SUITE_END()

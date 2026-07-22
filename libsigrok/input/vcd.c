@@ -975,8 +975,9 @@ static void create_feeds(const struct sr_input *in)
 	/* Create one feed for logic data. */
 	if (inc->logic_count) {
 		inc->unit_size = (inc->logic_count + 7) / 8;
-		inc->feed_logic = feed_queue_logic_alloc(in->sdi,
-			CHUNK_SIZE / inc->unit_size, inc->unit_size);
+		inc->feed_logic = feed_queue_logic_alloc_cross_data(in->sdi,
+			CHUNK_SIZE / inc->unit_size, inc->unit_size,
+			inc->logic_count);
 	}
 
 	/* Create one feed per analog channel. */

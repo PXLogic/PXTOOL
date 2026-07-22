@@ -27,9 +27,11 @@
 struct feed_queue_logic {
 	const struct sr_dev_inst *sdi;
 	size_t unit_size;
+	size_t channel_count;
 	size_t alloc_count;
 	size_t fill_count;
 	uint8_t *data_bytes;
+	uint8_t *cross_data;
 	struct sr_datafeed_packet packet;
 	struct sr_datafeed_logic logic;
 };
@@ -58,6 +60,62 @@ SR_API struct feed_queue_logic *feed_queue_logic_alloc(
 	q->logic.data = q->data_bytes;
 
 	return q;
+}
+
+SR_API struct feed_queue_logic *feed_queue_logic_alloc_cross_data(
+	const struct sr_dev_inst *sdi,
+	size_t sample_count, size_t unit_size, size_t channel_count)
+{
+	struct feed_queue_logic *q;
+
+	q = feed_queue_logic_alloc(sdi, sample_count, unit_size);
+	if (!q)
+		return NULL;
+
+	q->channel_count = channel_count;
+	if (q->channel_count && q->alloc_count >= 64)
+		q->alloc_count -= q->alloc_count % 64;
+	if (q->channel_count && q->alloc_count < 64)
+		q->alloc_count = 64;
+
+	return q;
+}
+
+static uint8_t *pack_logic_cross_data(const struct feed_queue_logic *q,
+	size_t *cross_len)
+{
+	uint8_t *cross_data;
+	size_t block_count, sample_idx, ch_idx;
+
+	*cross_len = 0;
+	if (!q->channel_count || !q->unit_size || !q->fill_count)
+		return NULL;
+
+	block_count = (q->fill_count + 63) / 64;
+	*cross_len = block_count * q->channel_count * 8;
+	cross_data = g_malloc0(*cross_len);
+	if (!cross_data)
+		return NULL;
+
+	for (sample_idx = 0; sample_idx < q->fill_count; sample_idx++) {
+		const uint8_t *sample;
+		size_t block, bit, bit_byte, block_base;
+		uint8_t bit_mask;
+
+		sample = &q->data_bytes[sample_idx * q->unit_size];
+		block = sample_idx / 64;
+		bit = sample_idx % 64;
+		bit_byte = bit / 8;
+		bit_mask = 1 << (bit % 8);
+		block_base = block * q->channel_count * 8;
+
+		for (ch_idx = 0; ch_idx < q->channel_count; ch_idx++) {
+			if (sample[ch_idx / 8] & (1 << (ch_idx % 8)))
+				cross_data[block_base + ch_idx * 8 + bit_byte] |= bit_mask;
+		}
+	}
+
+	return cross_data;
 }
 
 SR_API int feed_queue_logic_submit_one(struct feed_queue_logic *q,
@@ -114,12 +172,30 @@ SR_API int feed_queue_logic_submit_many(struct feed_queue_logic *q,
 SR_API int feed_queue_logic_flush(struct feed_queue_logic *q)
 {
 	int ret;
+	size_t cross_len;
 
 	if (!q->fill_count)
 		return SR_OK;
 
-	q->logic.length = q->fill_count * q->unit_size;
+	if (q->channel_count) {
+		q->cross_data = pack_logic_cross_data(q, &cross_len);
+		if (!q->cross_data)
+			return SR_ERR_MALLOC;
+		q->logic.format = LA_CROSS_DATA;
+		q->logic.unitsize = 1;
+		q->logic.length = cross_len;
+		q->logic.data = q->cross_data;
+	} else {
+		q->logic.length = q->fill_count * q->unit_size;
+		q->logic.data = q->data_bytes;
+	}
+
 	ret = sr_session_send(q->sdi, &q->packet);
+	if (q->cross_data) {
+		g_free(q->cross_data);
+		q->cross_data = NULL;
+		q->logic.data = q->data_bytes;
+	}
 	if (ret != SR_OK)
 		return ret;
 	q->fill_count = 0;
@@ -149,6 +225,7 @@ SR_API void feed_queue_logic_free(struct feed_queue_logic *q)
 		return;
 
 	g_free(q->data_bytes);
+	g_free(q->cross_data);
 	g_free(q);
 }
 

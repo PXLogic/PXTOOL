@@ -375,9 +375,8 @@ ImportPlan estimateVcdImport(const QString &fileName,
         }
 
         if (rawLine.startsWith(QLatin1Char('#'))) {
-            bool ok = false;
-            uint64_t timestamp = rawLine.mid(1).toULongLong(&ok);
-            if (!ok)
+            uint64_t timestamp = 0;
+            if (!parseVcdTimestampLine(rawLine, timestamp))
                 continue;
             timestamp /= downsample;
             if (!sawTimestamp) {
@@ -422,9 +421,8 @@ ImportPlan estimateVcdImport(const QString &fileName,
         if (rawLine.isEmpty())
             continue;
         if (rawLine.startsWith(QLatin1Char('#'))) {
-            bool ok = false;
-            uint64_t timestamp = rawLine.mid(1).toULongLong(&ok);
-            if (!ok)
+            uint64_t timestamp = 0;
+            if (!parseVcdTimestampLine(rawLine, timestamp))
                 continue;
             timestamp /= downsample;
             if (!firstSeen) {
