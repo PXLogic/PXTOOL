@@ -71,13 +71,13 @@ static int init(struct sr_input *in, GHashTable *options)
 	return SR_OK;
 }
 
-static int process_buffer(struct sr_input *in)
+static int process_buffer(struct sr_input *in, gboolean final)
 {
-	struct sr_datafeed_packet packet;
-	struct sr_datafeed_logic logic;
 	struct context *inc;
+	struct feed_queue_logic *queue;
 	gsize chunk_size, i;
 	int chunk;
+	int ret;
 
 	inc = in->priv;
 	if (!inc->started) {
@@ -91,20 +91,29 @@ static int process_buffer(struct sr_input *in)
 		inc->started = TRUE;
 	}
 
-	packet.type = SR_DF_LOGIC;
-	packet.payload = &logic;
-	logic.unitsize = inc->unitsize;
-
 	/* Cut off at multiple of unitsize. */
-	chunk_size = in->buf->len / logic.unitsize * logic.unitsize;
+	chunk_size = in->buf->len / inc->unitsize * inc->unitsize;
+	if (!final)
+		chunk_size -= chunk_size % (inc->unitsize * 64);
 
 	for (i = 0; i < chunk_size; i += chunk) {
-		logic.data = in->buf->str + i;
 		chunk = MIN(CHUNK_SIZE, chunk_size - i);
-		chunk /= logic.unitsize;
-		chunk *= logic.unitsize;
-		logic.length = chunk;
-		sr_session_send(in->sdi, &packet);
+		chunk /= inc->unitsize;
+		chunk *= inc->unitsize;
+
+		queue = feed_queue_logic_alloc_cross_data(in->sdi,
+			chunk / inc->unitsize, inc->unitsize,
+			g_slist_length(in->sdi->channels));
+		if (!queue)
+			return SR_ERR_MALLOC;
+
+		ret = feed_queue_logic_submit_many(queue,
+			(const uint8_t *)in->buf->str + i, chunk / inc->unitsize);
+		if (ret == SR_OK)
+			ret = feed_queue_logic_flush(queue);
+		feed_queue_logic_free(queue);
+		if (ret != SR_OK)
+			return ret;
 	}
 	g_string_erase(in->buf, 0, chunk_size);
 
@@ -120,10 +129,9 @@ static int receive(struct sr_input *in, GString *buf)
 	if (!in->sdi_ready) {
 		/* sdi is ready, notify frontend. */
 		in->sdi_ready = TRUE;
-		return SR_OK;
 	}
 
-	ret = process_buffer(in);
+	ret = process_buffer(in, FALSE);
 
 	return ret;
 }
@@ -134,7 +142,7 @@ static int end(struct sr_input *in)
 	int ret;
 
 	if (in->sdi_ready)
-		ret = process_buffer(in);
+		ret = process_buffer(in, TRUE);
 	else
 		ret = SR_OK;
 

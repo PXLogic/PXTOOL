@@ -102,6 +102,11 @@ public:
     uint64_t samplerate() const { return test_input_observer_samplerate(); }
     uint64_t sampleLimit() const { return test_input_observer_sample_limit(); }
     bool sawEnd() const { return test_input_observer_saw_end(); }
+    uint8_t logicPrefixByte(size_t index) const
+    {
+        BOOST_REQUIRE(index < test_input_observer_logic_prefix_len());
+        return test_input_observer_logic_prefix()[index];
+    }
     unsigned int channelCount() const
     {
         const sr_dev_inst *sdi = sr_input_dev_inst_get(input_);
@@ -147,11 +152,6 @@ QByteArray makeWavFixture()
     };
 
     return QByteArray(wav, sizeof(wav));
-}
-
-QByteArray makeChronovuImportFixture()
-{
-    return QByteArray::fromHex("00010302");
 }
 
 void appendU16(QByteArray &data, uint16_t value)
@@ -503,13 +503,18 @@ BOOST_AUTO_TEST_CASE(binary_input_streams_logic_packets)
         {"samplerate", g_variant_new_uint64(1000000)},
     }));
 
-    input.send(QByteArray::fromHex("00010302"));
+    input.send(QByteArray::fromHex("0001"));
+    input.send(QByteArray::fromHex("0302"));
     input.end();
 
     BOOST_CHECK_EQUAL(input.headerPackets(), 1);
     BOOST_CHECK_EQUAL(input.metaPackets(), 1);
     BOOST_CHECK_EQUAL(input.logicPackets(), 1);
-    BOOST_CHECK_EQUAL(input.logicSamples(), 4);
+    // DSView cross-data packets are 64-sample channel blocks. The source
+    // payload has four samples, followed by zero padding in this transport.
+    BOOST_CHECK_EQUAL(input.logicSamples(), 64);
+    BOOST_CHECK_EQUAL(input.logicPrefixByte(0), 0x06);
+    BOOST_CHECK_EQUAL(input.logicPrefixByte(8), 0x0c);
     BOOST_CHECK_EQUAL(input.samplerate(), 1000000);
     BOOST_CHECK(input.sawEnd());
 }
@@ -521,13 +526,16 @@ BOOST_AUTO_TEST_CASE(chronovu_input_streams_logic_packets)
         {"samplerate", g_variant_new_uint64(100000000)},
     }));
 
-    input.send(makeChronovuImportFixture());
+    input.send(QByteArray::fromHex("0001"));
+    input.send(QByteArray::fromHex("0302"));
     input.end();
 
     BOOST_CHECK_EQUAL(input.headerPackets(), 1);
     BOOST_CHECK_EQUAL(input.metaPackets(), 1);
     BOOST_CHECK_EQUAL(input.logicPackets(), 1);
-    BOOST_CHECK_EQUAL(input.logicSamples(), 4);
+    BOOST_CHECK_EQUAL(input.logicSamples(), 64);
+    BOOST_CHECK_EQUAL(input.logicPrefixByte(0), 0x06);
+    BOOST_CHECK_EQUAL(input.logicPrefixByte(8), 0x0c);
     BOOST_CHECK_EQUAL(input.samplerate(), 100000000);
     BOOST_CHECK(input.sawEnd());
 }

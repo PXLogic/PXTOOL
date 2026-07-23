@@ -28,6 +28,7 @@
 #include <thread>
 #include <QObject>
 #include <QFile>
+#include <QFileInfo>
 #include <libsigrok.h>
 
 #include "interface/icallbacks.h"
@@ -83,6 +84,11 @@ public:
     bool load_decoders(dock::ProtocolDock *widget, QJsonArray &dec_array);
     QString MakeSaveFile(bool bDlg);
     QString MakeExportFile(bool bDlg);
+    void setOutputFileName(const QString &fileName)
+    {
+        _file_name = fileName;
+        _suffix = QFileInfo(fileName).suffix();
+    }
     void setSelectedOutputFormatId(const QString &format_id);
     void setSelectedOutputOptions(const data::IoOptions &options);
     bool hasExplicitSelectedOutputFormat() const;

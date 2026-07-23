@@ -90,6 +90,57 @@ add_executable(DSView-test
     ../../common/minizip/zip.c
 )
 
+# InputImporter and StoreSession operate on a real SigSession.  Their
+# implementation reaches into the application runtime, so keep this coverage
+# in its own headless executable instead of growing the lightweight unit test.
+set(DSVIEW_FORMAT_INTEGRATION_RUNTIME_SOURCES
+    ${common_SOURCES}
+    ${DSView_SOURCES}
+    ${DSView_HEADERS_MOC}
+    ${DSView_FORMS_HEADERS}
+    ${DSView_RESOURCES_RCC}
+    ${libsigrok_SOURCES}
+    ${libsigrokdecode_SOURCES}
+)
+list(REMOVE_ITEM DSVIEW_FORMAT_INTEGRATION_RUNTIME_SOURCES PXTOOL/main.cpp)
+
+set(DSVIEW_FORMAT_INTEGRATION_RUNTIME_SOURCES_ABSOLUTE)
+foreach(source_file IN LISTS DSVIEW_FORMAT_INTEGRATION_RUNTIME_SOURCES)
+    if(IS_ABSOLUTE "${source_file}")
+        list(APPEND DSVIEW_FORMAT_INTEGRATION_RUNTIME_SOURCES_ABSOLUTE "${source_file}")
+    else()
+        list(APPEND DSVIEW_FORMAT_INTEGRATION_RUNTIME_SOURCES_ABSOLUTE
+            "${CMAKE_SOURCE_DIR}/${source_file}")
+    endif()
+endforeach()
+
+add_executable(DSView-format-integration-test
+    test_format_integration.cpp
+    ${DSVIEW_FORMAT_INTEGRATION_RUNTIME_SOURCES_ABSOLUTE}
+)
+add_dependencies(DSView-format-integration-test ${PROJECT_NAME})
+
+target_include_directories(DSView-format-integration-test PRIVATE
+    ..
+    ../..
+    ../../common
+    ../../libsigrok
+    ${GLIB_INCLUDE_DIRS}
+    ${LIBUSB_1_INCLUDE_DIRS}
+    ${QT_INCLUDE_DIRS}
+    ${Boost_INCLUDE_DIRS}
+)
+
+target_compile_definitions(DSView-format-integration-test PRIVATE
+    DSVIEW_TESTING
+    DSVIEW_FORMAT_FIXTURE_PATH="${CMAKE_SOURCE_DIR}/docs/wave_data/Upstream-Compat-Demo-la-260723-120157.csv"
+)
+
+target_link_libraries(DSView-format-integration-test
+    ${DSVIEW_LINK_LIBS}
+    nlohmann_json::nlohmann_json
+)
+
 if(DSVIEW_ENABLE_UPSTREAM_COMPAT_DEMO)
     target_sources(DSView-test PRIVATE
         ../../libsigrok/hardware/upstream-demo/upstream_demo.c

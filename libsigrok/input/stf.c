@@ -562,8 +562,8 @@ static int data_enter(const struct sr_input *in)
 	if (!inc->channel_count)
 		return SR_ERR_DATA;
 	inc->submit.unit_size = (inc->channel_count + 8 - 1) / 8;
-	inc->submit.feed = feed_queue_logic_alloc(in->sdi,
-		CHUNKSIZE, inc->submit.unit_size);
+	inc->submit.feed = feed_queue_logic_alloc_cross_data(in->sdi,
+		CHUNKSIZE, inc->submit.unit_size, inc->channel_count);
 	if (!inc->submit.feed)
 		return SR_ERR_MALLOC;
 

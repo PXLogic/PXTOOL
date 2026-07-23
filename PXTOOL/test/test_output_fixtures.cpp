@@ -265,16 +265,19 @@ BOOST_AUTO_TEST_CASE(binary_output_preserves_nul_bytes)
     BOOST_CHECK_EQUAL(static_cast<unsigned char>(bytes.at(3)), 0xff);
 }
 
-BOOST_AUTO_TEST_CASE(chronovu_output_requires_header_and_preserves_logic_bytes)
+BOOST_AUTO_TEST_CASE(chronovu_output_writes_fixed_size_la8_container)
 {
     const QByteArray source("\x00\x7f\x80\xff", 4);
     const QByteArray exported = export_logic_fixture(
         "chronovu-la8", {0x00, 0x7f, 0x80, 0xff},
         make_test_sdi_with_samplerate(50000000));
 
-    BOOST_REQUIRE_EQUAL(exported.size(), 1 + 4 + source.size());
-    BOOST_CHECK_EQUAL(static_cast<unsigned char>(exported.at(0)), 0x01);
-    BOOST_CHECK(exported.mid(5) == source);
+    const int data_size = 8 * 1024 * 1024;
+    BOOST_REQUIRE_EQUAL(exported.size(), data_size + 5);
+    BOOST_CHECK(exported.startsWith(source));
+    BOOST_CHECK_EQUAL(static_cast<unsigned char>(exported.at(source.size())), 0x00);
+    BOOST_CHECK_EQUAL(static_cast<unsigned char>(exported.at(data_size)), 0x01);
+    BOOST_CHECK_EQUAL(read_le32(exported, data_size + 1), 0U);
 }
 
 BOOST_AUTO_TEST_CASE(exports_logic_formats)

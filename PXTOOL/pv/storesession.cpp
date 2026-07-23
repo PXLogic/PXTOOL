@@ -1306,6 +1306,7 @@ void StoreSession::export_exec(data::Snapshot *snapshot)
                 lp.data = xbuf;
                 lp.length = size * unitsize;
                 lp.unitsize = unitsize;
+                lp.format = LA_CROSS_DATA;
                 p.type = SR_DF_LOGIC;
                 p.status = SR_PKT_OK;
                 p.payload = &lp;

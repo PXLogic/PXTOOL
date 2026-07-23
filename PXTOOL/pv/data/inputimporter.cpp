@@ -267,6 +267,32 @@ ImportPlan estimateBinaryImport(const QString &fileName,
     return plan;
 }
 
+ImportPlan estimateChronovuImport(const QString &fileName,
+                                  const sr_input_module *module,
+                                  const IoOptions &options)
+{
+    constexpr uint64_t kChronovuDataSize = 8ULL * 1024 * 1024;
+    ImportPlan plan;
+    plan.workMode = LOGIC;
+
+    const QVariant numChannelsOpt = optionValue(options, module,
+        QStringLiteral("numchannels"), QStringLiteral("numprobes"));
+    const uint64_t numChannels = numChannelsOpt.isValid()
+        ? static_cast<uint64_t>(numChannelsOpt.toUInt())
+        : 8ULL;
+    const uint64_t unitSize = qMax<uint64_t>(1, (numChannels + 7) / 8);
+    const uint64_t fileSize = static_cast<uint64_t>(QFileInfo(fileName).size());
+    const uint64_t dataSize = qMin(fileSize, kChronovuDataSize);
+    const QVariant samplerateOpt = optionValue(options, module,
+        QStringLiteral("samplerate"));
+
+    plan.sampleRate = samplerateOpt.isValid()
+        ? samplerateOpt.toULongLong()
+        : 1ULL;
+    plan.sampleLimit = clampSampleLimit(dataSize / unitSize);
+    return plan;
+}
+
 ImportPlan estimateWavImport(const QString &fileName)
 {
     ImportPlan plan;
@@ -474,6 +500,8 @@ ImportPlan makeImportPlan(const QString &formatId,
     }
     if (formatId == QLatin1String("binary"))
         return estimateBinaryImport(fileName, module, options);
+    if (formatId == QLatin1String("chronovu-la8"))
+        return estimateChronovuImport(fileName, module, options);
     if (formatId == QLatin1String("wav"))
         return estimateWavImport(fileName);
     if (formatId == QLatin1String("vcd"))
@@ -553,6 +581,19 @@ ImportResult InputImporter::importFile(SigSession &session,
             }
         }
 
+        // Some streaming inputs use the first receive call only to publish
+        // their device description. Give them one empty receive to process
+        // data supplied in that same call when the file fits one chunk.
+        if (input->sdi_ready) {
+            GString *flush = g_string_new("");
+            const int rc = sr_input_send(input, flush);
+            g_string_free(flush, TRUE);
+            if (rc != SR_OK) {
+                result.error = QStringLiteral("Failed while flushing %1.").arg(fileName);
+                return false;
+            }
+        }
+
         if (sr_input_end(input) != SR_OK) {
             result.error = QStringLiteral("Failed to finish importing %1.").arg(fileName);
             return false;
@@ -603,6 +644,9 @@ ImportResult InputImporter::importFile(SigSession &session,
                                  clampSampleLimit(plan.sampleLimit),
                                  displayName.isEmpty() ? fileName : displayName,
                                  fileName);
+    // Binding may initialize application-owned helpers that create their own
+    // SigSession and replace the global libsigrok datafeed route.
+    session.set_as_current();
     dsv_info("InputImporter: bound imported device session=%p channels=%u enabled=%u samplerate=%llu samplelimit=%llu",
              (void *)&session,
              channelCount(ownedDevice),

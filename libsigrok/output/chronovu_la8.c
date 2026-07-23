@@ -30,13 +30,14 @@
 
 #include "../log.h"
 
+#define CHRONOVU_LA8_DATASIZE (8 * 1024 * 1024)
+#define CHRONOVU_LA8_HDRSIZE  (sizeof(uint8_t) + sizeof(uint32_t))
+
 struct context {
-	unsigned int num_enabled_channels;
-	gboolean triggered;
 	uint64_t samplerate;
 	uint64_t samplecount;
-	int *channel_index;
-	GString *pretrig_buf;
+	uint32_t trigger_position;
+	GString *data;
 };
 
 /**
@@ -82,8 +83,6 @@ static uint8_t samplerate_to_divcount(uint64_t samplerate)
 static int init(struct sr_output *o, GHashTable *options)
 {
 	struct context *ctx;
-	struct sr_channel *ch;
-	GSList *l;
 
 	(void)options;
 
@@ -92,17 +91,12 @@ static int init(struct sr_output *o, GHashTable *options)
 
 	ctx = g_malloc0(sizeof(struct context));
 	o->priv = ctx;
-
-	for (l = o->sdi->channels; l; l = l->next) {
-		ch = l->data;
-		if (ch->type != SR_CHANNEL_LOGIC)
-			continue;
-		if (!ch->enabled)
-			continue;
-		ctx->num_enabled_channels++;
+	ctx->data = g_string_sized_new(CHRONOVU_LA8_DATASIZE);
+	if (!ctx->data) {
+		g_free(ctx);
+		o->priv = NULL;
+		return SR_ERR_MALLOC;
 	}
-	ctx->channel_index = g_malloc(sizeof(int) * ctx->num_enabled_channels);
-	ctx->pretrig_buf = g_string_sized_new(1024);
 
 	return SR_OK;
 }
@@ -111,10 +105,12 @@ static int receive(const struct sr_output *o, const struct sr_datafeed_packet *p
 		GString **out)
 {
 	const struct sr_datafeed_logic *logic;
+	const struct sr_datafeed_meta *meta;
+	const struct sr_config *src;
 	struct context *ctx;
 	GVariant *gvar;
-	uint64_t samplerate;
-	gchar c[4];
+	GSList *l;
+	uint8_t divcount;
 
 	*out = NULL;
 	if (!o || !o->sdi)
@@ -124,45 +120,42 @@ static int receive(const struct sr_output *o, const struct sr_datafeed_packet *p
 
 	switch (packet->type) {
 	case SR_DF_HEADER:
-		/* One byte for the 'divcount' value. */
-		if (sr_config_get(o->sdi->driver, o->sdi, NULL, NULL, SR_CONF_SAMPLERATE,
-				&gvar) == SR_OK) {
-			samplerate = g_variant_get_uint64(gvar);
-			g_variant_unref(gvar);
-		} else
-			samplerate = 0;
-		c[0] = samplerate_to_divcount(samplerate);
-		*out = g_string_new_len(c, 1);
-		ctx->triggered = FALSE;
+		break;
+	case SR_DF_META:
+		meta = packet->payload;
+		for (l = meta->config; l; l = l->next) {
+			src = l->data;
+			if (src->key == SR_CONF_SAMPLERATE)
+				ctx->samplerate = g_variant_get_uint64(src->data);
+		}
 		break;
 	case SR_DF_TRIGGER:
-		/* Four bytes (little endian) for the trigger point. */
-		c[0] = ctx->samplecount & 0xff;
-		c[1] = (ctx->samplecount >> 8) & 0xff;
-		c[2] = (ctx->samplecount >> 16) & 0xff;
-		c[3] = (ctx->samplecount >> 24) & 0xff;
-		*out = g_string_new_len(c, 4);
-		/* Flush the pre-trigger buffer. */
-		if (ctx->pretrig_buf->len)
-			g_string_append_len(*out, ctx->pretrig_buf->str,
-					ctx->pretrig_buf->len);
-		ctx->triggered = TRUE;
+		ctx->trigger_position = ctx->samplecount;
 		break;
 	case SR_DF_LOGIC:
 		logic = packet->payload;
-		if (!ctx->triggered)
-			g_string_append_len(ctx->pretrig_buf, logic->data, logic->length);
-		else
-			*out = g_string_new_len(logic->data, logic->length);
+		if (!logic->unitsize || logic->length >
+			CHRONOVU_LA8_DATASIZE - ctx->data->len)
+			return SR_ERR_ARG;
+		g_string_append_len(ctx->data, logic->data, logic->length);
 		ctx->samplecount += logic->length / logic->unitsize;
 		break;
 	case SR_DF_END:
-		if (!ctx->triggered && ctx->pretrig_buf->len) {
-			/* We never got a trigger, submit an empty one. */
-			*out = g_string_sized_new(ctx->pretrig_buf->len + 4);
-			g_string_append_len(*out, "\x00\x00\x00\x00", 4);
-			g_string_append_len(*out, ctx->pretrig_buf->str, ctx->pretrig_buf->len);
+		if (!ctx->samplerate && sr_config_get(o->sdi->driver, o->sdi,
+				NULL, NULL, SR_CONF_SAMPLERATE, &gvar) == SR_OK) {
+			ctx->samplerate = g_variant_get_uint64(gvar);
+			g_variant_unref(gvar);
 		}
+		divcount = samplerate_to_divcount(ctx->samplerate);
+		*out = g_string_sized_new(CHRONOVU_LA8_DATASIZE + CHRONOVU_LA8_HDRSIZE);
+		g_string_set_size(*out, CHRONOVU_LA8_DATASIZE + CHRONOVU_LA8_HDRSIZE);
+		memset((*out)->str, 0, (*out)->len);
+		memcpy((*out)->str, ctx->data->str, ctx->data->len);
+		(*out)->str[CHRONOVU_LA8_DATASIZE] = divcount;
+		(*out)->str[CHRONOVU_LA8_DATASIZE + 1] = ctx->trigger_position & 0xff;
+		(*out)->str[CHRONOVU_LA8_DATASIZE + 2] = (ctx->trigger_position >> 8) & 0xff;
+		(*out)->str[CHRONOVU_LA8_DATASIZE + 3] = (ctx->trigger_position >> 16) & 0xff;
+		(*out)->str[CHRONOVU_LA8_DATASIZE + 4] = (ctx->trigger_position >> 24) & 0xff;
 		break;
 	}
 
@@ -178,8 +171,7 @@ static int cleanup(struct sr_output *o)
 
 	if (o->priv) {
 		ctx = o->priv;
-		g_string_free(ctx->pretrig_buf, TRUE);
-		g_free(ctx->channel_index);
+		g_string_free(ctx->data, TRUE);
 		g_free(o->priv);
 		o->priv = NULL;
 	}
