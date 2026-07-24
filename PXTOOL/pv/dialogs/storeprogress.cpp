@@ -32,6 +32,7 @@
 #include <QHBoxLayout>
 #include <QVBoxLayout>
 #include <QBoxLayout>
+#include <QAbstractItemView>
 #include "../ui/msgbox.h"
 #include "../config/appconfig.h"
 #include "../interface/icallbacks.h"
@@ -383,6 +384,8 @@ void StoreProgress::save_run(ISessionDataGetter *getter)
         lay->setLabelAlignment(Qt::AlignRight | Qt::AlignVCenter);
         _start_cursor = create_range_combo(this);
         _end_cursor = create_range_combo(this);
+        _start_cursor->setPopupFitContents(false);
+        _end_cursor->setPopupFitContents(false);
         _start_cursor->setMinimumWidth(120);
         _end_cursor->setMinimumWidth(120);
         _start_cursor->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
@@ -401,10 +404,16 @@ void StoreProgress::save_run(ISessionDataGetter *getter)
             _end_cursor->addItem(cursor_name);
         }
 
-        _start_cursor->adjustToItemContents();
-        _end_cursor->adjustToItemContents();
+        if (QAbstractItemView *view = _start_cursor->view()) {
+            view->setMinimumWidth(_start_cursor->sizeHint().width() + 30);
+            view->setMaximumWidth(QWIDGETSIZE_MAX);
+        }
+        if (QAbstractItemView *view = _end_cursor->view()) {
+            view->setMinimumWidth(_end_cursor->sizeHint().width() + 30);
+            view->setMaximumWidth(QWIDGETSIZE_MAX);
+        }
 
-        lay->addRow(tr("Start") , _start_cursor);
+        lay->addRow(tr("Start*") , _start_cursor);
         lay->addRow(tr("End"), _end_cursor);
         _grid->addLayout(lay, 3, 0, 1, 3, Qt::AlignLeft);
     }
