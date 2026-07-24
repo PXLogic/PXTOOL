@@ -87,6 +87,9 @@ if [ ! -f "CMakeCache.txt" ]; then
 elif [ "$SOURCE_DIR/CMakeLists.txt" -nt "CMakeCache.txt" ]; then
     NEED_CMAKE=1
     echo "[Step 1/2] CMakeLists.txt changed — re-configuring with CMake..."
+elif ! grep -qx 'DSVIEW_ENABLE_UPSTREAM_COMPAT_DEMO:BOOL=ON' "CMakeCache.txt"; then
+    NEED_CMAKE=1
+    echo "[Step 1/2] Enabling upstream-compat demo and re-configuring with CMake..."
 else
     echo "[Step 1/2] CMake already configured, skipping."
 fi
@@ -96,6 +99,7 @@ if [ $NEED_CMAKE -eq 1 ]; then
     "$MINGW_PREFIX/bin/cmake.exe" "$SOURCE_DIR" \
         -G "MinGW Makefiles" \
         -DCMAKE_BUILD_TYPE=Release \
+        -DDSVIEW_ENABLE_UPSTREAM_COMPAT_DEMO=ON \
         -DCMAKE_C_COMPILER="$MINGW_PREFIX/bin/gcc.exe" \
         -DCMAKE_CXX_COMPILER="$MINGW_PREFIX/bin/g++.exe" \
         -DCMAKE_MAKE_PROGRAM="$MINGW_PREFIX/bin/mingw32-make.exe"
