@@ -1268,16 +1268,6 @@ namespace pv
 
     void SigSession::feed_in_logic(const sr_datafeed_logic &o)
     {
-        dsv_info("SigSession::feed_in_logic begin session@%p len=%llu unitsize=%u format=%d ch=%u have_data_before=%d last_ended=%d samplelimit=%llu samplerate=%llu",
-                 (void*)this,
-                 (unsigned long long)o.length,
-                 o.unitsize,
-                 o.format,
-                 get_ch_num(SR_CHANNEL_LOGIC),
-                 have_view_data() ? 1 : 0,
-                 _capture_data->get_logic()->last_ended() ? 1 : 0,
-                 (unsigned long long)cur_samplelimits(),
-                 (unsigned long long)cur_snap_samplerate());
         if (_capture_data->get_logic()->memory_failed())
         {
             dsv_err("Unexpected logic packet");
@@ -1342,10 +1332,6 @@ namespace pv
         set_receive_data_len(received_samples);
 
         _data_updated = true;
-        dsv_info("SigSession::feed_in_logic end session@%p recv_len=%llu have_data_after=%d",
-                 (void*)this,
-                 (unsigned long long)received_samples,
-                 have_view_data() ? 1 : 0);
     }
 
     void SigSession::feed_in_dso(const sr_datafeed_dso &o)
