@@ -266,9 +266,13 @@ static void cleanup(struct sr_input *in)
 	in->priv = NULL;
 
 	g_variant_unref(options[0].def);
+	options[0].def = NULL;
 	g_variant_unref(options[1].def);
+	options[1].def = NULL;
 	g_variant_unref(options[2].def);
+	options[2].def = NULL;
 	g_slist_free_full(options[2].values, (GDestroyNotify)g_variant_unref);
+	options[2].values = NULL;
 }
 
 static int reset(struct sr_input *in)

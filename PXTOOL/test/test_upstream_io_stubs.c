@@ -137,7 +137,8 @@ void test_input_observer_record_packet(const struct sr_dev_inst *sdi,
             }
             if (logic->format == LA_CROSS_DATA && logic_channels &&
                 logic->length % (logic_channels * 8) == 0)
-                test_input_observer.logic_samples += logic->length * 8 / logic_channels;
+                test_input_observer.logic_samples += logic->length * 8 /
+                    logic_channels;
             else
                 test_input_observer.logic_samples += logic->length / logic->unitsize;
         }

@@ -820,8 +820,7 @@ static int create_feed_buffer(struct sr_input *in)
 static int send_buffer(struct sr_input *in)
 {
 	struct context *inc;
-	struct sr_datafeed_packet packet;
-	struct sr_datafeed_logic logic;
+	struct feed_queue_logic *queue;
 	int rc;
 
 	inc = in->priv;
@@ -843,12 +842,16 @@ static int send_buffer(struct sr_input *in)
 		inc->rate_sent = TRUE;
 	}
 
-	packet.type = SR_DF_LOGIC;
-	packet.payload = &logic;
-	logic.unitsize = inc->unitsize;
-	logic.data = inc->feed_buffer;
-	logic.length = inc->unitsize * inc->samples_in_buffer;
-	rc = sr_session_send(in->sdi, &packet);
+	queue = feed_queue_logic_alloc_cross_data(in->sdi,
+		inc->samples_in_buffer, inc->unitsize,
+		g_slist_length(in->sdi->channels));
+	if (!queue)
+		return SR_ERR_MALLOC;
+	rc = feed_queue_logic_submit_many(queue, inc->feed_buffer,
+		inc->samples_in_buffer);
+	if (rc == SR_OK)
+		rc = feed_queue_logic_flush(queue);
+	feed_queue_logic_free(queue);
 
 	inc->samples_in_buffer = 0;
 
@@ -1128,7 +1131,8 @@ static void cleanup(struct sr_input *in)
 	for (idx = 0; idx < inc->channel_count; idx++)
 		g_free(inc->signal_names[idx]);
 	g_slist_free_full(inc->signal_groups, sg_free);
-	g_slist_free_full(inc->channels, g_free);
+	/* sr_input_free() owns and releases the sr_dev_inst channels. */
+	g_slist_free(inc->channels);
 	g_free(inc->feed_buffer);
 	memset(inc, 0, sizeof(*inc));
 }

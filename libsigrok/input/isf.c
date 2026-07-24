@@ -661,6 +661,7 @@ static void send_chunk(struct sr_input *in, size_t initial_offset, size_t num_sa
 	}
 
 	sr_analog_init(&analog, &encoding, &meaning, &spec, 2);
+	memset(&packet, 0, sizeof(packet));
 	packet.type = SR_DF_ANALOG;
 	packet.payload = &analog;
 	analog.num_samples = num_samples;

@@ -293,6 +293,21 @@ ImportPlan estimateChronovuImport(const QString &fileName,
     return plan;
 }
 
+ImportPlan estimateStreamingImport(const QString &fileName, int workMode,
+                                  const sr_input_module *module,
+                                  const IoOptions &options)
+{
+    ImportPlan plan;
+    plan.workMode = workMode;
+    plan.sampleLimit = qMax<uint64_t>(1024,
+        static_cast<uint64_t>(QFileInfo(fileName).size()));
+    const QVariant samplerateOpt = optionValue(options, module,
+        QStringLiteral("samplerate"));
+    if (samplerateOpt.isValid() && samplerateOpt.toULongLong() != 0)
+        plan.sampleRate = samplerateOpt.toULongLong();
+    return plan;
+}
+
 ImportPlan estimateWavImport(const QString &fileName)
 {
     ImportPlan plan;
@@ -502,6 +517,15 @@ ImportPlan makeImportPlan(const QString &formatId,
         return estimateBinaryImport(fileName, module, options);
     if (formatId == QLatin1String("chronovu-la8"))
         return estimateChronovuImport(fileName, module, options);
+    if (formatId == QLatin1String("raw_analog") ||
+        formatId == QLatin1String("isf"))
+        return estimateStreamingImport(fileName, ANALOG, module, options);
+    if (formatId == QLatin1String("logicport") ||
+        formatId == QLatin1String("saleae") ||
+        formatId == QLatin1String("protocoldata") ||
+        formatId == QLatin1String("trace32_ad") ||
+        formatId == QLatin1String("stf"))
+        return estimateStreamingImport(fileName, LOGIC, module, options);
     if (formatId == QLatin1String("wav"))
         return estimateWavImport(fileName);
     if (formatId == QLatin1String("vcd"))
@@ -644,8 +668,9 @@ ImportResult InputImporter::importFile(SigSession &session,
                                  clampSampleLimit(plan.sampleLimit),
                                  displayName.isEmpty() ? fileName : displayName,
                                  fileName);
-    // Binding may initialize application-owned helpers that create their own
-    // SigSession and replace the global libsigrok datafeed route.
+    // Binding may initialize application-owned helpers that replace the
+    // global libsigrok datafeed route.
+    ds_set_datafeed_callback(SigSession::data_feed_callback);
     session.set_as_current();
     dsv_info("InputImporter: bound imported device session=%p channels=%u enabled=%u samplerate=%llu samplelimit=%llu",
              (void *)&session,

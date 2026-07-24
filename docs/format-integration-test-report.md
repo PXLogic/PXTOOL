@@ -14,13 +14,20 @@ between `0x00` and `0xFF`.
 | binary | export/import | canonical round-trip and `00 ff` raw-byte prefix | PASS |
 | chronovu-la8 | export/import | fixed 8 MiB `.kdt` container and canonical logic prefix | PASS |
 | ascii/bits/hex/gnuplot/wavedrom/ols/srzip | export | non-empty format artifact/signature | PASS |
+| saleae | import | minimal Logic 2 digital fixture, sample count and waveform values | PASS |
+| logicport | import | minimal `.lpf` fixture, sample count and waveform values | PASS |
+| protocoldata | import | UART byte fixture, generated logic waveform | PASS |
+| trace32_ad | import | minimal PowerIntegrator `.ad` fixture and first sample | PASS |
+| stf | import | compressed Sigma Test File fixture, 448 logic samples | PASS |
+| raw_analog | import | U8 fixture, three analog samples through probe and replay passes | PASS |
+| isf | import | minimal binary ISF fixture, three analog samples | PASS |
 
 The runner is `DSView-format-integration-test`. It uses `QCoreApplication`,
 does not create widgets or file dialogs, and reuses one process-level
 libsigrok session to avoid repeated libusb initialization.
 
-## Remaining fixture gaps
+## Fixture construction
 
-Import-only formats (`isf`, `logicport`, `saleae`, `protocoldata`, `raw_analog`,
-`trace32_ad`, and `stf`) require external capture fixtures and are not claimed
-as covered by this CSV-based suite.
+The import-only cases construct deterministic minimal files in a temporary
+directory. This keeps the runner self-contained while exercising each real
+parser through `InputImporter`, `SigSession`, and the corresponding snapshot.

@@ -974,7 +974,7 @@ BOOST_AUTO_TEST_CASE(trace32_input_streams_logic_packets)
     BOOST_CHECK_EQUAL(input.headerPackets(), 1);
     BOOST_CHECK_EQUAL(input.metaPackets(), 1);
     BOOST_CHECK_EQUAL(input.logicPackets(), 1);
-    BOOST_CHECK_EQUAL(input.logicSamples(), 1);
+    BOOST_CHECK_EQUAL(input.logicSamples(), 64);
     BOOST_CHECK_EQUAL(input.samplerate(), 200000000);
     BOOST_CHECK(input.sawEnd());
 }

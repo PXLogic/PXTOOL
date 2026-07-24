@@ -422,18 +422,22 @@ static void send_metadata(struct sr_input *in)
 static void flush_output_buffer(struct sr_input *in)
 {
 	struct context *inc;
-	struct sr_datafeed_packet packet;
-	struct sr_datafeed_logic logic;
+	struct feed_queue_logic *queue;
+	size_t unitsize, samples;
 
 	inc = in->priv;
 
 	if (inc->out_buf->len) {
-		packet.type = SR_DF_LOGIC;
-		packet.payload = &logic;
-		logic.unitsize = (g_slist_length(in->sdi->channels) + 7) / 8;
-		logic.data = inc->out_buf->str;
-		logic.length = inc->out_buf->len;
-		sr_session_send(in->sdi, &packet);
+		unitsize = (g_slist_length(in->sdi->channels) + 7) / 8;
+		samples = inc->out_buf->len / unitsize;
+		queue = feed_queue_logic_alloc_cross_data(in->sdi, samples,
+			unitsize, g_slist_length(in->sdi->channels));
+		if (queue) {
+			if (feed_queue_logic_submit_many(queue,
+				(const uint8_t *)inc->out_buf->str, samples) == SR_OK)
+				(void)feed_queue_logic_flush(queue);
+			feed_queue_logic_free(queue);
+		}
 
 		g_string_truncate(inc->out_buf, 0);
 	}

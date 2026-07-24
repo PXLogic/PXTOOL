@@ -1447,6 +1447,20 @@ namespace pv
 
     void SigSession::feed_in_analog(const sr_datafeed_analog &o)
     {
+        // File input modules use standard libsigrok analog fields, while the
+        // DSView snapshot still consumes the legacy acquisition fields.
+        sr_datafeed_analog compatible = o;
+        if (!compatible.unit_bits && compatible.encoding) {
+            compatible.unit_bits = compatible.encoding->unitsize * 8;
+            compatible.unit_pitch = 1;
+            if (compatible.meaning) {
+                compatible.probes = compatible.meaning->channels;
+                compatible.mq = compatible.meaning->mq;
+                compatible.unit = compatible.meaning->unit;
+                compatible.mqflags = compatible.meaning->mqflags;
+            }
+        }
+
         if (_capture_data->get_analog()->memory_failed())
         {
             dsv_err("Unexpected analog packet");
@@ -1465,12 +1479,12 @@ namespace pv
             }
 
             // first payload
-            _capture_data->get_analog()->first_payload(o, _device_agent.get_sample_limit(), _device_agent.get_channels());
+            _capture_data->get_analog()->first_payload(compatible, _device_agent.get_sample_limit(), _device_agent.get_channels());
         }
         else
         {
             // Append to the existing data snapshot
-            _capture_data->get_analog()->append_payload(o);
+            _capture_data->get_analog()->append_payload(compatible);
         }
 
         if (_capture_data->get_analog()->memory_failed())
@@ -1480,7 +1494,7 @@ namespace pv
             return;
         }
 
-        set_receive_data_len(o.num_samples);
+        set_receive_data_len(compatible.num_samples);
         _data_updated = true;
     }
 

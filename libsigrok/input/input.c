@@ -231,22 +231,10 @@ SR_API const struct sr_option **sr_input_options_get(const struct sr_input_modul
  */
 SR_API void sr_input_options_free(const struct sr_option **options)
 {
-	int i;
-
 	if (!options)
 		return;
 
-	for (i = 0; options[i]; i++) {
-		if (options[i]->def) {
-			g_variant_unref(options[i]->def);
-			((struct sr_option *)options[i])->def = NULL;
-		}
-
-		if (options[i]->values) {
-			g_slist_free_full(options[i]->values, (GDestroyNotify)g_variant_unref);
-			((struct sr_option *)options[i])->values = NULL;
-		}
-	}
+	/* Option definitions are owned by their input modules. */
 	g_free(options);
 }
 

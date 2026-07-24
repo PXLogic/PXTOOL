@@ -318,8 +318,8 @@ static int flush_feed_buffer(struct sr_input *in)
 {
 	struct context *inc;
 	struct sr_datafeed_packet packet;
-	struct sr_datafeed_logic logic;
 	struct sr_datafeed_analog analog;
+	struct feed_queue_logic *queue;
 	struct sr_analog_encoding encoding;
 	struct sr_analog_meaning meaning;
 	struct sr_analog_spec spec;
@@ -363,14 +363,19 @@ static int flush_feed_buffer(struct sr_input *in)
 		packet.payload = &analog;
 		inc->feed.write_pos = (void *)inc->feed.buffer_analog;
 	} else {
-		memset(&logic, 0, sizeof(logic));
-		logic.length = inc->feed.samples_in_buffer;
-		logic.length *= inc->feed.unit_size;
-		logic.unitsize = inc->feed.unit_size;
-		logic.data = inc->feed.buffer_digital;
-		packet.type = SR_DF_LOGIC;
-		packet.payload = &logic;
+		queue = feed_queue_logic_alloc_cross_data(in->sdi,
+			inc->feed.samples_in_buffer, inc->feed.unit_size,
+			g_slist_length(in->sdi->channels));
+		if (!queue)
+			return SR_ERR_MALLOC;
+		rc = feed_queue_logic_submit_many(queue, inc->feed.buffer_digital,
+			inc->feed.samples_in_buffer);
+		if (rc == SR_OK)
+			rc = feed_queue_logic_flush(queue);
+		feed_queue_logic_free(queue);
 		inc->feed.write_pos = inc->feed.buffer_digital;
+		inc->feed.samples_in_buffer = 0;
+		return rc;
 	}
 	inc->feed.samples_in_buffer = 0;
 

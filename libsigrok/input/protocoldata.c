@@ -3112,8 +3112,8 @@ static int create_channels(struct sr_input *in)
 		sr_channel_new(sdi, index, SR_CHANNEL_LOGIC, TRUE, name);
 	}
 
-	inc->feed_logic = feed_queue_logic_alloc(in->sdi,
-		CHUNK_SIZE, sizeof(uint8_t));
+	inc->feed_logic = feed_queue_logic_alloc_cross_data(in->sdi,
+		CHUNK_SIZE, sizeof(uint8_t), handler->chans.count);
 	if (!inc->feed_logic) {
 		sr_err("Cannot create session feed.");
 		return SR_ERR_MALLOC;
