@@ -1382,6 +1382,7 @@ namespace pv
 
     void MainWindow::on_import_file(QString format_id, QString file_name)
     {
+        try {
         dsv_info("Import data: format=%s file=%s",
                  format_id.toUtf8().constData(),
                  file_name.toUtf8().constData());
@@ -1581,6 +1582,20 @@ namespace pv
                      (void*)_session,
                      (void*)import_session,
                      (_session && _session->have_view_data()) ? 1 : 0);
+        }
+        } catch (const std::exception &error) {
+            dsv_err("Import data: exception while importing file=%s format=%s error=%s",
+                    file_name.toUtf8().constData(),
+                    format_id.toUtf8().constData(),
+                    error.what());
+            MsgBox::Show(tr("Failed to import \"%1\": %2")
+                         .arg(file_name, QString::fromUtf8(error.what())));
+        } catch (...) {
+            dsv_err("Import data: unknown exception while importing file=%s format=%s",
+                    file_name.toUtf8().constData(),
+                    format_id.toUtf8().constData());
+            MsgBox::Show(tr("Failed to import \"%1\" due to an unexpected error.")
+                         .arg(file_name));
         }
     }
 

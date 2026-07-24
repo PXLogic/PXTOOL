@@ -310,7 +310,7 @@ BOOST_AUTO_TEST_CASE(input_output_uint32_editor_covers_full_range_from_zero_defa
     editor->setValue((std::numeric_limits<guint32>::max)());
     const QVariant value = pv::dialogs::detail::inputOutputOptionEditorValue(
         options[0], editor);
-    BOOST_CHECK_EQUAL(value.metaType().id(), QMetaType::UInt);
+    BOOST_CHECK_EQUAL(value.type(), QVariant::UInt);
     BOOST_CHECK_EQUAL(value.value<guint32>(), (std::numeric_limits<guint32>::max)());
 }
 

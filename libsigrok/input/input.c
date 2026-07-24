@@ -20,7 +20,17 @@
  */
 
 
+#ifndef _WIN32
+#ifndef _LARGEFILE_SOURCE
+#define _LARGEFILE_SOURCE 1
+#endif
+#ifndef _FILE_OFFSET_BITS
+#define _FILE_OFFSET_BITS 64
+#endif
+#endif
+
 #include <config.h>
+#include <stdio.h>
 #include <string.h>
 #include <errno.h>
 #include <sys/types.h>
