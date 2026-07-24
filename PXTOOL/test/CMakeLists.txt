@@ -17,6 +17,18 @@
 ## along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ##
 
+set(DSVIEW_TEST_QRC
+    ../themes/breeze.qrc
+)
+
+if(Qt5Core_FOUND)
+    qt5_add_resources(DSVIEW_TEST_RESOURCES ${DSVIEW_TEST_QRC})
+endif()
+
+if(Qt6Core_FOUND)
+    qt6_add_resources(DSVIEW_TEST_RESOURCES ${DSVIEW_TEST_QRC})
+endif()
+
 add_executable(DSView-test
     test.cpp
     test_channeltint.cpp
@@ -32,11 +44,14 @@ add_executable(DSView-test
     test_analogpacketadapter.cpp
     test_logsearch.cpp
     test_view_sampleconversion.cpp
+    test_theme.cpp
     test_theme_qss.cpp
     test_upstream_demo.cpp
     test_upstream_fx2lafw.cpp
     ../pv/view/channeltint.cpp
     ../pv/dock/logsearch.cpp
+    ../pv/theme/thememanager.cpp
+    ${DSVIEW_TEST_RESOURCES}
     ../pv/data/formatcapability.cpp
     ../pv/data/iooptions.cpp
     ../pv/data/analogpacketadapter.cpp

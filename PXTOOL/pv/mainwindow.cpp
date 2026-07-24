@@ -115,6 +115,7 @@
 #include "utility/diskcachesettings.h"
 #include "utility/path.h"
 #include "log.h"
+#include "theme/thememanager.h"
 #include "sigsession.h"
 #include "deviceagent.h"
 #include <stdlib.h>
@@ -130,6 +131,12 @@ namespace pv
 
     namespace{
         QString tmp_file;
+    }
+
+    static QColor themeColor(const QString &token, const QColor &fallback)
+    {
+        QColor color = AppConfig::Instance().GetThemeColor(token);
+        return color.isValid() ? color : fallback;
     }
 
     MainWindow::MainWindow(toolbars::TitleBar *title_bar, QWidget *parent)
@@ -334,16 +341,41 @@ namespace pv
         _menu_view = _menu_bar->addMenu(tr("Window"));
         _menu_themes = _menu_view->addMenu(tr("Themes"));
         _menu_themes->setObjectName(QString::fromUtf8("menuThemes"));
-        _action_dark  = _menu_themes->addAction(tr("Dark"));
-        _action_light = _menu_themes->addAction(tr("Light"));
-        _action_dark->setCheckable(true);
-        _action_light->setCheckable(true);
-        QActionGroup *theme_actions = new QActionGroup(_menu_themes);
-        theme_actions->setExclusive(true);
-        theme_actions->addAction(_action_dark);
-        theme_actions->addAction(_action_light);
-        connect(_action_dark,  SIGNAL(triggered()), _trig_bar, SLOT(on_actionDark_triggered()));
-        connect(_action_light, SIGNAL(triggered()), _trig_bar, SLOT(on_actionLight_triggered()));
+        _theme_action_group = new QActionGroup(this);
+        _theme_action_group->setExclusive(true);
+
+        _action_dark        = _menu_themes->addAction(tr("Dark"));
+        _action_light       = _menu_themes->addAction(tr("Light"));
+        _action_atom        = _menu_themes->addAction(tr("Atom One Dark"));
+        _action_ayu         = _menu_themes->addAction(tr("Ayu Light"));
+        _action_dark_cards  = _menu_themes->addAction(tr("Dark Colored Cards"));
+        _action_light_cards = _menu_themes->addAction(tr("Light Colored Cards"));
+
+        const QList<QAction*> themeActions = {
+            _action_dark,
+            _action_light,
+            _action_atom,
+            _action_ayu,
+            _action_dark_cards,
+            _action_light_cards,
+        };
+        const QList<QString> themeIds = {
+            THEME_STYLE_DARK,
+            THEME_STYLE_LIGHT,
+            THEME_STYLE_ATOM,
+            THEME_STYLE_AYU,
+            THEME_STYLE_DARK_CARDS,
+            THEME_STYLE_LIGHT_CARDS,
+        };
+        for (int i = 0; i < themeActions.size(); ++i) {
+            QAction *action = themeActions[i];
+            action->setCheckable(true);
+            action->setData(themeIds[i]);
+            _theme_action_group->addAction(action);
+            connect(action, &QAction::triggered, this, [this, action]() {
+                switchTheme(action->data().toString());
+            });
+        }
         _action_display_opts  = _menu_view->addAction(tr("Display Options..."));
         connect(_action_display_opts, SIGNAL(triggered()), _trig_bar, SLOT(on_display_setting()));
         _action_shortcuts = _menu_view->addAction(tr("Keyboard Shortcuts..."));
@@ -540,8 +572,11 @@ namespace pv
 
         const SigSession::DiskCacheStatus st = _session->disk_cache_status();
         AppConfig &app = AppConfig::Instance();
-        const bool isDark = (app.frameOptions.style == "dark");
-        const QString border = isDark ? QStringLiteral("#333333") : QStringLiteral("#BBBBBB");
+        const bool isDark = app.IsDarkStyle();
+        const bool isLegacy = pv::theme::ThemeManager::isLegacyTheme(app.frameOptions.style);
+        QString border = isDark ? QStringLiteral("#333333") : QStringLiteral("#BBBBBB");
+        if (!isLegacy)
+            border = themeColor(QStringLiteral("@border-strong"), QColor(border)).name();
         if (_disk_cache_footer_line)
             _disk_cache_footer_line->setStyleSheet(QStringLiteral(
                 "QWidget#disk_cache_footer_line{background:%1;}").arg(border));
@@ -621,6 +656,10 @@ namespace pv
         if (_menu_themes)         _menu_themes->setTitle(tr("Themes"));
         if (_action_dark)         _action_dark->setText(tr("Dark"));
         if (_action_light)        _action_light->setText(tr("Light"));
+        if (_action_atom)         _action_atom->setText(tr("Atom One Dark"));
+        if (_action_ayu)          _action_ayu->setText(tr("Ayu Light"));
+        if (_action_dark_cards)   _action_dark_cards->setText(tr("Dark Colored Cards"));
+        if (_action_light_cards)  _action_light_cards->setText(tr("Light Colored Cards"));
         if (_action_display_opts) _action_display_opts->setText(tr("Display Options..."));
         if (_action_shortcuts)    _action_shortcuts->setText(tr("Keyboard Shortcuts..."));
 
@@ -914,12 +953,30 @@ namespace pv
             return;
         }
 
-        bool isDark = AppConfig::Instance().IsDarkStyle();
-        int fsz = qRound(AppConfig::Instance().appOptions.fontSize);
+        AppConfig &app = AppConfig::Instance();
+        bool isDark = app.IsDarkStyle();
+        const bool isLegacy = pv::theme::ThemeManager::isLegacyTheme(app.frameOptions.style);
+        int fsz = qRound(app.appOptions.fontSize);
         QString bgColor   = isDark ? "#1E1E1E" : "#E8E8E8";
         QString selBg     = isDark ? "#2D2D2D" : "#FFFFFF";
         QString textColor = isDark ? "#CCCCCC" : "#333333";
         QString selText   = isDark ? "#FFFFFF" : "#000000";
+        QString addBg     = isDark ? "#2A2A2A" : "#E0E0E0";
+        QString addText   = isDark ? "#AAAAAA" : "#444444";
+        QString addHover  = isDark ? "#3A3A3A" : "#D0D0D0";
+        QString tabBarBg  = isDark ? "#1A1A1A" : "#D8D8D8";
+        QString tabBorder = isDark ? "#333333" : "#BBBBBB";
+        if (!isLegacy) {
+            bgColor = themeColor(QStringLiteral("@tabview-bg"), QColor(bgColor)).name();
+            selBg = themeColor(QStringLiteral("@bg-overlay"), QColor(selBg)).name();
+            textColor = themeColor(QStringLiteral("@fg-base"), QColor(textColor)).name();
+            selText = themeColor(QStringLiteral("@fg-bright"), QColor(selText)).name();
+            addBg = themeColor(QStringLiteral("@tabview-bg"), QColor(addBg)).name();
+            addText = themeColor(QStringLiteral("@fg-base"), QColor(addText)).name();
+            addHover = themeColor(QStringLiteral("@bg-overlay"), QColor(addHover)).name();
+            tabBarBg = themeColor(QStringLiteral("@tabview-bg"), QColor(tabBarBg)).name();
+            tabBorder = themeColor(QStringLiteral("@border-strong"), QColor(tabBorder)).name();
+        }
         QString closeBtnStyle = isDark
             ? QString("QPushButton{background:transparent;color:#888;border:none;font-size:%1px;padding:0px;max-width:14px;min-width:14px;}"
                       "QPushButton:hover{color:#FF6060;}").arg(fsz)
@@ -993,17 +1050,17 @@ namespace pv
         addBtn->setStyleSheet(QString(
             "QPushButton{background:%1;color:%2;border-radius:4px;font-size:%3px;font-weight:bold;border:none;}"
             "QPushButton:hover{background:%4;}")
-            .arg(isDark ? "#2A2A2A" : "#E0E0E0")
-            .arg(isDark ? "#AAAAAA" : "#444444")
+            .arg(addBg)
+            .arg(addText)
             .arg(fsz + 2)
-            .arg(isDark ? "#3A3A3A" : "#D0D0D0"));
+            .arg(addHover));
         connect(addBtn, &QPushButton::clicked, this, &MainWindow::on_session_tab_add);
         _tab_bar_layout->addWidget(addBtn);
 
         _session_tab_bar->setStyleSheet(QString(
             "QWidget#session_tab_bar{background:%1;border-top:1px solid %2;}")
-            .arg(isDark ? "#1A1A1A" : "#D8D8D8")
-            .arg(isDark ? "#333333" : "#BBBBBB"));
+            .arg(tabBarBg)
+            .arg(tabBorder));
     }
 
     void MainWindow::update_tab_bar_style()
@@ -3024,26 +3081,63 @@ namespace pv
         _session->update_lang_text();
     }
 
+    void MainWindow::syncThemeActions()
+    {
+        if (!_theme_action_group)
+            return;
+
+        const QString themeId = pv::theme::ThemeManager::normalizeId(AppConfig::Instance().frameOptions.style);
+        const QList<QAction*> actions = _theme_action_group->actions();
+        for (QAction *action : actions)
+            action->setChecked(action->data().toString() == themeId);
+    }
+
     void MainWindow::switchTheme(QString style)
     {
         AppConfig &app = AppConfig::Instance();
+        const QString themeId = pv::theme::ThemeManager::normalizeId(style);
 
-        if (app.frameOptions.style != style)
+        if (app.frameOptions.style != themeId)
         {
-            app.frameOptions.style = style;
+            app.frameOptions.style = themeId;
             app.SaveFrame();
         }
 
-        QString qssRes = ":/" + style + ".qss";
-        QFile qss(qssRes);
-        qss.open(QFile::ReadOnly | QFile::Text);
-        qApp->setStyleSheet(qss.readAll());
-        qss.close();
+        if (pv::theme::ThemeManager::isLegacyTheme(themeId)) {
+            app.SetThemeTokens(pv::theme::ThemeManager::legacyTokens(themeId));
 
-        if (_action_dark)
-            _action_dark->setChecked(style == THEME_STYLE_DARK);
-        if (_action_light)
-            _action_light->setChecked(style == THEME_STYLE_LIGHT);
+            const QString qssRes = ":/" + themeId + ".qss";
+            QFile qss(qssRes);
+            if (qss.open(QFile::ReadOnly | QFile::Text)) {
+                qApp->setStyleSheet(QString::fromUtf8(qss.readAll()));
+            } else {
+                dsv_err("Unable to open theme stylesheet:%s", qssRes.toUtf8().constData());
+            }
+        } else {
+            QHash<QString, QString> tokens;
+            QString styleSheet;
+            QString error;
+            if (pv::theme::ThemeManager::buildStyleSheet(themeId, tokens, styleSheet, &error)) {
+                app.SetThemeTokens(tokens);
+                qApp->setStyleSheet(styleSheet);
+            } else {
+                const QString fallback = pv::theme::ThemeManager::isDarkTheme(themeId)
+                                         ? QString(THEME_STYLE_DARK)
+                                         : QString(THEME_STYLE_LIGHT);
+                dsv_err("Unable to build theme stylesheet for %s:%s; falling back to %s",
+                        themeId.toUtf8().constData(),
+                        error.toUtf8().constData(),
+                        fallback.toUtf8().constData());
+                if (fallback != themeId) {
+                    if (app.frameOptions.style != fallback) {
+                        app.frameOptions.style = fallback;
+                        app.SaveFrame();
+                    }
+                    switchTheme(fallback);
+                    return;
+                }
+            }
+        }
 
         UiManager::Instance()->Update(UI_UPDATE_ACTION_THEME);
         UiManager::Instance()->Update(UI_UPDATE_ACTION_FONT);
@@ -3052,6 +3146,7 @@ namespace pv
         if (_session_tab_bar)
             rebuild_tab_buttons();
         update_disk_cache_footer();
+        syncThemeActions();
 
         data_updated();
     }

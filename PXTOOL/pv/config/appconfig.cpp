@@ -20,6 +20,7 @@
  */
 
 #include "appconfig.h"
+#include "../theme/thememanager.h"
 #include <QApplication>
 #include <QGuiApplication>
 #include <QScreen>
@@ -539,31 +540,40 @@ float AppConfig::GetDefaultFontSize()
 
 bool AppConfig::IsDarkStyle()
 {
-    if (frameOptions.style == THEME_STYLE_DARK){
-        return true;
-    }
-    return false;
+    return pv::theme::ThemeManager::isDarkTheme(frameOptions.style);
 }
 
 QColor AppConfig::GetStyleColor()
 {
-    if (IsDarkStyle()){
-        return QColor(38, 38, 38);
-    }
-    else{
-        return QColor(248, 248, 248);
-    }
+    const QColor fallback = IsDarkStyle() ? QColor(38, 38, 38) : QColor(248, 248, 248);
+    return GetThemeColor("@bg-base", fallback);
+}
+
+void AppConfig::SetThemeTokens(const QHash<QString, QString> &tokens)
+{
+    _themeTokens = tokens;
+}
+
+QString AppConfig::GetThemeTokenValue(const QString &tokenName) const
+{
+    return _themeTokens.value(tokenName);
+}
+
+QColor AppConfig::GetThemeColor(const QString &tokenName, const QColor &fallback) const
+{
+    const QColor color(_themeTokens.value(tokenName));
+    if (color.isValid())
+        return color;
+    return fallback;
 }
 
 
 //-------------api
 QString GetIconPath()
 {   
-    QString style = AppConfig::Instance().frameOptions.style;
-    if (style == ""){
-        style = THEME_STYLE_DARK;
-    }
-    return ":/icons/" + style;
+    if (AppConfig::Instance().IsDarkStyle())
+        return ":/icons/dark";
+    return ":/icons/light";
 }
 
 QString GetAppDataDir()

@@ -18,6 +18,7 @@
 #include "edge_nav_button.h"
 
 #include "../config/appconfig.h"
+#include "../theme/thememanager.h"
 
 #include <QMouseEvent>
 #include <QPainter>
@@ -30,6 +31,12 @@ namespace view {
 
 static const int ButtonSize = 24;
 static const int BorderRadius = 3;
+
+static QColor themeColor(const QString &token, const QColor &fallback)
+{
+    QColor color = AppConfig::Instance().GetThemeColor(token);
+    return color.isValid() ? color : fallback;
+}
 
 EdgeNavButton::EdgeNavButton(Direction dir, QWidget *parent) :
     QWidget(parent),
@@ -44,13 +51,19 @@ EdgeNavButton::EdgeNavButton(Direction dir, QWidget *parent) :
 
 void EdgeNavButton::UpdateTheme()
 {
-    const bool isDark = (AppConfig::Instance().frameOptions.style == "dark");
+    const bool isDark = AppConfig::Instance().IsDarkStyle();
     _bgColor = isDark ? QColor("#1f1f1f") : QColor("#ffffff");
     _hoverBgColor = isDark ? QColor("#2a2a2a") : QColor("#f3f4f6");
     _borderColor = isDark ? QColor("#444444") : QColor("#d4d4d4");
     _disabledBorderColor = isDark ? QColor("#363636") : QColor("#e0e0e0");
     _arrowColor = isDark ? QColor("#eff0f1") : QColor("#2A2A2A");
     _disabledColor = isDark ? QColor("#555555") : QColor("#9ca3af");
+    if (!pv::theme::ThemeManager::isLegacyTheme(AppConfig::Instance().frameOptions.style)) {
+        _bgColor = themeColor("@panel-bg", _bgColor);
+        _hoverBgColor = themeColor("@bg-overlay", _hoverBgColor);
+        _borderColor = themeColor("@border-strong", _borderColor);
+        _arrowColor = themeColor("@panel-text", _arrowColor);
+    }
     update();
 }
 
