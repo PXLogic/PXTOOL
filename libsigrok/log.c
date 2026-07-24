@@ -84,3 +84,8 @@ SR_API void ds_log_level(int level)
         xlog_set_level(log_ctx, level);
     }
 }
+
+SR_API int sr_log_loglevel_get(void)
+{
+    return log_level_value == -1 ? SR_LOG_NONE : log_level_value;
+}

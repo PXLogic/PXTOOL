@@ -69,6 +69,7 @@ public:
     void SetTitleSpace(int h);
 
     void update_font();
+    static void normalize_button_box(QDialogButtonBox *button_box);
 
     void show();
 

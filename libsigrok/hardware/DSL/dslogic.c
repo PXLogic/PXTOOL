@@ -1484,8 +1484,7 @@ static int dev_acquisition_start(struct sr_dev_inst *sdi, void *cb_data)
     devc->status = DSL_START;
 
 	/* Send header packet to the session bus. */
-    //std_session_send_df_header(cb_data, LOG_PREFIX);
-    std_session_send_df_header(sdi, LOG_PREFIX);
+    std_session_send_df_header(sdi);
 
     return SR_OK;
 }

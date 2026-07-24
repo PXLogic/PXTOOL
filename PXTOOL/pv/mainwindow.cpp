@@ -64,6 +64,9 @@
 #include "data/logicsnapshot.h"
 #include "data/dsosnapshot.h"
 #include "data/analogsnapshot.h"
+#include "data/formatcapability.h"
+#include "data/inputimporter.h"
+#include "data/iooptions.h"
 
 #include "dialogs/about.h"
 #include "dialogs/deviceoptions.h"
@@ -73,6 +76,7 @@
 #include "dialogs/applicationpardlg.h"
 #include "dialogs/shortcutdlg.h"
 #include "dialogs/diskcachedialog.h"
+#include "dialogs/inputoutputoptionsdlg.h"
 
 #include "toolbars/samplingbar.h"
 #include "toolbars/trigbar.h"
@@ -290,9 +294,19 @@ namespace pv
         _action_store   = _menu_session->addAction(tr("Store..."));
         _action_default = _menu_session->addAction(tr("Default..."));
         _action_disk_cache = _menu_session->addAction(tr("Disk Cache Settings..."));
-        _action_open = _menu_file->addAction(tr("Open..."));
-        _action_save    = _menu_file->addAction(tr("Save..."));
-        _action_export  = _menu_file->addAction(tr("Export..."));
+        _action_open = new QAction(this);
+        _action_import = new QAction(this);
+        _menu_import = _menu_file->addMenu(tr("Import"));
+        _menu_import->addAction(_action_open);
+        _menu_import->addSeparator();
+        _menu_import->addAction(_action_import);
+        _menu_import->addSeparator();
+        _action_save = new QAction(this);
+        _menu_export = _menu_file->addMenu(tr("Export"));
+        _menu_export->addAction(_action_save);
+        _menu_export->addSeparator();
+        _action_export = _menu_export->addAction(tr("Export Other Formats..."));
+        _menu_export->addSeparator();
         _action_capture = _menu_file->addAction(tr("Capture..."));
         _menu_file->addSeparator();
         _action_quit = _menu_file->addAction(tr("Exit"));
@@ -301,10 +315,27 @@ namespace pv
         connect(_action_default, SIGNAL(triggered()), _file_bar, SLOT(on_actionDefault_triggered()));
         connect(_action_disk_cache, &QAction::triggered, this, &MainWindow::on_disk_cache_settings);
         connect(_action_open,    SIGNAL(triggered()), _file_bar, SLOT(on_actionOpen_triggered()));
+        connect(_action_import,  SIGNAL(triggered()), this, SLOT(on_import_format_triggered()));
         connect(_action_save,    &QAction::triggered, this, &MainWindow::on_save);
         connect(_action_export,  &QAction::triggered, this, &MainWindow::on_export);
         connect(_action_capture, SIGNAL(triggered()), _file_bar, SLOT(on_actionCapture_triggered()));
         connect(_action_quit,    &QAction::triggered, this, &MainWindow::close);
+
+        const QVector<pv::data::FormatCapability> import_formats = pv::data::importFormats();
+        for (const pv::data::FormatCapability &format : import_formats) {
+            QAction *action = _menu_import->addAction(format.menuText);
+            action->setData(format.id);
+            _import_format_ids.insert(action, format.id);
+            connect(action, SIGNAL(triggered()), this, SLOT(on_import_format_triggered()));
+        }
+
+        const QVector<pv::data::FormatCapability> export_formats = pv::data::exportFormats();
+        for (const pv::data::FormatCapability &format : export_formats) {
+            QAction *action = _menu_export->addAction(format.menuText);
+            action->setData(format.id);
+            _export_format_ids.insert(action, format.id);
+            connect(action, SIGNAL(triggered()), this, SLOT(on_export_format_triggered()));
+        }
 
         // Window menu
         _menu_view = _menu_bar->addMenu(tr("Window"));
@@ -423,8 +454,13 @@ namespace pv
 
         // file toolbar
         connect(_file_bar, SIGNAL(sig_load_file(QString)), this, SLOT(on_load_file(QString)));
+        connect(_file_bar, SIGNAL(sig_import_file(QString, QString)),
+                this, SLOT(on_import_file(QString, QString)));
+        connect(_file_bar, SIGNAL(sig_import()), this, SLOT(on_import_format_triggered()));
         connect(_file_bar, SIGNAL(sig_save()), this, SLOT(on_save()));
         connect(_file_bar, SIGNAL(sig_export()), this, SLOT(on_export()));
+        connect(_file_bar, SIGNAL(sig_export_format(QString)),
+                this, SLOT(on_export_format(QString)));
         connect(_file_bar, SIGNAL(sig_screenShot()), this, SLOT(on_screenShot()), Qt::QueuedConnection);
         connect(_file_bar, SIGNAL(sig_load_session(QString)), this, SLOT(on_load_session(QString)));
         connect(_file_bar, SIGNAL(sig_store_session(QString)), this, SLOT(on_store_session(QString)));
@@ -607,9 +643,12 @@ namespace pv
         if (_action_load)    _action_load->setText(tr("Load..."));
         if (_action_store)   _action_store->setText(tr("Store..."));
         if (_action_default) _action_default->setText(tr("Default..."));
-        if (_action_open)    _action_open->setText(tr("Open..."));
-        if (_action_save)    _action_save->setText(tr("Save..."));
-        if (_action_export)  _action_export->setText(tr("Export..."));
+        if (_action_open)    _action_open->setText(tr("Import DSL Data..."));
+        if (_menu_import)    _menu_import->setTitle(tr("Import"));
+        if (_action_import)  _action_import->setText(tr("Import Other Formats..."));
+        if (_action_save)    _action_save->setText(tr("Export DSL Data..."));
+        if (_menu_export)    _menu_export->setTitle(tr("Export"));
+        if (_action_export)  _action_export->setText(tr("Export Other Formats..."));
         if (_action_capture) _action_capture->setText(tr("Capture..."));
         if (_action_quit)    _action_quit->setText(tr("Exit"));
 
@@ -693,6 +732,15 @@ namespace pv
         if (!g || g->active_session_uid < 0) return -1;
         auto it = _uid_to_index.constFind(g->active_session_uid);
         return (it == _uid_to_index.constEnd()) ? -1 : it.value();
+    }
+
+    int MainWindow::current_session_global_index() const
+    {
+        if (!_session) return -1;
+        for (int i = 0; i < _session_items.size(); ++i)
+            if (_session_items[i].session == _session)
+                return i;
+        return -1;
     }
 
     MainWindow::DeviceGroup *MainWindow::create_group(ds_device_handle handle)
@@ -1117,9 +1165,7 @@ namespace pv
         // deactivate outgoing callback / capture / msg listener.
         _is_switching_session = true;
 
-        int prev_active = -1;
-        DeviceGroup *prev_g = current_group();
-        if (prev_g) prev_active = active_session_global_index_of_group(prev_g);
+        int prev_active = current_session_global_index();
         // Skip prelude when the outgoing session IS the target — this happens
         // legitimately in two cases:
         //   * a caller (e.g. on_session_tab_add) creates a new session and switches
@@ -1138,12 +1184,15 @@ namespace pv
             oldItem.session->set_decoder_pannel(nullptr);
         }
 
-        DeviceGroup *new_g = find_group_by_handle(handle);
+        SessionItem &newItem = _session_items[global_index];
+        DeviceGroup *new_g = group_owning_session(newItem.uid);
+        if (!new_g)
+            new_g = find_group_by_handle(handle);
         if (new_g) {
             _active_group_index = index_of_group(new_g);
-            new_g->active_session_uid = _session_items[global_index].uid;
+            new_g->active_session_uid = newItem.uid;
         }
-        SessionItem &newItem = _session_items[global_index];
+
         _session      = newItem.session;
         _view         = newItem.view;
         _device_agent = _session->get_device();
@@ -1179,8 +1228,12 @@ namespace pv
         if (!new_group) return;
 
         int prev_global = -1;
-        DeviceGroup *prev_group = current_group();
-        if (prev_group) prev_global = active_session_global_index_of_group(prev_group);
+        prev_global = current_session_global_index();
+        DeviceGroup *prev_group = nullptr;
+        if (prev_global >= 0)
+            prev_group = group_owning_session(_session_items[prev_global].uid);
+        if (!prev_group)
+            prev_group = current_group();
 
         if (prev_global == index && prev_group == new_group) return;
 
@@ -1202,6 +1255,10 @@ namespace pv
         new_group->active_session_uid = _session_items[index].uid;
         SessionItem &newItem = _session_items[index];
 
+        ds_device_handle target_handle = newItem.session->get_device()->handle();
+        if (target_handle == NULL_HANDLE)
+            target_handle = new_group->handle;
+
         _session      = newItem.session;
         _view         = newItem.view;
         _device_agent = _session->get_device();
@@ -1209,6 +1266,16 @@ namespace pv
         newItem.session->set_as_current();
         newItem.session->add_msg_listener(this);
         if (newItem.cb) newItem.cb->setActive(true);
+
+        // Rebind before wiring hardware sessions into UI widgets. Imported
+        // sessions own an in-memory custom device, so re-activating the global
+        // device table here can disturb their channel pointers/state.
+        if (!_device_agent->is_custom_device())
+            _session->rebind_device(target_handle);
+        else
+            dsv_info("switch_to_session: skip rebind for custom/imported session@%p handle=%p",
+                     (void*)_session,
+                     target_handle);
 
         _sampling_bar->setSession(_session);
         _sampling_bar->set_view(_view);
@@ -1220,8 +1287,6 @@ namespace pv
         _is_switching_session = false;
 
         rebuild_tab_buttons();
-
-        _session->rebind_device(new_group->handle);
 
         if (_session->have_view_data()) {
             _view->set_all_update(true);
@@ -1344,12 +1409,251 @@ namespace pv
         }
 
         ds_device_handle file_handle = find_latest_device_handle();
+
         if (file_handle == NULL_HANDLE) {
             MsgBox::Show(tr("File loaded but no device handle was returned."));
             return;
         }
 
-        switch_to_device(file_handle);
+        DeviceGroup *grp = current_group();
+        if (!grp)
+            grp = find_group_by_handle(_device_agent ? _device_agent->handle() : NULL_HANDLE);
+        if (!grp)
+            grp = create_group(file_handle);
+
+        const int uid = create_session_in_group(grp);
+        const int idx = _uid_to_index.value(uid, -1);
+        if (idx < 0) {
+            MsgBox::Show(tr("Failed to create a session for the loaded file."));
+            return;
+        }
+
+        SessionItem &item = _session_items[idx];
+        item.name = QFileInfo(file_name).completeBaseName();
+        if (item.name.isEmpty())
+            item.name = tr("Loaded File");
+
+        switch_to_session_for_handle(idx, file_handle);
+        rebuild_tab_buttons();
+    }
+
+    void MainWindow::on_import_file(QString format_id, QString file_name)
+    {
+        try {
+        dsv_info("Import data: format=%s file=%s",
+                 format_id.toUtf8().constData(),
+                 file_name.toUtf8().constData());
+
+        const QVector<pv::data::FormatCapability> formats = pv::data::importFormats();
+        const pv::data::FormatCapability *format = pv::data::findFormatById(formats, format_id);
+        if (!format) {
+            MsgBox::Show(tr("Unsupported import format for \"%1\".").arg(file_name));
+            return;
+        }
+
+        const sr_input_module *module = sr_input_find(format_id.toUtf8().constData());
+        if (!module) {
+            MsgBox::Show(tr("Import format \"%1\" is unavailable.")
+                .arg(format->description));
+            return;
+        }
+
+        pv::data::CsvImportPlan dsview_csv_plan;
+        const bool is_dsview_csv = pv::data::estimateDsViewCsvImportPlan(file_name,
+                                                                         dsview_csv_plan);
+        dsv_info("Import data: DSView CSV detection file=%s detected=%d samplerate=%llu samplelimit=%llu logic_channels=%llu",
+                 file_name.toUtf8().constData(),
+                 is_dsview_csv ? 1 : 0,
+                 (unsigned long long)dsview_csv_plan.sampleRate,
+                 (unsigned long long)dsview_csv_plan.sampleLimit,
+                 (unsigned long long)dsview_csv_plan.logicChannelCount);
+        if (is_dsview_csv && format_id != QLatin1String("csv")) {
+            dsv_info("Import data: detected DSView CSV export, switching format to csv.");
+            format_id = QLatin1String("csv");
+            format = pv::data::findFormatById(formats, format_id);
+            module = sr_input_find(format_id.toUtf8().constData());
+            if (!format || !module) {
+                MsgBox::Show(tr("Import format \"%1\" is unavailable.")
+                    .arg(QLatin1String("CSV")));
+                return;
+            }
+        }
+
+        const sr_option **definitions = sr_input_options_get(module);
+        pv::data::IoOptions options(definitions);
+        if (is_dsview_csv && format_id == QLatin1String("csv")) {
+            pv::data::applyDsViewCsvImportPlan(options, dsview_csv_plan);
+            dsv_info("Import data: applied DSView CSV options samplerate=%llu logic_channels=%llu first_column=%u",
+                     (unsigned long long)options.value(QStringLiteral("samplerate")).toULongLong(),
+                     (unsigned long long)options.value(QStringLiteral("logic_channels")).toUInt(),
+                     options.value(QStringLiteral("first_column")).toUInt());
+        }
+        bool accepted = true;
+        if (format->hasOptions) {
+            dsv_info("Import data: showing options dialog format=%s dsview_csv=%d",
+                     format_id.toUtf8().constData(),
+                     is_dsview_csv ? 1 : 0);
+            dialogs::InputOutputOptionsDlg dlg(
+                tr("Import %1").arg(format->description), definitions, options, this);
+            accepted = dlg.exec() == QDialog::Accepted;
+            if (accepted) {
+                options = dlg.options();
+                if (format_id == QLatin1String("csv"))
+                    dsv_info("Import data: accepted CSV options samplerate=%llu logic_channels=%llu first_column=%u single_column=%u start_line=%u header=%d column_separator=%s comment_leader=%s",
+                             (unsigned long long)options.value(QStringLiteral("samplerate")).toULongLong(),
+                             options.value(QStringLiteral("logic_channels")).toUInt(),
+                             options.value(QStringLiteral("first_column")).toUInt(),
+                             options.value(QStringLiteral("single_column")).toUInt(),
+                             options.value(QStringLiteral("start_line")).toUInt(),
+                             options.value(QStringLiteral("header")).toBool() ? 1 : 0,
+                             options.value(QStringLiteral("column_separator")).toString().toUtf8().constData(),
+                             options.value(QStringLiteral("comment_leader")).toString().toUtf8().constData());
+            } else {
+                dsv_info("Import data: options dialog canceled format=%s",
+                         format_id.toUtf8().constData());
+            }
+        }
+        sr_input_options_free(definitions);
+
+        if (!accepted)
+            return;
+
+        SigSession *previous_session = _session;
+        SessionCallback *import_cb = new SessionCallback(this);
+        import_cb->setActive(false);
+        SigSession *import_session = new SigSession();
+        import_session->set_callback(import_cb);
+
+        import_session->set_as_current();
+        const pv::data::ImportResult result = pv::data::InputImporter::importFile(
+            *import_session, format_id, file_name, options);
+        dsv_info("Import data: import result ok=%d samplerate=%llu samplelimit=%llu error=%s",
+                 result.ok ? 1 : 0,
+                 (unsigned long long)result.sampleRate,
+                 (unsigned long long)result.sampleLimit,
+                 result.error.toUtf8().constData());
+
+        previous_session->set_as_current();
+
+        if (!result.ok) {
+            delete import_session;
+            delete import_cb;
+            const QString message = result.error.isEmpty()
+                ? tr("Failed to import \"%1\" as %2.")
+                    .arg(file_name, format->description)
+                : tr("Failed to import \"%1\" as %2.\n%3")
+                    .arg(file_name, format->description, result.error);
+            MsgBox::Show(message);
+            return;
+        }
+
+        const int uid = _next_session_uid++;
+        pv::view::View *view = new pv::view::View(import_session, _sampling_bar, this);
+        _session_stack->addWidget(view);
+        dsv_info("Import data: creating imported session uid=%d session=%p view=%p have_data=%d samplerate=%llu samplelimit=%llu",
+                 uid,
+                 (void*)import_session,
+                 (void*)view,
+                 import_session->have_view_data() ? 1 : 0,
+                 (unsigned long long)import_session->cur_snap_samplerate(),
+                 (unsigned long long)import_session->cur_samplelimits());
+
+        SessionItem item;
+        item.uid = uid;
+        item.session = import_session;
+        item.view = view;
+        item.name = QFileInfo(file_name).completeBaseName();
+        if (item.name.isEmpty())
+            item.name = tr("Imported Session");
+        item.cb = import_cb;
+        _session_items.append(item);
+        _uid_to_index[uid] = _session_items.size() - 1;
+
+        DeviceGroup *grp = current_group();
+        if (!grp)
+            grp = create_group(import_session->get_device()->handle());
+        grp->session_uids.append(uid);
+        grp->active_session_uid = uid;
+
+        rebuild_uid_index();
+        switch_to_session(_uid_to_index.value(uid));
+        dsv_info("Import data: switched to imported session uid=%d active_session=%p expected_session=%p have_data=%d samplerate=%llu samplelimit=%llu",
+                 uid,
+                 (void*)_session,
+                 (void*)import_session,
+                 (_session == import_session && _session->have_view_data()) ? 1 : 0,
+                 _session ? (unsigned long long)_session->cur_snap_samplerate() : 0ULL,
+                 _session ? (unsigned long long)_session->cur_samplelimits() : 0ULL);
+
+        if (format_id == QLatin1String("csv")) {
+            if (result.sampleRate > 0) {
+                _session->get_device()->set_config_uint64(
+                    SR_CONF_SAMPLERATE, result.sampleRate);
+            }
+            if (result.sampleLimit > 0) {
+                _session->get_device()->set_config_uint64(
+                    SR_CONF_LIMIT_SAMPLES, result.sampleLimit);
+            }
+        }
+
+        rebuild_tab_buttons();
+
+        if (_session == import_session && _session->have_view_data()) {
+            dsv_info("Import data: scheduling imported view refresh session=%p view=%p",
+                     (void*)import_session,
+                     (void*)_view);
+            QTimer::singleShot(0, this, [this, import_session]() {
+                if (_session != import_session || !_session->have_view_data()) {
+                    dsv_info("Import data: skipped imported view refresh active_session=%p expected_session=%p have_data=%d",
+                             (void*)_session,
+                             (void*)import_session,
+                             (_session && _session->have_view_data()) ? 1 : 0);
+                    return;
+                }
+                dsv_info("Import data: refreshing imported view session=%p view=%p samplerate=%llu samplelimit=%llu",
+                         (void*)_session,
+                         (void*)_view,
+                         (unsigned long long)_session->cur_snap_samplerate(),
+                         (unsigned long long)_session->cur_samplelimits());
+                const int before_width = _view->get_view_width();
+                dsv_info("Import data: imported view before fit width=%d scale=%g offset=%lld max_offset=%lld",
+                         before_width,
+                         _view->scale(),
+                         (long long)_view->offset(),
+                         before_width > 0 ? (long long)_view->get_max_offset() : 0LL);
+                _view->auto_set_max_scale();
+                _view->set_scale_offset(_view->scale(), 0);
+                const int after_width = _view->get_view_width();
+                dsv_info("Import data: imported view after fit width=%d scale=%g offset=%lld max_offset=%lld",
+                         after_width,
+                         _view->scale(),
+                         (long long)_view->offset(),
+                         after_width > 0 ? (long long)_view->get_max_offset() : 0LL);
+                _view->set_all_update(true);
+                _view->data_updated();
+                _view->on_state_changed(true);
+                _view->update_view_port();
+            });
+        } else {
+            dsv_info("Import data: not scheduling imported view refresh active_session=%p expected_session=%p have_data=%d",
+                     (void*)_session,
+                     (void*)import_session,
+                     (_session && _session->have_view_data()) ? 1 : 0);
+        }
+        } catch (const std::exception &error) {
+            dsv_err("Import data: exception while importing file=%s format=%s error=%s",
+                    file_name.toUtf8().constData(),
+                    format_id.toUtf8().constData(),
+                    error.what());
+            MsgBox::Show(tr("Failed to import \"%1\": %2")
+                         .arg(file_name, QString::fromUtf8(error.what())));
+        } catch (...) {
+            dsv_err("Import data: unknown exception while importing file=%s format=%s",
+                    file_name.toUtf8().constData(),
+                    format_id.toUtf8().constData());
+            MsgBox::Show(tr("Failed to import \"%1\" due to an unexpected error.")
+                         .arg(file_name));
+        }
     }
 
     void MainWindow::session_error()
@@ -1628,7 +1932,131 @@ namespace pv
 
         StoreProgress *dlg = new StoreProgress(_session, this);
         dlg->SetView(_view);
+        if (!_selected_export_format_id.isEmpty()) {
+            dlg->setSelectedOutputFormatId(_selected_export_format_id);
+            dlg->setSelectedOutputOptions(_selected_export_options);
+        }
+        _selected_export_format_id.clear();
+        _selected_export_options = pv::data::IoOptions(nullptr);
         dlg->export_run();
+    }
+
+    void MainWindow::on_export_format(QString format_id)
+    {
+        const QVector<pv::data::FormatCapability> formats =
+            pv::data::exportFormats();
+        const pv::data::FormatCapability *format =
+            pv::data::findFormatById(formats, format_id);
+        if (!format)
+            return;
+
+        const bool requires_options =
+            pv::data::formatRequiresOptions(format_id);
+        const sr_output_module *module =
+            sr_output_find(format_id.toUtf8().data());
+        if (!module)
+            return;
+
+        const sr_option **definitions = sr_output_options_get(module);
+        pv::data::IoOptions options(definitions);
+        bool accepted = true;
+        if (requires_options) {
+            dialogs::InputOutputOptionsDlg dlg(
+                tr("Export Data"), definitions, this);
+            accepted = dlg.exec() == QDialog::Accepted;
+            if (accepted)
+                options = dlg.options();
+        }
+        sr_output_options_free(definitions);
+
+        if (!accepted)
+            return;
+
+        dsv_info("Export data: selected format=%s", format_id.toUtf8().constData());
+        _selected_export_format_id = format_id;
+        _selected_export_options = options;
+        on_export();
+    }
+
+    void MainWindow::on_import_format_triggered()
+    {
+        QAction *action = qobject_cast<QAction *>(sender());
+        const QVector<pv::data::FormatCapability> formats = pv::data::importFormats();
+        QString format_id = action ? action->data().toString() : QString();
+        const pv::data::FormatCapability *format =
+            pv::data::findFormatById(formats, format_id);
+
+        AppConfig &app = AppConfig::Instance();
+        QString file_name;
+        QString selected_filter;
+        if (format) {
+            file_name = QFileDialog::getOpenFileName(
+                this,
+                tr("Import File"),
+                app.userHistory.openDir,
+                format->dialogFilter);
+        } else {
+            QStringList filters;
+            for (const pv::data::FormatCapability &item : formats)
+                filters << item.dialogFilter;
+            QString selected_filter;
+            file_name = QFileDialog::getOpenFileName(
+                this,
+                tr("Import File"),
+                app.userHistory.openDir,
+                filters.join(";;"),
+                &selected_filter);
+            if (!file_name.isEmpty()) {
+                for (const pv::data::FormatCapability &item : formats) {
+                    if (item.dialogFilter == selected_filter) {
+                        format = &item;
+                        break;
+                    }
+                }
+                if (!format) {
+                    const QString suffix = QFileInfo(file_name).suffix();
+                    for (const pv::data::FormatCapability &item : formats) {
+                        if (item.extensions.contains(suffix, Qt::CaseInsensitive)) {
+                            format = &item;
+                            break;
+                        }
+                    }
+                }
+                if (format)
+                    format_id = format->id;
+            }
+        }
+
+        if (file_name.isEmpty())
+            return;
+        const QString suffix = QFileInfo(file_name).suffix();
+        format = pv::data::resolveImportFormatSelection(
+            formats, format_id, selected_filter, suffix);
+        if (!format) {
+            MsgBox::Show(tr("Unsupported import format."));
+            return;
+        }
+
+        const QString dir = path::GetDirectoryName(file_name);
+        if (dir != app.userHistory.openDir) {
+            app.userHistory.openDir = dir;
+            app.SaveHistory();
+        }
+
+        on_import_file(format_id, file_name);
+    }
+
+    void MainWindow::on_export_format_triggered()
+    {
+        QAction *action = qobject_cast<QAction *>(sender());
+        if (!action)
+            return;
+
+        const QString format_id = action->data().toString();
+        if (format_id.isEmpty())
+            return;
+
+        on_export_format(format_id);
     }
 
     bool MainWindow::on_load_session(QString name)
@@ -1724,38 +2152,41 @@ namespace pv
         if (gvar_opts == NULL)
         {
             dsv_warn("Device config list is empty. id:SR_CONF_DEVICE_SESSIONS");
-            /* Driver supports no device instance sessions. */
-            return false;
+            /* Some drivers, including demo/file-backed sessions, expose no
+             * serializable device-session config list. Export should still
+             * succeed with the rest of the session metadata. */
         }
-
-        const int *const options = (const int32_t *)g_variant_get_fixed_array(
-                                        gvar_opts, &num_opts, sizeof(int32_t));
-
-        for (unsigned int i = 0; i < num_opts; i++)
+        else
         {
-            const struct sr_config_info *const info = _device_agent->get_config_info(options[i]);
-            gvar = _device_agent->get_config(info->key);
-            if (gvar != NULL)
+            const int *const options = (const int32_t *)g_variant_get_fixed_array(
+                                            gvar_opts, &num_opts, sizeof(int32_t));
+
+            for (unsigned int i = 0; i < num_opts; i++)
             {
-                if (info->datatype == SR_T_BOOL)
-                    sessionVar[info->name] = QJsonValue::fromVariant(g_variant_get_boolean(gvar));
-                else if (info->datatype == SR_T_UINT64)
-                    sessionVar[info->name] = QJsonValue::fromVariant(QString::number(g_variant_get_uint64(gvar)));
-                else if (info->datatype == SR_T_UINT8)
-                    sessionVar[info->name] = QJsonValue::fromVariant(g_variant_get_byte(gvar));
-                 else if (info->datatype == SR_T_INT16)
-                    sessionVar[info->name] = QJsonValue::fromVariant(g_variant_get_int16(gvar));
-                else if (info->datatype == SR_T_FLOAT) //save as string format
-                    sessionVar[info->name] = QJsonValue::fromVariant(QString::number(g_variant_get_double(gvar)));
-                else if (info->datatype == SR_T_CHAR)
-                    sessionVar[info->name] = QJsonValue::fromVariant(g_variant_get_string(gvar, NULL));
-                else if (info->datatype == SR_T_LIST)
-                    sessionVar[info->name] =  QJsonValue::fromVariant(g_variant_get_int16(gvar));
-                else{
-                    dsv_err("Unkown config info type:%d", info->datatype);
-                    assert(false);
+                const struct sr_config_info *const info = _device_agent->get_config_info(options[i]);
+                gvar = _device_agent->get_config(info->key);
+                if (gvar != NULL)
+                {
+                    if (info->datatype == SR_T_BOOL)
+                        sessionVar[info->name] = QJsonValue::fromVariant(g_variant_get_boolean(gvar));
+                    else if (info->datatype == SR_T_UINT64)
+                        sessionVar[info->name] = QJsonValue::fromVariant(QString::number(g_variant_get_uint64(gvar)));
+                    else if (info->datatype == SR_T_UINT8)
+                        sessionVar[info->name] = QJsonValue::fromVariant(g_variant_get_byte(gvar));
+                     else if (info->datatype == SR_T_INT16)
+                        sessionVar[info->name] = QJsonValue::fromVariant(g_variant_get_int16(gvar));
+                    else if (info->datatype == SR_T_FLOAT) //save as string format
+                        sessionVar[info->name] = QJsonValue::fromVariant(QString::number(g_variant_get_double(gvar)));
+                    else if (info->datatype == SR_T_CHAR)
+                        sessionVar[info->name] = QJsonValue::fromVariant(g_variant_get_string(gvar, NULL));
+                    else if (info->datatype == SR_T_LIST)
+                        sessionVar[info->name] =  QJsonValue::fromVariant(g_variant_get_int16(gvar));
+                    else{
+                        dsv_err("Unkown config info type:%d", info->datatype);
+                        assert(false);
+                    }
+                    g_variant_unref(gvar);
                 }
-                g_variant_unref(gvar);                
             }
         }
 

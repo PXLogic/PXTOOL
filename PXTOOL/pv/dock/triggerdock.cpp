@@ -276,23 +276,23 @@ void TriggerDock::device_updated()
     int mode = _session->get_device()->get_work_mode();
     bool ret;
     int ch_num;
+    bool allowAdv = mode == LOGIC && _session->get_device()->supports_advanced_trigger();
 
-    ret = _session->get_device()->get_config_uint64(SR_CONF_HW_DEPTH, hw_depth);
+    _adv_radioButton->setEnabled(allowAdv);
+    _position_spinBox->setEnabled(false);
+    _position_slider->setEnabled(false);
+
+    ret = _session->get_device()->supports_config(SR_CONF_HW_DEPTH) &&
+        _session->get_device()->get_config_uint64(SR_CONF_HW_DEPTH, hw_depth);
 
     if (ret) {
         if (mode == LOGIC) {
-            _session->get_device()->get_config_bool(SR_CONF_STREAM, stream);
+            if (_session->get_device()->supports_config(SR_CONF_STREAM))
+                _session->get_device()->get_config_bool(SR_CONF_STREAM, stream);
             sample_limits = _session->get_device()->get_sample_limit();
 
-            // Ask the driver whether this device supports advanced trigger.
-            // Drivers return TRUE if they do (or are under development and
-            // need UI access for testing).  If the driver does not handle
-            // SR_CONF_HAVE_ADVANCED_TRIGGER (returns SR_ERR_NA), get_config_bool
-            // returns false and capKnown stays false → button disabled.
-            bool haveAdvTrig = false;
-            bool capKnown = _session->get_device()->get_config_bool(SR_CONF_HAVE_ADVANCED_TRIGGER, haveAdvTrig);
             // Advanced trigger is unavailable in stream mode regardless of capability.
-            bool allowAdv = capKnown && haveAdvTrig && !stream;
+            allowAdv = _session->get_device()->supports_advanced_trigger() && !stream;
             _adv_radioButton->setEnabled(allowAdv);
             _position_spinBox->setEnabled(!stream);
             _position_slider->setEnabled(!stream);
@@ -313,6 +313,11 @@ void TriggerDock::device_updated()
                 simple_trigger();
             }
         }
+    }
+
+    if (!allowAdv && _adv_radioButton->isChecked()) {
+        _simple_radioButton->setChecked(true);
+        simple_trigger();
     }
 
     ret = _session->get_device()->get_config_int16(SR_CONF_TOTAL_CH_NUM, ch_num);

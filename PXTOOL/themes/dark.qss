@@ -3119,6 +3119,7 @@ QDialog#logOptionsDialog QWidget#device_options_divider,
 QDialog#aboutDialog QWidget#device_options_divider,
 QDialog#protocolListDialog QWidget#device_options_divider,
 QDialog#protocolExportDialog QWidget#device_options_divider,
+QDialog#inputOutputOptionsDialog QWidget#device_options_divider,
 QDialog#storeProgressDialog QWidget#device_options_divider,
 QDialog#diskCacheSettingsDialog QWidget#device_options_divider,
 QDialog#dsMessageBoxDialog QWidget#device_options_divider {
@@ -3369,5 +3370,6 @@ QDialog#dsMessageBoxDialog QMessageBox#dsMessageBoxInner QLabel {
 }
 QDialog#dsMessageBoxDialog QMessageBox#dsMessageBoxInner QDialogButtonBox {
     background-color: #1e1e1e;
-    border: none;
+    border-top: 1px solid #333333;
+    padding: 10px 12px;
 }

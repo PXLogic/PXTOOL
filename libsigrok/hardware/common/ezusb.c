@@ -100,6 +100,7 @@ SR_PRIV int ezusb_upload_firmware(libusb_device *dev, int configuration,
 {
 	struct libusb_device_handle *hdl;
 	int ret;
+	int result;
 
     sr_info("uploading firmware to device on %d.%d",
 		libusb_get_bus_number(dev), libusb_get_device_address(dev));
@@ -110,6 +111,8 @@ SR_PRIV int ezusb_upload_firmware(libusb_device *dev, int configuration,
         return SR_ERR;
 	}
 
+	result = SR_OK;
+
 /*
  * The libusbx darwin backend is broken: it can report a kernel driver being
  * active, but detaching it always returns an error.
@@ -119,7 +122,8 @@ SR_PRIV int ezusb_upload_firmware(libusb_device *dev, int configuration,
 		if ((ret = libusb_detach_kernel_driver(hdl, 0)) < 0) {
             sr_err("failed to detach kernel driver: %s",
 					libusb_error_name(ret));
-            return SR_ERR;
+            result = SR_ERR;
+			goto cleanup;
 		}
 	}
 #endif
@@ -127,20 +131,28 @@ SR_PRIV int ezusb_upload_firmware(libusb_device *dev, int configuration,
 	if ((ret = libusb_set_configuration(hdl, configuration)) < 0) {
         sr_err("Unable to set configuration: %s",
 				libusb_error_name(ret));
-        return SR_ERR;
+        result = SR_ERR;
+		goto cleanup;
 	}
 
-	if ((ezusb_reset(hdl, 1)) < 0)
-        return SR_ERR;
+	if ((ezusb_reset(hdl, 1)) < 0) {
+        result = SR_ERR;
+		goto cleanup;
+	}
 
-	if (ezusb_install_firmware(hdl, filename) < 0)
-        return SR_ERR;
+	if (ezusb_install_firmware(hdl, filename) < 0) {
+        result = SR_ERR;
+		goto cleanup;
+	}
 
-	if ((ezusb_reset(hdl, 0)) < 0)
-        return SR_ERR;
+	if ((ezusb_reset(hdl, 0)) < 0) {
+        result = SR_ERR;
+		goto cleanup;
+	}
 
+cleanup:
 	if (hdl != NULL)
 		libusb_close(hdl);
 
-    return SR_OK;
+    return result;
 }

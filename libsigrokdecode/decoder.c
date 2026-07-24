@@ -164,6 +164,49 @@ static void decoder_option_free(void* data)
     g_free(opt);
 }
 
+static struct srd_channel* c_decoder_channel_copy(const struct srd_channel* src)
+{
+    struct srd_channel* ch;
+
+    if (!src)
+        return NULL;
+
+    ch = g_malloc0(sizeof(struct srd_channel));
+    ch->id = g_strdup(src->id);
+    ch->name = g_strdup(src->name);
+    ch->desc = g_strdup(src->desc);
+    ch->order = src->order;
+    ch->type = src->type;
+    ch->idn = g_strdup(src->idn);
+
+    return ch;
+}
+
+static struct srd_decoder_option* c_decoder_option_copy(
+    const struct srd_decoder_option* src)
+{
+    struct srd_decoder_option* opt;
+    GSList* value;
+
+    if (!src)
+        return NULL;
+
+    opt = g_malloc0(sizeof(struct srd_decoder_option));
+    opt->id = g_strdup(src->id);
+    opt->idn = g_strdup(src->idn);
+    opt->desc = g_strdup(src->desc);
+    if (src->def)
+        opt->def = g_variant_ref_sink(src->def);
+
+    for (value = src->values; value; value = value->next) {
+        if (value->data)
+            opt->values = g_slist_append(opt->values,
+                g_variant_ref_sink(value->data));
+    }
+
+    return opt;
+}
+
 static void decoder_free(struct srd_decoder* dec)
 {
     PyGILState_STATE gstate;
@@ -1226,26 +1269,23 @@ SRD_API int srd_c_decoder_register(struct srd_c_decoder* dec)
     d->channels = NULL;
     if (dec->num_channels > 0 && dec->channels) {
         for (i = 0; i < dec->num_channels; i++) {
-            struct srd_channel* ch = g_malloc(sizeof(struct srd_channel));
-            memcpy(ch, &dec->channels[i], sizeof(struct srd_channel));
+            struct srd_channel* ch = c_decoder_channel_copy(&dec->channels[i]);
             d->channels = g_slist_append(d->channels, ch);
         }
     }
-
     d->opt_channels = NULL;
     if (dec->num_optional_channels > 0 && dec->optional_channels) {
         for (i = 0; i < dec->num_optional_channels; i++) {
-            struct srd_channel* ch = g_malloc(sizeof(struct srd_channel));
-            memcpy(ch, &dec->optional_channels[i], sizeof(struct srd_channel));
+            struct srd_channel* ch =
+                c_decoder_channel_copy(&dec->optional_channels[i]);
             d->opt_channels = g_slist_append(d->opt_channels, ch);
         }
     }
-
     d->options = NULL;
     if (dec->num_options > 0 && dec->options) {
         for (i = 0; i < dec->num_options; i++) {
-            struct srd_decoder_option* o = g_malloc(sizeof(struct srd_decoder_option));
-            memcpy(o, &dec->options[i], sizeof(struct srd_decoder_option));
+            struct srd_decoder_option* o =
+                c_decoder_option_copy(&dec->options[i]);
             d->options = g_slist_append(d->options, o);
         }
     }

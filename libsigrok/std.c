@@ -1,7 +1,8 @@
 /*
- * This file is part of the libsigrok project.
+ * This file is part of the PXTOOL project.
+ * PXTOOL is based on PulseView.
  *
- * Copyright (C) 2013 Uwe Hermann <uwe@hermann-uwe.de>
+ * Copyright (C) 2026 DreamSourceLab <support@dreamsourcelab.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,6 +21,7 @@
 
 #include "libsigrok-internal.h"
 #include <glib.h>
+#include <string.h>
 #include "log.h"
 #include <assert.h>
 
@@ -67,38 +69,66 @@ SR_PRIV int std_hw_init(struct sr_context *sr_ctx, struct sr_dev_driver *di,
  * hw_dev_acquisition_start() API callback.
  *
  * @param sdi The device instance to use.
- * @param prefix A driver-specific prefix string used for log messages.
- * 		 Must not be NULL. An empty string is allowed.
- *
  * @return SR_OK upon success, SR_ERR_ARG upon invalid arguments, or
  *         SR_ERR upon other errors.
  */
-SR_PRIV int std_session_send_df_header(const struct sr_dev_inst *sdi,
-				       const char *prefix)
+SR_PRIV int std_session_send_df_header(const struct sr_dev_inst *sdi)
 {
 	int ret;
 	struct sr_datafeed_packet packet;
 	struct sr_datafeed_header header;
 
-	if (!prefix) {
-		sr_err("Invalid prefix.");
+	if (!sdi) {
+		sr_err("Invalid device instance.");
 		return SR_ERR_ARG;
 	}
 
-	sr_dbg("%sStarting acquisition.", prefix);
-
 	/* Send header packet to the session bus. */
-	sr_dbg("%sSending SR_DF_HEADER packet.", prefix);
+	memset(&packet, 0, sizeof(packet));
 	packet.type = SR_DF_HEADER;
     packet.status = SR_PKT_OK;
 	packet.payload = (uint8_t *)&header;
 	header.feed_version = 1;
 	gettimeofday(&header.starttime, NULL);
 
-	if ((ret = ds_data_forward(sdi, &packet)) < 0) {
-		sr_err("%sFailed to send header packet: %d.", prefix, ret);
+	if ((ret = sr_session_send(sdi, &packet)) < 0) {
+		sr_err("Failed to send header packet: %d.", ret);
 		return ret;
 	}
 
 	return SR_OK;
+}
+
+static int send_df_without_payload(const struct sr_dev_inst *sdi,
+		uint16_t packet_type)
+{
+	struct sr_datafeed_packet packet;
+
+	if (!sdi)
+		return SR_ERR_ARG;
+
+	memset(&packet, 0, sizeof(packet));
+	packet.type = packet_type;
+	packet.status = SR_PKT_OK;
+	return sr_session_send(sdi, &packet);
+}
+
+SR_PRIV int std_session_send_df_end(const struct sr_dev_inst *sdi)
+{
+	return send_df_without_payload(sdi, SR_DF_END);
+}
+
+SR_PRIV int std_session_send_df_trigger(const struct sr_dev_inst *sdi)
+{
+	return send_df_without_payload(sdi, SR_DF_TRIGGER);
+}
+
+SR_PRIV int std_session_send_df_frame_begin(const struct sr_dev_inst *sdi)
+{
+	return send_df_without_payload(sdi, SR_DF_FRAME_BEGIN);
+}
+
+SR_PRIV int std_session_send_df_frame_end(const struct sr_dev_inst *sdi)
+{
+	return send_df_without_payload(sdi, SR_DF_FRAME_END);
 }

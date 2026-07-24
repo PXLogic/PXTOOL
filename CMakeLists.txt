@@ -63,7 +63,16 @@ set(DISABLE_WERROR TRUE) #Build without -Werror
 set(ENABLE_SIGNALS TRUE) #Build with UNIX signals
 set(ENABLE_COTIRE FALSE) #Enable cotire
 option(ENABLE_TESTS "Enable unit tests" OFF)
+option(DSVIEW_ENABLE_UPSTREAM_COMPAT_DEMO "Enable the upstream-compat demo driver proof of concept" OFF)
+option(DSVIEW_ENABLE_UPSTREAM_FX2LAFW "Enable the upstream-compat fx2lafw scan-only driver" OFF)
 set(STATIC_PKGDEPS_LIBS FALSE) #Statically link to (pkg-config) libraries
+
+if(DSVIEW_ENABLE_UPSTREAM_COMPAT_DEMO)
+    add_compile_definitions(HAVE_UPSTREAM_COMPAT_DEMO)
+endif()
+if(DSVIEW_ENABLE_UPSTREAM_FX2LAFW)
+    add_compile_definitions(HAVE_UPSTREAM_FX2LAFW)
+endif()
 
 if(WIN32)
 	# On Windows/MinGW we need to statically link to libraries.
@@ -281,10 +290,16 @@ set(DSView_SOURCES
     PXTOOL/pv/mainwindow.cpp
     PXTOOL/pv/data/snapshot.cpp
     PXTOOL/pv/data/signaldata.cpp
+    PXTOOL/pv/data/formatcapability.cpp
+    PXTOOL/pv/data/iooptions.cpp
+    PXTOOL/pv/data/inputimporter.cpp
+    PXTOOL/pv/data/analogpacketadapter.cpp
     PXTOOL/pv/data/logicsnapshot.cpp
     PXTOOL/pv/data/spillmanager.cpp
     PXTOOL/pv/data/analogsnapshot.cpp
     PXTOOL/pv/dialogs/deviceoptions.cpp
+    PXTOOL/pv/dialogs/inputoutputoptioneditor.cpp
+    PXTOOL/pv/dialogs/inputoutputoptionsdlg.cpp
     PXTOOL/pv/prop/property.cpp
     PXTOOL/pv/prop/int.cpp
     PXTOOL/pv/prop/enum.cpp
@@ -431,6 +446,12 @@ set(DSView_HEADERS
     PXTOOL/pv/sigsession.h
     PXTOOL/pv/mainwindow.h
     PXTOOL/pv/dialogs/deviceoptions.h
+    PXTOOL/pv/dialogs/inputoutputoptioneditor.h
+    PXTOOL/pv/dialogs/inputoutputoptionsdlg.h
+    PXTOOL/pv/data/formatcapability.h
+    PXTOOL/pv/data/iooptions.h
+    PXTOOL/pv/data/inputimporter.h
+    PXTOOL/pv/data/analogpacketadapter.h
     PXTOOL/pv/data/spillmanager.h
     PXTOOL/pv/utility/diskcachesettings.h
     PXTOOL/pv/prop/property.h
@@ -548,6 +569,8 @@ endif ()
 #-------------------------------------------------------------------------------
 set(libsigrok_SOURCES
     libsigrok/version.c
+    libsigrok/analog.c
+    libsigrok/keyinfo.c
     libsigrok/strutil.c
     libsigrok/std.c
     libsigrok/session_driver.c
@@ -559,18 +582,42 @@ set(libsigrok_SOURCES
     libsigrok/output/output.c
     libsigrok/input/input.c
     libsigrok/hardware/demo/demo.c
-    libsigrok/input/in_binary.c
-    libsigrok/input/in_vcd.c
-    libsigrok/input/in_wav.c
+    libsigrok/input/binary.c
+    libsigrok/input/chronovu_la8.c
+    libsigrok/input/csv.c
+    libsigrok/input/feed_queue.c
+    libsigrok/input/isf.c
+    libsigrok/input/logicport.c
+    libsigrok/input/null.c
+    libsigrok/input/protocoldata.c
+    libsigrok/input/raw_analog.c
+    libsigrok/input/saleae.c
+    libsigrok/input/scpi.c
+    libsigrok/input/stf.c
+    libsigrok/input/trace32_ad.c
+    libsigrok/input/vcd.c
+    libsigrok/input/wav.c
+    libsigrok/minilzo/minilzo.c
     libsigrok/output/csv.c
+    libsigrok/output/analog.c
+    libsigrok/output/ascii.c
+    libsigrok/output/binary.c
+    libsigrok/output/bits.c
+    libsigrok/output/chronovu_la8.c
     libsigrok/output/gnuplot.c
+    libsigrok/output/hex.c
+    libsigrok/output/null.c
+    libsigrok/output/ols.c
     libsigrok/output/srzip.c
     libsigrok/output/vcd.c
+    libsigrok/output/wav.c
+    libsigrok/output/wavedrom.c
     libsigrok/hardware/DSL/dslogic.c
     libsigrok/hardware/common/usb.c
     libsigrok/hardware/common/ezusb.c
     libsigrok/trigger.c
     libsigrok/dsdevice.c
+    libsigrok/device_source.c
     libsigrok/hardware/DSL/dscope.c
     libsigrok/hardware/DSL/command.c
     libsigrok/hardware/DSL/dsl.c
@@ -578,6 +625,18 @@ set(libsigrok_SOURCES
     libsigrok/hardware/pxlogic/usb_ctrl.c
     libsigrok/lib_main.c
 )
+
+if(DSVIEW_ENABLE_UPSTREAM_COMPAT_DEMO)
+    list(APPEND libsigrok_SOURCES
+        libsigrok/hardware/upstream-demo/upstream_demo.c
+    )
+endif()
+
+if(DSVIEW_ENABLE_UPSTREAM_FX2LAFW)
+    list(APPEND libsigrok_SOURCES
+        libsigrok/hardware/upstream-fx2lafw/fx2lafw.c
+    )
+endif()
 
 set(libsigrok_HEADERS
     libsigrok/version.h
@@ -1067,4 +1126,5 @@ if(ENABLE_TESTS)
 	add_subdirectory(PXTOOL/test)
 	enable_testing()
 	add_test(NAME DSView-test COMMAND DSView-test)
+	add_test(NAME srd-c-decoder-lifetime-test COMMAND srd-c-decoder-lifetime-test)
 endif(ENABLE_TESTS)

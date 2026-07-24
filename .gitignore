@@ -8,6 +8,9 @@
 # Local documentation (not tracked)
 /docs/
 
+# Local linked Git worktrees
+/.worktrees/
+
 # Local Qt user cache
 /.qt/
 
@@ -17,10 +20,15 @@
 # CMake and build artifacts (in-source build)
 /CMakeCache.txt
 /CMakeFiles/
+/CTestTestfile.cmake
 /_deps/
 /Makefile
 /cmake_install.cmake
 /install_manifest.txt
+/PXTOOL/test/CMakeFiles/
+/PXTOOL/test/CTestTestfile.cmake
+/PXTOOL/test/Makefile
+/PXTOOL/test/cmake_install.cmake
 
 # CPack packaging artifacts
 /CPackConfig.cmake
@@ -36,6 +44,9 @@
 /build.linux/
 /build.windows/
 /build/
+/build.local/
+/build.tests/
+/build-tests/
 /logo/
 /share/
 
@@ -62,3 +73,8 @@ __pycache__/
 
 # Local Python environments
 /.venv*/
+
+/build.test
+
+# CTest temporary output
+/Testing/Temporary/

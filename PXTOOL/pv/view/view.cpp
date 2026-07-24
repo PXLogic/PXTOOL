@@ -38,6 +38,7 @@
 #include "signal.h"
 #include "dsosignal.h"
 #include "view.h"
+#include "sampleconversion.h"
 #include "viewport.h"
 #include "spectrumtrace.h"
 #include "lissajoustrace.h"
@@ -573,24 +574,32 @@ void View::set_trig_pos(int percent)
 
 void View::set_search_pos(uint64_t search_pos, bool hit)
 { 
-    QColor fore(QWidget::palette().color(QWidget::foregroundRole()));
-    fore.setAlpha(View::BackAlpha);
-
-    const double time = search_pos * 1.0 / _session->cur_snap_samplerate();
-    _search_pos = search_pos;
-    _search_hit = hit;
-    _search_cursor->set_index(search_pos);
-    _search_cursor->set_colour(hit ? View::Blue : fore);
+    set_search_marker(search_pos, hit);
 
     int width = get_view_width();
     assert(width);
 
     if (hit) {
-        _show_search_cursor = true;
+        const double time = search_pos * 1.0 / _session->cur_snap_samplerate();
         set_scale_offset(_scale,  (time / _scale) - (width / 2));
-        _ruler->update();
-        viewport_update();
     }
+}
+
+void View::set_search_marker(uint64_t search_pos, bool hit)
+{
+    QColor fore(QWidget::palette().color(QWidget::foregroundRole()));
+    fore.setAlpha(View::BackAlpha);
+
+    _search_pos = search_pos;
+    _search_hit = hit;
+    _search_cursor->set_index(search_pos);
+    _search_cursor->set_colour(hit ? View::Blue : fore);
+
+    if (hit)
+        _show_search_cursor = true;
+
+    _ruler->update();
+    viewport_update();
 }
 
 void View::zoom_to_search_pos(uint64_t search_pos)
@@ -1592,50 +1601,14 @@ bool View::get_dso_trig_moved()
 
 double View::index2pixel(uint64_t index, bool has_hoff)
 {
-    const uint64_t rateValue = session().cur_snap_samplerate();
-    const double scaleValue = scale();
-    const int64_t offsetValue = offset();    
-    const double hoffValue = trig_hoff();
-
-    double pixels = 0;
-
-    const double samples_per_pixel = rateValue * scaleValue;
-
-    if (has_hoff){
-        pixels = index / samples_per_pixel - offsetValue + hoffValue / samples_per_pixel;
-    }
-    else{
-        pixels = index / samples_per_pixel - offsetValue;
-    }
-
-    /*
-    const double samples_per_pixel = session().cur_snap_samplerate() * scale();
-    double pixels;
-    if (has_hoff)
-        pixels = index/samples_per_pixel - offset() + trig_hoff()/samples_per_pixel;
-    else
-        pixels = index/samples_per_pixel - offset();
-        */
-
-    return pixels;
+    return sample_index_to_pixel(index, session().cur_snap_samplerate(),
+        scale(), offset(), has_hoff ? trig_hoff() : 0);
 }
 
 uint64_t View::pixel2index(double pixel)
 {   
-    const uint64_t rateValue = session().cur_snap_samplerate();
-    const double scaleValue = scale();
-    const int64_t offsetValue = offset();    
-    const double hoffValue = trig_hoff();
- 
-    const double samples_per_pixel = rateValue * scaleValue;
-    const double index = (pixel + offsetValue) * samples_per_pixel - hoffValue;
-
-    const uint64_t sampleIndex = (uint64_t)std::round(index);
-
-    return sampleIndex;
-
-    //const double samples_per_pixel = session().cur_snap_samplerate() * scale();
-    //uint64_t index = (pixel + offset()) * samples_per_pixel - trig_hoff();
+    return pixel_to_sample_index(pixel, session().cur_snap_samplerate(),
+        scale(), offset(), trig_hoff());
 }
 
 void View::set_receive_len(uint64_t len)

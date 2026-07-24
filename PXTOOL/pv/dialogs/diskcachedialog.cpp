@@ -90,8 +90,8 @@ DiskCacheDialog::DiskCacheDialog(QWidget* parent)
     footer_lay->setContentsMargins(12, 10, 12, 10);
     footer_lay->setSpacing(6);
     footer_lay->addStretch();
-    footer_lay->addWidget(ok_btn);
     footer_lay->addWidget(cancel_btn);
+    footer_lay->addWidget(ok_btn);
     layout()->addLayout(footer_lay);
 
     connect(ok_btn, &QPushButton::clicked, this, &DiskCacheDialog::slotAccept);

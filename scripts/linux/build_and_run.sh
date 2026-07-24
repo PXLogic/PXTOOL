@@ -14,8 +14,13 @@ UDEV_RULES_PATH="/etc/udev/rules.d/60-dreamsourcelab.rules"
 
 cd "${ROOT_DIR}"
 
-echo "[1/4] Configure"
-CMAKE_ARGS=(-S "${ROOT_DIR}" -B "${BUILD_DIR}" -DCMAKE_BUILD_TYPE=RelWithDebInfo)
+echo "[1/4] Configure upstream-compat demo"
+CMAKE_ARGS=(
+    -S "${ROOT_DIR}"
+    -B "${BUILD_DIR}"
+    -DCMAKE_BUILD_TYPE=RelWithDebInfo
+    -DDSVIEW_ENABLE_UPSTREAM_COMPAT_DEMO=ON
+)
 if [ ! -f "${BUILD_DIR}/CMakeCache.txt" ] && command -v ninja >/dev/null 2>&1; then
     CMAKE_ARGS+=(-G Ninja)
 fi

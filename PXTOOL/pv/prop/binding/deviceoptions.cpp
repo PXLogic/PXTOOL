@@ -31,7 +31,6 @@
 #include "../int.h"
 #include "../../config/appconfig.h"
 #include "../../log.h"
-#include "../../appcontrol.h"
 #include "../../sigsession.h"
 #include "../../dock/deviceoptionsdock.h"
 #include "../../deviceagent.h"
@@ -43,15 +42,16 @@ namespace pv {
 namespace prop {
 namespace binding {
 
-DeviceOptions::DeviceOptions()
+DeviceOptions::DeviceOptions(DeviceAgent *device_agent) :
+    _device_agent(device_agent)
 {
-	GVariant *gvar_opts, *gvar_list;
-	gsize num_opts;
+    GVariant *gvar_opts, *gvar_list;
+    gsize num_opts;
 
-	SigSession *session = AppControl::Instance()->GetSession();
-	_device_agent = session->get_device();
+    if (!_device_agent || !_device_agent->have_instance())
+        return;
 
-	gvar_opts = _device_agent->get_config_list(NULL, SR_CONF_DEVICE_OPTIONS);
+    gvar_opts = _device_agent->get_config_list(NULL, SR_CONF_DEVICE_OPTIONS);
 	 
     if (gvar_opts == NULL)
 		/* Driver supports no device instance options. */
@@ -161,15 +161,13 @@ DeviceOptions::DeviceOptions()
 
 GVariant* DeviceOptions::config_getter(int key)
 { 
-	SigSession *session = AppControl::Instance()->GetSession();
-	DeviceAgent *_device_agent = session->get_device();	
-	return _device_agent->get_config(key);
+    return _device_agent ? _device_agent->get_config(key) : NULL;
 }
 
 void DeviceOptions::config_setter(int key, GVariant* value)
 {
-	SigSession *session = AppControl::Instance()->GetSession();
-	DeviceAgent *_device_agent = session->get_device();
+    if (!_device_agent)
+        return;
     double stream_buff_gb = 0;
     const bool log_stream_buff = (key == SR_CONF_STREAM_BUFF && value != NULL);
     if (log_stream_buff)
@@ -185,8 +183,8 @@ void DeviceOptions::bind_bool(const QString &name, const QString label, int key)
 {
 	QString text = LangResource::Instance()->get_lang_text(STR_PAGE_DSL, label.toLocal8Bit().data(), label.toLocal8Bit().data());
 	_properties.push_back(
-        new Bool(name, text, bind(config_getter, key),
-			bind(config_setter, key, _1)));
+        new Bool(name, text, bind(&DeviceOptions::config_getter, this, key),
+            bind(&DeviceOptions::config_setter, this, key, _1)));
 }
 
 void DeviceOptions::bind_enum(const QString &name, const QString label, int key,
@@ -208,8 +206,8 @@ void DeviceOptions::bind_enum(const QString &name, const QString label, int key,
 
 	_properties.push_back(
         new Enum(name, label, values,
-			bind(config_getter, key),
-			bind(config_setter, key, _1)));
+            bind(&DeviceOptions::config_getter, this, key),
+            bind(&DeviceOptions::config_setter, this, key, _1)));
 }
 
 void DeviceOptions::bind_int(const QString &name, const QString label, int key, QString suffix,
@@ -217,8 +215,8 @@ void DeviceOptions::bind_int(const QString &name, const QString label, int key, 
 {
 	_properties.push_back(
         new Int(name, label, suffix, range,
-			bind(config_getter, key),
-			bind(config_setter, key, _1)));
+            bind(&DeviceOptions::config_getter, this, key),
+            bind(&DeviceOptions::config_setter, this, key, _1)));
 }
 
 void DeviceOptions::bind_double(const QString &name, const QString label, int key, QString suffix,
@@ -227,8 +225,8 @@ void DeviceOptions::bind_double(const QString &name, const QString label, int ke
 {
     _properties.push_back(
         new Double(name, label, decimals, suffix, range, step,
-            bind(config_getter, key),
-            bind(config_setter, key, _1)));
+            bind(&DeviceOptions::config_getter, this, key),
+            bind(&DeviceOptions::config_setter, this, key, _1)));
 }
 
 QString DeviceOptions::print_gvariant(GVariant *const gvar)
@@ -265,13 +263,13 @@ void DeviceOptions::bind_samplerate(const QString &name, const QString label,
 
 		assert(num_elements == 3);
 
-		_properties.push_back(
-			//tr
-            new Double(name, label, 0, QObject::tr("Hz"),
-				make_pair((double)elements[0], (double)elements[1]),
-						(double)elements[2],
-				bind(samplerate_double_getter),
-				bind(samplerate_double_setter, _1)));
+			_properties.push_back(
+				//tr
+	            new Double(name, label, 0, QObject::tr("Hz"),
+					make_pair((double)elements[0], (double)elements[1]),
+							(double)elements[2],
+                    bind(&DeviceOptions::samplerate_double_getter, this),
+                    bind(&DeviceOptions::samplerate_double_setter, this, _1)));
 
 		g_variant_unref(gvar_list_samplerates);
 	}
@@ -359,8 +357,8 @@ void DeviceOptions::bind_bandwidths(const QString &name, const QString label, in
 
 	_properties.push_back(
         new Enum(name, label, values,
-			bind(config_getter, key),
-			bind(config_setter, key, _1)));
+            bind(&DeviceOptions::config_getter, this, key),
+            bind(&DeviceOptions::config_setter, this, key, _1)));
 }
 
 void DeviceOptions::bind_list(const QString &name, const QString label, int key, GVariant *const gvar_list)
@@ -383,11 +381,10 @@ void DeviceOptions::bind_list(const QString &name, const QString label, int key,
 
 	_properties.push_back(
         new Enum(name, label, values,
-			bind(config_getter, key),
-			bind(config_setter, key, _1)));
+            bind(&DeviceOptions::config_getter, this, key),
+            bind(&DeviceOptions::config_setter, this, key, _1)));
 }
 
 } // binding
 } // prop
 } // pv
-

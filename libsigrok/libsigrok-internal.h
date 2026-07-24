@@ -43,6 +43,259 @@
 #define ARRAY_AND_SIZE(a) (a), ARRAY_SIZE(a)
 #endif
 
+#ifdef __clang__
+#define ALL_ZERO { }
+#else
+#define ALL_ZERO { 0 }
+#endif
+
+static inline uint16_t read_u16le(const uint8_t *p)
+{
+    return (uint16_t)p[0] | ((uint16_t)p[1] << 8);
+}
+#define RL16(x) read_u16le((const uint8_t *)(x))
+
+static inline uint8_t read_u8(const uint8_t *p)
+{
+    return p[0];
+}
+#define R8(x) read_u8((const uint8_t *)(x))
+
+static inline int16_t read_i16le(const uint8_t *p)
+{
+    return (int16_t)read_u16le(p);
+}
+#define RL16S(x) read_i16le((const uint8_t *)(x))
+
+static inline void write_u16le(uint8_t *p, uint16_t x)
+{
+    p[0] = x & 0xff;
+    x >>= 8;
+    p[1] = x & 0xff;
+}
+#define WL16(p, x) write_u16le((uint8_t *)(p), (uint16_t)(x))
+
+static inline void write_u8(uint8_t *p, uint8_t x)
+{
+    p[0] = x;
+}
+
+static inline uint32_t read_u32le(const uint8_t *p)
+{
+    return (uint32_t)p[0] | ((uint32_t)p[1] << 8) |
+        ((uint32_t)p[2] << 16) | ((uint32_t)p[3] << 24);
+}
+#define RL32(x) read_u32le((const uint8_t *)(x))
+
+static inline int32_t read_i32le(const uint8_t *p)
+{
+    return (int32_t)read_u32le(p);
+}
+#define RL32S(x) read_i32le((const uint8_t *)(x))
+
+static inline void write_u32le(uint8_t *p, uint32_t x)
+{
+    p[0] = x & 0xff;
+    x >>= 8;
+    p[1] = x & 0xff;
+    x >>= 8;
+    p[2] = x & 0xff;
+    x >>= 8;
+    p[3] = x & 0xff;
+}
+#define WL32(p, x) write_u32le((uint8_t *)(p), (uint32_t)(x))
+
+static inline uint64_t read_u64le(const uint8_t *p)
+{
+    return (uint64_t)p[0] |
+        ((uint64_t)p[1] << 8) |
+        ((uint64_t)p[2] << 16) |
+        ((uint64_t)p[3] << 24) |
+        ((uint64_t)p[4] << 32) |
+        ((uint64_t)p[5] << 40) |
+        ((uint64_t)p[6] << 48) |
+        ((uint64_t)p[7] << 56);
+}
+#define RL64(x) read_u64le((const uint8_t *)(x))
+
+static inline void write_u64le(uint8_t *p, uint64_t x)
+{
+    p[0] = x & 0xff;
+    x >>= 8;
+    p[1] = x & 0xff;
+    x >>= 8;
+    p[2] = x & 0xff;
+    x >>= 8;
+    p[3] = x & 0xff;
+    x >>= 8;
+    p[4] = x & 0xff;
+    x >>= 8;
+    p[5] = x & 0xff;
+    x >>= 8;
+    p[6] = x & 0xff;
+    x >>= 8;
+    p[7] = x & 0xff;
+}
+#define WL64(p, x) write_u64le((uint8_t *)(p), (uint64_t)(x))
+
+static inline float read_fltle(const uint8_t *p)
+{
+    union {
+        uint32_t u;
+        float f;
+    } value;
+
+    value.u = read_u32le(p);
+    return value.f;
+}
+
+static inline double read_dblle(const uint8_t *p)
+{
+    union {
+        uint64_t u;
+        double d;
+    } value;
+
+    value.u = read_u64le(p);
+    return value.d;
+}
+
+static inline void write_fltle(uint8_t *p, float x)
+{
+    union {
+        uint32_t u;
+        float f;
+    } value;
+
+    value.f = x;
+    write_u32le(p, value.u);
+}
+
+static inline void write_dblle(uint8_t *p, double x)
+{
+    union {
+        uint64_t u;
+        double d;
+    } value;
+
+    value.d = x;
+    write_u64le(p, value.u);
+}
+
+static inline uint16_t read_u16le_inc(const uint8_t **p)
+{
+    uint16_t v;
+
+    if (!p || !*p)
+        return 0;
+    v = read_u16le(*p);
+    *p += sizeof(v);
+    return v;
+}
+
+static inline uint8_t read_u8_inc(const uint8_t **p)
+{
+    uint8_t v;
+
+    if (!p || !*p)
+        return 0;
+    v = read_u8(*p);
+    *p += sizeof(v);
+    return v;
+}
+
+static inline uint32_t read_u32le_inc(const uint8_t **p)
+{
+    uint32_t v;
+
+    if (!p || !*p)
+        return 0;
+    v = read_u32le(*p);
+    *p += sizeof(v);
+    return v;
+}
+
+static inline uint64_t read_u64le_inc(const uint8_t **p)
+{
+    uint64_t v;
+
+    if (!p || !*p)
+        return 0;
+    v = read_u64le(*p);
+    *p += sizeof(v);
+    return v;
+}
+
+static inline float read_fltle_inc(const uint8_t **p)
+{
+    float v;
+
+    if (!p || !*p)
+        return 0;
+    v = read_fltle(*p);
+    *p += sizeof(v);
+    return v;
+}
+
+static inline double read_dblle_inc(const uint8_t **p)
+{
+    double v;
+
+    if (!p || !*p)
+        return 0;
+    v = read_dblle(*p);
+    *p += sizeof(v);
+    return v;
+}
+
+static inline void write_u8_inc(uint8_t **p, uint8_t x)
+{
+    if (!p || !*p)
+        return;
+    write_u8(*p, x);
+    *p += sizeof(x);
+}
+
+static inline void write_u16le_inc(uint8_t **p, uint16_t x)
+{
+    if (!p || !*p)
+        return;
+    write_u16le(*p, x);
+    *p += sizeof(x);
+}
+
+static inline void write_u32le_inc(uint8_t **p, uint32_t x)
+{
+    if (!p || !*p)
+        return;
+    write_u32le(*p, x);
+    *p += sizeof(x);
+}
+
+static inline void write_u64le_inc(uint8_t **p, uint64_t x)
+{
+    if (!p || !*p)
+        return;
+    write_u64le(*p, x);
+    *p += sizeof(x);
+}
+
+static inline void write_fltle_inc(uint8_t **p, float x)
+{
+    if (!p || !*p)
+        return;
+    write_fltle(*p, x);
+    *p += sizeof(x);
+}
+
+static inline void write_dblle_inc(uint8_t **p, double x)
+{
+    if (!p || !*p)
+        return;
+    write_dblle(*p, x);
+    *p += sizeof(x);
+}
+
 #undef min
 #define min(a,b) ((a)<(b)?(a):(b))
 #undef max
@@ -92,6 +345,15 @@ enum sr_dev_driver_type
 	DRIVER_TYPE_DEMO = 0,
 	DRIVER_TYPE_FILE = 1,
 	DRIVER_TYPE_HARDWARE = 2
+};
+
+enum ds_device_source_kind
+{
+	DS_DEVICE_SOURCE_UNKNOWN = 0,
+	DS_DEVICE_SOURCE_NATIVE = 1,
+	DS_DEVICE_SOURCE_UPSTREAM_COMPAT = 2,
+	DS_DEVICE_SOURCE_FILE = 3,
+	DS_DEVICE_SOURCE_DEMO = 4
 };
 
 struct lang_text_map_item{
@@ -154,6 +416,9 @@ struct sr_dev_inst {
 	/** Device type:(demo,filelog,hardware). The type see enum sr_device_type. */
 	int dev_type;
 
+	/** Internal source kind: native, upstream-compat, file, or demo. */
+	int source_kind;
+
     /** Index of device in driver. */
     int index;
 
@@ -171,6 +436,9 @@ struct sr_dev_inst {
 
     /** List of channels. */
     GSList *channels;
+
+    /** List of sr_channel_group structs. */
+    GSList *channel_groups;
  
     /** Device instance connection data (used?) */
     void *conn;
@@ -252,9 +520,27 @@ struct ds_trigger {
 
 /*--- device.c --------------------------------------------------------------*/
 
-SR_PRIV struct sr_channel *sr_channel_new(uint16_t index, int type, gboolean enabled, const char *name);
+SR_PRIV struct sr_channel *sr_channel_new(struct sr_dev_inst *sdi,
+        int index, int type, gboolean enabled, const char *name);
+SR_PRIV void sr_channel_free(struct sr_channel *channel);
+SR_PRIV void sr_channel_free_cb(void *channel);
+SR_PRIV gboolean sr_channels_differ(struct sr_channel *ch1,
+        struct sr_channel *ch2);
+SR_PRIV gboolean sr_channel_lists_differ(GSList *l1, GSList *l2);
+SR_PRIV int sr_dev_channel_name_set(struct sr_channel *channel,
+    const char *name);
+SR_PRIV struct sr_channel_group *sr_channel_group_new(struct sr_dev_inst *sdi,
+        const char *name, void *priv);
+SR_PRIV void sr_channel_group_free(struct sr_channel_group *cg);
+SR_PRIV void sr_channel_group_free_cb(void *cg);
 
 SR_PRIV void sr_dev_probes_free(struct sr_dev_inst *sdi);
+
+#ifdef DSVIEW_TESTING
+SR_PRIV void sr_test_channel_lifecycle_reset(void);
+SR_PRIV unsigned int sr_test_channel_free_count(void);
+SR_PRIV unsigned int sr_test_channel_group_free_count(void);
+#endif
 
 SR_PRIV int sr_enable_device_channel(struct sr_dev_inst *sdi, const struct sr_channel *probe, gboolean enable);
 
@@ -299,6 +585,10 @@ SR_PRIV int sr_session_source_add(gintptr poll_object, int events,
                                   sr_receive_data_callback_t cb,
                                   const struct sr_dev_inst *sdi);
 SR_PRIV int sr_session_source_remove(gintptr poll_object);
+SR_PRIV int sr_session_send_meta(const struct sr_dev_inst *sdi,
+        uint32_t key, GVariant *var);
+SR_PRIV int sr_session_send(const struct sr_dev_inst *sdi,
+        const struct sr_datafeed_packet *packet);
 
 /*--- std.c -----------------------------------------------------------------*/
 
@@ -306,8 +596,64 @@ typedef int (*dev_close_t)(struct sr_dev_inst *sdi);
 
 SR_PRIV int std_hw_init(struct sr_context *sr_ctx, struct sr_dev_driver *di,
 		const char *prefix);
-SR_PRIV int std_session_send_df_header(const struct sr_dev_inst *sdi,
-		const char *prefix);
+SR_PRIV int std_session_send_df_header(const struct sr_dev_inst *sdi);
+SR_PRIV int std_session_send_df_end(const struct sr_dev_inst *sdi);
+SR_PRIV int std_session_send_df_trigger(const struct sr_dev_inst *sdi);
+SR_PRIV int std_session_send_df_frame_begin(const struct sr_dev_inst *sdi);
+SR_PRIV int std_session_send_df_frame_end(const struct sr_dev_inst *sdi);
+
+/*--- analog.c ------------------------------------------------------------*/
+
+SR_PRIV int sr_analog_init(struct sr_datafeed_analog *analog,
+        struct sr_analog_encoding *encoding,
+        struct sr_analog_meaning *meaning,
+        struct sr_analog_spec *spec, int digits);
+
+/*--- strutil.c ------------------------------------------------------------*/
+
+SR_PRIV int sr_atol(const char *str, long *ret);
+SR_PRIV int sr_atol_base(const char *str, long *ret, char **end, int base);
+SR_PRIV int sr_atoul_base(const char *str, unsigned long *ret, char **end,
+        int base);
+SR_PRIV int sr_atoi(const char *str, int *ret);
+SR_PRIV int sr_atod(const char *str, double *ret);
+SR_PRIV int sr_atod_ascii(const char *str, double *ret);
+SR_PRIV int sr_atod_ascii_digits(const char *str, double *ret, int *digits);
+SR_PRIV int sr_atof_ascii(const char *str, float *ret);
+SR_PRIV int sr_atof_ascii_digits(const char *str, float *ret, int *digits);
+
+/*--- input/feed_queue.c ----------------------------------------------------*/
+
+struct feed_queue_logic;
+struct feed_queue_analog;
+
+SR_API struct feed_queue_logic *feed_queue_logic_alloc(
+        const struct sr_dev_inst *sdi, size_t sample_count, size_t unit_size);
+SR_API struct feed_queue_logic *feed_queue_logic_alloc_cross_data(
+        const struct sr_dev_inst *sdi, size_t sample_count, size_t unit_size,
+        size_t channel_count);
+SR_API int feed_queue_logic_submit_one(struct feed_queue_logic *q,
+        const uint8_t *data, size_t repeat_count);
+SR_API int feed_queue_logic_submit_many(struct feed_queue_logic *q,
+        const uint8_t *data, size_t samples_count);
+SR_API int feed_queue_logic_flush(struct feed_queue_logic *q);
+SR_API int feed_queue_logic_send_trigger(struct feed_queue_logic *q);
+SR_API void feed_queue_logic_free(struct feed_queue_logic *q);
+
+SR_API struct feed_queue_analog *feed_queue_analog_alloc(
+        const struct sr_dev_inst *sdi, size_t sample_count, int digits,
+        struct sr_channel *ch);
+SR_API int feed_queue_analog_mq_unit(struct feed_queue_analog *q,
+        enum sr_mq mq, enum sr_mqflag mq_flag, enum sr_unit unit);
+SR_API int feed_queue_analog_scale_offset(struct feed_queue_analog *q,
+        const struct sr_rational *scale, const struct sr_rational *offset);
+SR_API int feed_queue_analog_submit_one(struct feed_queue_analog *q,
+        float data, size_t repeat_count);
+SR_API int feed_queue_analog_flush(struct feed_queue_analog *q);
+SR_API void feed_queue_analog_free(struct feed_queue_analog *q);
+SR_PRIV int sr_count_digits(const char *str, int *digits);
+SR_PRIV GString *sr_hexdump_new(const uint8_t *data, size_t len);
+SR_PRIV void sr_hexdump_free(GString *text);
 
 /*--- trigger.c -------------------------------------------------*/
 SR_PRIV uint64_t sr_trigger_get_mask0(uint16_t stage);

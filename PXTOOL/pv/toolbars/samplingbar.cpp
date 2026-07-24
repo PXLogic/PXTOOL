@@ -27,11 +27,15 @@
 #include <QHBoxLayout>
 #include <QAbstractItemView>
 #include <QStandardItemModel>
+#include <QStandardItem>
 #include <QStyleFactory>
 #include <QApplication>
 #include <QToolButton>
 #include <QFontMetrics>
+#include <QSignalBlocker>
+#include <QTimer>
 #include <math.h>
+#include <limits>
 #include <libusb-1.0/libusb.h>
 #include "../dialogs/deviceoptions.h"
 #include "../dialogs/waitingdialog.h"
@@ -326,7 +330,8 @@ namespace pv
             if (_lbl_smplrate) _lbl_smplrate->setText(tr("Sample Rate"));
             if (_lbl_buffer) {
                 bool stream_mode = false;
-                if (_device_agent && _device_agent->have_instance())
+                if (_device_agent && _device_agent->have_instance() &&
+                    _device_agent->supports_config(SR_CONF_STREAM))
                     _device_agent->get_config_bool(SR_CONF_STREAM, stream_mode);
                 update_buffer_label(stream_mode);
             }
@@ -835,8 +840,13 @@ namespace pv
             assert(!_updating_sample_count);
             _updating_sample_count = true;
 
-            _device_agent->get_config_bool(SR_CONF_STREAM, stream_mode);
-            _device_agent->get_config_uint64(SR_CONF_HW_DEPTH, hw_depth);
+            if (_device_agent->supports_config(SR_CONF_STREAM))
+                _device_agent->get_config_bool(SR_CONF_STREAM, stream_mode);
+
+            if (!_device_agent->supports_config(SR_CONF_HW_DEPTH) ||
+                !_device_agent->get_config_uint64(SR_CONF_HW_DEPTH, hw_depth))
+                hw_depth = _device_agent->get_sample_limit();
+
             int mode = _device_agent->get_work_mode();
 
             if (mode == LOGIC)
@@ -858,7 +868,8 @@ namespace pv
 
             if (mode == LOGIC)
             {
-                _device_agent->get_config_bool(SR_CONF_RLE_SUPPORT, rle_support);
+                if (_device_agent->supports_config(SR_CONF_RLE_SUPPORT))
+                    _device_agent->get_config_bool(SR_CONF_RLE_SUPPORT, rle_support);
                 if (rle_support)
                     rle_depth = min(hw_depth * SR_KB(1), sw_depth);
             }
@@ -899,7 +910,8 @@ namespace pv
                 const auto &dc = _session->disk_cache_settings();
                 const uint64_t disk_gb = dc.disk_limit_gb == 0 ? 128 : dc.disk_limit_gb;
                 double stream_buff_gb = 0;
-                if (_device_agent->get_config_double(SR_CONF_STREAM_BUFF, stream_buff_gb) &&
+                if (_device_agent->supports_config(SR_CONF_STREAM_BUFF) &&
+                    _device_agent->get_config_double(SR_CONF_STREAM_BUFF, stream_buff_gb) &&
                     stream_buff_gb > 0) {
                     const double scaled_depth =
                         (static_cast<double>(hw_depth) * static_cast<double>(disk_gb)) /
@@ -1171,18 +1183,23 @@ namespace pv
                                         .value<double>();
 
             const uint64_t sample_limit = _device_agent->get_sample_limit();
-            uint64_t max_sample_rate;
+            uint64_t max_sample_rate = std::numeric_limits<uint64_t>::max();
 
-            if (_device_agent->get_config_uint64(SR_CONF_MAX_DSO_SAMPLERATE, max_sample_rate) == false)
+            if (_device_agent->supports_config(SR_CONF_MAX_DSO_SAMPLERATE) &&
+                _device_agent->get_config_uint64(SR_CONF_MAX_DSO_SAMPLERATE, max_sample_rate) == false)
             {
                 dsv_err("ERROR: config_get SR_CONF_MAX_DSO_SAMPLERATE failed.");
                 return -1;
             }
 
-            const uint64_t sample_rate = min((uint64_t)(sample_limit * SR_SEC(1) /
-                                                        (hori_res * DS_CONF_DSO_HDIVS)),
-                                             (uint64_t)(max_sample_rate /
-                                                        (_session->get_ch_num(SR_CHANNEL_DSO) ? _session->get_ch_num(SR_CHANNEL_DSO) : 1)));
+            const uint64_t requested_sample_rate = (uint64_t)(sample_limit * SR_SEC(1) /
+                                                              (hori_res * DS_CONF_DSO_HDIVS));
+            const int dso_ch_num = _session->get_ch_num(SR_CHANNEL_DSO) ?
+                _session->get_ch_num(SR_CHANNEL_DSO) : 1;
+            const uint64_t capped_sample_rate =
+                max_sample_rate == std::numeric_limits<uint64_t>::max() ?
+                requested_sample_rate : (uint64_t)(max_sample_rate / dso_ch_num);
+            const uint64_t sample_rate = min(requested_sample_rate, capped_sample_rate);
             set_sample_rate(sample_rate);
 
             _device_agent->set_config_uint64( SR_CONF_TIMEBASE, hori_res);
@@ -1436,7 +1453,8 @@ namespace pv
     int op_mode = -1;
     bool stream_cfg = false;
     const bool has_op_mode = _device_agent->get_config_int16(SR_CONF_OPERATION_MODE, op_mode);
-    const bool has_stream_cfg = _device_agent->get_config_bool(SR_CONF_STREAM, stream_cfg);
+    const bool has_stream_cfg = _device_agent->supports_config(SR_CONF_STREAM) &&
+        _device_agent->get_config_bool(SR_CONF_STREAM, stream_cfg);
     const bool stream_by_helper = _device_agent->is_stream_mode();
     dsv_info("SamplingBar::reload mode=%d dev=%s op_mode(valid=%d,val=%d) stream_cfg(valid=%d,val=%d) helper_stream=%d demo=%d",
              _device_agent->get_work_mode(),
@@ -1550,27 +1568,57 @@ namespace pv
             struct ds_device_base_info *array = NULL;
             int dev_count = 0;
             int select_index = 0;
+            const bool reopen_popup = _device_selector.IsPopup();
 
             dsv_info("Update device list.");
 
+            if (reopen_popup)
+                _device_selector.hidePopup();
+
             array = _session->get_device_list(dev_count, select_index);
+
+            _updating_device_list = true;
+            QSignalBlocker deviceSelectorBlocker(&_device_selector);
 
             if (array == NULL)
             {
-                dsv_err("Get deivce list error!");
+                if (dev_count == 0)
+                {
+                    dsv_info("Device list is empty; showing empty device selector state.");
+                    _device_selector.clear();
+                    _device_selector.addItem(tr("No device"), QVariant::fromValue((unsigned long long)NULL_HANDLE));
+                    if (QStandardItemModel *model = qobject_cast<QStandardItemModel*>(_device_selector.model())) {
+                        if (QStandardItem *item = model->item(0))
+                            item->setEnabled(false);
+                    }
+                    _device_selector.setCurrentIndex(0);
+                    _device_selector.setEnabled(false);
+                    _last_device_handle = NULL_HANDLE;
+                    _last_device_index = 0;
+                    apply_device_bar_combo_popup();
+                    _device_selector.refreshPopupLayout();
+                    _updating_device_list = false;
+                    return;
+                }
+
+                dsv_err("Get device list error! count=%d", dev_count);
+                _updating_device_list = false;
                 return;
             }
 
-            _updating_device_list = true;
             struct ds_device_base_info *p = NULL;
             ds_device_handle    cur_dev_handle = NULL_HANDLE;
 
             _device_selector.clear();
+            _device_selector.setEnabled(true);
+            dsv_info("Device selector refresh: count=%d active_index=%d", dev_count, select_index);
 
             for (int i = 0; i < dev_count; i++)
             {
                 p = (array + i);
                 _device_selector.addItem(QString(p->name), QVariant::fromValue((unsigned long long)p->handle));
+                dsv_info("Device selector item[%d]: name=\"%s\" handle=%llu",
+                         i, p->name, (unsigned long long)p->handle);
                 
                 if (i == select_index)
                     cur_dev_handle = p->handle;
@@ -1591,13 +1639,23 @@ namespace pv
             }
 
             _last_device_index = select_index;
+            dsv_info("Device selector selected index=%d handle=%llu combo_count=%d",
+                     select_index, (unsigned long long)cur_dev_handle, _device_selector.count());
             int width = _device_selector.sizeHint().width();
             _device_selector.setFixedWidth(min(width + 15, _device_selector.maximumWidth()));
             _device_selector.view()->setMinimumWidth(width + 30);
             apply_device_bar_combo_popup();
+            _device_selector.refreshPopupLayout();
             sync_buffer_combo_width();
 
             _updating_device_list = false;
+
+            if (reopen_popup && _device_selector.count() > 0) {
+                QTimer::singleShot(0, this, [this]() {
+                    if (_device_selector.isEnabled() && _device_selector.count() > 0)
+                        _device_selector.showPopup();
+                });
+            }
         }
 
         void SamplingBar::config_device()
@@ -1616,7 +1674,8 @@ namespace pv
             int op_mode = -1;
             bool stream_cfg = false;
             const bool has_op_mode = _session->get_device()->get_config_int16(SR_CONF_OPERATION_MODE, op_mode);
-            const bool has_stream_cfg = _session->get_device()->get_config_bool(SR_CONF_STREAM, stream_cfg);
+            const bool has_stream_cfg = _session->get_device()->supports_config(SR_CONF_STREAM) &&
+                _session->get_device()->get_config_bool(SR_CONF_STREAM, stream_cfg);
 
             _device_type.setEnabled(bEnable);
             _mode_button.setEnabled(bEnable);

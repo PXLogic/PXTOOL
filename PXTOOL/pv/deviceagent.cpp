@@ -22,7 +22,20 @@
 #include "deviceagent.h"
 #include <assert.h>
 #include "log.h"
+#include "deviceagentcustomconfig.h"
+extern "C" {
+#include "libsigrok-internal.h"
+}
 
+namespace {
+
+void free_custom_mode_list(GSList *list)
+{
+    if (list)
+        g_slist_free(list);
+}
+
+}
 
 DeviceAgent::DeviceAgent()
 {
@@ -31,6 +44,11 @@ DeviceAgent::DeviceAgent()
     _dev_type = 0;
     _callback = NULL;
     _is_new_device = false;
+    _custom_device = false;
+    _custom_work_mode = LOGIC;
+    _custom_sample_rate = 0;
+    _custom_sample_limit = 0;
+    _custom_mode_list = nullptr;
 }
 
 void DeviceAgent::update()
@@ -41,6 +59,12 @@ void DeviceAgent::update()
     _di = NULL;
     _dev_type = 0;
     _is_new_device = false;
+    _custom_device = false;
+    _custom_work_mode = LOGIC;
+    _custom_sample_rate = 0;
+    _custom_sample_limit = 0;
+    free_custom_mode_list(_custom_mode_list);
+    _custom_mode_list = nullptr;
 
     struct ds_device_full_info info;
 
@@ -70,6 +94,15 @@ bool DeviceAgent::enable_probe(const sr_channel *probe, bool enable)
 {
     assert(_dev_handle);
 
+    if (_custom_device) {
+        sr_channel *editable = const_cast<sr_channel *>(probe);
+        if (!editable)
+            return false;
+        editable->enabled = enable;
+        config_changed();
+        return true;
+    }
+
     if (ds_enable_device_channel(probe, enable) == SR_OK){
         config_changed();
         return true;
@@ -81,6 +114,18 @@ bool DeviceAgent::enable_probe(int probe_index, bool enable)
 {
      assert(_dev_handle);
 
+     if (_custom_device) {
+        for (GSList *l = get_channels(); l; l = l->next) {
+            sr_channel *probe = (sr_channel *)l->data;
+            if (probe->index == probe_index) {
+                probe->enabled = enable;
+                config_changed();
+                return true;
+            }
+        }
+        return false;
+     }
+
      if (ds_enable_device_channel_index(probe_index, enable) == SR_OK){
         config_changed();
         return true;
@@ -91,6 +136,21 @@ bool DeviceAgent::enable_probe(int probe_index, bool enable)
 bool DeviceAgent::set_channel_name(int ch_index, const char *name)
 {
     assert(_dev_handle);
+
+    if (_custom_device) {
+        if (!name)
+            return false;
+        for (GSList *l = get_channels(); l; l = l->next) {
+            sr_channel *probe = (sr_channel *)l->data;
+            if (probe->index == ch_index) {
+                g_free(probe->name);
+                probe->name = g_strdup(name);
+                config_changed();
+                return true;
+            }
+        }
+        return false;
+    }
     
     if (ds_set_device_channel_name(ch_index, name) == SR_OK){
         config_changed();
@@ -102,6 +162,9 @@ bool DeviceAgent::set_channel_name(int ch_index, const char *name)
 uint64_t DeviceAgent::get_sample_limit()
 {
     assert(_dev_handle);
+
+    if (_custom_device)
+        return _custom_sample_limit;
 
     uint64_t v;
     GVariant* gvar = NULL;
@@ -123,6 +186,9 @@ uint64_t DeviceAgent::get_sample_rate()
 {
     assert(_dev_handle);
 
+    if (_custom_device)
+        return _custom_sample_rate;
+
     uint64_t v;
     GVariant* gvar = NULL;
 
@@ -142,6 +208,9 @@ uint64_t DeviceAgent::get_sample_rate()
 uint64_t DeviceAgent::get_time_base()
 {
     assert(_dev_handle);
+
+    if (_custom_device)
+        return 0;
 
     uint64_t v;
     GVariant* gvar = NULL;
@@ -178,12 +247,16 @@ double DeviceAgent::get_sample_time()
 const GSList* DeviceAgent::get_device_mode_list()
 {
     assert(_dev_handle);
+    if (_custom_device)
+        return _custom_mode_list;
     return ds_get_actived_device_mode_list();
 }
 
 bool DeviceAgent::is_trigger_enabled()
 {
     assert(_dev_handle);
+    if (_custom_device)
+        return false;
     if (ds_trigger_is_enabled() > 0){
         return true;
     }
@@ -193,6 +266,9 @@ bool DeviceAgent::is_trigger_enabled()
 bool DeviceAgent::start()
 {
     assert(_dev_handle);
+
+    if (_custom_device)
+        return false;
 
     if (ds_start_collect() == SR_OK){
         return true;
@@ -204,6 +280,9 @@ bool DeviceAgent::stop()
 {
     assert(_dev_handle);
 
+    if (_custom_device)
+        return false;
+
     if (ds_stop_collect() == SR_OK){
         return true;
     }
@@ -212,12 +291,87 @@ bool DeviceAgent::stop()
 
 void DeviceAgent::release()
 {
-    ds_release_actived_device();
+    if (_custom_device) {
+        if (_di)
+            sr_dev_inst_free(_di);
+        _dev_handle = NULL_HANDLE;
+        _di = NULL;
+        _dev_name.clear();
+        _driver_name.clear();
+        _path.clear();
+        _dev_type = 0;
+        _is_new_device = false;
+        _custom_device = false;
+        _custom_work_mode = LOGIC;
+        _custom_sample_rate = 0;
+        _custom_sample_limit = 0;
+        free_custom_mode_list(_custom_mode_list);
+        _custom_mode_list = nullptr;
+        return;
+    }
+
+    if (_dev_handle == NULL_HANDLE)
+        return;
+
+    struct ds_device_full_info active_info;
+    if (ds_get_actived_device_info(&active_info) == SR_OK &&
+        active_info.handle == _dev_handle) {
+        ds_release_actived_device();
+    }
+
+    _dev_handle = NULL_HANDLE;
+    _di = NULL;
+    _dev_name.clear();
+    _driver_name.clear();
+    _path.clear();
+    _dev_type = 0;
+    _is_new_device = false;
+    _custom_sample_rate = 0;
+    _custom_sample_limit = 0;
+}
+
+void DeviceAgent::bind_custom_device(struct sr_dev_inst *di,
+                                     int dev_type,
+                                     int work_mode,
+                                     const QString &name,
+                                     const QString &path,
+                                     const QString &driver_name,
+                                     uint64_t sample_rate,
+                                     uint64_t sample_limit)
+{
+    if (_custom_device && _di && _di != di)
+        sr_dev_inst_free(_di);
+
+    _dev_handle = di ? (ds_device_handle)di : NULL_HANDLE;
+    _di = di;
+    _dev_type = dev_type;
+    _dev_name = name;
+    _path = path;
+    _driver_name = driver_name;
+    _is_new_device = false;
+    _custom_device = (di != nullptr);
+    _custom_work_mode = work_mode;
+    _custom_sample_rate = sample_rate;
+    _custom_sample_limit = sample_limit;
+    free_custom_mode_list(_custom_mode_list);
+    _custom_mode_list = nullptr;
+    _custom_mode_entry.mode = work_mode;
+    _custom_mode_entry.name = "Imported Data";
+    _custom_mode_entry.acronym = "import";
+    _custom_mode_list = g_slist_append(nullptr, &_custom_mode_entry);
 }
 
 bool DeviceAgent::have_enabled_channel()
 {
     assert(_dev_handle);
+    if (_custom_device) {
+        for (GSList *l = get_channels(); l; l = l->next) {
+            const sr_channel *probe = (const sr_channel *)l->data;
+            if (probe->enabled)
+                return true;
+        }
+        return false;
+    }
     return ds_channel_is_enabled() > 0;
 }
 
@@ -244,17 +398,24 @@ bool DeviceAgent::channel_is_enable(int index)
 
 int DeviceAgent::get_work_mode()
 {
+    if (_custom_device)
+        return _custom_work_mode;
     return ds_get_actived_device_mode();
 }
 
 const struct sr_config_info *DeviceAgent::get_config_info(int key)
 {
+    if (_custom_device)
+        return sr_config_info_get(key);
     return ds_get_actived_device_config_info(key);
 }
 
 bool DeviceAgent::get_device_status(struct sr_status &status, gboolean prg)
 {   
     assert(_dev_handle);
+
+    if (_custom_device)
+        return false;
 
     if (ds_get_actived_device_status(&status, prg) == SR_OK)
     {
@@ -275,12 +436,16 @@ void DeviceAgent::free_config(struct sr_config *src)
 
 bool DeviceAgent::is_collecting()
 {
+    if (_custom_device)
+        return false;
     return ds_is_collecting() > 0;
 }
 
 GSList *DeviceAgent::get_channels()
 {
     assert(_dev_handle);
+    if (_custom_device)
+        return _di ? _di->channels : nullptr;
     return ds_get_actived_device_channels();
 }
 
@@ -293,6 +458,52 @@ GSList *DeviceAgent::get_channels()
         return mode_val;
     }
     return -1;
+ }
+
+ bool DeviceAgent::supports_config(int key)
+ {
+    if (!have_instance())
+        return false;
+
+    if (_custom_device) {
+        switch (key) {
+        case SR_CONF_SAMPLERATE:
+        case SR_CONF_LIMIT_SAMPLES:
+        case SR_CONF_OPERATION_MODE:
+        case SR_CONF_STREAM:
+            return true;
+        default:
+            return false;
+        }
+    }
+
+    return ds_actived_device_supports_config_key(key) > 0;
+ }
+
+ bool DeviceAgent::supports_capability(int capability)
+ {
+    if (!have_instance())
+        return false;
+
+    if (_custom_device)
+        return capability == DS_DEVICE_CAP_WAVEFORM;
+
+    return ds_actived_device_supports_capability(capability) > 0;
+ }
+
+ bool DeviceAgent::supports_waveform()
+ {
+    return supports_capability(DS_DEVICE_CAP_WAVEFORM);
+ }
+
+ bool DeviceAgent::supports_stream()
+ {
+    return supports_capability(DS_DEVICE_CAP_STREAM);
+ }
+
+ bool DeviceAgent::supports_advanced_trigger()
+ {
+    return supports_capability(DS_DEVICE_CAP_ADVANCED_TRIGGER);
  }
 
  bool DeviceAgent::is_stream_mode()
@@ -322,16 +533,27 @@ GSList *DeviceAgent::get_channels()
     }        
     
     QString pattern_mode;
-    if(get_config_string(SR_CONF_PATTERN_MODE, pattern_mode) == false)
-    {
-        assert(false);
-    }
+    if(!supports_config(SR_CONF_PATTERN_MODE) ||
+       get_config_string(SR_CONF_PATTERN_MODE, pattern_mode) == false ||
+       pattern_mode.isEmpty())
+        return QStringLiteral("random");
+
     return pattern_mode;
  }
 
 GVariant* DeviceAgent::get_config_list(const sr_channel_group *group, int key)
 {
     assert(_dev_handle);
+
+    if (_custom_device) {
+        (void)group;
+        if (key == SR_CONF_SAMPLERATE) {
+            dsv_info("DeviceAgent::get_config_list custom samplerate=%llu",
+                     (unsigned long long)_custom_sample_rate);
+            return custom_samplerate_list_variant(_custom_sample_rate);
+        }
+        return NULL;
+    }
 
     GVariant *data = NULL;
 
@@ -351,7 +573,23 @@ GVariant* DeviceAgent::get_config_list(const sr_channel_group *group, int key)
 
 GVariant* DeviceAgent::get_config(int key, const sr_channel *ch, const sr_channel_group *cg)
 {
-    assert(_dev_handle); 
+    if (_dev_handle == NULL_HANDLE)
+        return NULL;
+
+    if (_custom_device) {
+        (void)ch;
+        (void)cg;
+        return custom_config_variant(key);
+    }
+
+    struct ds_device_full_info active_info;
+    if (ds_get_actived_device_info(&active_info) != SR_OK ||
+        active_info.handle != _dev_handle) {
+        dsv_warn("DeviceAgent::get_config ignored inactive device handle=%p key=%d",
+                 (void*)_dev_handle, key);
+        return NULL;
+    }
+
     GVariant *data = NULL;
     
     int ret = ds_get_actived_device_config(ch, cg, key, &data);
@@ -378,6 +616,15 @@ bool DeviceAgent::set_config(int key, GVariant *data, const sr_channel *ch, cons
  {
     assert(_dev_handle);
 
+    if (_custom_device) {
+        (void)ch;
+        (void)cg;
+        if (!set_custom_config_variant(key, data))
+            return false;
+        config_changed();
+        return true;
+    }
+
     int ret = ds_set_actived_device_config(ch, cg, key, data);
     if (ret != SR_OK)
     {
@@ -403,9 +650,12 @@ bool DeviceAgent::set_config(int key, GVariant *data, const sr_channel *ch, cons
     return false;
  }
 
- bool DeviceAgent::set_config_int32(int key, int value, const sr_channel *ch, const sr_channel_group *cg)
+bool DeviceAgent::set_config_int32(int key, int value, const sr_channel *ch, const sr_channel_group *cg)
  {
     assert(_dev_handle);
+
+    if (_custom_device)
+        return set_config(key, g_variant_new_int32(value), ch, cg);
 
     GVariant *gvar = g_variant_new_int32(value);
     int ret = ds_set_actived_device_config(ch, cg, key, gvar);
@@ -438,6 +688,9 @@ bool DeviceAgent::set_config(int key, GVariant *data, const sr_channel *ch, cons
     assert(value);
     assert(_dev_handle);
 
+    if (_custom_device)
+        return set_config(key, g_variant_new_string(value), ch, cg);
+
     GVariant *gvar = g_variant_new_string(value);
     int ret = ds_set_actived_device_config(ch, cg, key, gvar);
 
@@ -468,6 +721,9 @@ bool DeviceAgent::set_config_bool(int key, bool value, const sr_channel *ch, con
 {
     assert(_dev_handle);
 
+    if (_custom_device)
+        return set_config(key, g_variant_new_boolean(value), ch, cg);
+
     GVariant *gvar = g_variant_new_boolean(value);
     int ret = ds_set_actived_device_config(ch, cg, key, gvar);
 
@@ -496,6 +752,9 @@ bool DeviceAgent::get_config_uint64(int key, uint64_t &value, const sr_channel *
 bool DeviceAgent::set_config_uint64(int key, uint64_t value, const sr_channel *ch, const sr_channel_group *cg)
 {
     assert(_dev_handle);
+
+    if (_custom_device)
+        return set_config(key, g_variant_new_uint64(value), ch, cg);
 
     GVariant *gvar = g_variant_new_uint64(value);
     int ret = ds_set_actived_device_config(ch, cg, key, gvar);
@@ -526,6 +785,9 @@ bool DeviceAgent::set_config_uint16(int key, int value, const sr_channel *ch, co
 {
     assert(_dev_handle);
 
+    if (_custom_device)
+        return set_config(key, g_variant_new_uint16(value), ch, cg);
+
     GVariant *gvar = g_variant_new_uint16(value);
     int ret = ds_set_actived_device_config(ch, cg, key, gvar);
 
@@ -554,6 +816,9 @@ bool DeviceAgent::get_config_uint32(int key, uint32_t &value, const sr_channel *
 bool DeviceAgent::set_config_uint32(int key, uint32_t value, const sr_channel *ch, const sr_channel_group *cg)
 {
     assert(_dev_handle);
+
+    if (_custom_device)
+        return set_config(key, g_variant_new_uint32(value), ch, cg);
 
     GVariant *gvar = g_variant_new_uint32(value);
     int ret = ds_set_actived_device_config(ch, cg, key, gvar);
@@ -584,6 +849,9 @@ bool DeviceAgent::set_config_int16(int key, int value, const sr_channel *ch, con
 {
     assert(_dev_handle);
 
+    if (_custom_device)
+        return set_config(key, g_variant_new_int16(value), ch, cg);
+
     GVariant *gvar = g_variant_new_int16(value);
     int ret = ds_set_actived_device_config(ch, cg, key, gvar);
 
@@ -612,6 +880,9 @@ bool DeviceAgent::get_config_byte(int key, int &value, const sr_channel *ch, con
 bool DeviceAgent::set_config_byte(int key, int value, const sr_channel *ch, const sr_channel_group *cg)
 {
     assert(_dev_handle);
+
+    if (_custom_device)
+        return set_config(key, g_variant_new_byte((uint8_t)value), ch, cg);
 
     GVariant *gvar = g_variant_new_byte((uint8_t)value);
     int ret = ds_set_actived_device_config(ch, cg, key, gvar);
@@ -642,6 +913,9 @@ bool DeviceAgent::set_config_double(int key, double value, const sr_channel *ch,
 {
     assert(_dev_handle);
 
+    if (_custom_device)
+        return set_config(key, g_variant_new_double(value), ch, cg);
+
     GVariant *gvar = g_variant_new_double(value);
     int ret = ds_set_actived_device_config(ch, cg, key, gvar);
 
@@ -655,4 +929,49 @@ bool DeviceAgent::set_config_double(int key, double value, const sr_channel *ch,
 }
 
 //---------------device config end -----------/
+
+GVariant *DeviceAgent::custom_config_variant(int key) const
+{
+    switch (key) {
+    case SR_CONF_SAMPLERATE:
+        return g_variant_ref_sink(g_variant_new_uint64(_custom_sample_rate));
+    case SR_CONF_LIMIT_SAMPLES:
+        return g_variant_ref_sink(g_variant_new_uint64(_custom_sample_limit));
+    case SR_CONF_OPERATION_MODE:
+        return g_variant_ref_sink(g_variant_new_int16(_custom_work_mode));
+    case SR_CONF_STREAM:
+        return g_variant_ref_sink(g_variant_new_boolean(FALSE));
+    default:
+        return NULL;
+    }
+}
+
+bool DeviceAgent::set_custom_config_variant(int key, GVariant *data)
+{
+    if (!data)
+        return false;
+
+    switch (key) {
+    case SR_CONF_SAMPLERATE:
+        if (!g_variant_is_of_type(data, G_VARIANT_TYPE_UINT64))
+            return false;
+        _custom_sample_rate = g_variant_get_uint64(data);
+        return true;
+    case SR_CONF_LIMIT_SAMPLES:
+        if (!g_variant_is_of_type(data, G_VARIANT_TYPE_UINT64))
+            return false;
+        _custom_sample_limit = g_variant_get_uint64(data);
+        return true;
+    case SR_CONF_OPERATION_MODE:
+        if (!g_variant_is_of_type(data, G_VARIANT_TYPE_INT16))
+            return false;
+        _custom_work_mode = g_variant_get_int16(data);
+        _custom_mode_entry.mode = _custom_work_mode;
+        return true;
+    case SR_CONF_STREAM:
+        return g_variant_is_of_type(data, G_VARIANT_TYPE_BOOLEAN);
+    default:
+        return false;
+    }
+}
 

@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "libusb.h"
+#include <libsigrok/libsigrok.h>
 #include "../../libsigrok-internal.h"
 
 /* Protocol commands */

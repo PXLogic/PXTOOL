@@ -170,9 +170,8 @@ static GString *gen_header(const struct sr_output *o)
     g_string_append_printf(header, "; Sample rate: %s\n", samplerate_s);
     g_free(samplerate_s);
 
-    char *depth_s = sr_samplecount_string(ctx->limit_samples);
-    g_string_append_printf(header, "; Sample count: %s\n", depth_s);
-    g_free(depth_s);
+    g_string_append_printf(header, "; Sample count: %" PRIu64 " Samples\n",
+            ctx->limit_samples);
 
     if (ctx->type == SR_CHANNEL_LOGIC)
         g_string_append_printf(header, "Time(s),");
@@ -379,12 +378,26 @@ static int cleanup(struct sr_output *o)
 	return SR_OK;
 }
 
+static struct sr_option options[] = {
+	{ "type", "Channel type", "Data channel type", NULL, NULL },
+	{ 0, 0, 0, 0, 0 }
+};
+
+static const struct sr_option *get_options(void)
+{
+	if (!options[0].def)
+		options[0].def = g_variant_ref_sink(
+			g_variant_new_int16(SR_CHANNEL_LOGIC));
+
+	return options;
+}
+
 SR_PRIV struct sr_output_module output_csv = {
 	.id = "csv",
 	.name = "CSV",
 	.desc = "Comma-separated values",
 	.exts = (const char*[]){"csv", NULL},
-	.options = NULL,
+	.options = get_options,
 	.init = init,
 	.receive = receive,
 	.cleanup = cleanup,

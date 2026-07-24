@@ -246,6 +246,7 @@ public:
         return _search_hit;
     }
 
+    void set_search_marker(uint64_t search_pos, bool hit);
     void set_search_pos(uint64_t search_pos, bool hit);
 
     // Navigate to a search result with auto-zoom: ensures the horizontal scale

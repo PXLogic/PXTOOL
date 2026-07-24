@@ -29,6 +29,9 @@
 #include "data/logicsnapshot.h"
 #include "data/dsosnapshot.h"
 #include "data/analogsnapshot.h"
+#include "data/formatcapability.h"
+#include "data/iooptions.h"
+#include "data/analogpacketadapter.h"
 #include "data/decoderstack.h"
 #include "data/decode/decoder.h"
 #include "data/decode/row.h"
@@ -45,8 +48,9 @@
 #include <QJsonObject>
 #include <QJsonArray>
 #include <QStandardPaths>
+#include <cmath>
+#include <limits>
 #include <math.h>
-#include <QTextStream>
 #include <list>
 
 #ifdef _WIN32
@@ -56,7 +60,6 @@
 #include <libsigrokdecode.h>
 #include "config/appconfig.h"
 #include "dsvdef.h"
-#include "utility/encoding.h"
 #include "utility/path.h"
 #include "log.h" 
 
@@ -64,6 +67,40 @@
 #define DEOCDER_CONFIG_VERSION  2
  
 namespace pv { 
+
+namespace {
+
+class OutputInstance final {
+public:
+    OutputInstance(const sr_output_module *module, GHashTable *options,
+                   const sr_dev_inst *sdi, uint64_t start_sample_index)
+        : value_(sr_output_new_with_start_sample_index(
+            module, options, sdi, start_sample_index))
+    {
+    }
+
+    ~OutputInstance()
+    {
+        if (value_)
+            sr_output_free(value_);
+    }
+
+    const sr_output *get() const
+    {
+        return value_;
+    }
+
+private:
+    const sr_output *value_ = nullptr;
+};
+
+bool format_requires_standard_analog(const sr_output_module *module)
+{
+    return module && (!strcmp(module->id, "analog") ||
+                      !strcmp(module->id, "wav"));
+}
+
+} // namespace
 
 StoreSession::StoreSession(SigSession *session) :
 	_session(session),
@@ -114,23 +151,33 @@ void StoreSession::cancel()
     _canceled = true; 
 }
 
-QList<QString> StoreSession::getSuportedExportFormats(){
-    const struct sr_output_module** supportedModules = sr_output_list();
-    QList<QString> list;
-    while(*supportedModules){
-        if(*supportedModules == NULL)
-            break;
-        if (_session->get_device()->get_work_mode() != LOGIC &&
-            strcmp((*supportedModules)->id, "csv"))
-            break;
-        QString format((*supportedModules)->desc);
-        format.append(" (*.");
-        format.append((*supportedModules)->id);
-        format.append(")");
-        list.append(format);
-        supportedModules++;
-    }
-    return list;
+void StoreSession::setSelectedOutputFormatId(const QString &format_id)
+{
+    _selectedOutputFormatId = format_id;
+    _selectedOutputFormatExplicit = !format_id.isEmpty();
+}
+
+void StoreSession::setSelectedOutputOptions(const data::IoOptions &options)
+{
+    _selectedOutputOptions = options;
+    _selectedOptionsFormatId = _selectedOutputFormatId;
+    _hasSelectedOutputOptions = true;
+}
+
+bool StoreSession::hasExplicitSelectedOutputFormat() const
+{
+    return _selectedOutputFormatExplicit;
+}
+
+bool StoreSession::append_output(QFile &file, GString *chunk)
+{
+    if (!chunk)
+        return true;
+
+    const gsize length = chunk->len;
+    const qint64 written = file.write(chunk->str, static_cast<qint64>(length));
+    g_string_free(chunk, TRUE);
+    return written == static_cast<qint64>(length);
 }
 
 bool StoreSession::save_start()
@@ -785,62 +832,148 @@ bool StoreSession::meta_gen(data::Snapshot *snapshot, std::string &str)
     return true;
 }
 
-//export as csv file
-bool StoreSession::export_start()
+bool StoreSession::validateExportFormat()
 {
+    _has_error = false;
+    _error.clear();
+
     std::set<int> type_set;
-    for(auto s : _session->get_signals()) {
-        int _tp = s->get_type();
-        type_set.insert(_tp);
-    }
+    for (auto signal : _session->get_signals())
+        type_set.insert(signal->get_type());
 
     if (type_set.size() > 1) {
         _error = tr("DSView does not currently support\nfile export for multiple data types.");
         return false;
-    } else if (type_set.size() == 0) {
+    }
+    if (type_set.empty()) {
         _error = tr("No data to save.");
         return false;
     }
 
     const auto snapshot = _session->get_snapshot(*type_set.begin());
+    if (!snapshot) {
+        _error = tr("No data to save.");
+        return false;
+    }
+
+    const QVector<data::FormatCapability> formats = data::exportFormats();
+    const data::FormatCapability *format = data::resolveExportFormatSelection(
+        formats, _selectedOutputFormatId, QString(), _suffix);
+    if (!format) {
+        _error = tr("Invalid export format.");
+        return false;
+    }
+
+    _outModule = sr_output_find(format->id.toUtf8().data());
+    if (_outModule == NULL) {
+        _error = tr("Invalid export format.");
+        return false;
+    }
+
+    data::ExportDataType data_type;
+    if (dynamic_cast<data::LogicSnapshot *>(snapshot))
+        data_type = data::ExportDataType::Logic;
+    else if (dynamic_cast<data::AnalogSnapshot *>(snapshot))
+        data_type = data::ExportDataType::Analog;
+    else if (dynamic_cast<data::DsoSnapshot *>(snapshot))
+        data_type = data::ExportDataType::Dso;
+    else {
+        _error = tr("The active data type is not supported for export.");
+        return false;
+    }
+
+    _error = data::exportCompatibilityError(*format, data_type);
+    if (!_error.isEmpty())
+        return false;
+
+    if (!format_requires_standard_analog(_outModule))
+        return true;
+
+    auto *analog_snapshot = dynamic_cast<data::AnalogSnapshot *>(snapshot);
+    QString reason;
+    uint32_t ref_min = 0;
+    uint32_t ref_max = 0;
+    int enabled_channels = 0;
+
+    if (!analog_snapshot) {
+        reason = tr("the active capture is not analog data");
+    } else if (analog_snapshot->get_unit_bytes() != 1) {
+        reason = tr("only 8-bit analog snapshots can be converted safely");
+    } else if (_session->cur_snap_samplerate() == 0) {
+        reason = tr("the sample rate is unavailable");
+    } else if (!_session->get_device()->get_config_uint32(
+                   SR_CONF_REF_MIN, ref_min) ||
+               !_session->get_device()->get_config_uint32(
+                   SR_CONF_REF_MAX, ref_max) || ref_max <= ref_min) {
+        reason = tr("the capture reference range is unavailable");
+    } else {
+        for (const GSList *item = _session->get_device()->get_channels();
+             item; item = item->next) {
+            const auto *channel = static_cast<const sr_channel *>(item->data);
+            if (!channel || channel->type != SR_CHANNEL_ANALOG ||
+                !channel->enabled)
+                continue;
+
+            ++enabled_channels;
+            if (!channel->name || !channel->map_unit ||
+                strcmp(channel->map_unit, "V") ||
+                !analog_snapshot->has_data(channel->index) ||
+                analog_snapshot->get_ch_order(channel->index) < 0 ||
+                !std::isfinite(channel->map_min) ||
+                !std::isfinite(channel->map_max) ||
+                channel->map_max <= channel->map_min) {
+                reason = tr("an enabled channel lacks a valid voltage mapping");
+                break;
+            }
+        }
+        if (reason.isEmpty() && enabled_channels == 0)
+            reason = tr("no enabled analog channels are available");
+        if (reason.isEmpty() && !strcmp(_outModule->id, "wav")) {
+            const uint64_t bytes_per_frame =
+                static_cast<uint64_t>(enabled_channels) * sizeof(float);
+            if (bytes_per_frame > (std::numeric_limits<uint16_t>::max)() ||
+                _session->cur_snap_samplerate() >
+                    (std::numeric_limits<uint32_t>::max)() / bytes_per_frame) {
+                reason = tr("the sample rate or channel count exceeds the WAV format limits");
+            }
+        }
+    }
+
+    if (!reason.isEmpty()) {
+        _error = tr("%1 requires standard analog samples: %2.")
+            .arg(format->description, reason);
+        return false;
+    }
+
+    return true;
+}
+
+//export as csv file
+bool StoreSession::export_start()
+{
+    if (!validateExportFormat())
+        return false;
+
+    std::set<int> type_set;
+    for (auto signal : _session->get_signals())
+        type_set.insert(signal->get_type());
+
+    const auto snapshot = _session->get_snapshot(*type_set.begin());
     assert(snapshot);
-    // Check we have data
     if (snapshot->empty()) {
         _error = tr("No data to save.");
         return false;
     }
 
-    if (_file_name == ""){
+    if (_file_name.isEmpty()) {
         _error = tr("No set file name.");
         return false;
     }
 
-    const struct sr_output_module **supportedModules = sr_output_list();
-    while (*supportedModules)
-    {
-        if (*supportedModules == NULL)
-            break;
-        if (!strcmp((*supportedModules)->id, _suffix.toUtf8().data()))
-        {
-            _outModule = *supportedModules;
-            break;
-        }
-        supportedModules++;
-    }
-
-    if (_outModule == NULL)
-    {
-        _error = tr("Invalid export format.");
-    }
-    else
-    {
-        if (_thread.joinable()) _thread.join();
-        _thread = std::thread(&StoreSession::export_proc, this, snapshot);
-        return !_has_error;
-    }
-
-    _error.clear();
-    return false;
+    if (_thread.joinable())
+        _thread.join();
+    _thread = std::thread(&StoreSession::export_proc, this, snapshot);
+    return !_has_error;
 }
 
 void StoreSession::export_proc(data::Snapshot *snapshot)
@@ -882,38 +1015,139 @@ void StoreSession::export_exec(data::Snapshot *snapshot)
         return;
     }
 
-    GHashTable *params = g_hash_table_new(g_str_hash, g_str_equal);
-    GVariant* filenameGVariant = g_variant_new_bytestring(_file_name.toUtf8().data());
-    g_hash_table_insert(params, (char*)"filename", filenameGVariant);
-    GVariant* typeGVariant = g_variant_new_int16(channel_type);
-    g_hash_table_insert(params, (char*)"type", typeGVariant);
+    const uint64_t snapshot_samples = snapshot->get_sample_count();
+    const uint64_t snapshot_ring_samples = snapshot->get_ring_sample_count();
+    uint64_t export_limit_samples = snapshot_samples;
 
-    struct sr_output output;
-    output.module = (sr_output_module*) _outModule;
-    output.sdi = _session->get_device()->inst();
-    output.param = NULL;
-    output.start_sample_index = 0;
+    if (logic_snapshot) {
+        const uint64_t session_limit_samples = _session->cur_samplelimits();
 
-    if (channel_type == SR_CHANNEL_LOGIC){
-        output.start_sample_index = _start_index;
+        if (_start_index > 0 && _end_index > 0 && _end_index > _start_index) {
+            export_limit_samples = _end_index - _start_index;
+        } else if (_end_index > 0) {
+            export_limit_samples = _end_index;
+        } else if (_start_index > 0) {
+            export_limit_samples =
+                snapshot_ring_samples > _start_index
+                    ? snapshot_ring_samples - _start_index
+                    : 0;
+        } else if (session_limit_samples != 0) {
+            export_limit_samples = session_limit_samples;
+        } else {
+            export_limit_samples = snapshot_ring_samples;
+        }
+
+        dsv_info("StoreSession::export_exec logic meta: samplerate=%llu session_limit=%llu snapshot_samples=%llu ring_samples=%llu range=[%llu,%llu] metadata_samples=%llu original=%d",
+                 (unsigned long long)_session->cur_snap_samplerate(),
+                 (unsigned long long)session_limit_samples,
+                 (unsigned long long)snapshot_samples,
+                 (unsigned long long)snapshot_ring_samples,
+                 (unsigned long long)_start_index,
+                 (unsigned long long)_end_index,
+                 (unsigned long long)export_limit_samples,
+                 origin_flag);
+    } else {
+        dsv_info("StoreSession::export_exec meta: type=%d samplerate=%llu snapshot_samples=%llu ring_samples=%llu metadata_samples=%llu",
+                 channel_type,
+                 (unsigned long long)_session->cur_snap_samplerate(),
+                 (unsigned long long)snapshot_samples,
+                 (unsigned long long)snapshot_ring_samples,
+                 (unsigned long long)export_limit_samples);
     }
 
-    if(_outModule->init){
-       if(_outModule->init(&output, params) != SR_OK){
-        dsv_err("Failed to init export module.");
+    const sr_option **module_options = sr_output_options_get(_outModule);
+    data::IoOptions output_options(module_options);
+    if (module_options)
+        sr_output_options_free(module_options);
+
+    if (_hasSelectedOutputOptions &&
+        _selectedOptionsFormatId == QString::fromUtf8(_outModule->id)) {
+        output_options = _selectedOutputOptions;
+    }
+    _selectedOutputOptions = data::IoOptions(nullptr);
+    _selectedOptionsFormatId.clear();
+    _hasSelectedOutputOptions = false;
+
+    if (!strcmp(_outModule->id, "csv"))
+        output_options.set("type",
+            QVariant::fromValue(static_cast<qint16>(channel_type)));
+    else if (!strcmp(_outModule->id, "srzip"))
+        output_options.set("filename", _file_name);
+
+    GHashTable *params = output_options.toGHashTable();
+    const uint64_t start_sample_index =
+        channel_type == SR_CHANNEL_LOGIC ? _start_index : 0;
+    OutputInstance output(_outModule, params, _session->get_device()->inst(),
+                          start_sample_index);
+    g_hash_table_destroy(params);
+
+    if (!output.get()) {
+        _has_error = true;
+        _error = tr("Failed to initialize export module.");
         return;
-       }
     }
 
+    const bool module_writes_file = !strcmp(_outModule->id, "srzip");
     QFile file(_file_name);
-    file.open(QIODevice::WriteOnly | QIODevice::Text);
-    QTextStream out(&file); 
-    encoding::set_utf8(out);
-    //out.setGenerateByteOrderMark(true);  // UTF-8 without BOM
+    if (!module_writes_file &&
+        !file.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
+        _has_error = true;
+        _error = tr("Failed to open export file for writing.");
+        QFile::remove(_file_name);
+        return;
+    }
+
+    const auto cleanup_partial_export = [&file, module_writes_file, this] {
+        file.close();
+        if (!module_writes_file)
+            QFile::remove(_file_name);
+    };
+
+    const auto fail_export = [this, &cleanup_partial_export](const QString &error) {
+        _has_error = true;
+        _error = error;
+        cleanup_partial_export();
+    };
+
+    const auto send_packet = [this, &output, &file, module_writes_file, &fail_export](
+        const sr_datafeed_packet &packet) {
+        GString *chunk = nullptr;
+        if (sr_output_send(output.get(), &packet, &chunk) != SR_OK) {
+            if (chunk)
+                g_string_free(chunk, TRUE);
+            fail_export(QObject::tr("Failed to export data."));
+            return false;
+        }
+
+        if (module_writes_file) {
+            if (chunk)
+                g_string_free(chunk, TRUE);
+            return true;
+        }
+
+        if (!append_output(file, chunk)) {
+            fail_export(QObject::tr("Failed to write export file."));
+            return false;
+        }
+
+        return true;
+    };
+
+    struct sr_datafeed_packet p;
+    struct sr_datafeed_header header;
+
+    memset(&header, 0, sizeof(header));
+    header.feed_version = 1;
+    gettimeofday(&header.starttime, NULL);
+
+    p.type = SR_DF_HEADER;
+    p.status = SR_PKT_OK;
+    p.payload = &header;
+    p.bExportOriginalData = 0;
+    if (!send_packet(p))
+        return;
 
     // Meta
-    GString *data_out;
-    struct sr_datafeed_packet p;
     struct sr_datafeed_meta meta;
     struct sr_config *src;
 
@@ -922,46 +1156,50 @@ void StoreSession::export_exec(data::Snapshot *snapshot)
 
     meta.config = g_slist_append(NULL, src);
 
-    src = _session->get_device()->new_config(SR_CONF_LIMIT_SAMPLES,
-                g_variant_new_uint64(snapshot->get_sample_count()));
+    const bool standard_analog_output =
+        format_requires_standard_analog(_outModule);
+    if (!standard_analog_output) {
+        src = _session->get_device()->new_config(SR_CONF_LIMIT_SAMPLES,
+                    g_variant_new_uint64(export_limit_samples));
 
-    meta.config = g_slist_append(meta.config, src);
+        meta.config = g_slist_append(meta.config, src);
 
-    GVariant *gvar;
-    int bits=0;
+        GVariant *gvar;
+        int bits=0;
 
-    _session->get_device()->get_config_byte(SR_CONF_UNIT_BITS, bits);
+        _session->get_device()->get_config_byte(SR_CONF_UNIT_BITS, bits);
 
-    gvar = _session->get_device()->get_config(SR_CONF_REF_MIN);
-    if (gvar != NULL) {
-        src = _session->get_device()->new_config(SR_CONF_REF_MIN, gvar);
-        g_variant_unref(gvar);
-    } 
-    else {
-        src = _session->get_device()->new_config(SR_CONF_REF_MIN, g_variant_new_uint32(1));
+        gvar = _session->get_device()->get_config(SR_CONF_REF_MIN);
+        if (gvar != NULL) {
+            src = _session->get_device()->new_config(SR_CONF_REF_MIN, gvar);
+            g_variant_unref(gvar);
+        }
+        else {
+            src = _session->get_device()->new_config(SR_CONF_REF_MIN, g_variant_new_uint32(1));
+        }
+
+        meta.config = g_slist_append(meta.config, src);
+
+        gvar = _session->get_device()->get_config(SR_CONF_REF_MAX);
+        if (gvar != NULL) {
+            src = _session->get_device()->new_config(SR_CONF_REF_MAX, gvar);
+            g_variant_unref(gvar);
+        }
+        else {
+            src = _session->get_device()->new_config(SR_CONF_REF_MAX, g_variant_new_uint32((1 << bits) - 1));
+        }
+        meta.config = g_slist_append(meta.config, src);
     }
-
-    meta.config = g_slist_append(meta.config, src);
-
-    gvar = _session->get_device()->get_config(SR_CONF_REF_MAX);
-    if (gvar != NULL) {
-        src = _session->get_device()->new_config(SR_CONF_REF_MAX, gvar);
-        g_variant_unref(gvar);
-    }
-    else {
-        src = _session->get_device()->new_config(SR_CONF_REF_MAX, g_variant_new_uint32((1 << bits) - 1));
-    }
-    meta.config = g_slist_append(meta.config, src);
 
     p.type = SR_DF_META;
     p.status = SR_PKT_OK;
     p.payload = &meta;
     p.bExportOriginalData = 0;
-    _outModule->receive(&output, &p, &data_out);
-
-    if(data_out){
-        out << QString::fromUtf8((char*) data_out->str);
-        g_string_free(data_out,TRUE);
+    if (!send_packet(p)) {
+        for (GSList *l = meta.config; l; l = l->next)
+            _session->get_device()->free_config(static_cast<sr_config *>(l->data));
+        g_slist_free(meta.config);
+        return;
     }
     for (GSList *l = meta.config; l; l = l->next) {
         src = (struct sr_config *)l->data;
@@ -986,6 +1224,7 @@ void StoreSession::export_exec(data::Snapshot *snapshot)
         if (start_index > logic_snapshot->get_ring_sample_count()){
             dsv_err("ERROR:the start curosr is invalid!");
             _units_stored = -1;
+            fail_export(tr("Invalid export data range."));
             progress_updated();
             return;
         }
@@ -1009,6 +1248,14 @@ void StoreSession::export_exec(data::Snapshot *snapshot)
         else if (end_index > 0){
             _unit_count = end_index;
         }
+
+        dsv_info("StoreSession::export_exec logic data: blocks=%d ring_samples=%llu start=%llu end=%llu rows_to_send=%llu metadata_samples=%llu",
+                 blk_num,
+                 (unsigned long long)logic_snapshot->get_ring_sample_count(),
+                 (unsigned long long)start_index,
+                 (unsigned long long)end_index,
+                 (unsigned long long)_unit_count,
+                 (unsigned long long)export_limit_samples);
 
         for (int blk = 0; !_canceled  &&  blk < blk_num; blk++) {
             uint64_t buf_sample_num = logic_snapshot->get_block_size(blk) * 8;
@@ -1042,8 +1289,7 @@ void StoreSession::export_exec(data::Snapshot *snapshot)
                     size = buf_sample_num - i;
                 uint8_t *xbuf = (uint8_t *)malloc(size * unitsize);
                 if (xbuf == NULL) {
-                    _has_error = true;
-                    _error = tr("xbuffer malloc failed.");
+                    fail_export(tr("Failed to allocate export buffer."));
                     return;
                 }                
                 memset(xbuf, 0, size * unitsize);
@@ -1060,15 +1306,14 @@ void StoreSession::export_exec(data::Snapshot *snapshot)
                 lp.data = xbuf;
                 lp.length = size * unitsize;
                 lp.unitsize = unitsize;
+                lp.format = LA_CROSS_DATA;
                 p.type = SR_DF_LOGIC;
                 p.status = SR_PKT_OK;
                 p.payload = &lp;
                 p.bExportOriginalData = origin_flag;
-                _outModule->receive(&output, &p, &data_out);
-
-                if(data_out){
-                    out << QString::fromUtf8((char*) data_out->str);
-                    g_string_free(data_out,TRUE);
+                if (!send_packet(p)) {
+                    free(xbuf);
+                    return;
                 }
 
                 _units_stored += size;
@@ -1087,6 +1332,7 @@ void StoreSession::export_exec(data::Snapshot *snapshot)
         uint8_t *ch_data_buffer = (uint8_t*)malloc(usize * dso_snapshot->get_channel_num() + 1);
         if (ch_data_buffer == NULL){
             dsv_err("StoreSession::export_proc, malloc failed.");
+            fail_export(tr("Failed to allocate export buffer."));
             return;
         }
 
@@ -1125,11 +1371,9 @@ void StoreSession::export_exec(data::Snapshot *snapshot)
             p.status = SR_PKT_OK;
             p.payload = &dp;
             p.bExportOriginalData = 0;
-            _outModule->receive(&output, &p, &data_out);
-
-            if(data_out){
-                out << (char*) data_out->str;
-                g_string_free(data_out,TRUE);
+            if (!send_packet(p)) {
+                free(ch_data_buffer);
+                return;
             }
 
             _units_stored += size;
@@ -1145,10 +1389,43 @@ void StoreSession::export_exec(data::Snapshot *snapshot)
         _unit_count = snapshot->get_sample_count();
         uint64_t unit_count = _unit_count;
         void* data_buffer = analog_snapshot->get_data();
-        unsigned int usize = 8192;        
-        struct sr_datafeed_analog ap;
-        
-        unsigned char* read_buf = (unsigned char*)data_buffer;
+        unsigned int usize = 8192;
+
+        QVector<data::AnalogChannelRef> analog_channels;
+        QVector<data::Unsigned8AnalogConversion> conversions;
+        uint32_t ref_min = 0;
+        uint32_t ref_max = 0;
+        if (standard_analog_output) {
+            if (!_session->get_device()->get_config_uint32(
+                    SR_CONF_REF_MIN, ref_min) ||
+                !_session->get_device()->get_config_uint32(
+                    SR_CONF_REF_MAX, ref_max) || ref_max <= ref_min) {
+                fail_export(tr("The analog reference range became unavailable."));
+                return;
+            }
+
+            for (GSList *item = _session->get_device()->get_channels();
+                 item; item = item->next) {
+                auto *channel = static_cast<sr_channel *>(item->data);
+                if (!channel || channel->type != SR_CHANNEL_ANALOG ||
+                    !channel->enabled)
+                    continue;
+
+                const int source_index =
+                    analog_snapshot->get_ch_order(channel->index);
+                const double units_per_code =
+                    (channel->map_max - channel->map_min) /
+                    static_cast<double>(ref_max - ref_min);
+                analog_channels.append(data::AnalogChannelRef(channel));
+                conversions.append({
+                    static_cast<uint32_t>(source_index),
+                    static_cast<double>(channel->hw_offset),
+                    units_per_code,
+                });
+            }
+        }
+
+        struct sr_datafeed_analog ap{};
 
         const uint64_t ring_start = analog_snapshot->get_ring_start();
  
@@ -1181,18 +1458,36 @@ void StoreSession::export_exec(data::Snapshot *snapshot)
                     size = sample_count - i;
                 }
          
-                ap.data = (unsigned char*)block_buffer[j] + i * ch_count;
-                ap.num_samples = size;
-                p.type = SR_DF_ANALOG;
-                p.status = SR_PKT_OK;
-                p.payload = &ap;
-                p.bExportOriginalData = 0;
-                _outModule->receive(&output, &p, &data_out);
-
-                if(data_out){
-                    out << (char*) data_out->str;
-                    g_string_free(data_out,TRUE);
-                }           
+                if (standard_analog_output) {
+                    try {
+                        const auto samples =
+                            data::convertUnsigned8AnalogSamples(
+                                static_cast<const uint8_t *>(block_buffer[j]) +
+                                    i * ch_count,
+                                size, ch_count, conversions);
+                        auto packet = data::makeAnalogPacket(
+                            analog_channels, samples, size,
+                            _session->cur_snap_samplerate(),
+                            SR_MQ_VOLTAGE, SR_UNIT_VOLT);
+                        packet.packet.bExportOriginalData = 0;
+                        if (!send_packet(packet.packet))
+                            return;
+                    } catch (const std::exception &error) {
+                        dsv_err("Failed to create standard analog packet: %s",
+                                error.what());
+                        fail_export(tr("Failed to convert analog samples."));
+                        return;
+                    }
+                } else {
+                    ap.data = (unsigned char*)block_buffer[j] + i * ch_count;
+                    ap.num_samples = size;
+                    p.type = SR_DF_ANALOG;
+                    p.status = SR_PKT_OK;
+                    p.payload = &ap;
+                    p.bExportOriginalData = 0;
+                    if (!send_packet(p))
+                        return;
+                }
 
                 _units_stored += size;
                 progress_updated();
@@ -1202,12 +1497,19 @@ void StoreSession::export_exec(data::Snapshot *snapshot)
         }
     }
 
-    // optional, as QFile destructor will already do it:
+    if (_canceled) {
+        cleanup_partial_export();
+        return;
+    }
+
+    p.type = SR_DF_END;
+    p.status = SR_PKT_OK;
+    p.payload = nullptr;
+    p.bExportOriginalData = 0;
+    if (!send_packet(p))
+        return;
+
     file.close();
-    _outModule->cleanup(&output);
-    g_hash_table_destroy(params);
-    if (filenameGVariant != NULL)
-        g_variant_unref(filenameGVariant);
 
     progress_updated();
 }
@@ -1592,16 +1894,18 @@ double StoreSession::get_integer(GVariant *var)
 QString StoreSession::MakeSaveFile(bool bDlg)
 {
     QString default_name;
+    QString device_name = _session->get_device()->name().trimmed();
+    device_name.replace(QRegularExpression("\\s+"), "-");
 
     AppConfig &app = AppConfig::Instance(); 
     if (app.userHistory.saveDir != "")
     {
-        default_name = app.userHistory.saveDir + "/"  + _session->get_device()->name() + "-";
+        default_name = app.userHistory.saveDir + "/"  + device_name + "-";
     } 
     else{
         QDir _dir;
         QString _root = _dir.home().path();                
-        default_name =  _root + "/" + _session->get_device()->name() + "-";
+        default_name =  _root + "/" + device_name + "-";
     } 
 
     for (const GSList *l = _session->get_device()->get_device_mode_list(); l; l = l->next) 
@@ -1652,16 +1956,18 @@ QString StoreSession::MakeSaveFile(bool bDlg)
 QString StoreSession::MakeExportFile(bool bDlg)
 {
     QString default_name;
+    QString device_name = _session->get_device()->name().trimmed();
+    device_name.replace(QRegularExpression("\\s+"), "-");
     AppConfig &app = AppConfig::Instance();  
     
     if (app.userHistory.exportDir != "")
     {
-        default_name = app.userHistory.exportDir  + "/"  + _session->get_device()->name() + "-";
+        default_name = app.userHistory.exportDir  + "/"  + device_name + "-";
     } 
     else{
         QDir _dir;
         QString _root = _dir.home().path();    
-        default_name =  _root + "/" + _session->get_device()->name() + "-";
+        default_name =  _root + "/" + device_name + "-";
     }  
 
     for (const GSList *l = _session->get_device()->get_device_mode_list(); l; l = l->next) {
@@ -1673,22 +1979,37 @@ QString StoreSession::MakeExportFile(bool bDlg)
     }
     default_name += _session->get_session_time().toString("-yyMMdd-hhmmss");
 
-    //ext name
-    QList<QString> supportedFormats = getSuportedExportFormats();
-    QString filter;
-    for(int i = 0; i < supportedFormats.count();i++){
-        filter.append(supportedFormats[i]);
-        if(i < supportedFormats.count() - 1)
-            filter.append(";;");
-    }
+    const QVector<data::FormatCapability> formats = data::exportFormats();
+    const QString filter = data::saveDialogFilter(formats);
 
     QString selfilter;
-    if (app.userHistory.exportFormat != "" 
-            && _session->get_device()->get_work_mode() == LOGIC){
-        selfilter.append(app.userHistory.exportFormat);
+    const data::FormatCapability *selected_format = nullptr;
+    if (!_selectedOutputFormatId.isEmpty()) {
+        selected_format = data::findFormatById(formats, _selectedOutputFormatId);
+        if (selected_format)
+            selfilter = selected_format->dialogFilter;
     }
-    else{
-        selfilter.append(".csv");
+
+    if (selfilter.isEmpty() && app.userHistory.exportFormat != ""
+            && _session->get_device()->get_work_mode() == LOGIC){
+        for (const data::FormatCapability &format : formats) {
+            if (format.dialogFilter == app.userHistory.exportFormat) {
+                selected_format = &format;
+                _selectedOutputFormatId = format.id;
+                _selectedOutputFormatExplicit = false;
+                selfilter = format.dialogFilter;
+                break;
+            }
+        }
+    }
+
+    if (selfilter.isEmpty()) {
+        selected_format = data::findFormatById(formats, "csv");
+        if (selected_format) {
+            selfilter = selected_format->dialogFilter;
+            _selectedOutputFormatId = selected_format->id;
+            _selectedOutputFormatExplicit = false;
+        }
     }
 
     if (bDlg)
@@ -1703,6 +2024,15 @@ QString StoreSession::MakeExportFile(bool bDlg)
         if (default_name == "")
         {
             return "";
+        }
+
+        for (const data::FormatCapability &format : formats) {
+            if (format.dialogFilter == selfilter) {
+                selected_format = &format;
+                _selectedOutputFormatId = format.id;
+                _selectedOutputFormatExplicit = false;
+                break;
+            }
         }
 
         bool bChange = false;
@@ -1724,19 +2054,11 @@ QString StoreSession::MakeExportFile(bool bDlg)
         }
     }
 
-    QString extName = selfilter;
-    if (extName == ""){
-        extName = filter;
-    }
-
-    QStringList list = extName.split('.').last().split(')');
-    _suffix = list.first();
-
     QFileInfo f(default_name);
-    if(f.suffix().compare(_suffix)){
-        //tr
-         default_name += "." + _suffix;
-    }           
+    if (f.suffix().isEmpty() && selected_format && !selected_format->extensions.isEmpty())
+        default_name += "." + selected_format->extensions.first();
+
+    _suffix = QFileInfo(default_name).suffix();
 
     _file_name = default_name;
     return default_name;    

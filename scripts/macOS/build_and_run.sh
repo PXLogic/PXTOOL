@@ -17,8 +17,9 @@ CDECODER_RUNTIME_DIR="${HOME}/Library/Application Support/DreamSourceLab/PXTOOL/
 
 cd "${ROOT_DIR}"
 
-echo "[1/4] Build (make)"
+echo "[1/4] Configure upstream-compat demo and build"
 CPU_COUNT="$(sysctl -n hw.ncpu 2>/dev/null || echo 8)"
+cmake . -DDSVIEW_ENABLE_UPSTREAM_COMPAT_DEMO=ON
 make -j"${CPU_COUNT}"
 cmake --build "${ROOT_DIR}" --target stage_webui --parallel 1
 

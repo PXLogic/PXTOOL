@@ -48,6 +48,7 @@ public:
     int exec();
 
     void update_font();
+    void update_button_style();
     
     inline int IsYes(){return _bClickYes;}
 
@@ -59,12 +60,15 @@ private slots:
     void on_button(QAbstractButton* btn);
 
 private:
+    void ensure_footer_divider();
+
     QVBoxLayout         *_layout;
     QVBoxLayout         *_main_layout;
     QWidget             *_main_widget;
     QMessageBox         *_msg;
     toolbars::TitleBar  *_titlebar;
     Shadow              *_shadow;
+    QWidget             *_footer_divider;
  
     QPoint              _startPos;
     bool                _bClickYes;

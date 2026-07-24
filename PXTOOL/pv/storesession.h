@@ -25,11 +25,14 @@
 
 #include <stdint.h>
 #include <string>
-#include <thread>  
+#include <thread>
 #include <QObject>
-#include <libsigrok.h> 
+#include <QFile>
+#include <QFileInfo>
+#include <libsigrok.h>
 
 #include "interface/icallbacks.h"
+#include "data/iooptions.h"
 
 #include "ZipMaker.h"
 
@@ -61,6 +64,7 @@ public:
 	const QString& error();
     bool save_start();
     bool export_start();
+    bool validateExportFormat();
 	void wait();
 	void cancel();
 
@@ -80,6 +84,14 @@ public:
     bool load_decoders(dock::ProtocolDock *widget, QJsonArray &dec_array);
     QString MakeSaveFile(bool bDlg);
     QString MakeExportFile(bool bDlg);
+    void setOutputFileName(const QString &fileName)
+    {
+        _file_name = fileName;
+        _suffix = QFileInfo(fileName).suffix();
+    }
+    void setSelectedOutputFormatId(const QString &format_id);
+    void setSelectedOutputOptions(const data::IoOptions &options);
+    bool hasExplicitSelectedOutputFormat() const;
 
     inline QString GetFileName(){
         return _file_name;
@@ -97,7 +109,7 @@ public:
     }
 
 private:
-    QList<QString> getSuportedExportFormats();
+    bool append_output(QFile &file, GString *chunk);
     double get_integer(GVariant * var);
     void MakeChunkName(char *chunk_name, int chunk_num, int index, int type, int version);
 
@@ -113,6 +125,11 @@ private:
     SigSession      *_session;
 	std::thread     _thread;
     const struct sr_output_module* _outModule;
+    QString         _selectedOutputFormatId;
+    bool            _selectedOutputFormatExplicit = false;
+    QString         _selectedOptionsFormatId;
+    data::IoOptions _selectedOutputOptions{nullptr};
+    bool            _hasSelectedOutputOptions = false;
  
 	uint64_t        _units_stored;
 	uint64_t        _unit_count;

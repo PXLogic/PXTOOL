@@ -32,6 +32,7 @@
 #include <QHBoxLayout>
 #include <QVBoxLayout>
 #include <QBoxLayout>
+#include <QAbstractItemView>
 #include "../ui/msgbox.h"
 #include "../config/appconfig.h"
 #include "../interface/icallbacks.h"
@@ -42,6 +43,67 @@
 
 namespace pv {
 namespace dialogs {
+
+namespace {
+
+void apply_dialog_combo_style(DsComboBox *combo)
+{
+    if (!combo)
+        return;
+
+    const bool isDark = (AppConfig::Instance().frameOptions.style != "light");
+    const QString comboBg = isDark ? QStringLiteral("#1a1a1a") : QStringLiteral("#ffffff");
+    const QString comboBorder = isDark ? QStringLiteral("#444444") : QStringLiteral("#6b7280");
+    const QString comboFg = isDark ? QStringLiteral("#d1d5db") : QStringLiteral("#374151");
+    const QString comboHoverBorder = isDark ? QStringLiteral("#666666") : QStringLiteral("#374151");
+    const QString comboDisabledBg = isDark ? QStringLiteral("#111111") : QStringLiteral("#f3f4f6");
+    const QString comboDisabledFg = isDark ? QStringLiteral("#555555") : QStringLiteral("#9ca3af");
+    const QString comboDisabledBorder = isDark ? QStringLiteral("#2a2a2a") : QStringLiteral("#d1d5db");
+    const QString comboPopupBg = isDark ? QStringLiteral("#1e1e1e") : QStringLiteral("#ffffff");
+    const QString comboPopupBorder = isDark ? QStringLiteral("#444444") : QStringLiteral("#d4d4d4");
+    const QString comboPopupFg = isDark ? QStringLiteral("#d1d5db") : QStringLiteral("#374151");
+    const int fsPx = qRound(AppConfig::Instance().appOptions.fontSize);
+    const int itemH = qMax(20, fsPx + 8);
+
+    const QString comboStyle =
+        QStringLiteral(
+            "QComboBox { background-color: %1; border: 1px solid %2;"
+            " border-radius: 4px; padding: 2px 8px; min-height: 20px;"
+            " color: %3; font-size: %11px; }"
+            "QComboBox:hover { border-color: %4; }"
+            "QComboBox:disabled { background-color: %5; border-color: %6;"
+            " color: %7; }"
+            "QComboBox::drop-down { border: none; width: 16px; }"
+            "QAbstractItemView { background-color: %8; border: 1px solid %9;"
+            " selection-background-color: #7c3aed; color: %10;"
+            " outline: none; padding: 6px 0; font-size: %11px; }"
+            "QAbstractItemView::item { min-height: %12px; padding: 4px 12px;"
+            " border: 1px solid transparent; }"
+            "QAbstractItemView::item:selected { background-color: #7c3aed;"
+            " color: #ffffff; }"
+            "QAbstractItemView::item:hover { background-color: #7c3aed;"
+            " color: #ffffff; }")
+            .arg(comboBg, comboBorder, comboFg, comboHoverBorder,
+                 comboDisabledBg, comboDisabledBorder, comboDisabledFg,
+                 comboPopupBg, comboPopupBorder, comboPopupFg,
+                 QString::number(fsPx), QString::number(itemH));
+
+    combo->setStyleSheet(comboStyle);
+    combo->setPopupItemHeight(itemH);
+}
+
+DsComboBox *create_range_combo(QWidget *parent)
+{
+    auto *combo = new DsComboBox(parent);
+    combo->setObjectName("save_range_combo");
+    combo->setMaxVisibleItems(12);
+    combo->setSizeAdjustPolicy(QComboBox::AdjustToContents);
+    combo->setPopupFitContents(true);
+    apply_dialog_combo_style(combo);
+    return combo;
+}
+
+} // namespace
 
 StoreProgress::StoreProgress(SigSession *session, QWidget *parent) :
     DSDialog(parent)
@@ -99,7 +161,7 @@ StoreProgress::StoreProgress(SigSession *session, QWidget *parent) :
     _openButton->setMinimumWidth(76);
 
     _space = new QWidget(this);
-    _space->setMinimumHeight(80);
+    _space->setFixedHeight(0);
     _space->setVisible(false);
 
     grid->addWidget(&_progress, 0, 0, 1, 3);
@@ -124,8 +186,8 @@ StoreProgress::StoreProgress(SigSession *session, QWidget *parent) :
     footer_lay->setContentsMargins(12, 10, 12, 10);
     footer_lay->setSpacing(6);
     footer_lay->addStretch();
-    footer_lay->addWidget(ok_btn);
     footer_lay->addWidget(cancel_btn);
+    footer_lay->addWidget(ok_btn);
     layout()->addLayout(footer_lay);
 
     connect(cancel_btn, &QPushButton::clicked, this, &StoreProgress::reject);
@@ -140,6 +202,19 @@ StoreProgress::StoreProgress(SigSession *session, QWidget *parent) :
 
     connect(&m_timer, &QTimer::timeout, this, &StoreProgress::on_timeout);
     m_timer.setInterval(100);
+}
+
+void StoreProgress::setSelectedOutputFormatId(const QString &format_id)
+{
+    if (_store_session)
+        _store_session->setSelectedOutputFormatId(format_id);
+}
+
+void StoreProgress::setSelectedOutputOptions(
+    const pv::data::IoOptions &options)
+{
+    if (_store_session)
+        _store_session->setSelectedOutputOptions(options);
 }
 
 StoreProgress::~StoreProgress()
@@ -292,21 +367,29 @@ void StoreProgress::accept()
 void StoreProgress::save_run(ISessionDataGetter *getter)
 {
     _isExport = false;
-    setTitle(tr("Save"));
+    setTitle(tr("Export Data"));
     QString file = _store_session->MakeSaveFile(false);
     _fileLab->setText(file); 
     _store_session->_sessionDataGetter = getter;
 
     if (_store_session->IsLogicDataType() && _view != NULL)
     {
+        setMinimumHeight(240);
         QFormLayout *lay = new QFormLayout();
         lay->setContentsMargins(0, 4, 0, 0);
         lay->setHorizontalSpacing(8);
         lay->setVerticalSpacing(8);
-        _start_cursor = new DsComboBox();
-        _end_cursor = new DsComboBox();
-        _start_cursor->setObjectName("save_range_combo");
-        _end_cursor->setObjectName("save_range_combo");
+        lay->setFieldGrowthPolicy(QFormLayout::FieldsStayAtSizeHint);
+        lay->setFormAlignment(Qt::AlignLeft | Qt::AlignTop);
+        lay->setLabelAlignment(Qt::AlignRight | Qt::AlignVCenter);
+        _start_cursor = create_range_combo(this);
+        _end_cursor = create_range_combo(this);
+        _start_cursor->setPopupFitContents(false);
+        _end_cursor->setPopupFitContents(false);
+        _start_cursor->setMinimumWidth(120);
+        _end_cursor->setMinimumWidth(120);
+        _start_cursor->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+        _end_cursor->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
    
         _start_cursor->addItem(tr("Start"));
         _end_cursor->addItem(tr("End"));
@@ -315,15 +398,24 @@ void StoreProgress::save_run(ISessionDataGetter *getter)
 
         for (int i=0; i<cursor_list.size(); i++){
             //tr
-            QString cursor_name = tr("Cursor") + 
+            QString cursor_name = tr("Cursor") +
                                 QString::number(i+1);
             _start_cursor->addItem(cursor_name);
             _end_cursor->addItem(cursor_name);
         }
 
-        lay->addRow(tr("Start") , _start_cursor);
+        if (QAbstractItemView *view = _start_cursor->view()) {
+            view->setMinimumWidth(_start_cursor->sizeHint().width() + 30);
+            view->setMaximumWidth(QWIDGETSIZE_MAX);
+        }
+        if (QAbstractItemView *view = _end_cursor->view()) {
+            view->setMinimumWidth(_end_cursor->sizeHint().width() + 30);
+            view->setMaximumWidth(QWIDGETSIZE_MAX);
+        }
+
+        lay->addRow(tr("Start*") , _start_cursor);
         lay->addRow(tr("End"), _end_cursor);
-        _grid->addLayout(lay, 3, 0, 1, 2);
+        _grid->addLayout(lay, 3, 0, 1, 3, Qt::AlignLeft);
     }
 
     show();  
@@ -332,11 +424,15 @@ void StoreProgress::save_run(ISessionDataGetter *getter)
 void StoreProgress::export_run()
 {
     if (_store_session->IsLogicDataType())
-    { 
+    {
+        setMinimumHeight(280);
         QFormLayout *lay = new QFormLayout();
         lay->setContentsMargins(0, 4, 0, 0);
         lay->setHorizontalSpacing(8);
         lay->setVerticalSpacing(8);
+        lay->setFieldGrowthPolicy(QFormLayout::FieldsStayAtSizeHint);
+        lay->setFormAlignment(Qt::AlignLeft | Qt::AlignTop);
+        lay->setLabelAlignment(Qt::AlignRight | Qt::AlignVCenter);
         bool isOrg = AppConfig::Instance().appOptions.originalData;
 
         _ckOrigin  = new QRadioButton();
@@ -347,10 +443,12 @@ void StoreProgress::export_run()
         _ckCompress->setText(tr("Compressed data"));
         _ckCompress->setChecked(!isOrg);
 
-        _start_cursor = new DsComboBox();
-        _end_cursor = new DsComboBox();
-        _start_cursor->setObjectName("save_range_combo");
-        _end_cursor->setObjectName("save_range_combo");
+        _start_cursor = create_range_combo(this);
+        _end_cursor = create_range_combo(this);
+        _start_cursor->setMinimumWidth(120);
+        _end_cursor->setMinimumWidth(120);
+        _start_cursor->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+        _end_cursor->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
    
         _start_cursor->addItem(tr("Start"));
         _end_cursor->addItem(tr("End"));
@@ -359,11 +457,14 @@ void StoreProgress::export_run()
         
         for (int i=0; i<cursor_list.size(); i++){
             //tr
-            QString cursor_name = tr("Cursor") + 
+            QString cursor_name = tr("Cursor") +
                                 QString::number(i+1);
             _start_cursor->addItem(cursor_name);
             _end_cursor->addItem(cursor_name);
         }
+
+        _start_cursor->adjustToItemContents();
+        _end_cursor->adjustToItemContents();
 
         lay->addRow(tr("Start") , _start_cursor);
         lay->addRow(tr("End"), _end_cursor);
@@ -374,16 +475,24 @@ void StoreProgress::export_run()
 
         lay->addRow("",_ckOrigin);
         lay->addRow("", _ckCompress);
-        _grid->addLayout(lay, 3, 0, 1, 2);
+        _grid->addLayout(lay, 3, 0, 1, 3, Qt::AlignLeft);
 
         connect(_ckOrigin, SIGNAL(clicked(bool)), this, SLOT(on_ck_origin(bool)));
         connect(_ckCompress, SIGNAL(clicked(bool)), this, SLOT(on_ck_compress(bool)));
     }
 
     _isExport = true;
-    setTitle(tr("Export"));
+    setTitle(tr("Export Data"));
+
+    if (_store_session->hasExplicitSelectedOutputFormat() &&
+        !_store_session->validateExportFormat()) {
+        show_error();
+        close();
+        return;
+    }
+
     QString file = _store_session->MakeExportFile(false);
-    _fileLab->setText(file); 
+    _fileLab->setText(file);
 
     if (_ckOrigin != NULL){
         bool bFlag = file.endsWith(".csv");
@@ -425,10 +534,20 @@ void StoreProgress::on_progress_updated()
 void StoreProgress::on_change_file()
 {
     QString file  = "";
-    if (_isExport)
+    if (_isExport) {
+        if (_store_session->hasExplicitSelectedOutputFormat() &&
+            !_store_session->validateExportFormat()) {
+            show_error();
+            return;
+        }
         file = _store_session->MakeExportFile(true);
-    else
+        if (!file.isEmpty() && !_store_session->validateExportFormat()) {
+            show_error();
+            return;
+        }
+    } else {
         file = _store_session->MakeSaveFile(true);
+    }
 
     if (file != ""){
         _fileLab->setText(file); 

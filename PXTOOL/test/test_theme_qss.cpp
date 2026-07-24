@@ -101,6 +101,19 @@ bool measure_restyle_refreshes_all_cursor_button_rows(const std::string &source)
         block.find("update_cursor_info();") != std::string::npos;
 }
 
+bool has_dsl_export_range_popup_device_sizing(const std::string &source)
+{
+    const std::string marker = "void StoreProgress::save_run(";
+    const std::string::size_type start = source.find(marker);
+    if (start == std::string::npos)
+        return false;
+
+    const std::string block = source.substr(start);
+    return block.find("setPopupFitContents(false)") != std::string::npos &&
+        block.find("view->setMinimumWidth") != std::string::npos &&
+        block.find("addRow(tr(\"Start*\")") != std::string::npos;
+}
+
 } // namespace
 
 BOOST_AUTO_TEST_SUITE(theme_qss)
@@ -163,6 +176,13 @@ BOOST_AUTO_TEST_CASE(measure_restyle_refreshes_cursor_button_rows)
     const std::string source = read_file("PXTOOL/pv/dock/measuredock.cpp");
 
     BOOST_TEST(measure_restyle_refreshes_all_cursor_button_rows(source));
+}
+
+BOOST_AUTO_TEST_CASE(dsl_export_range_popup_matches_device_popup_sizing)
+{
+    const std::string source = read_file("PXTOOL/pv/dialogs/storeprogress.cpp");
+
+    BOOST_TEST(has_dsl_export_range_popup_device_sizing(source));
 }
 
 BOOST_AUTO_TEST_SUITE_END()

@@ -275,7 +275,7 @@ struct DEMO_profile {
 struct DEMO_channels {
     enum DEMO_CHANNEL_ID id;
     enum OPERATION_MODE mode;
-    enum CHANNEL_TYPE type;
+    enum sr_channeltype type;
 
     uint16_t num;
     uint8_t unit_bits;

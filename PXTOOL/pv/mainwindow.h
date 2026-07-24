@@ -37,9 +37,11 @@
 #include <QHBoxLayout>
 #include <QHash>
 #include <QList>
+#include <QMap>
 #include <QStackedWidget>
 #include <QShortcut>
 #include <libsigrok.h>
+#include "data/iooptions.h"
 #include "sessioncallback.h"
 
 class QAction;
@@ -115,6 +117,7 @@ private slots:
     void on_session_tab_switch(int index);
     void on_session_tab_close_by_uid(int uid);
 	void on_load_file(QString file_name);
+    void on_import_file(QString format_id, QString file_name);
     void on_open_doc();
     void on_protocol(bool visible);
     void on_trigger(bool visible);
@@ -124,6 +127,9 @@ private slots:
     void on_screenShot();
     void on_save();
     void on_export();
+    void on_export_format(QString format_id);
+    void on_import_format_triggered();
+    void on_export_format_triggered();
     void on_disk_cache_settings();
 
     // Shortcut slots
@@ -265,6 +271,11 @@ private:
 	QMenuBar                *_menu_bar;
 	QMenu                   *_menu_file;
 	QAction                 *_action_open;
+    QAction                 *_action_import = nullptr;
+    QMenu                   *_menu_import = nullptr;
+    QMap<QAction *, QString> _import_format_ids;
+    QMenu                   *_menu_export = nullptr;
+    QMap<QAction *, QString> _export_format_ids;
 	QAction                 *_action_connect;
 	QAction                 *_action_quit;
 
@@ -283,6 +294,8 @@ private:
     QAction *_action_default  = nullptr;
     QAction *_action_save     = nullptr;
     QAction *_action_export   = nullptr;
+    QString _selected_export_format_id;
+    data::IoOptions _selected_export_options{nullptr};
     QAction *_action_capture  = nullptr;
     QAction *_action_disk_cache = nullptr;
 
@@ -374,6 +387,7 @@ private:
     DeviceGroup       *group_owning_session(int uid);
     int                index_of_group(DeviceGroup *g) const;
     int                active_session_global_index_of_group(DeviceGroup *g);
+    int                current_session_global_index() const;
     DeviceGroup       *create_group(ds_device_handle handle);
     int                create_session_in_group(DeviceGroup *grp);
     void               register_groups_from_device_list();

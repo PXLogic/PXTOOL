@@ -67,6 +67,7 @@ class LogicSnapshot;
 class DecoderModel;
 class MathStack;
 class DecoderStack;
+class InputImporter;
 
 namespace decode {
     class Decoder;
@@ -133,6 +134,7 @@ class SigSession:
     public IMessageListener,
     public IDeviceAgentCallback
 {
+    friend class pv::data::InputImporter;
 private:
     static constexpr float Oversampling = 2.0f;
 
@@ -430,9 +432,17 @@ public:
     void remove_msg_listener(IMessageListener *ln);
     void set_as_current();
     void rebind_device(ds_device_handle handle);
+    void bind_imported_device(struct sr_dev_inst *sdi,
+                              int work_mode,
+                              uint64_t sample_rate,
+                              uint64_t sample_limit,
+                              const QString &name,
+                              const QString &path);
+    void finish_imported_capture(uint64_t sample_limit_override = 0);
     void refresh_signal_probes();
     void save_channel_enabled_states();
     void restore_channel_enabled_states();
+    void enable_all_channels();
     bool is_channel_enabled(int ch_index);
     void broadcast_msg(int msg);    
     bool have_new_realtime_refresh(bool keep);
@@ -576,11 +586,11 @@ private:
     /**
      * Attempts to autodetect the format. Failing that
      * @param filename The filename of the input file.
-     * @return A pointer to the 'struct sr_input_format' that should be
+     * @return A pointer to the 'struct sr_input_module' that should be
      * 	used, or NULL if no input format was selected or
      * 	auto-detected.
      */
-    static sr_input_format* determine_input_file_format(const std::string &filename); 
+    static const sr_input_module* determine_input_file_format(const std::string &filename);
 
     // data feed
 	void feed_in_header(const sr_dev_inst *sdi);

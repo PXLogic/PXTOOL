@@ -1,0 +1,89 @@
+# VCS and local agent/index caches
+.git/
+.codegraph/
+.codex/
+
+# Build and packaging output
+build/
+build.dir/
+build.linux/
+build.macOS/
+build.windows/
+dist/
+package-root/
+share/
+logo/
+_CPack_Packages/
+CPackConfig.cmake
+CPackSourceConfig.cmake
+*.dmg
+*.zip
+
+# Local build directories and generated CMake state.
+/build/
+/build.dir/
+/build.linux/
+/build.macOS/
+/build.windows/
+/CMakeCache.txt
+/CMakeFiles/
+/CTestTestfile.cmake
+/_deps/
+/Makefile
+/cmake_install.cmake
+/compile_commands.json
+/build.ninja
+/.ninja_deps
+/.ninja_log
+/install_manifest.txt
+
+/PXTOOL/test/CMakeFiles/
+/PXTOOL/test/CTestTestfile.cmake
+/PXTOOL/test/Makefile
+/PXTOOL/test/cmake_install.cmake
+
+# Packaging, install roots, and distributable archives.
+/dist/
+/package-root/
+/logo/
+/share/
+/_CPack_Packages/
+/CPackConfig.cmake
+/CPackSourceConfig.cmake
+/DSView-*-Darwin.dmg
+/PXTOOL-*-Darwin.dmg
+/PXTOOL-*-arm64-macOS.dmg
+*.dSYM/
+*.zip
+
+# Qt-generated sources and temporary Qt cache.
+/.qt/
+**/moc_*.cpp
+**/moc_*.cpp_parameters
+/qrc_*.cpp
+qrc_*.cpp
+
+# Web dependencies and output
+web/node_modules/
+web/dist/
+web/dist-ssr/
+web/logs/
+web/*.local
+
+# Example decoder build outputs.
+/pv/cdecoders/example_*/build/
+/pv/cdecoders/example_spi/*.dylib
+/pv/cdecoders/example_spi/*.so
+/spi.dylib
+
+# Codex/code intelligence and language runtime caches.
+/.codegraph/
+__pycache__/
+*.py[cod]
+/.venv*/
+
+# Logs and temporary/editor files
+*.log
+.DS_Store
+*.sw?
+*~

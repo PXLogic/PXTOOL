@@ -45,6 +45,10 @@ public:
         return _dev_handle != NULL_HANDLE;
     }
 
+    inline bool is_custom_device() const {
+        return _custom_device;
+    }
+
     inline QString name(){
         return _dev_name;
     }
@@ -161,6 +165,15 @@ public:
     */
     void release();
 
+    void bind_custom_device(struct sr_dev_inst *di,
+                            int dev_type,
+                            int work_mode,
+                            const QString &name,
+                            const QString &path,
+                            const QString &driver_name,
+                            uint64_t sample_rate,
+                            uint64_t sample_limit);
+
     bool is_collecting();
 
     inline bool is_new_device(){
@@ -170,6 +183,16 @@ public:
     bool channel_is_enable(int index);
 
     int get_hardware_operation_mode();
+
+    bool supports_config(int key);
+
+    bool supports_capability(int capability);
+
+    bool supports_waveform();
+
+    bool supports_stream();
+
+    bool supports_advanced_trigger();
 
     bool is_stream_mode();
 
@@ -213,6 +236,8 @@ public:
 
 private:
     void config_changed(); 
+    GVariant *custom_config_variant(int key) const;
+    bool set_custom_config_variant(int key, GVariant *data);
 
     //---------------device config-----------/
 public:
@@ -235,6 +260,12 @@ private:
     bool        _is_new_device;
     struct sr_dev_inst  *_di; 
     IDeviceAgentCallback *_callback;
+    bool        _custom_device = false;
+    int         _custom_work_mode = LOGIC;
+    uint64_t    _custom_sample_rate = 0;
+    uint64_t    _custom_sample_limit = 0;
+    GSList     *_custom_mode_list = nullptr;
+    struct sr_dev_mode _custom_mode_entry {};
 };
 
 
