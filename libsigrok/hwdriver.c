@@ -104,7 +104,10 @@ static struct sr_config_info sr_config_info_data[] = {
 	{SR_CONF_PWM1_FREQ, SR_T_FLOAT,"PWM1 Freq"},
 	{SR_CONF_PWM0_DUTY, SR_T_FLOAT,"PWM0 Duty"},
 	{SR_CONF_PWM1_DUTY, SR_T_FLOAT,"PWM1 Duty"},
-	{SR_CONF_STREAM_BUFF, SR_T_FLOAT,"Stream buff Size"},
+	{SR_CONF_STREAM_BUFF, SR_T_FLOAT,"Disk Buff Size (with cache)"},
+	{SR_CONF_DISK_CACHE_ENABLE, SR_T_BOOL, "Disk Cache Enable"},
+	{SR_CONF_DISK_CACHE_PATH, SR_T_CHAR, "Disk Cache Path"},
+	{SR_CONF_STREAM_MEM_BUFF, SR_T_FLOAT, "Mem Buff Size (no cache)"},
 
     {0, 0, NULL},
 };

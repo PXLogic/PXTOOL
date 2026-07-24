@@ -115,6 +115,7 @@ void GlitchFilterDock::buildUi()
         row.mode_cb->addItem(tr("Both"),      static_cast<int>(data::FilterMode::Both));
         row.mode_cb->addItem(tr("High only"), static_cast<int>(data::FilterMode::HighOnly));
         row.mode_cb->addItem(tr("Low only"),  static_cast<int>(data::FilterMode::LowOnly));
+        row.mode_cb->setPopupFitContents(true);
         row.mode_cb->setEnabled(false);
 
         row.ch_label->setAlignment(Qt::AlignCenter);
@@ -187,6 +188,7 @@ void GlitchFilterDock::retranslateUi()
         row.mode_cb->setItemText(1, tr("High only"));
         row.mode_cb->setItemText(2, tr("Low only"));
         row.mode_cb->setCurrentIndex(cur);
+        row.mode_cb->refreshPopupLayout();
     }
 
     _apply_btn->setText(tr("Apply"));

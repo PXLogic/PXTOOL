@@ -21,6 +21,7 @@
 #include <QFrame>
 #include <vector>
 
+#include "../ui/dscombobox.h"
 #include "../ui/uimanager.h"
 #include "../data/glitchfilter.h"
 
@@ -103,7 +104,7 @@ private:
         QLabel    *ch_label;
         // Polarity selector: index maps to FilterMode enum value
         // (0=Both, 1=HighOnly, 2=LowOnly). Disabled when enable_cb is off.
-        QComboBox *mode_cb;
+        DsComboBox *mode_cb;
     };
     std::vector<ChannelRow> _ch_rows;
 

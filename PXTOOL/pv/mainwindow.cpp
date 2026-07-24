@@ -309,6 +309,7 @@ namespace pv
         // Window menu
         _menu_view = _menu_bar->addMenu(tr("Window"));
         _menu_themes = _menu_view->addMenu(tr("Themes"));
+        _menu_themes->setObjectName(QString::fromUtf8("menuThemes"));
         _theme_action_group = new QActionGroup(this);
         _theme_action_group->setExclusive(true);
 

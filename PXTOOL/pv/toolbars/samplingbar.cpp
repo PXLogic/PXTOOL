@@ -520,13 +520,13 @@ namespace pv
                         " color: %7; }"
                         "QComboBox::drop-down { border: none; width: 16px; }"
                         "QAbstractItemView { background-color: %8; border: 1px solid %9;"
-                        " selection-background-color: #1185D1; color: %10;"
+                        " selection-background-color: #7c3aed; color: %10;"
                         " outline: none; padding: 6px 0; font-size: %11px; }"
                         "QAbstractItemView::item { min-height: %12px; padding: 4px 12px;"
                         " border: 1px solid transparent; }"
-                        "QAbstractItemView::item:selected { background-color: #1185D1;"
+                        "QAbstractItemView::item:selected { background-color: #7c3aed;"
                         " color: #ffffff; }"
-                        "QAbstractItemView::item:hover { background-color: #1185D1;"
+                        "QAbstractItemView::item:hover { background-color: #7c3aed;"
                         " color: #ffffff; }")
                 .arg(comboBg, comboBorder, comboFg, comboHoverBorder,
                      comboDisabledBg, comboDisabledBorder, comboDisabledFg,

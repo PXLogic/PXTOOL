@@ -21,6 +21,7 @@
 
 #include "trigbar.h"
 
+#include <QActionGroup>
 #include <QBitmap>
 #include <QList>
 #include <QPainter>
@@ -73,6 +74,7 @@ TrigBar::TrigBar(SigSession *session, QWidget *parent) :
    
     _dark_style = new QAction(this);
     _dark_style->setObjectName(QString::fromUtf8("actionDark"));
+    _dark_style->setCheckable(true);
     
     _light_style = new QAction(this);
     _light_style->setObjectName(QString::fromUtf8("actionLight"));
@@ -215,12 +217,12 @@ void TrigBar::reStyle()
     _action_fft->setIcon(QIcon(iconPath+"/fft.svg"));
     _action_math->setIcon(QIcon(iconPath+"/math.svg"));
     _action_lissajous->setIcon(QIcon(iconPath+"/lissajous.svg"));
-    _dark_style->setIcon(QIcon(iconPath+"/dark.svg"));
-    _light_style->setIcon(QIcon(iconPath+"/light.svg"));
-    _atom_style->setIcon(QIcon(iconPath+"/dark.svg"));
-    _ayu_style->setIcon(QIcon(iconPath+"/light.svg"));
-    _dark_cards_style->setIcon(QIcon(iconPath+"/dark.svg"));
-    _light_cards_style->setIcon(QIcon(iconPath+"/light.svg"));
+    _dark_style->setIcon(QIcon());
+    _light_style->setIcon(QIcon());
+    _atom_style->setIcon(QIcon());
+    _ayu_style->setIcon(QIcon());
+    _dark_cards_style->setIcon(QIcon());
+    _light_cards_style->setIcon(QIcon());
 
     _action_dispalyOptions->setIcon(QIcon(iconPath+"/gear.svg"));
 
@@ -232,6 +234,7 @@ void TrigBar::reStyle()
 
     QString icon_fname = iconPath + "/" + QString(app.IsDarkStyle() ? THEME_STYLE_DARK : THEME_STYLE_LIGHT) + ".svg";
     _themes->setIcon(QIcon(icon_fname));
+    update_theme_actions();
 }
 
 void TrigBar::protocol_clicked()
@@ -429,6 +432,14 @@ void TrigBar::update_checked_status()
     _protocol_button.setChecked(opt->decodeDock);
     _measure_button.setChecked(opt->measureDock);
     _search_button.setChecked(opt->searchDock);
+}
+
+void TrigBar::update_theme_actions()
+{
+    const QString themeId = pv::theme::ThemeManager::normalizeId(AppConfig::Instance().frameOptions.style);
+    const QList<QAction*> themeActions = _theme_group->actions();
+    for (QAction *action : themeActions)
+        action->setChecked(action->data().toString() == themeId);
 }
 
 void TrigBar::UpdateLanguage()

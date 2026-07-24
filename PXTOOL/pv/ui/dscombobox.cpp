@@ -46,7 +46,7 @@ public:
 
     static QColor highlightColor()
     {
-        return QColor(0x11, 0x85, 0xD1);
+        return QColor(0x7C, 0x3A, 0xED);
     }
 
     QSize sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const override

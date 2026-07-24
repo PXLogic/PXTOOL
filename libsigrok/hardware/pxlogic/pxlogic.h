@@ -36,7 +36,7 @@
 #include "usb_ctrl.h"
 #define PXVIEW_BL_EN 0
 #define NUM_TRIGGER_STAGES	16
-#define FIRMWARE_VERSION 0x56900027
+#define FIRMWARE_VERSION 0x56900028
 #define FIRMWARE_BL_VERSION 0x56900000
 #define PWM_CLK 125000000
 #define PWM_MAX 1000000
@@ -191,6 +191,9 @@ struct PX_context {
     uint16_t trig_logic1[NUM_TRIGGER_STAGES];
     uint32_t trig_count[NUM_TRIGGER_STAGES];
     double   stream_buff_size;
+    double   stream_mem_buff_size;
+    gboolean disk_cache_enable;
+    char     *disk_cache_path;
 
     gboolean    pwm0_en;
     double      pwm0_freq;
@@ -343,6 +346,9 @@ static const int hwoptions[] = {
 	//SR_CONF_PWM1_FREQ ,
 	//SR_CONF_PWM1_DUTY ,
     //SR_CONF_PWM1_EN   ,
+    SR_CONF_DISK_CACHE_ENABLE,
+    SR_CONF_DISK_CACHE_PATH,
+    SR_CONF_STREAM_MEM_BUFF,
     SR_CONF_STREAM_BUFF,
     
     
@@ -370,6 +376,9 @@ static const int32_t sessions[] = {
 	SR_CONF_PWM0_FREQ ,
 	SR_CONF_PWM0_DUTY ,
     SR_CONF_PWM0_EN   ,
+    SR_CONF_DISK_CACHE_ENABLE,
+    SR_CONF_DISK_CACHE_PATH,
+    SR_CONF_STREAM_MEM_BUFF,
     SR_CONF_STREAM_BUFF,
 	
 	//SR_CONF_PWM1_FREQ ,

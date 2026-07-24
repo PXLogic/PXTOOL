@@ -292,6 +292,7 @@ set(DSView_SOURCES
     PXTOOL/pv/prop/bool.cpp
     PXTOOL/pv/prop/binding/binding.cpp
     PXTOOL/pv/toolbars/samplingbar.cpp
+    PXTOOL/pv/view/channeltint.cpp
     PXTOOL/pv/view/viewport.cpp
     PXTOOL/pv/view/view.cpp
     PXTOOL/pv/view/timemarker.cpp

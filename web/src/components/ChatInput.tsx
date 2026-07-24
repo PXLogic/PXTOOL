@@ -1,6 +1,9 @@
 import { useState, useRef, useEffect, type KeyboardEvent } from 'react';
 import { useAppStore } from '../hooks/useAppStore';
 import { useTranslation } from 'react-i18next';
+import { SendHorizontal, Square } from 'lucide-react';
+import { Button } from './ui/button';
+import { Textarea } from './ui/textarea';
 
 export default function ChatInput() {
   const [text, setText] = useState('');
@@ -35,34 +38,41 @@ export default function ChatInput() {
   };
 
   return (
-    <div className="flex items-end gap-2 p-4 bg-bg-casing border-t-4 border-border shadow-[0_-4px_0_rgba(0,0,0,0.1)] relative z-10">
-      <div className="flex-1 bg-white border-2 border-border shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] flex items-center p-2">
-        <textarea
+    <div className="relative z-10 border-t border-border bg-card p-4">
+      <div className="relative rounded-xl border border-input bg-background shadow-sm">
+        <Textarea
           ref={textareaRef}
           onChange={(e) => setText(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder={t('INPUT_PLACEHOLDER')}
           rows={1}
-          className="flex-1 resize-none bg-transparent outline-none border-none px-2 py-1 text-lg text-text-casing placeholder:text-text-casing-muted placeholder:opacity-50 font-mono"
+          className="!min-h-20 resize-none border-0 bg-transparent py-3 pl-4 pr-14 shadow-none focus-visible:ring-0 focus-visible:ring-offset-0"
           spellCheck="false"
         />
+        {isProcessing ? (
+          <Button
+            onClick={stopGeneration}
+            variant="destructive"
+            size="icon"
+            className="absolute bottom-2 right-2 h-8 w-8"
+            aria-label={t('HALT')}
+            title={t('HALT')}
+          >
+            <Square className="h-4 w-4" />
+          </Button>
+        ) : (
+          <Button
+            onClick={handleSend}
+            disabled={!text.trim() || isProcessing}
+            size="icon"
+            className="absolute bottom-2 right-2 h-8 w-8"
+            aria-label={t('EXECUTE')}
+            title={t('EXECUTE')}
+          >
+            <SendHorizontal className="h-4 w-4" />
+          </Button>
+        )}
       </div>
-      {isProcessing ? (
-        <button
-          onClick={stopGeneration}
-          className="px-6 py-3 border-2 border-border bg-error text-bg-casing font-bold uppercase tracking-widest shadow-[4px_4px_0_0_#000] active:translate-x-[4px] active:translate-y-[4px] active:shadow-[0_0_0_0_#000] transition-all"
-        >
-          {t('HALT')}
-        </button>
-      ) : (
-        <button
-          onClick={handleSend}
-          disabled={!text.trim() || isProcessing}
-          className="px-6 py-3 border-2 border-border bg-accent text-bg-casing font-bold uppercase tracking-widest shadow-[4px_4px_0_0_#000] active:translate-x-[4px] active:translate-y-[4px] active:shadow-[0_0_0_0_#000] transition-all disabled:opacity-50 disabled:active:translate-x-0 disabled:active:translate-y-0 disabled:active:shadow-[4px_4px_0_0_#000]"
-        >
-          {t('EXECUTE')}
-        </button>
-      )}
     </div>
   );
 }

@@ -325,12 +325,19 @@ static struct PX_context *DSLogic_dev_new(const struct PX_profile *prof)
     devc->pwm0_en   = 0;
     devc->pwm0_freq = 1000;
     devc->pwm0_duty = 50;
+    devc->pwm0_freq_set = (uint32_t)((double)PWM_CLK / devc->pwm0_freq);
+    devc->pwm0_duty_set = (uint32_t)((double)devc->pwm0_freq_set * devc->pwm0_duty / 100);
     devc->pwm1_en   = 0;
     devc->pwm1_freq = 1000;
     devc->pwm1_duty = 50;
+    devc->pwm1_freq_set = (uint32_t)((double)PWM_CLK / devc->pwm1_freq);
+    devc->pwm1_duty_set = (uint32_t)((double)devc->pwm1_freq_set * devc->pwm1_duty / 100);
     devc->is_loop = 0;
 
-    devc->stream_buff_size = 32;
+    devc->stream_buff_size = 16;
+    devc->stream_mem_buff_size = 16;
+    devc->disk_cache_enable = FALSE;
+    devc->disk_cache_path = NULL;
 
 
 
@@ -979,6 +986,7 @@ int dev_destroy(struct sr_dev_inst *sdi)
      assert(sdi);
 
     struct sr_dev_driver *driver;
+    struct PX_context *devc = sdi->priv;
     driver = sdi->driver;
 
     //hw_dev_close(sdi);
@@ -992,6 +1000,7 @@ int dev_destroy(struct sr_dev_inst *sdi)
         else if (sdi->dev_type == DEV_TYPE_SERIAL)
             sr_serial_dev_inst_free(sdi->conn);
     }
+    g_free(devc->disk_cache_path);
     //hw_dev_close(sdi);
     sr_dev_inst_free(sdi);
     return SR_OK;
@@ -1100,20 +1109,20 @@ static int config_get(int id, GVariant **data, const struct sr_dev_inst *sdi,
         *data = g_variant_new_byte(devc->max_height);
         break;
     case SR_CONF_HW_DEPTH:
-        if(devc->op_mode == OP_BUFFER){
-            *data = g_variant_new_uint64(devc->profile->dev_caps.hw_depth / channel_modes[devc->ch_mode].unit_bits/devc-> ch_num); 
-        }
-        else if(devc->op_mode == OP_STREAM){
-            const uint16_t mode_ch = channel_modes[devc->ch_mode].num;
-            const uint64_t depth = devc->stream_buff_size * 1024ULL * 1024 * 1024 * 8
-                / channel_modes[devc->ch_mode].unit_bits / mode_ch;
-            sr_info("pxlogic HW_DEPTH stream: buff=%.1fGB ch_mode=%d mode_ch=%u en_ch=%u depth=%llu",
-                devc->stream_buff_size, devc->ch_mode, mode_ch, devc->ch_num,
-                (unsigned long long)depth);
-            *data = g_variant_new_uint64(depth);
-        }
-        else{
-            *data = g_variant_new_uint64(devc->profile->dev_caps.hw_depth / channel_modes[devc->ch_mode].unit_bits/devc-> ch_num); 
+        {
+            uint16_t ch_num_div = devc->ch_num ? devc->ch_num : 1;
+            uint16_t unit_bits = channel_modes[devc->ch_mode].unit_bits ? channel_modes[devc->ch_mode].unit_bits : 1;
+            if (devc->op_mode == OP_BUFFER) {
+                *data = g_variant_new_uint64(devc->profile->dev_caps.hw_depth / unit_bits / ch_num_div);
+            } else if (devc->op_mode == OP_STREAM) {
+                if (devc->disk_cache_enable) {
+                    *data = g_variant_new_uint64((uint64_t)(devc->stream_buff_size * 1024 * 1024 * 1024) * 8 / unit_bits / ch_num_div);
+                } else {
+                    *data = g_variant_new_uint64((uint64_t)(devc->stream_mem_buff_size * 1024 * 1024 * 1024) * 8 / unit_bits / ch_num_div);
+                }
+            } else {
+                *data = g_variant_new_uint64(devc->profile->dev_caps.hw_depth / unit_bits / ch_num_div);
+            }
         }
         break;
     case SR_CONF_VLD_CH_NUM:
@@ -1183,6 +1192,15 @@ static int config_get(int id, GVariant **data, const struct sr_dev_inst *sdi,
         break;
         case SR_CONF_STREAM_BUFF:
             *data = g_variant_new_double(devc->stream_buff_size);
+        break;
+        case SR_CONF_STREAM_MEM_BUFF:
+            *data = g_variant_new_double(devc->stream_mem_buff_size);
+        break;
+        case SR_CONF_DISK_CACHE_ENABLE:
+            *data = g_variant_new_boolean(devc->disk_cache_enable);
+        break;
+        case SR_CONF_DISK_CACHE_PATH:
+            *data = g_variant_new_string(devc->disk_cache_path ? devc->disk_cache_path : "");
         break;
 
         case SR_CONF_STREAM:
@@ -1495,10 +1513,7 @@ static int config_set(int id, GVariant *data, struct sr_dev_inst *sdi,
     }
     else if (id == SR_CONF_PWM1_EN) {
         devc->pwm1_en = g_variant_get_boolean(data);
-        usb_wr_reg(usb->devhdl,16<<2,(uint32_t)devc->pwm0_en);
-
-
-
+        usb_wr_reg(usb->devhdl,19<<2,(uint32_t)devc->pwm1_en);
     } 
     else if (id == SR_CONF_PWM1_FREQ) {
         ret = SR_OK;
@@ -1506,6 +1521,13 @@ static int config_set(int id, GVariant *data, struct sr_dev_inst *sdi,
         devc->pwm1_freq_set = (uint32_t)((double)PWM_CLK/devc->pwm1_freq);
         sr_dbg("pwm1_freq_set =  %d", devc->pwm1_freq_set);
         devc->pwm1_freq = (double)PWM_CLK/(double)devc->pwm1_freq_set;
+        devc->pwm1_duty_set = (uint32_t)((double)devc->pwm1_freq_set * devc->pwm1_duty / 100);
+        devc->pwm1_duty = (double)devc->pwm1_duty_set * 100 / (double)devc->pwm1_freq_set;
+
+        usb_wr_reg(usb->devhdl,19<<2,0);
+        usb_wr_reg(usb->devhdl,20<<2,devc->pwm1_freq_set-1);
+        usb_wr_reg(usb->devhdl,21<<2,devc->pwm1_duty_set-1);
+        usb_wr_reg(usb->devhdl,19<<2,(uint32_t)devc->pwm1_en);
     }
     else if (id == SR_CONF_PWM1_DUTY) {
         ret = SR_OK;
@@ -1527,6 +1549,19 @@ static int config_set(int id, GVariant *data, struct sr_dev_inst *sdi,
         ret = SR_OK;
         devc->stream_buff_size = g_variant_get_double(data);
         sr_info("pxlogic set STREAM_BUFF: %.1f GB", devc->stream_buff_size);
+    }
+    else if (id == SR_CONF_STREAM_MEM_BUFF) {
+        ret = SR_OK;
+        devc->stream_mem_buff_size = g_variant_get_double(data);
+    }
+    else if (id == SR_CONF_DISK_CACHE_ENABLE) {
+        ret = SR_OK;
+        devc->disk_cache_enable = g_variant_get_boolean(data);
+    }
+    else if (id == SR_CONF_DISK_CACHE_PATH) {
+        ret = SR_OK;
+        g_free(devc->disk_cache_path);
+        devc->disk_cache_path = g_variant_dup_string(data, NULL);
     }
     else {
         ret = SR_ERR_NA;

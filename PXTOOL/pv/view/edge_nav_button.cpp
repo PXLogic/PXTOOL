@@ -24,6 +24,7 @@
 #include <QPainter>
 #include <QPainterPath>
 #include <QPaintEvent>
+#include <QRectF>
 
 namespace pv {
 namespace view {
@@ -78,7 +79,7 @@ void EdgeNavButton::paintEvent(QPaintEvent *event)
 
     p.setPen(QPen(border, 1));
     p.setBrush(bg);
-    p.drawRoundedRect(rect().adjusted(0.5, 0.5, -0.5, -0.5),
+    p.drawRoundedRect(QRectF(rect()).adjusted(0.5, 0.5, -0.5, -0.5),
                       BorderRadius, BorderRadius);
 
     p.setPen(Qt::NoPen);
@@ -103,7 +104,11 @@ void EdgeNavButton::paintEvent(QPaintEvent *event)
     p.drawPath(arrow);
 }
 
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+void EdgeNavButton::enterEvent(QEnterEvent *event)
+#else
 void EdgeNavButton::enterEvent(QEvent *event)
+#endif
 {
     (void)event;
     _hovered = true;
