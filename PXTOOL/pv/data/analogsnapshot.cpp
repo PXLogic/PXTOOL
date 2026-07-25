@@ -247,6 +247,11 @@ uint32_t AnalogSnapshot::channel_count() const
     return _channel_num;
 }
 
+uint64_t AnalogSnapshot::sample_count() const
+{
+    return _sample_count;
+}
+
 uint64_t AnalogSnapshot::physical_sample_index(uint64_t sample_index) const
 {
     if (_sample_count < _total_sample_count)

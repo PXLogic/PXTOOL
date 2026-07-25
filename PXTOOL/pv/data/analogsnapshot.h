@@ -99,6 +99,7 @@ public:
     double channel_min(uint32_t channel_order) const;
     double channel_max(uint32_t channel_order) const;
     uint32_t channel_count() const;
+    uint64_t sample_count() const;
 
     const uint8_t *get_samples(int64_t start_sample);
 

@@ -43,6 +43,7 @@ add_executable(DSView-test
     test_input_fixtures.cpp
     test_analogpacketadapter.cpp
     test_analogsnapshot.cpp
+    test_analogtologic.cpp
     test_logsearch.cpp
     test_view_sampleconversion.cpp
     test_theme.cpp
@@ -58,6 +59,7 @@ add_executable(DSView-test
     ../pv/data/analogpacketadapter.cpp
     ../pv/data/snapshot.cpp
     ../pv/data/analogsnapshot.cpp
+    ../pv/data/analogtologic.cpp
     ../pv/dialogs/inputoutputoptioneditor.cpp
     test_formatcapability_stubs.c
     test_upstream_io_stubs.c
