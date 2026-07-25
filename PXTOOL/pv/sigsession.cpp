@@ -1453,6 +1453,7 @@ namespace pv
             return; // This analog packet was not expected.
         }
 
+        bool accepted = false;
         if (_capture_data->get_analog()->last_ended())
         {
             // reset scale of analog signal
@@ -1465,12 +1466,21 @@ namespace pv
             }
 
             // first payload
-            _capture_data->get_analog()->first_payload(compatible, _device_agent.get_sample_limit(), _device_agent.get_channels());
+            accepted = _capture_data->get_analog()->first_payload(
+                compatible, _device_agent.get_sample_limit(),
+                _device_agent.get_channels());
         }
         else
         {
             // Append to the existing data snapshot
-            _capture_data->get_analog()->append_payload(compatible);
+            accepted = _capture_data->get_analog()->append_payload(compatible);
+        }
+
+        if (!accepted)
+        {
+            _error = Pkt_data_err;
+            _callback->session_error();
+            return;
         }
 
         if (_capture_data->get_analog()->memory_failed())
