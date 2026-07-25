@@ -323,12 +323,7 @@ void DecoderOptionsDlg::load_decoder_forms(QWidget *container)
 pv::SigSession* DecoderOptionsDlg::effectiveSession()
 {
     if (_session) {
-        for (auto s : _session->get_signals()) {
-            if (s->signal_type() == SR_CHANNEL_LOGIC &&
-                _session->is_channel_enabled(s->get_index()))
-                return _session;
-        }
-        if (!_session->get_derived_logic_indices().empty())
+        if (!_session->decoder_input_signals().empty())
             return _session;
     }
     return AppControl::Instance()->GetSession();
@@ -354,7 +349,7 @@ DsComboBox* DecoderOptionsDlg::create_probe_selector(
 	assert(dec);
     
     pv::SigSession *eff = effectiveSession();
-    const auto &sigs = eff->get_signals();
+    const auto sigs = eff->decoder_input_signals();
 
     data::decode::Decoder *decoder = const_cast<data::decode::Decoder*>(dec);
 
@@ -374,8 +369,7 @@ DsComboBox* DecoderOptionsDlg::create_probe_selector(
     {
         dex++;
 
-        if (s->signal_type() == SR_CHANNEL_LOGIC &&
-            eff->is_channel_enabled(s->get_index())) {
+		if (s->enabled()) {
 			selector->addItem(s->get_name(),QVariant::fromValue(s->get_index()));
 
             if (binded_index == s->get_index()){
@@ -390,14 +384,6 @@ DsComboBox* DecoderOptionsDlg::create_probe_selector(
 		}
 	}
 
-    for (const int derived_index : eff->get_derived_logic_indices()) {
-        dex++;
-        const QString name = QStringLiteral("Analog Logic %1")
-                                 .arg(derived_index - pv::SigSession::DerivedLogicIndexBase);
-        selector->addItem(name, QVariant::fromValue(derived_index));
-        if (binded_index == derived_index)
-            selector->setCurrentIndex(dex);
-    }
 
     if (binded_index == -1){
         if (auto_match_combo_dex >= 0)

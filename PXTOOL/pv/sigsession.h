@@ -221,6 +221,7 @@ public:
     }
 
 	std::vector<view::Signal*>& get_signals(); 
+    std::vector<view::Signal*> decoder_input_signals() const;
 
     static constexpr int DerivedLogicIndexBase = 1000000;
     bool set_analog_logic_conversion(int analog_index,

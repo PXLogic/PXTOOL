@@ -891,6 +891,16 @@ namespace pv
         return _signals;
     } 
 
+    std::vector<view::Signal*> SigSession::decoder_input_signals() const
+    {
+        std::vector<view::Signal*> result;
+        for (auto *signal : _signals) {
+            if (signal->signal_type() == SR_CHANNEL_LOGIC && signal->enabled())
+                result.push_back(signal);
+        }
+        return result;
+    }
+
     void SigSession::check_update()
     {
         ds_lock_guard lock(_data_mutex);
