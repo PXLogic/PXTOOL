@@ -68,6 +68,7 @@ add_executable(DSView-test
     test_deviceagent_stubs.cpp
     ../pv/deviceagent.cpp
     ../../libsigrok/analog.c
+    ../../libsigrok/hardware/demo/demo.c
     ../../libsigrok/keyinfo.c
     ../../libsigrok/device_source.c
     ../../libsigrok/dsdevice.c
@@ -108,6 +109,7 @@ add_executable(DSView-test
     ../../libsigrok/output/wavedrom.c
     ../../libsigrok/strutil.c
     ../../common/log/xlog.c
+    ../../common/minizip/unzip.c
     ../../common/minizip/ioapi.c
     ../../common/minizip/zip.c
 )

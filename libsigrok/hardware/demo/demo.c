@@ -61,6 +61,13 @@ static void *logic_post_buf = NULL;
 #define PATTERN_COUNT 20
 #define RANDOM_NAME "random"
 
+#define ANALOG_GENERATED_PACKET_SAMPLES 512
+#define ANALOG_GENERATOR_BASE_FREQUENCY 1000.0
+
+static const char *const analog_pattern_names[] = {
+    "sine", "square", "triangle", "sawtooth", "random",
+};
+
 struct demo_mode_pattern
 {
     char *patterns[PATTERN_COUNT+1];
@@ -90,8 +97,8 @@ static const struct DEMO_channels channel_modes[] = {
      SR_KHZ(50), SR_GHZ(1), "Use 16 Channels (Max 20MHz)"},
 
     // DAQ
-    {DEMO_ANALOG10x2,   ANALOG, SR_CHANNEL_ANALOG,  2,  8, SR_MHZ(1), SR_Mn(1),
-     SR_HZ(10),  SR_MHZ(10), "Use Channels 0~1 (Max 10MHz)"},
+    {DEMO_ANALOG10x2,   ANALOG, SR_CHANNEL_ANALOG,  5,  8, SR_MHZ(1), SR_Mn(1),
+     SR_HZ(10),  SR_MHZ(10), "Use Channels 0~4 (Max 10MHz)"},
 
     // OSC
     {DEMO_DSO200x2,     DSO,    SR_CHANNEL_DSO,     2,  8, SR_MHZ(100), SR_Kn(10),
@@ -112,6 +119,39 @@ static int get_pattern_mode_from_file(const char *sub_dir, struct demo_mode_patt
 static int get_pattern_mode_index_by_string(uint8_t device_mode, const char* pattern);
 static const char* get_pattern_name(uint8_t device_mode, int index);
 
+static struct demo_analog_generator *analog_generator_for_channel(
+        struct session_vdev *vdev, const struct sr_channel *ch)
+{
+    if (!vdev || !ch || ch->type != SR_CHANNEL_ANALOG ||
+            ch->index < 0 || ch->index >= ANALOG_DEFAULT_NUM_PROBE)
+        return NULL;
+
+    return &vdev->analog_generators[ch->index];
+}
+
+static int analog_pattern_from_name(const char *name)
+{
+    unsigned int i;
+
+    if (!name)
+        return -1;
+
+    for (i = 0; i < ARRAY_SIZE(analog_pattern_names); i++) {
+        if (!strcmp(name, analog_pattern_names[i]))
+            return i;
+    }
+
+    return -1;
+}
+
+static const char *analog_pattern_name(enum demo_analog_pattern pattern)
+{
+    if (pattern < 0 || pattern >= ARRAY_SIZE(analog_pattern_names))
+        return NULL;
+
+    return analog_pattern_names[pattern];
+}
+
 static int vdev_init(struct sr_dev_inst *sdi)
 {
     struct session_vdev* vdev = sdi->priv;
@@ -125,6 +165,8 @@ static int vdev_init(struct sr_dev_inst *sdi)
     vdev->data_buf = NULL;
     vdev->data_buf_len = 0;
     vdev->analog_read_pos = 0;
+    vdev->analog_generated_samples = 0;
+    vdev->analog_use_generator = TRUE;
 
     vdev->cur_block = 0;
     vdev->num_blocks = 0;
@@ -797,8 +839,41 @@ static int config_get(int id, GVariant **data, const struct sr_dev_inst *sdi,
         *data = g_variant_new_boolean(vdev->instant);
         break;
     case SR_CONF_PATTERN_MODE:
+        if (sdi->mode == ANALOG && ch) {
+            struct demo_analog_generator *generator =
+                analog_generator_for_channel(vdev, ch);
+            if (!generator)
+                return SR_ERR_ARG;
+            patter_name = analog_pattern_name(generator->pattern);
+            if (!patter_name)
+                return SR_ERR_ARG;
+            *data = g_variant_new_string(patter_name);
+            break;
+        }
         patter_name = get_pattern_name(sdi->mode, vdev->sample_generator);
         *data = g_variant_new_string(patter_name);
+        break;
+    case SR_CONF_AMPLITUDE:
+        if (sdi->mode != ANALOG || !ch)
+            return SR_ERR_ARG;
+        {
+            struct demo_analog_generator *generator =
+                analog_generator_for_channel(vdev, ch);
+            if (!generator)
+                return SR_ERR_ARG;
+            *data = g_variant_new_double(generator->amplitude);
+        }
+        break;
+    case SR_CONF_OFFSET:
+        if (sdi->mode != ANALOG || !ch)
+            return SR_ERR_ARG;
+        {
+            struct demo_analog_generator *generator =
+                analog_generator_for_channel(vdev, ch);
+            if (!generator)
+                return SR_ERR_ARG;
+            *data = g_variant_new_double(generator->offset);
+        }
         break;
     case SR_CONF_MAX_HEIGHT:
         *data = g_variant_new_string(maxHeights[vdev->max_height]);
@@ -967,6 +1042,8 @@ static int config_set(int id, GVariant *data, struct sr_dev_inst *sdi,
         break;
     case SR_CONF_DEVICE_MODE:
         sdi->mode = g_variant_get_int16(data);
+        if (sdi->mode == ANALOG)
+            vdev->analog_use_generator = TRUE;
         nv = get_pattern_mode_index_by_string(sdi->mode, (sdi->mode == LOGIC ? DEFAULT_LOGIC_FILE :
                                                           sdi->mode == DSO ? DEFAULT_DSO_FILE : DEFAULT_ANALOG_FILE));
         if (nv != -1){
@@ -980,6 +1057,46 @@ static int config_set(int id, GVariant *data, struct sr_dev_inst *sdi,
         break;
     case SR_CONF_PATTERN_MODE:
         stropt = g_variant_get_string(data, NULL);
+        if (sdi->mode == ANALOG && ch) {
+            struct demo_analog_generator *generator =
+                analog_generator_for_channel(vdev, ch);
+            nv = analog_pattern_from_name(stropt);
+            if (!generator || nv < 0)
+                return SR_ERR_ARG;
+            generator->pattern = nv;
+            vdev->analog_use_generator = TRUE;
+            return SR_OK;
+        }
+        if (sdi->mode == ANALOG && !ch) {
+            const char *replay_prefix = "replay:";
+            size_t replay_prefix_len = strlen(replay_prefix);
+
+            nv = analog_pattern_from_name(stropt);
+            if (nv >= 0) {
+                unsigned int channel_index;
+
+                for (channel_index = 0;
+                        channel_index < ANALOG_DEFAULT_NUM_PROBE;
+                        channel_index++) {
+                    vdev->analog_generators[channel_index].pattern = nv;
+                }
+                vdev->analog_use_generator = TRUE;
+                return SR_OK;
+            }
+
+            if (g_str_has_prefix(stropt, replay_prefix)) {
+                nv = get_pattern_mode_index_by_string(ANALOG,
+                    stropt + replay_prefix_len);
+                if (nv < 0)
+                    return SR_ERR_ARG;
+                vdev->sample_generator = nv;
+                vdev->analog_use_generator = FALSE;
+                reset_dsl_path(sdi, vdev->sample_generator);
+                return load_virtual_device_session(sdi);
+            }
+
+            return SR_ERR_ARG;
+        }
         tmp_sample_generator = vdev->sample_generator;
         nv = get_pattern_mode_index_by_string(sdi->mode , stropt);
         if(nv == -1){
@@ -1008,6 +1125,31 @@ static int config_set(int id, GVariant *data, struct sr_dev_inst *sdi,
 
         sr_dbg("%s: setting pattern to %d",
             __func__, vdev->sample_generator);
+        break;
+
+    case SR_CONF_AMPLITUDE:
+        if (sdi->mode != ANALOG || !ch ||
+                !isfinite(g_variant_get_double(data)))
+            return SR_ERR_ARG;
+        {
+            struct demo_analog_generator *generator =
+                analog_generator_for_channel(vdev, ch);
+            if (!generator)
+                return SR_ERR_ARG;
+            generator->amplitude = g_variant_get_double(data);
+        }
+        break;
+    case SR_CONF_OFFSET:
+        if (sdi->mode != ANALOG || !ch ||
+                !isfinite(g_variant_get_double(data)))
+            return SR_ERR_ARG;
+        {
+            struct demo_analog_generator *generator =
+                analog_generator_for_channel(vdev, ch);
+            if (!generator)
+                return SR_ERR_ARG;
+            generator->offset = g_variant_get_double(data);
+        }
         break;
 
     case SR_CONF_MAX_HEIGHT:
@@ -1196,6 +1338,22 @@ static int config_list(int key, GVariant **data, const struct sr_dev_inst *sdi,
         *data = g_variant_builder_end(&gvb);
         break;
     case SR_CONF_PATTERN_MODE:
+        if (sdi->mode == ANALOG) {
+            GVariantBuilder patterns;
+            int index;
+
+            g_variant_builder_init(&patterns, G_VARIANT_TYPE("as"));
+            for (index = 0; index < (int)ARRAY_SIZE(analog_pattern_names); index++)
+                g_variant_builder_add(&patterns, "s", analog_pattern_names[index]);
+            for (index = 0; index < demo_pattern_array[ANALOG].count; index++) {
+                char *replay_name = g_strdup_printf("replay:%s",
+                    demo_pattern_array[ANALOG].patterns[index]);
+                g_variant_builder_add(&patterns, "s", replay_name);
+                g_free(replay_name);
+            }
+            *data = g_variant_builder_end(&patterns);
+            break;
+        }
         info = &demo_pattern_array[sdi->mode];
         *data = g_variant_new_strv((const char* const*)info->patterns, info->count);
         break;
@@ -1203,8 +1361,21 @@ static int config_list(int key, GVariant **data, const struct sr_dev_inst *sdi,
         *data = g_variant_new_strv(maxHeights, ARRAY_SIZE(maxHeights));
         break;
     case SR_CONF_PROBE_CONFIGS:
-        *data = g_variant_new_from_data(G_VARIANT_TYPE("ai"),
-                                        probeOptions, ARRAY_SIZE(probeOptions) * sizeof(int32_t), TRUE, NULL, NULL);
+        if (sdi->mode == ANALOG) {
+            static const int32_t analog_probe_options[] = {
+                SR_CONF_PROBE_EN, SR_CONF_PATTERN_MODE, SR_CONF_AMPLITUDE,
+                SR_CONF_OFFSET, SR_CONF_PROBE_COUPLING, SR_CONF_PROBE_VDIV,
+                SR_CONF_PROBE_MAP_DEFAULT, SR_CONF_PROBE_MAP_UNIT,
+                SR_CONF_PROBE_MAP_MIN, SR_CONF_PROBE_MAP_MAX,
+            };
+            *data = g_variant_new_from_data(G_VARIANT_TYPE("ai"),
+                analog_probe_options, sizeof(analog_probe_options), TRUE,
+                NULL, NULL);
+        } else {
+            *data = g_variant_new_from_data(G_VARIANT_TYPE("ai"),
+                probeOptions, ARRAY_SIZE(probeOptions) * sizeof(int32_t), TRUE,
+                NULL, NULL);
+        }
         break;
     case SR_CONF_PROBE_VDIV:
         g_variant_builder_init(&gvb, G_VARIANT_TYPE("a{sv}"));
@@ -1283,7 +1454,8 @@ static int hw_dev_acquisition_start(struct sr_dev_inst *sdi,
         return SR_ERR_MALLOC;  
     }
 
-    if(vdev->sample_generator != PATTERN_RANDOM)
+    if(vdev->sample_generator != PATTERN_RANDOM &&
+            !(sdi->mode == ANALOG && vdev->analog_use_generator))
     {
         if (vdev->archive != NULL){
             sr_err("history archive is not closed.");
@@ -1401,14 +1573,17 @@ static int hw_dev_acquisition_start(struct sr_dev_inst *sdi,
             }
             vdev->packet_time = ANALOG_PACKET_TIME(ANALOG_PACKET_NUM_PER_SEC);
         }
-        if(vdev->sample_generator == PATTERN_RANDOM){
+        if(!vdev->analog_use_generator && vdev->sample_generator == PATTERN_RANDOM){
             init_analog_random_data(vdev);
         }
 
         vdev->analog_read_pos = 0;
         vdev->analog_post_buf_len = 0;
+        vdev->analog_generated_samples = 0;
 
-        sr_session_source_add(-1, 0, 0, receive_data_analog, sdi);
+        sr_session_source_add(-1, 0, 0,
+            vdev->analog_use_generator ? receive_data_analog_generated :
+            receive_data_analog_replay, sdi);
     }
 
     return SR_OK;
@@ -2299,7 +2474,138 @@ static int receive_data_dso(int fd, int revents, const struct sr_dev_inst *sdi)
 }
 
 
-static int receive_data_analog(int fd, int revents, const struct sr_dev_inst *sdi)
+static double analog_waveform_value(enum demo_analog_pattern pattern,
+        double phase)
+{
+    switch (pattern) {
+    case DEMO_ANALOG_SINE:
+        return sin(2.0 * G_PI * phase);
+    case DEMO_ANALOG_SQUARE:
+        return phase < 0.5 ? 1.0 : -1.0;
+    case DEMO_ANALOG_TRIANGLE:
+        return 1.0 - 4.0 * fabs(phase - 0.5);
+    case DEMO_ANALOG_SAWTOOTH:
+        return 2.0 * phase - 1.0;
+    case DEMO_ANALOG_RANDOM:
+        return 2.0 * ((double)rand() / (double)RAND_MAX) - 1.0;
+    default:
+        return 0.0;
+    }
+}
+
+static int receive_data_analog_generated(int fd, int revents,
+        const struct sr_dev_inst *sdi)
+{
+    struct session_vdev *vdev = sdi->priv;
+    struct sr_datafeed_packet packet;
+    struct sr_datafeed_analog analog;
+    struct sr_analog_encoding encoding;
+    struct sr_analog_meaning meaning;
+    struct sr_analog_spec spec;
+    GSList *channels = NULL;
+    GSList *item;
+    float *samples;
+    uint64_t sample_count;
+    uint64_t channel_count;
+    uint64_t sample_index;
+    uint64_t channel_index;
+
+    (void)fd;
+    (void)revents;
+
+    if (!vdev || !vdev->samplerate)
+        return FALSE;
+
+    for (item = sdi->channels; item; item = item->next) {
+        struct sr_channel *channel = item->data;
+        if (channel && channel->type == SR_CHANNEL_ANALOG && channel->enabled)
+            channels = g_slist_append(channels, channel);
+    }
+
+    channel_count = g_slist_length(channels);
+    if (!channel_count) {
+        g_slist_free(channels);
+        return FALSE;
+    }
+
+    if (vdev->analog_generated_samples >= vdev->total_samples)
+        return FALSE;
+
+    sample_count = MIN(vdev->total_samples - vdev->analog_generated_samples,
+        ANALOG_GENERATED_PACKET_SAMPLES);
+    if (!sample_count)
+        return FALSE;
+
+    samples = g_try_malloc_n(sample_count * channel_count, sizeof(*samples));
+    if (!samples) {
+        g_slist_free(channels);
+        return FALSE;
+    }
+
+    for (sample_index = 0; sample_index < sample_count; sample_index++) {
+        for (item = channels, channel_index = 0; item;
+                item = item->next, channel_index++) {
+            struct sr_channel *channel = item->data;
+            struct demo_analog_generator *generator =
+                analog_generator_for_channel(vdev, channel);
+            double frequency;
+            double value;
+
+            if (!generator) {
+                g_free(samples);
+                g_slist_free(channels);
+                return FALSE;
+            }
+
+            value = analog_waveform_value(generator->pattern, generator->phase);
+            samples[sample_index * channel_count + channel_index] =
+                (float)(generator->offset + generator->amplitude * value);
+            frequency = ANALOG_GENERATOR_BASE_FREQUENCY * (channel->index + 1);
+            generator->phase = fmod(generator->phase + frequency /
+                (double)vdev->samplerate, 1.0);
+        }
+    }
+
+    if (sr_analog_init(&analog, &encoding, &meaning, &spec, 3) != SR_OK) {
+        g_free(samples);
+        g_slist_free(channels);
+        return FALSE;
+    }
+
+    analog.data = samples;
+    analog.num_samples = sample_count;
+    analog.probes = channels;
+    analog.unit_bits = sizeof(float) * 8;
+    analog.mq = SR_MQ_VOLTAGE;
+    analog.unit = SR_UNIT_VOLT;
+    analog.mqflags = 0;
+    meaning.mq = SR_MQ_VOLTAGE;
+    meaning.unit = SR_UNIT_VOLT;
+    meaning.mqflags = 0;
+    meaning.channels = channels;
+
+    memset(&packet, 0, sizeof(packet));
+    packet.type = SR_DF_ANALOG;
+    packet.status = SR_PKT_OK;
+    packet.payload = &analog;
+    ds_data_forward(sdi, &packet);
+
+    vdev->analog_generated_samples += sample_count;
+    g_free(samples);
+    g_slist_free(channels);
+
+    if (vdev->analog_generated_samples >= vdev->total_samples) {
+        packet.type = SR_DF_END;
+        packet.payload = NULL;
+        ds_data_forward(sdi, &packet);
+        sr_session_source_remove(-1);
+        return FALSE;
+    }
+
+    return TRUE;
+}
+
+static int receive_data_analog_replay(int fd, int revents, const struct sr_dev_inst *sdi)
 {
     struct session_vdev *vdev = sdi->priv;
     struct sr_datafeed_packet packet;
@@ -2711,6 +3017,12 @@ static int load_virtual_device_session(struct sr_dev_inst *sdi)
             probe->map_unit = ANALOG_DEFAULT_MAP_UNIT;
             probe->map_min =  ANALOG_DEFAULT_MAP_MIN;
             probe->map_max = ANALOG_DEFAULT_MAP_MAX;
+
+            vdev->analog_generators[i].pattern = DEMO_ANALOG_SINE;
+            vdev->analog_generators[i].amplitude = 1.0;
+            vdev->analog_generators[i].offset = 0.0;
+            vdev->analog_generators[i].phase =
+                (double)i / (double)ANALOG_DEFAULT_NUM_PROBE;
 
         }
         adjust_samplerate(sdi);

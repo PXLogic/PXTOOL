@@ -53,7 +53,7 @@
 #define DSO_RANDOM_DATA rand()%120 +68
 #define DSO_BUF_LEN SR_MB(1)
 
-#define ANALOG_PROBE_NUM 2
+#define ANALOG_PROBE_NUM 5
 #define ANALOG_PACKET_NUM_PER_SEC 200
 #define ANALOG_POST_DATA_PER_SECOND(n) ((n)*(ANALOG_PROBE_NUM))
 #define ANALOG_PACKET_LEN(n) ((ANALOG_POST_DATA_PER_SECOND(n))/(ANALOG_PACKET_NUM_PER_SEC))
@@ -92,7 +92,6 @@
 #define ANALOG_CYCLE_RATIO ((gdouble)(103) / (gdouble)(2048))
 #define ANALOG_DATA_LEN_PER_CYCLE 206
 #define ANALOG_RANDOM_DATA rand()%120 +68
-#define ANALOG_PROBE_NUM 2
 
 #define ANALOG_RETE(n) ((n/SR_HZ(10)))
 
@@ -115,7 +114,7 @@
 
 #define ANALOG_DEFAULT_SAMPLERATE SR_MHZ(1)
 #define ANALOG_DEFAULT_TOTAL_SAMPLES SR_MHZ(1)
-#define ANALOG_DEFAULT_NUM_PROBE 2
+#define ANALOG_DEFAULT_NUM_PROBE 5
 #define ANALOG_DEFAULT_NUM_BLOCK 1
 #define ANALOG_DEFAULT_BIT 8
 #define ANALOG_DEFAULT_ENABLE TRUE
@@ -136,6 +135,21 @@
 enum DEMO_PATTERN {  
     PATTERN_RANDOM = 0,
     PATTERN_DEFAULT = 1,
+};
+
+enum demo_analog_pattern {
+    DEMO_ANALOG_SINE,
+    DEMO_ANALOG_SQUARE,
+    DEMO_ANALOG_TRIANGLE,
+    DEMO_ANALOG_SAWTOOTH,
+    DEMO_ANALOG_RANDOM,
+};
+
+struct demo_analog_generator {
+    enum demo_analog_pattern pattern;
+    double amplitude;
+    double offset;
+    double phase;
 };
 
 enum DEMO_LOGIC_CHANNEL_ID {
@@ -182,12 +196,15 @@ struct session_vdev
     uint16_t samplerates_min_index;
     uint16_t samplerates_max_index;
     uint8_t sample_generator;
+    gboolean analog_use_generator;
+    struct demo_analog_generator analog_generators[ANALOG_DEFAULT_NUM_PROBE];
     void        *data_buf;
     uint64_t    data_buf_len;
     
     void *analog_post_buf;
     uint64_t analog_post_buf_len;
     uint64_t analog_read_pos;
+    uint64_t analog_generated_samples;
 
     int cur_block;
     int num_blocks;
@@ -495,7 +512,8 @@ static int receive_data_logic_decoder(int fd, int revents, const struct sr_dev_i
 
 static int receive_data_dso(int fd, int revents, const struct sr_dev_inst *sdi);
 
-static int receive_data_analog(int fd, int revents, const struct sr_dev_inst *sdi);
+static int receive_data_analog_generated(int fd, int revents, const struct sr_dev_inst *sdi);
+static int receive_data_analog_replay(int fd, int revents, const struct sr_dev_inst *sdi);
 
 static void send_error_packet(const struct sr_dev_inst *cb_sdi, struct session_vdev *vdev, struct sr_datafeed_packet *packet);
 

@@ -1063,6 +1063,12 @@ enum sr_config_option_id
      */
     SR_CONF_HAVE_ADVANCED_TRIGGER = 30108,
 
+    /** Signal-generator peak amplitude in the measured unit. */
+    SR_CONF_AMPLITUDE = 30109,
+
+    /** Signal-generator DC offset in the measured unit. */
+    SR_CONF_OFFSET = 30110,
+
 	/*--- Acquisition modes ---------------------------------------------*/
 
 	/**

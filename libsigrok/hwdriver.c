@@ -68,6 +68,8 @@ static struct sr_config_info sr_config_info_data[] = {
     {SR_CONF_CLOCK_EDGE, SR_T_BOOL, "Using Clock Negedge"},
     {SR_CONF_CAPTURE_RATIO, SR_T_UINT64,"Pre-trigger capture ratio"},
     {SR_CONF_PATTERN_MODE, SR_T_CHAR,"Operation Mode"},
+    {SR_CONF_AMPLITUDE, SR_T_FLOAT,"Amplitude"},
+    {SR_CONF_OFFSET, SR_T_FLOAT,"Offset"},
 	{SR_CONF_RLE, SR_T_BOOL,"Run Length Encoding"},
     {SR_CONF_WAIT_UPLOAD, SR_T_BOOL,"Wait Buffer Upload"},
     {SR_CONF_TRIGGER_SLOPE, SR_T_UINT8,"Trigger slope"},
