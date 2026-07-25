@@ -25,6 +25,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include <algorithm>
+#include <limits>
  
 #include "analogsnapshot.h"
 #include "../dsvdef.h"
@@ -45,7 +46,8 @@ AnalogSnapshot::AnalogSnapshot() :
 {
 	memset(_envelope_levels, 0, sizeof(_envelope_levels));
     _unit_pitch = 0;
-    _data  = NULL; 
+    _data  = NULL;
+    _is_float = false;
 }
 
 AnalogSnapshot::~AnalogSnapshot()
@@ -75,7 +77,9 @@ void AnalogSnapshot::init_all()
     _sample_count = 0;
     _ring_sample_count = 0;
     _memory_failed = false;
-    _last_ended = true; 
+    _last_ended = true;
+    _channel_mins.clear();
+    _channel_maxs.clear();
 
     for (unsigned int i = 0; i < _channel_num; i++) {
         for (unsigned int level = 0; level < ScaleStepCount; level++) {
@@ -106,12 +110,27 @@ void AnalogSnapshot::clear()
     init_all();
 }
 
-void AnalogSnapshot::first_payload(const sr_datafeed_analog &analog, uint64_t total_sample_count, GSList *channels)
+bool AnalogSnapshot::first_payload(const sr_datafeed_analog &analog, uint64_t total_sample_count, GSList *channels)
 {
+    const bool standard_packet = analog.encoding || analog.meaning;
+    if (standard_packet) {
+        if (!analog.encoding || !analog.meaning || !analog.meaning->channels ||
+            !analog.data || !analog.encoding->unitsize || total_sample_count == 0)
+            return false;
+        _unit_bytes = analog.encoding->unitsize;
+        _is_float = analog.encoding->is_float;
+        channels = analog.meaning->channels;
+    } else {
+        if (!analog.data || !analog.unit_bits || !channels || total_sample_count == 0)
+            return false;
+        _unit_bytes = (analog.unit_bits + 7) / 8;
+        _is_float = false;
+    }
+
+    if (_unit_bytes != 1 && _unit_bytes != 2 && _unit_bytes != 4 && _unit_bytes != 8)
+        return false;
+
     _total_sample_count = total_sample_count;
-    _unit_bytes = (analog.unit_bits + 7) / 8;
-    assert(_unit_bytes > 0);
-    assert(_unit_bytes <= sizeof(uint64_t));
 
     _channel_num = 0; // The enabled and disabled channels count.
 
@@ -179,24 +198,111 @@ void AnalogSnapshot::first_payload(const sr_datafeed_analog &analog, uint64_t to
 
         _capacity = size;
         _memory_failed = false;
-        append_payload(analog);
+        _channel_mins.assign(_channel_num, std::numeric_limits<double>::infinity());
+        _channel_maxs.assign(_channel_num, -std::numeric_limits<double>::infinity());
+        if (!append_payload(analog))
+            return false;
         _last_ended = false;
+        return true;
     }
     else {
         free_data();
         free_envelop();
         _memory_failed = true;
+        return false;
     }
 }
 
-void AnalogSnapshot::append_payload(const sr_datafeed_analog &analog)
+bool AnalogSnapshot::append_payload(const sr_datafeed_analog &analog)
 {
+    if (!analog.data || !analog.num_samples)
+        return false;
+
+    if (analog.encoding) {
+        if (!analog.meaning || !analog.meaning->channels ||
+            analog.encoding->unitsize != _unit_bytes ||
+            analog.encoding->is_float != _is_float)
+            return false;
+    }
+
     std::lock_guard<std::mutex> lock(_mutex);
-    append_data(analog.data, analog.num_samples, analog.unit_pitch);
+    append_data(analog.data, analog.num_samples,
+                analog.encoding ? 1 : analog.unit_pitch);
+
+    recompute_extrema();
 
 	// Generate the first mip-map from the data
     if (analog.num_samples != 0) // guarantee new samples to compute
         append_payload_to_envelope_levels();
+    return true;
+}
+
+bool AnalogSnapshot::is_float() const
+{
+    return _is_float;
+}
+
+uint32_t AnalogSnapshot::channel_count() const
+{
+    return _channel_num;
+}
+
+uint64_t AnalogSnapshot::physical_sample_index(uint64_t sample_index) const
+{
+    if (_sample_count < _total_sample_count)
+        return sample_index;
+    return (_ring_sample_count + sample_index) % _total_sample_count;
+}
+
+double AnalogSnapshot::sample_as_double(uint32_t channel_order,
+                                        uint64_t sample_index) const
+{
+    if (!_data || channel_order >= _channel_num || sample_index >= _sample_count)
+        return 0.0;
+
+    const uint64_t physical = physical_sample_index(sample_index);
+    const uint8_t *source = static_cast<const uint8_t *>(_data) +
+        (physical * _channel_num + channel_order) * _unit_bytes;
+    if (_is_float) {
+        if (_unit_bytes == sizeof(float)) {
+            float value;
+            memcpy(&value, source, sizeof(value));
+            return value;
+        }
+        if (_unit_bytes == sizeof(double)) {
+            double value;
+            memcpy(&value, source, sizeof(value));
+            return value;
+        }
+        return 0.0;
+    }
+
+    uint64_t value = 0;
+    memcpy(&value, source, _unit_bytes);
+    return static_cast<double>(value);
+}
+
+void AnalogSnapshot::recompute_extrema()
+{
+    _channel_mins.assign(_channel_num, std::numeric_limits<double>::infinity());
+    _channel_maxs.assign(_channel_num, -std::numeric_limits<double>::infinity());
+    for (uint64_t sample = 0; sample < _sample_count; sample++) {
+        for (uint32_t channel = 0; channel < _channel_num; channel++) {
+            const double value = sample_as_double(channel, sample);
+            _channel_mins[channel] = std::min(_channel_mins[channel], value);
+            _channel_maxs[channel] = std::max(_channel_maxs[channel], value);
+        }
+    }
+}
+
+double AnalogSnapshot::channel_min(uint32_t channel_order) const
+{
+    return channel_order < _channel_mins.size() ? _channel_mins[channel_order] : 0.0;
+}
+
+double AnalogSnapshot::channel_max(uint32_t channel_order) const
+{
+    return channel_order < _channel_maxs.size() ? _channel_maxs[channel_order] : 0.0;
 }
 
 void AnalogSnapshot::append_data(void *data, uint64_t samples, uint16_t pitch)
