@@ -295,7 +295,7 @@ Run: cmake --build build --target DSView-test DSView-format-integration-test srd
 
 Expected: successful build.
 
-- [ ] **Step 2: Run all automated tests**
+- [x] **Step 2: Run all automated tests**
 
 Run: ctest --test-dir build --output-on-failure
 
