@@ -1028,7 +1028,12 @@ namespace pv
         int analog_index, const data::AnalogToLogic::Config &config)
     {
         if (!_view_data || config.mode == data::AnalogToLogic::Mode::Disabled) {
-            _derived_logic.erase(analog_index);
+            auto it = _derived_logic.find(analog_index);
+            if (it != _derived_logic.end()) {
+                if (it->second.device)
+                    sr_dev_inst_free(it->second.device);
+                _derived_logic.erase(it);
+            }
             return false;
         }
 

@@ -328,6 +328,8 @@ pv::SigSession* DecoderOptionsDlg::effectiveSession()
                 _session->is_channel_enabled(s->get_index()))
                 return _session;
         }
+        if (!_session->get_derived_logic_indices().empty())
+            return _session;
     }
     return AppControl::Instance()->GetSession();
 }
@@ -387,6 +389,15 @@ DsComboBox* DecoderOptionsDlg::create_probe_selector(
             }
 		}
 	}
+
+    for (const int derived_index : eff->get_derived_logic_indices()) {
+        dex++;
+        const QString name = QStringLiteral("Analog Logic %1")
+                                 .arg(derived_index - pv::SigSession::DerivedLogicIndexBase);
+        selector->addItem(name, QVariant::fromValue(derived_index));
+        if (binded_index == derived_index)
+            selector->setCurrentIndex(dex);
+    }
 
     if (binded_index == -1){
         if (auto_match_combo_dex >= 0)
