@@ -82,6 +82,11 @@ public:
 
     void set_data(data::AnalogSnapshot *data);
 
+    bool auto_range() const { return _auto_range; }
+    void set_auto_range(bool enabled) { _auto_range = enabled; }
+    double volts_per_div() const { return _volts_per_div; }
+    void set_volts_per_div(double value);
+
     int get_hw_offset();
     int commit_settings();
 
@@ -160,6 +165,7 @@ private:
                         const float top, const float bottom, const int width);
 
     void paint_hover_measure(QPainter &p, QColor fore, QColor back);
+    void update_display_range(int order, int height);
 
 private:
 	pv::data::AnalogSnapshot *_data;
@@ -172,6 +178,10 @@ private:
     int _bits;
     double _ref_min;
     double _ref_max;
+    bool _auto_range;
+    double _volts_per_div;
+    double _display_min;
+    double _display_max;
 
     bool _hover_en;
     uint64_t _hover_index;

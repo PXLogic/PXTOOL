@@ -625,6 +625,8 @@ private:
     void trig_check_timeout();
 
     void clear_signals(); 
+    void remove_derived_logic_signal(int index);
+    void remove_all_derived_logic_signals();
 
     inline void data_lock(){
         _data_lock = true;

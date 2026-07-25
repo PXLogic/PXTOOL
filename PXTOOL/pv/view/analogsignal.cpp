@@ -21,6 +21,7 @@
  */
 
 #include <math.h>
+#include <cmath>
 #include "../view/analogsignal.h"
 #include "../data/analogsnapshot.h"
 #include "../view/view.h"
@@ -47,6 +48,10 @@ AnalogSignal::AnalogSignal(data::AnalogSnapshot *data, sr_channel *probe) :
     Signal(probe),
     _data(data),
     _rects(NULL),
+    _auto_range(true),
+    _volts_per_div(1.0),
+    _display_min(-5.0),
+    _display_max(5.0),
     _hover_en(false),
     _hover_index(0),
     _hover_point(QPointF(-1, -1)),
@@ -96,6 +101,10 @@ AnalogSignal::AnalogSignal(view::AnalogSignal *s, pv::data::AnalogSnapshot *data
     Signal(*s, probe),
     _data(data),
     _rects(NULL),
+    _auto_range(s->auto_range()),
+    _volts_per_div(s->volts_per_div()),
+    _display_min(-5.0),
+    _display_max(5.0),
     _hover_en(false),
     _hover_index(0),
     _hover_point(QPointF(-1, -1)),
@@ -108,6 +117,39 @@ AnalogSignal::AnalogSignal(view::AnalogSignal *s, pv::data::AnalogSnapshot *data
     _zero_offset = s->get_zero_offset();
 
     _scale = s->get_scale();
+}
+
+void AnalogSignal::set_volts_per_div(double value)
+{
+    if (value > 0.0 && std::isfinite(value)) {
+        _volts_per_div = value;
+        _auto_range = false;
+    }
+}
+
+void AnalogSignal::update_display_range(int order, int height)
+{
+    if (!_data || !_data->is_float() || height <= 0)
+        return;
+
+    if (_auto_range) {
+        _display_min = _data->channel_min(order);
+        _display_max = _data->channel_max(order);
+        if (!std::isfinite(_display_min) || !std::isfinite(_display_max) ||
+            _display_min == _display_max) {
+            const double center = std::isfinite(_display_min) ? _display_min : 0.0;
+            _display_min = center - 0.5;
+            _display_max = center + 0.5;
+        }
+        const double padding = (_display_max - _display_min) * 0.05;
+        _display_min -= padding;
+        _display_max += padding;
+    } else {
+        const double span = NumSpanY * _volts_per_div;
+        _display_min = -span;
+        _display_max = span;
+    }
+    _scale = static_cast<float>(height / (_display_max - _display_min));
 }
 
 AnalogSignal::~AnalogSignal()
@@ -223,10 +265,11 @@ QPointF AnalogSignal::get_point(uint64_t index, float &value)
     const int height = get_totalHeight();
     const float top = get_y() - height * 0.5;
     const float bottom = get_y() + height * 0.5;
+    update_display_range(order, height);
     const int hw_offset = get_hw_offset();
     const float x = (index / samples_per_pixel - pixels_offset);
     const float y = _data->is_float() ?
-        min(max(top, get_zero_vpos() - (float)(value * _scale)), bottom) :
+        min(max(top, static_cast<float>(top + (_display_max - value) * _scale)), bottom) :
         min(max(top, get_zero_vpos() + (value - hw_offset)* _scale), bottom);
     pt = QPointF(x, y);
 
@@ -418,7 +461,7 @@ void AnalogSignal::paint_mid(QPainter &p, int left, int right, QColor fore, QCol
     const int height = get_totalHeight();
     const float top = get_y() - height * 0.5;
     const float bottom = get_y() + height * 0.5;
-    const float zeroY = ratio2pos(get_zero_ratio());
+    float zeroY = ratio2pos(get_zero_ratio());
     const int width = right - left + 1;
 
     const double scale = _view->scale();
@@ -429,6 +472,10 @@ void AnalogSignal::paint_mid(QPainter &p, int left, int right, QColor fore, QCol
     const int order = _data->get_ch_order(get_index());
     if (order == -1)
         return;
+
+    update_display_range(order, height);
+    if (_data->is_float())
+        zeroY = static_cast<float>(top + _display_max * _scale);
 
     //The channel have no data.
     if (_data->has_enabled_channel(get_index()) == false){

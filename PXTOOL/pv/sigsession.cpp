@@ -927,6 +927,7 @@ namespace pv
         unsigned int analog_probe_count = 0;
 
         dsv_info("SigSession::init_signals() clearing data for session@%p", (void*)this);
+        clear_analog_logic_conversions();
         _capture_data->clear();
         _view_data->clear();
         invalidate_glitch_filter_state();
@@ -1030,6 +1031,7 @@ namespace pv
         if (!_view_data || config.mode == data::AnalogToLogic::Mode::Disabled) {
             auto it = _derived_logic.find(analog_index);
             if (it != _derived_logic.end()) {
+                remove_derived_logic_signal(it->second.channel->index);
                 if (it->second.device)
                     sr_dev_inst_free(it->second.device);
                 _derived_logic.erase(it);
@@ -1067,11 +1069,24 @@ namespace pv
             return false;
         }
         derived.config = config;
+        bool signal_exists = false;
+        for (auto *signal : _signals) {
+            if (signal->get_index() == derived.channel->index) {
+                signal_exists = true;
+                break;
+            }
+        }
+        if (!signal_exists) {
+            _signals.push_back(new view::LogicSignal(
+                derived.snapshot.get(), derived.channel));
+            make_channels_view_index();
+        }
         return true;
     }
 
     void SigSession::clear_analog_logic_conversions()
     {
+        remove_all_derived_logic_signals();
         for (auto &item : _derived_logic) {
             if (item.second.device)
                 sr_dev_inst_free(item.second.device);
@@ -2811,6 +2826,31 @@ namespace pv
             DESTROY_QT_LATER(p);
         }
         _signals.clear();
+    }
+
+    void SigSession::remove_derived_logic_signal(int index)
+    {
+        for (auto it = _signals.begin(); it != _signals.end(); ++it) {
+            if ((*it)->get_index() == index) {
+                (*it)->sig_released(*it);
+                DESTROY_QT_LATER(*it);
+                _signals.erase(it);
+                return;
+            }
+        }
+    }
+
+    void SigSession::remove_all_derived_logic_signals()
+    {
+        for (auto it = _signals.begin(); it != _signals.end();) {
+            if ((*it)->get_index() >= DerivedLogicIndexBase) {
+                (*it)->sig_released(*it);
+                DESTROY_QT_LATER(*it);
+                it = _signals.erase(it);
+            } else {
+                ++it;
+            }
+        }
     }
 
     view::Signal* SigSession::get_signal_by_index(int index)
