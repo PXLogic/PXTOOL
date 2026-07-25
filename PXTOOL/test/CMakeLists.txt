@@ -112,6 +112,10 @@ add_executable(DSView-test
     ../../common/minizip/zip.c
 )
 
+target_compile_definitions(DSView-test PRIVATE
+    DSVIEW_SOURCE_DIR="${CMAKE_SOURCE_DIR}"
+)
+
 # InputImporter and StoreSession operate on a real SigSession.  Their
 # implementation reaches into the application runtime, so keep this coverage
 # in its own headless executable instead of growing the lightweight unit test.

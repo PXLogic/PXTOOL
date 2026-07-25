@@ -129,9 +129,7 @@ analog-to-logic protocol decoding.
 - Passed: targeted `analog_*`, `analog_to_logic`, and device capability tests;
   `DSView-format-integration-test` (9 cases); and
   `srd-c-decoder-lifetime-test`.
-- `ctest --test-dir build.tests --output-on-failure` is not fully green because
-  `DSView-test` has 13 pre-existing failures in `test_theme_qss.cpp`. No theme
-  source or QSS file was changed by this work.
+- Passed: `ctest --test-dir build.tests --output-on-failure` (2/2 tests).
 - Hardware: Not run; no accessible device exposing `SR_CHANNEL_ANALOG`.
 
 ## Scope Boundaries
