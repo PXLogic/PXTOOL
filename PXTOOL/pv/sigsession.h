@@ -35,6 +35,7 @@
 #include <list>
 #include <QHash>
 #include <QMetaObject>
+#include <memory>
 
 #include "view/mathtrace.h"
 #include "data/mathstack.h"
@@ -45,6 +46,7 @@
 #include "eventobject.h"
 #include "data/logicsnapshot.h"
 #include "data/analogsnapshot.h"
+#include "data/analogtologic.h"
 #include "data/dsosnapshot.h"
 #include "data/glitchfilter.h"
 #include "utility/diskcachesettings.h"
@@ -219,6 +221,13 @@ public:
     }
 
 	std::vector<view::Signal*>& get_signals(); 
+
+    static constexpr int DerivedLogicIndexBase = 1000000;
+    bool set_analog_logic_conversion(int analog_index,
+                                     const data::AnalogToLogic::Config &config);
+    void clear_analog_logic_conversions();
+    data::LogicSnapshot* get_derived_logic_snapshot(int index) const;
+    std::vector<int> get_derived_logic_indices() const;
 
     bool add_decoder(srd_decoder *const dec, bool silent, DecoderStatus *dstatus, 
                         std::list<pv::data::decode::Decoder*> &sub_decoders, view::Trace* &out_trace);
@@ -642,6 +651,13 @@ private:
     QHash<pv::data::DecoderStack*, QMetaObject::Connection> _decode_connections;
 
 	std::vector<view::Signal*>      _signals; 
+    struct DerivedLogic {
+        std::unique_ptr<data::LogicSnapshot> snapshot;
+        sr_dev_inst *device = nullptr;
+        sr_channel *channel = nullptr;
+        data::AnalogToLogic::Config config;
+    };
+    std::map<int, DerivedLogic> _derived_logic;
     std::vector<view::DecodeTrace*> _decode_traces;
     pv::data::DecoderModel          *_decoder_model;
     std::vector<view::SpectrumTrace*> _spectrum_traces;

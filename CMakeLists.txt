@@ -297,6 +297,7 @@ set(DSView_SOURCES
     PXTOOL/pv/data/logicsnapshot.cpp
     PXTOOL/pv/data/spillmanager.cpp
     PXTOOL/pv/data/analogsnapshot.cpp
+    PXTOOL/pv/data/analogtologic.cpp
     PXTOOL/pv/dialogs/deviceoptions.cpp
     PXTOOL/pv/dialogs/inputoutputoptioneditor.cpp
     PXTOOL/pv/dialogs/inputoutputoptionsdlg.cpp
