@@ -238,6 +238,7 @@ private:
     void config_changed(); 
     GVariant *custom_config_variant(int key) const;
     bool set_custom_config_variant(int key, GVariant *data);
+    void rebuild_custom_mode_list();
 
     //---------------device config-----------/
 public:
@@ -265,7 +266,7 @@ private:
     uint64_t    _custom_sample_rate = 0;
     uint64_t    _custom_sample_limit = 0;
     GSList     *_custom_mode_list = nullptr;
-    struct sr_dev_mode _custom_mode_entry {};
+    std::vector<struct sr_dev_mode> _custom_mode_entries;
 };
 
 

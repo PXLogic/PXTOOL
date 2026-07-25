@@ -29,6 +29,30 @@ extern "C" {
 #include "libsigrok-internal.h"
 }
 
+namespace {
+
+bool has_mode(const GSList *modes, int wanted_mode)
+{
+    for (const GSList *entry = modes; entry; entry = entry->next) {
+        const sr_dev_mode *mode = static_cast<const sr_dev_mode *>(entry->data);
+        if (mode && mode->mode == wanted_mode)
+            return true;
+    }
+
+    return false;
+}
+
+sr_dev_inst *make_imported_device(sr_channeltype channel_type)
+{
+    sr_dev_inst *sdi = sr_dev_inst_new(LOGIC, SR_ST_INACTIVE,
+                                       "DSView", "Imported", "0.1");
+    if (sdi)
+        sr_channel_new(sdi, 0, channel_type, TRUE, "CH0");
+    return sdi;
+}
+
+} // namespace
+
 BOOST_AUTO_TEST_SUITE(deviceagent_capability)
 
 BOOST_AUTO_TEST_CASE(capability_methods_are_available)
@@ -91,6 +115,29 @@ BOOST_AUTO_TEST_CASE(demo_operation_mode_defaults_to_random_without_pattern_conf
     BOOST_CHECK(agent.is_demo());
     BOOST_CHECK(!agent.supports_config(SR_CONF_PATTERN_MODE));
     BOOST_CHECK_EQUAL(agent.get_demo_operation_mode().toStdString(), "random");
+
+    agent.release();
+}
+
+BOOST_AUTO_TEST_CASE(imported_device_modes_follow_channel_capabilities)
+{
+    DeviceAgent agent;
+
+    sr_dev_inst *logic_device = make_imported_device(SR_CHANNEL_LOGIC);
+    BOOST_REQUIRE(logic_device != nullptr);
+    agent.bind_custom_device(logic_device, DEV_TYPE_DEMO, LOGIC,
+                             QStringLiteral("Logic import"), QString(),
+                             QStringLiteral("import"), 1'000'000, 1024);
+    BOOST_CHECK(has_mode(agent.get_device_mode_list(), LOGIC));
+    BOOST_CHECK(!has_mode(agent.get_device_mode_list(), ANALOG));
+
+    sr_dev_inst *analog_device = make_imported_device(SR_CHANNEL_ANALOG);
+    BOOST_REQUIRE(analog_device != nullptr);
+    agent.bind_custom_device(analog_device, DEV_TYPE_DEMO, LOGIC,
+                             QStringLiteral("Analog import"), QString(),
+                             QStringLiteral("import"), 1'000'000, 1024);
+    BOOST_CHECK(has_mode(agent.get_device_mode_list(), ANALOG));
+    BOOST_CHECK(!has_mode(agent.get_device_mode_list(), LOGIC));
 
     agent.release();
 }
