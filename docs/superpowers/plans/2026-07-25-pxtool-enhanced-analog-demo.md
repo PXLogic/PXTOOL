@@ -24,7 +24,7 @@
 - Modify: `libsigrok/hardware/demo/demo.c`
 - Test: `PXTOOL/test/test_upstream_demo.cpp`
 
-- [ ] **Step 1: Write failing driver capability tests**
+- [x] **Step 1: Write failing driver capability tests**
 
 Add a test that scans a demo device with ANALOG mode and asserts five enabled
 `SR_CHANNEL_ANALOG` channels. Add a second test that lists `SR_CONF_PATTERN_MODE`
@@ -36,14 +36,14 @@ BOOST_CHECK_EQUAL(analog_channel_count(sdi), 5);
 BOOST_CHECK(pattern_list_contains(channel, "sawtooth"));
 ```
 
-- [ ] **Step 2: Run the tests and verify they fail**
+- [x] **Step 2: Run the tests and verify they fail**
 
 Run: `cmake --build build.tests --target DSView-test && ./build.macOS/DSView-test --run_test=upstream_demo/analog_*`
 
 Expected: FAIL because the current demo creates two analog channels and does
 not expose generated waveform names as per-channel configuration.
 
-- [ ] **Step 3: Add the state model**
+- [x] **Step 3: Add the state model**
 
 In `demo.h`, define `enum demo_analog_pattern` with the five names and a
 `struct demo_analog_generator { enum demo_analog_pattern pattern; double amplitude; double offset; double phase; }`.
@@ -54,14 +54,14 @@ Change `ANALOG_DEFAULT_NUM_PROBE` and `ANALOG_PROBE_NUM` to 5. In the ANALOG
 branch of device creation, initialize one generator and one `SR_CHANNEL_ANALOG`
 channel for each index.
 
-- [ ] **Step 4: Expose configuration**
+- [x] **Step 4: Expose configuration**
 
 Make `config_list`, `config_get`, and `config_set` recognize `SR_CONF_PATTERN_MODE`,
 `SR_CONF_AMPLITUDE`, `SR_CONF_OFFSET`, and `SR_CONF_PROBE_EN` for individual
 analog channels. Reject an unrecognized pattern and non-finite amplitude or
 offset with `SR_ERR_ARG`.
 
-- [ ] **Step 5: Run tests and commit**
+- [x] **Step 5: Run tests and commit**
 
 Run: `cmake --build build.tests --target DSView-test && ./build.macOS/DSView-test --run_test=upstream_demo/analog_*`
 
@@ -78,7 +78,7 @@ git commit -m "feat: configure five-channel analog demo"
 - Modify: `libsigrok/hardware/demo/demo.c`
 - Test: `PXTOOL/test/test_upstream_demo.cpp`
 
-- [ ] **Step 1: Write failing packet tests**
+- [x] **Step 1: Write failing packet tests**
 
 Add a session callback test that starts ANALOG demo acquisition and captures its
 first `SR_DF_ANALOG` packet. Assert `encoding`, `meaning`, and `meaning->channels`
@@ -91,13 +91,13 @@ BOOST_CHECK_EQUAL(packet.analog.encoding->unitsize, sizeof(float));
 BOOST_CHECK_EQUAL(g_slist_length(packet.analog.meaning->channels), 5);
 ```
 
-- [ ] **Step 2: Run and verify RED**
+- [x] **Step 2: Run and verify RED**
 
 Run: `cmake --build build.tests --target DSView-test && ./build.macOS/DSView-test --run_test=upstream_demo/generated_analog_packet_is_standard_float`
 
 Expected: FAIL because the old path sends a legacy byte packet.
 
-- [ ] **Step 3: Implement generated packet assembly**
+- [x] **Step 3: Implement generated packet assembly**
 
 Add a helper in `demo.c` that gathers enabled analog channels, computes a bounded
 packet sample count, and fills an interleaved `float` buffer. Generate each
@@ -113,13 +113,13 @@ Initialize a local `sr_analog_encoding`, `sr_analog_meaning`, and
 `SR_DF_ANALOG` packet. Free the temporary channel list and buffer after the
 session callback returns.
 
-- [ ] **Step 4: Keep legacy replay isolated**
+- [x] **Step 4: Keep legacy replay isolated**
 
 Route explicitly selected `.demo` captures to the existing `receive_data_analog`
 replay logic. Route the default ANALOG mode to the new generator. Do not combine
 generated and replay bytes in an acquisition.
 
-- [ ] **Step 5: Run tests and commit**
+- [x] **Step 5: Run tests and commit**
 
 Run: `cmake --build build.tests --target DSView-test && ./build.macOS/DSView-test --run_test=upstream_demo/generated_analog_packet_is_standard_float`
 
@@ -136,7 +136,7 @@ git commit -m "feat: emit standard float analog demo packets"
 - Modify: `PXTOOL/test/test_upstream_demo.cpp`
 - Modify: `libsigrok/hardware/demo/demo.c`
 
-- [ ] **Step 1: Write failing waveform tests**
+- [x] **Step 1: Write failing waveform tests**
 
 Configure channel 0 to square with amplitude 2.0 and offset 1.0, disable
 channel 1, then capture one packet. Assert all channel-0 values are within
@@ -148,20 +148,20 @@ BOOST_CHECK(value >= -1.0F && value <= 3.0F);
 BOOST_CHECK_EQUAL(g_slist_length(packet.analog.meaning->channels), 4);
 ```
 
-- [ ] **Step 2: Run and verify RED**
+- [x] **Step 2: Run and verify RED**
 
 Run: `cmake --build build.tests --target DSView-test && ./build.macOS/DSView-test --run_test=upstream_demo/analog_waveform_*`
 
 Expected: FAIL until the generated path honors per-channel settings.
 
-- [ ] **Step 3: Correct generator/config integration**
+- [x] **Step 3: Correct generator/config integration**
 
 Use the per-channel generator state and `sr_channel::enabled` state when
 assembling each packet. Ensure every generated waveform stays in [-1, 1] before
 amplitude/offset transformation. Random samples must also use that normalized
 range.
 
-- [ ] **Step 4: Run regression tests and commit**
+- [x] **Step 4: Run regression tests and commit**
 
 Run: `cmake --build build.tests --target DSView-test && ./build.macOS/DSView-test --run_test=upstream_demo/analog_*`
 
@@ -177,26 +177,26 @@ git commit -m "test: cover analog demo waveforms"
 **Files:**
 - Modify: `docs/superpowers/specs/2026-07-25-pxtool-enhanced-analog-demo-design.md`
 
-- [ ] **Step 1: Build relevant targets**
+- [x] **Step 1: Build relevant targets**
 
 Run: `cmake --build build.tests --target DSView DSView-test DSView-format-integration-test -j2`
 
 Expected: successful build.
 
-- [ ] **Step 2: Run automated suites**
+- [x] **Step 2: Run automated suites**
 
 Run: `ctest --test-dir build.tests --output-on-failure && ./build.macOS/DSView-format-integration-test --log_level=message`
 
 Expected: PASS.
 
-- [ ] **Step 3: Run demo acceptance**
+- [x] **Step 3: Run demo acceptance**
 
 Launch `build.macOS/PXTOOL.app/Contents/MacOS/PXTOOL`, select Demo -> ANALOG,
 confirm five traces are present, use the analog trace context menu to select a
 waveform and threshold conversion, and confirm the derived logic trace is
 available in the decoder input selector.
 
-- [ ] **Step 4: Record verification and commit**
+- [x] **Step 4: Record verification and commit**
 
 Append exact automated results and either `Demo acceptance: passed` or the
 unavailable condition to the design spec.

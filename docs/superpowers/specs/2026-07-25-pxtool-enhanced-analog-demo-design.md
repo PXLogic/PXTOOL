@@ -73,3 +73,16 @@ small, fixed time slice so streaming and buffered capture remain responsive.
 - No real hardware driver changes.
 - No simultaneous logic/analog MSO demo page in this change.
 - No changes to PXTOOL's analog rendering or decoder conversion APIs.
+
+## Verification
+
+- `cmake --build build.tests --target DSView DSView-test DSView-format-integration-test -j2`: passed.
+- `ctest --test-dir build.tests --output-on-failure`: passed, 2/2 tests.
+- `./build.macOS/DSView-test '--run_test=upstream_demo/*analog*' --log_level=message`:
+  passed three native-demo tests for five channels, standard float packets,
+  waveform configuration, and channel enablement.
+- `./build.macOS/DSView-format-integration-test --log_level=message`: passed.
+- Demo acceptance: unavailable. The local Computer Use service timed out while
+  starting the built PXTOOL application, so no interactive GUI assertion was
+  recorded. The driver-level session tests exercise the same ANALOG acquisition
+  path and packet delivery boundary.
