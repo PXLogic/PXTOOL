@@ -2192,6 +2192,10 @@ namespace pv
 
         for (auto s : _session->get_signals())
         {
+            // Derived logic is regenerated from its analog source; never persist
+            // its packed samples as a physical channel.
+            if (s->get_index() >= SigSession::DerivedLogicIndexBase)
+                continue;
             QJsonObject s_obj;
             s_obj["index"] = s->get_index();
             s_obj["view_index"] = s->get_view_index();
@@ -2231,6 +2235,15 @@ namespace pv
                 s_obj["mapMin"] = analogSig->get_mapMin();
                 s_obj["mapMax"] = analogSig->get_mapMax();
                 s_obj["mapDefault"] = analogSig->get_mapDefault();
+                s_obj["autoRange"] = analogSig->auto_range();
+                s_obj["voltsPerDiv"] = analogSig->volts_per_div();
+                data::AnalogToLogic::Config config;
+                if (_session->analog_logic_config(s->get_index(), config)) {
+                    s_obj["analogLogicMode"] = static_cast<int>(config.mode);
+                    s_obj["analogLogicThreshold"] = config.threshold;
+                    s_obj["analogLogicLow"] = config.low;
+                    s_obj["analogLogicHigh"] = config.high;
+                }
             }
 
             if (logicSig) {
@@ -2449,6 +2462,17 @@ namespace pv
                             probe->map_default = obj["mapDefault"].toBool();
                         }
 
+                        if (probe->type == SR_CHANNEL_ANALOG &&
+                            obj.contains("analogLogicMode")) {
+                            data::AnalogToLogic::Config config;
+                            config.mode = static_cast<data::AnalogToLogic::Mode>(
+                                obj["analogLogicMode"].toInt());
+                            config.threshold = obj["analogLogicThreshold"].toDouble();
+                            config.low = obj["analogLogicLow"].toDouble();
+                            config.high = obj["analogLogicHigh"].toDouble();
+                            _session->set_analog_logic_config(probe->index, config);
+                        }
+
                         break;
                     }
                 }
@@ -2458,6 +2482,23 @@ namespace pv
         }
 
         _session->reload();
+
+        for (auto *signal : _session->get_signals()) {
+            auto *analog = dynamic_cast<view::AnalogSignal *>(signal);
+            if (!analog)
+                continue;
+            for (const QJsonValue &value : sessionObj["channel"].toArray()) {
+                const QJsonObject obj = value.toObject();
+                if (obj["index"].toInt() == analog->get_index() &&
+                    obj["type"].toInt() == SR_CHANNEL_ANALOG) {
+                    const bool auto_range = obj["autoRange"].toBool(true);
+                    if (obj.contains("voltsPerDiv"))
+                        analog->set_volts_per_div(obj["voltsPerDiv"].toDouble());
+                    analog->set_auto_range(auto_range);
+                    break;
+                }
+            }
+        }
 
         // load signal setting
         if (mode == DSO)

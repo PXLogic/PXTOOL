@@ -1038,6 +1038,7 @@ namespace pv
     bool SigSession::set_analog_logic_conversion(
         int analog_index, const data::AnalogToLogic::Config &config)
     {
+        set_analog_logic_config(analog_index, config);
         if (!_view_data || config.mode == data::AnalogToLogic::Mode::Disabled) {
             auto it = _derived_logic.find(analog_index);
             if (it != _derived_logic.end()) {
@@ -1091,6 +1092,25 @@ namespace pv
                 derived.snapshot.get(), derived.channel));
             make_channels_view_index();
         }
+        return true;
+    }
+
+    void SigSession::set_analog_logic_config(
+        int analog_index, const data::AnalogToLogic::Config &config)
+    {
+        if (config.mode == data::AnalogToLogic::Mode::Disabled)
+            _analog_logic_configs.erase(analog_index);
+        else
+            _analog_logic_configs[analog_index] = config;
+    }
+
+    bool SigSession::analog_logic_config(
+        int analog_index, data::AnalogToLogic::Config &config) const
+    {
+        const auto it = _analog_logic_configs.find(analog_index);
+        if (it == _analog_logic_configs.end())
+            return false;
+        config = it->second;
         return true;
     }
 
@@ -2675,7 +2695,11 @@ namespace pv
                         
                         _view_data = _capture_data;
                         invalidate_glitch_filter_state();
-                        attach_data_to_signal(_view_data); 
+                        attach_data_to_signal(_view_data);
+                        clear_analog_logic_conversions();
+                        const auto conversion_configs = _analog_logic_configs;
+                        for (const auto &entry : conversion_configs)
+                            set_analog_logic_conversion(entry.first, entry.second);
                         set_session_time(_trig_time);
 
                         _callback->receive_trigger(_view_data->_trig_pos); //Update trig position.

@@ -226,6 +226,10 @@ public:
     static constexpr int DerivedLogicIndexBase = 1000000;
     bool set_analog_logic_conversion(int analog_index,
                                      const data::AnalogToLogic::Config &config);
+    void set_analog_logic_config(int analog_index,
+                                 const data::AnalogToLogic::Config &config);
+    bool analog_logic_config(int analog_index,
+                             data::AnalogToLogic::Config &config) const;
     void clear_analog_logic_conversions();
     data::LogicSnapshot* get_derived_logic_snapshot(int index) const;
     std::vector<int> get_derived_logic_indices() const;
@@ -661,6 +665,7 @@ private:
         data::AnalogToLogic::Config config;
     };
     std::map<int, DerivedLogic> _derived_logic;
+    std::map<int, data::AnalogToLogic::Config> _analog_logic_configs;
     std::vector<view::DecodeTrace*> _decode_traces;
     pv::data::DecoderModel          *_decoder_model;
     std::vector<view::SpectrumTrace*> _spectrum_traces;
