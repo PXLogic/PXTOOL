@@ -59,6 +59,8 @@ add_executable(DSView-test
     ../pv/data/analogpacketadapter.cpp
     ../pv/data/snapshot.cpp
     ../pv/data/analogsnapshot.cpp
+    ../pv/data/logicsnapshot.cpp
+    ../pv/data/spillmanager.cpp
     ../pv/data/analogtologic.cpp
     ../pv/dialogs/inputoutputoptioneditor.cpp
     test_formatcapability_stubs.c
