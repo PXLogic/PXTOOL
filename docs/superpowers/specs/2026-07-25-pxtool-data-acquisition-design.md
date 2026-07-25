@@ -122,6 +122,18 @@ Hardware acceptance uses a device with `SR_CHANNEL_ANALOG` to verify
 sampling-rate and depth controls, acquisition, V/div, auto-ranging, and
 analog-to-logic protocol decoding.
 
+### Verification Result (2026-07-25)
+
+- Built: `DSView`, `DSView-test`, `DSView-format-integration-test`, and
+  `srd-c-decoder-lifetime-test` from `build.tests`.
+- Passed: targeted `analog_*`, `analog_to_logic`, and device capability tests;
+  `DSView-format-integration-test` (9 cases); and
+  `srd-c-decoder-lifetime-test`.
+- `ctest --test-dir build.tests --output-on-failure` is not fully green because
+  `DSView-test` has 13 pre-existing failures in `test_theme_qss.cpp`. No theme
+  source or QSS file was changed by this work.
+- Hardware: Not run; no accessible device exposing `SR_CHANNEL_ANALOG`.
+
 ## Scope Boundaries
 
 The first implementation presents separate logic and analog pages through the
