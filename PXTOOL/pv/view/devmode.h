@@ -68,6 +68,7 @@ public:
 private:
     void paintEvent(QPaintEvent *event) override;
     void sync_mode_button(int mode, const QString &iconPath);
+    void apply_mode_style();
 
 private:
     void mousePressEvent(QMouseEvent * event) override;

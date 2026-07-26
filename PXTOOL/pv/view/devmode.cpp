@@ -64,7 +64,7 @@ DevMode::DevMode(QWidget *parent, SigSession *session) :
 
     QHBoxLayout *layout = new QHBoxLayout(this);
     layout->setSpacing(0);
-    layout->setContentsMargins(2, 0, 0, 0);
+    layout->setContentsMargins(0, 0, 0, 0);
 
     _close_button = new XToolButton();
     _close_button->setObjectName("FileCloseButton");
@@ -78,13 +78,7 @@ DevMode::DevMode(QWidget *parent, SigSession *session) :
     _mode_btn = new DsComboBox(this);
     _mode_btn->setObjectName("ModeButton");
     _mode_btn->setFrame(false);
-    // DevMode is an overlay selector; keep its compact appearance without
-    // the bordered button chrome used by the device-bar combos.
-    _mode_btn->setStyleSheet(
-        "QComboBox#ModeButton, QComboBox#ModeButton:hover, "
-        "QComboBox#ModeButton:focus, QComboBox#ModeButton:on "
-        "{ border: none; }"
-        "QComboBox#ModeButton::drop-down { border: none; }");
+    apply_mode_style();
     // Keep the mode switch as a real popup button so keyboard and accessibility
     // clients can discover and activate it without relying on the icon.
     _mode_btn->setAccessibleName(tr("Mode"));
@@ -156,7 +150,10 @@ void DevMode::set_device()
     }
     _updating_mode = false;
 
+    _close_button->setVisible(false);
+
     if (_device_agent->is_file()){
+        _close_button->setVisible(true);
         _close_button->setDisabled(false);
         _close_button->setIcon(QIcon(iconPath + "/close.svg"));
         _bFile = true;
@@ -165,7 +162,34 @@ void DevMode::set_device()
     sync_mode_button(_device_agent->get_work_mode(), iconPath);
 
     UpdateFont();
+    apply_mode_style();
     update();    
+}
+
+void DevMode::apply_mode_style()
+{
+    if (!_mode_btn)
+        return;
+
+    const int fontSize = qMax(1, qRound(AppConfig::Instance().appOptions.fontSize));
+    const QString purple = AppConfig::Instance().IsDarkStyle()
+        ? QStringLiteral("#a855f7") : QStringLiteral("#7c3aed");
+
+    QFont font = _mode_btn->font();
+    font.setPixelSize(fontSize);
+    font.setBold(true);
+    font.setUnderline(true);
+    _mode_btn->setFont(font);
+    _mode_btn->setStyleSheet(
+        QStringLiteral("QComboBox#ModeButton, QComboBox#ModeButton:hover, "
+                       "QComboBox#ModeButton:focus, QComboBox#ModeButton:on "
+                       "{ background: transparent; border: none; color: %1; "
+                       "font-size: %2px; font-weight: 600; }"
+                       "QComboBox#ModeButton::drop-down { width: 0px; border: none; }"
+                       "QComboBox#ModeButton::down-arrow { image: none; width: 0px; "
+                       "height: 0px; }"
+                       "QComboBox#ModeButton QAbstractItemView { color: %1; }")
+            .arg(purple, QString::number(fontSize)));
 }
 
 void DevMode::paintEvent(QPaintEvent*)
@@ -283,6 +307,7 @@ void DevMode::UpdateLanguage()
 
 void DevMode::UpdateTheme()
 {
+    apply_mode_style();
     set_device();
 }
 
@@ -298,6 +323,7 @@ void DevMode::UpdateFont()
     }
 
     _mode_btn->setFont(font);
+    apply_mode_style();
 }
 
 } // namespace view
