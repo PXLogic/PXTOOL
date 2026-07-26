@@ -878,7 +878,11 @@ namespace pv
 
     ds_device_handle MainWindow::pick_default_device_handle()
     {
-        return find_latest_device_handle();
+        // Keep the native PXTOOL demo as the startup device. The upstream
+        // compatibility demo is intentionally logic-only, while the native
+        // demo exposes all three work modes in the top-left selector.
+        ds_device_handle demo = find_demo_device_handle();
+        return demo != NULL_HANDLE ? demo : find_latest_device_handle();
     }
 
     void MainWindow::gc_offline_groups()
