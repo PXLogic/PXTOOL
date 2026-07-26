@@ -227,13 +227,17 @@ Run the existing macOS app and inspect the accessibility tree. Expected: the lef
 
 - [x] **Step 3: Strengthen the control**
 
-Update `DevMode` so the current mode is represented by a standard popup button with:
+Update `DevMode` so the current mode is represented by the same `DsComboBox`
+family used by the Device selector, with each item retaining its mode icon:
 - `accessibleName` = `Mode`
 - `accessibleDescription` describing the current mode and that it opens a menu
 - visible text and icon synced from the active device mode
 - menu actions for all three modes with existing `on_mode_change()` behavior preserved
 
-Make the button easier to hit by giving it a slightly larger hit area and a clear visual affordance, without changing the layout of the rest of the view.
+Make the combo easier to hit by giving it a slightly larger hit area and a clear
+visual affordance, without changing the layout of the rest of the view. Hide
+the SamplingBar `MODE` label together with its operation-mode combo whenever
+the active work mode is Data Acquisition or Oscilloscope.
 
 - [x] **Step 4: Rebuild and recheck UI navigation**
 

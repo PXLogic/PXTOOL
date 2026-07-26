@@ -1472,11 +1472,13 @@ namespace pv
             {
                 if (_device_agent->is_file()){
                     _mode_button.setVisible(false);
+                    if (_lbl_mode) _lbl_mode->setVisible(false);
                 }
                 else
                 {
                     update_mode_icon();
                     _mode_button.setVisible(true);
+                    if (_lbl_mode) _lbl_mode->setVisible(true);
 
                     if (auto *m = qobject_cast<QStandardItemModel*>(_mode_button.model()))
                         m->item(2)->setEnabled(true);
@@ -1487,12 +1489,14 @@ namespace pv
             else if (mode == ANALOG)
             {
                 _mode_button.setVisible(false);
+                if (_lbl_mode) _lbl_mode->setVisible(false);
                 _run_stop_button.setVisible(true);
                 _instant_button.setVisible(false);
             }
             else if (mode == DSO)
             {
                 _mode_button.setVisible(false);
+                if (_lbl_mode) _lbl_mode->setVisible(false);
                 _run_stop_button.setVisible(true);
                 _instant_button.setVisible(true);
             }
@@ -1681,6 +1685,9 @@ namespace pv
             _mode_button.setEnabled(bEnable);
             _configure_button.setEnabled(bEnable);
             _device_selector.setEnabled(bEnable);
+            const bool showWorkModeControls = mode == LOGIC && !_session->get_device()->is_file();
+            _mode_button.setVisible(showWorkModeControls);
+            if (_lbl_mode) _lbl_mode->setVisible(showWorkModeControls);
             // Disable Loop item by default; re-enable for LOGIC non-file devices.
             if (auto *m = qobject_cast<QStandardItemModel*>(_mode_button.model()))
                 m->item(2)->setEnabled(false);

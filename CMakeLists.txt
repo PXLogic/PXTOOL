@@ -63,7 +63,7 @@ set(DISABLE_WERROR TRUE) #Build without -Werror
 set(ENABLE_SIGNALS TRUE) #Build with UNIX signals
 set(ENABLE_COTIRE FALSE) #Enable cotire
 option(ENABLE_TESTS "Enable unit tests" OFF)
-option(DSVIEW_ENABLE_UPSTREAM_COMPAT_DEMO "Enable the upstream-compat demo driver proof of concept" OFF)
+option(DSVIEW_ENABLE_UPSTREAM_COMPAT_DEMO "Enable the upstream-compat demo driver proof of concept" ON)
 option(DSVIEW_ENABLE_UPSTREAM_FX2LAFW "Enable the upstream-compat fx2lafw scan-only driver" OFF)
 set(STATIC_PKGDEPS_LIBS FALSE) #Statically link to (pkg-config) libraries
 

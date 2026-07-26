@@ -57,6 +57,7 @@ DevMode::DevMode(QWidget *parent, SigSession *session) :
         tr("Switch between Logic Analyzer, Data Acquisition, and Oscilloscope."));
 
     _bFile = false;
+    _updating_mode = false;
 
     _session = session;
     _device_agent = session->get_device();
@@ -74,7 +75,7 @@ DevMode::DevMode(QWidget *parent, SigSession *session) :
     _close_button->setToolButtonStyle(Qt::ToolButtonIconOnly); 
     _close_button->setMinimumWidth(10);
 
-    _mode_btn = new XToolButton();
+    _mode_btn = new DsComboBox(this);
     _mode_btn->setObjectName("ModeButton");
     // Keep the mode switch as a real popup button so keyboard and accessibility
     // clients can discover and activate it without relying on the icon.
@@ -84,20 +85,14 @@ DevMode::DevMode(QWidget *parent, SigSession *session) :
     _mode_btn->setToolTip(tr("Capture mode"));
     _mode_btn->setStatusTip(tr("Select Logic Analyzer, Data Acquisition, or Oscilloscope"));
     _mode_btn->setFocusPolicy(Qt::StrongFocus);
-    _mode_btn->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
+    _mode_btn->setIconSize(QSize(16, 16));
     _mode_btn->setContentsMargins(0, 0, 0, 0);
-    _mode_btn->setPopupMode(QToolButton::InstantPopup);
     _mode_btn->setMinimumHeight(28);
     _mode_btn->setMinimumWidth(150);
     _mode_btn->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Preferred);
-
-   // _mode_btn->setArrowType(Qt::NoArrow);
-
-    _pop_menu = new QMenu(this);
-    _pop_menu->setAccessibleName(tr("Capture mode menu"));
-    _pop_menu->setAccessibleDescription(tr("Choose the capture mode to display."));
-    _pop_menu->setContentsMargins(15,0,0,0);
-    _mode_btn->setMenu(_pop_menu);
+    _mode_btn->setPopupItemHeight(28);
+    _mode_btn->setPopupFitContents(true);
+    connect(_mode_btn, SIGNAL(currentIndexChanged(int)), this, SLOT(on_mode_change(int)));
 
     layout->addWidget(_close_button);
     layout->addWidget(_mode_btn); 
@@ -124,14 +119,8 @@ void DevMode::set_device()
 
     _bFile = false;
    
-   //remove all action object
-    for(std::map<QAction *, const sr_dev_mode *>::const_iterator i = _mode_list.begin();
-        i != _mode_list.end(); i++) {
-        (*i).first->setParent(NULL);
-        _pop_menu->removeAction((*i).first);
-        delete (*i).first;
-    }
-    _mode_list.clear();
+    _updating_mode = true;
+    _mode_btn->clear();
 
     _close_button->setIcon(QIcon());
     _close_button->setDisabled(true); 
@@ -145,32 +134,19 @@ void DevMode::set_device()
         auto *mode_name = get_mode_name(mode->mode);
         QString icon_name = QString::fromLocal8Bit(mode_name->_logo);
 
-        QAction *action = new QAction(this);
-        action->setIcon(QIcon(iconPath + "square-" + icon_name));
-        action->setCheckable(true);
-
         int md = mode->mode;
+        QString label;
 
         if (md == LOGIC)
-            action->setText(tr("Logic Analyzer"));
+            label = tr("Logic Analyzer");
         else if (md == ANALOG)
-            action->setText(tr("Data Acquisition"));
+            label = tr("Data Acquisition");
         else if (md == DSO)
-            action->setText(tr("Oscilloscope"));
+            label = tr("Oscilloscope");
 
-        action->setToolTip(tr("Switch to %1").arg(action->text()));
-
-        connect(action, SIGNAL(triggered()), this, SLOT(on_mode_change()));
-
-        _mode_list[action] = mode;
-        int cur_mode = _device_agent->get_work_mode();
-          
-        if (cur_mode == _mode_list[action]->mode)
-        {
-            action->setChecked(true);
-        }
-        _pop_menu->addAction(action);
+        _mode_btn->addItem(QIcon(iconPath + icon_name), label, md);
     }
+    _updating_mode = false;
 
     if (_device_agent->is_file()){
         _close_button->setDisabled(false);
@@ -196,7 +172,6 @@ void DevMode::paintEvent(QPaintEvent*)
 
 void DevMode::sync_mode_button(int mode, const QString &iconPath)
 {
-    const auto *mode_name = get_mode_name(mode);
     QString label;
     if (mode == LOGIC)
         label = tr("Logic Analyzer");
@@ -207,51 +182,43 @@ void DevMode::sync_mode_button(int mode, const QString &iconPath)
     else
         label = tr("Capture Mode");
 
-    const QString separator = iconPath.endsWith('/') ? QString() : QString("/");
-    _mode_btn->setIcon(QIcon(iconPath + separator + QString::fromLocal8Bit(mode_name->_logo)));
-    _mode_btn->setText(label);
+    (void)iconPath;
+    const bool oldUpdating = _updating_mode;
+    _updating_mode = true;
+    for (int i = 0; i < _mode_btn->count(); ++i) {
+        if (_mode_btn->itemData(i).toInt() == mode) {
+            _mode_btn->setCurrentIndex(i);
+            break;
+        }
+    }
+    _updating_mode = oldUpdating;
     _mode_btn->setAccessibleName(tr("Mode"));
     _mode_btn->setAccessibleDescription(
         tr("Current mode: %1. Opens a menu to switch capture mode.").arg(label));
     _mode_btn->setToolTip(tr("Capture mode: %1 (click to switch)").arg(label));
 
-    for (auto &entry : _mode_list)
-        entry.first->setChecked(entry.second->mode == mode);
 }
 
-void DevMode::on_mode_change()
+void DevMode::on_mode_change(int index)
 {
+    if (_updating_mode || index < 0 || index >= _mode_btn->count())
+        return;
+
     if (_device_agent->have_instance() == false){
         assert(false);
     }
-    
-    QAction *action = qobject_cast<QAction *>(sender());
 
-    if (_device_agent->get_work_mode() == _mode_list[action]->mode){
+    const int mode = _mode_btn->itemData(index).toInt();
+    if (_device_agent->get_work_mode() == mode){
         return;
     }
 
     QString iconPath = GetIconPath();
 
-    for(auto i = _mode_list.begin();i != _mode_list.end(); i++)
-    {
-        if ((*i).first == action){
-
-            int mode = (*i).second->mode;
-            if (_device_agent->get_work_mode() == mode){
-                dsv_info("Current mode is set.");
-                break;
-            }
-            
-            _session->stop_capture();            
-            _session->session_save();                                    
-            _session->switch_work_mode(mode);
-
-            sync_mode_button(mode, iconPath);
-               
-            break;                
-        }      
-    }
+    _session->stop_capture();
+    _session->session_save();
+    _session->switch_work_mode(mode);
+    sync_mode_button(mode, iconPath);
 
     UpdateFont();
 }
@@ -322,10 +289,7 @@ void DevMode::UpdateFont()
         o->setFont(font);
     }
 
-    for (auto it = _mode_list.begin(); it != _mode_list.end(); it++)
-    { 
-        (*it).first->setFont(font);
-    }
+    _mode_btn->setFont(font);
 }
 
 } // namespace view
