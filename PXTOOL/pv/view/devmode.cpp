@@ -102,6 +102,18 @@ protected:
         painter.setFont(font());
         painter.drawText(QRect(x, content.top(), textWidth, content.height()),
                          Qt::AlignVCenter | Qt::AlignLeft, text);
+
+        const QRect arrow = style()->subControlRect(QStyle::CC_ComboBox, &option,
+                                                      QStyle::SC_ComboBoxArrow,
+                                                      this);
+        const QColor arrowColor(AppConfig::Instance().IsDarkStyle()
+                                    ? QStringLiteral("#a855f7")
+                                    : QStringLiteral("#7c3aed"));
+        QPen arrowPen(arrowColor, 1.8, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin);
+        painter.setPen(arrowPen);
+        const QPoint center = arrow.center();
+        painter.drawLine(center + QPoint(-4, -2), center + QPoint(0, 2));
+        painter.drawLine(center + QPoint(0, 2), center + QPoint(4, -2));
     }
 };
   
@@ -211,7 +223,18 @@ void DevMode::set_device()
 
         _mode_btn->addItem(tinted_mode_icon(iconPath + icon_name, modeColor,
                                              QSize(32, 24)), label, md);
+        QFont popupFont = _mode_btn->font();
+        popupFont.setBold(false);
+        popupFont.setUnderline(false);
+        _mode_btn->setItemData(_mode_btn->count() - 1, popupFont, Qt::FontRole);
     }
+    const QFontMetrics modeMetrics(_mode_btn->font());
+    int popupTextWidth = 0;
+    for (int i = 0; i < _mode_btn->count(); ++i)
+        popupTextWidth = qMax(popupTextWidth,
+                              modeMetrics.horizontalAdvance(_mode_btn->itemText(i)));
+    _mode_btn->setPopupFitContents(false);
+    _mode_btn->view()->setMinimumWidth(popupTextWidth + 32 + 8 + 28);
     _updating_mode = false;
 
     _close_button->setVisible(false);
@@ -255,8 +278,8 @@ void DevMode::apply_mode_style()
                        "{ background: transparent; border: none; color: %1; "
                        "font-size: %2px; font-weight: 600; padding: 3px 8px 6px 4px; }"
                        "QComboBox#ModeButton::drop-down { width: 18px; border: none; }"
-                       "QComboBox#ModeButton::down-arrow { image: url(:/icons/sidebar/"
-                       "chevron-down.svg); width: 12px; height: 12px; }"
+                       "QComboBox#ModeButton::down-arrow { image: none; width: 0px; "
+                       "height: 0px; }"
                        "QComboBox#ModeButton QAbstractItemView { color: %3; "
                        "font-size: %2px; font-weight: normal; text-decoration: none; }")
             .arg(purple, QString::number(fontSize), popupText));
@@ -264,6 +287,10 @@ void DevMode::apply_mode_style()
     popupFont.setBold(false);
     popupFont.setUnderline(false);
     _mode_btn->view()->setFont(popupFont);
+    QPalette popupPalette = _mode_btn->view()->palette();
+    popupPalette.setColor(QPalette::Text, popupText);
+    popupPalette.setColor(QPalette::HighlightedText, Qt::white);
+    _mode_btn->view()->setPalette(popupPalette);
     setStyleSheet(QStringLiteral(
         "QWidget#DevMode { background-color: %1; border: none; "
         "border-radius: 4px; }" ).arg(purpleBg));
