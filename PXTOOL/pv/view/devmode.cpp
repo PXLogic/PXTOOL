@@ -30,6 +30,7 @@
 #include <QPainter>
 #include <QRect>
 #include <QHBoxLayout>
+#include <QAbstractItemView>
 
 #include "../config/appconfig.h"
 #include "../ui/msgbox.h"
@@ -61,6 +62,48 @@ static QIcon tinted_mode_icon(const QString &path, const QColor &color,
     painter.end();
     return QIcon(tinted);
 }
+
+class DevModeComboBox final : public DsComboBox
+{
+public:
+    explicit DevModeComboBox(QWidget *parent) : DsComboBox(parent) {}
+
+protected:
+    void paintEvent(QPaintEvent *) override
+    {
+        QStyleOptionComboBox option;
+        initStyleOption(&option);
+        option.currentIcon = QIcon();
+        option.currentText.clear();
+
+        QPainter painter(this);
+        style()->drawComplexControl(QStyle::CC_ComboBox, &option, &painter, this);
+
+        if (currentIndex() < 0)
+            return;
+
+        QRect content = style()->subControlRect(QStyle::CC_ComboBox, &option,
+                                                 QStyle::SC_ComboBoxEditField,
+                                                 this);
+        const QFontMetrics metrics(font());
+        const QString text = currentText();
+        const QIcon icon = itemIcon(currentIndex());
+        const QSize requested = iconSize();
+        const int textWidth = metrics.horizontalAdvance(text);
+        const int gap = 6;
+        const int groupWidth = requested.width() + gap + textWidth;
+        int x = content.center().x() - groupWidth / 2;
+        const int y = content.center().y() - requested.height() / 2;
+
+        icon.paint(&painter, QRect(x, y, requested.width(), requested.height()),
+                   Qt::AlignCenter, QIcon::Normal, QIcon::On);
+        x += requested.width() + gap;
+        painter.setPen(palette().color(QPalette::ButtonText));
+        painter.setFont(font());
+        painter.drawText(QRect(x, content.top(), textWidth, content.height()),
+                         Qt::AlignVCenter | Qt::AlignLeft, text);
+    }
+};
   
 namespace pv {
 namespace view {
@@ -92,7 +135,7 @@ DevMode::DevMode(QWidget *parent, SigSession *session) :
     _close_button->setToolButtonStyle(Qt::ToolButtonIconOnly); 
     _close_button->setMinimumWidth(10);
 
-    _mode_btn = new DsComboBox(this);
+    _mode_btn = new DevModeComboBox(this);
     _mode_btn->setObjectName("ModeButton");
     _mode_btn->setFrame(false);
     apply_mode_style();
@@ -104,7 +147,7 @@ DevMode::DevMode(QWidget *parent, SigSession *session) :
     _mode_btn->setToolTip(tr("Capture mode"));
     _mode_btn->setStatusTip(tr("Select Logic Analyzer, Data Acquisition, or Oscilloscope"));
     _mode_btn->setFocusPolicy(Qt::StrongFocus);
-    _mode_btn->setIconSize(QSize(24, 18));
+    _mode_btn->setIconSize(QSize(32, 24));
     _mode_btn->setContentsMargins(0, 0, 0, 0);
     _mode_btn->setMinimumHeight(28);
     _mode_btn->setMinimumWidth(150);
@@ -167,7 +210,7 @@ void DevMode::set_device()
             label = tr("Oscilloscope");
 
         _mode_btn->addItem(tinted_mode_icon(iconPath + icon_name, modeColor,
-                                             QSize(24, 18)), label, md);
+                                             QSize(32, 24)), label, md);
     }
     _updating_mode = false;
 
@@ -198,8 +241,8 @@ void DevMode::apply_mode_style()
     const QString purpleBg = AppConfig::Instance().IsDarkStyle()
         ? QStringLiteral("rgba(147, 51, 234, 0.20)")
         : QStringLiteral("rgba(124, 58, 237, 0.12)");
-    const QString purpleBorder = AppConfig::Instance().IsDarkStyle()
-        ? QStringLiteral("#9333ea") : QStringLiteral("#7c3aed");
+    const QString popupText = AppConfig::Instance().IsDarkStyle()
+        ? QStringLiteral("#d1d5db") : QStringLiteral("#374151");
 
     QFont font = _mode_btn->font();
     font.setPixelSize(fontSize);
@@ -211,14 +254,19 @@ void DevMode::apply_mode_style()
                        "QComboBox#ModeButton:focus, QComboBox#ModeButton:on "
                        "{ background: transparent; border: none; color: %1; "
                        "font-size: %2px; font-weight: 600; padding: 3px 8px 6px 4px; }"
-                       "QComboBox#ModeButton::drop-down { width: 0px; border: none; }"
-                       "QComboBox#ModeButton::down-arrow { image: none; width: 0px; "
-                       "height: 0px; }"
-                       "QComboBox#ModeButton QAbstractItemView { color: %1; }")
-            .arg(purple, QString::number(fontSize)));
+                       "QComboBox#ModeButton::drop-down { width: 18px; border: none; }"
+                       "QComboBox#ModeButton::down-arrow { image: url(:/icons/sidebar/"
+                       "chevron-down.svg); width: 12px; height: 12px; }"
+                       "QComboBox#ModeButton QAbstractItemView { color: %3; "
+                       "font-size: %2px; font-weight: normal; text-decoration: none; }")
+            .arg(purple, QString::number(fontSize), popupText));
+    QFont popupFont = font;
+    popupFont.setBold(false);
+    popupFont.setUnderline(false);
+    _mode_btn->view()->setFont(popupFont);
     setStyleSheet(QStringLiteral(
-        "QWidget#DevMode { background-color: %1; border: 1px solid %2; "
-        "border-radius: 4px; }" ).arg(purpleBg, purpleBorder));
+        "QWidget#DevMode { background-color: %1; border: none; "
+        "border-radius: 4px; }" ).arg(purpleBg));
 }
 
 void DevMode::paintEvent(QPaintEvent*)
