@@ -51,6 +51,11 @@ namespace view {
 DevMode::DevMode(QWidget *parent, SigSession *session) :
     QWidget(parent) 
 {
+    setObjectName("DevMode");
+    setAccessibleName(tr("Capture mode switch"));
+    setAccessibleDescription(
+        tr("Switch between Logic Analyzer, Data Acquisition, and Oscilloscope."));
+
     _bFile = false;
 
     _session = session;
@@ -71,14 +76,26 @@ DevMode::DevMode(QWidget *parent, SigSession *session) :
 
     _mode_btn = new XToolButton();
     _mode_btn->setObjectName("ModeButton");
-    _mode_btn->setToolButtonStyle(Qt::ToolButtonTextOnly);
+    // Keep the mode switch as a real popup button so keyboard and accessibility
+    // clients can discover and activate it without relying on the icon.
+    _mode_btn->setAccessibleName(tr("Mode"));
+    _mode_btn->setAccessibleDescription(
+        tr("Select the active capture mode. Opens a menu of available modes."));
+    _mode_btn->setToolTip(tr("Capture mode"));
+    _mode_btn->setStatusTip(tr("Select Logic Analyzer, Data Acquisition, or Oscilloscope"));
+    _mode_btn->setFocusPolicy(Qt::StrongFocus);
+    _mode_btn->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
     _mode_btn->setContentsMargins(0, 0, 0, 0);
     _mode_btn->setPopupMode(QToolButton::InstantPopup);
-    _mode_btn->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Maximum);
+    _mode_btn->setMinimumHeight(28);
+    _mode_btn->setMinimumWidth(150);
+    _mode_btn->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Preferred);
 
    // _mode_btn->setArrowType(Qt::NoArrow);
 
     _pop_menu = new QMenu(this);
+    _pop_menu->setAccessibleName(tr("Capture mode menu"));
+    _pop_menu->setAccessibleDescription(tr("Choose the capture mode to display."));
     _pop_menu->setContentsMargins(15,0,0,0);
     _mode_btn->setMenu(_pop_menu);
 
@@ -130,6 +147,7 @@ void DevMode::set_device()
 
         QAction *action = new QAction(this);
         action->setIcon(QIcon(iconPath + "square-" + icon_name));
+        action->setCheckable(true);
 
         int md = mode->mode;
 
@@ -140,6 +158,8 @@ void DevMode::set_device()
         else if (md == DSO)
             action->setText(tr("Oscilloscope"));
 
+        action->setToolTip(tr("Switch to %1").arg(action->text()));
+
         connect(action, SIGNAL(triggered()), this, SLOT(on_mode_change()));
 
         _mode_list[action] = mode;
@@ -147,15 +167,7 @@ void DevMode::set_device()
           
         if (cur_mode == _mode_list[action]->mode)
         {
-            QString icon_fname = iconPath + icon_name;
-            _mode_btn->setIcon(QIcon(icon_fname));
-            
-            if (cur_mode == LOGIC)
-                _mode_btn->setText(tr("Logic Analyzer"));
-            else if (cur_mode == ANALOG)
-                _mode_btn->setText(tr("Data Acquisition"));
-            else if (cur_mode == DSO)
-                _mode_btn->setText(tr("Oscilloscope"));
+            action->setChecked(true);
         }
         _pop_menu->addAction(action);
     }
@@ -165,6 +177,8 @@ void DevMode::set_device()
         _close_button->setIcon(QIcon(iconPath + "/close.svg"));
         _bFile = true;
     }
+
+    sync_mode_button(_device_agent->get_work_mode(), iconPath);
 
     UpdateFont();
     update();    
@@ -178,6 +192,31 @@ void DevMode::paintEvent(QPaintEvent*)
     o.initFrom(this);
     QPainter painter(this);
     style()->drawPrimitive(QStyle::PE_Widget, &o, &painter, this);
+}
+
+void DevMode::sync_mode_button(int mode, const QString &iconPath)
+{
+    const auto *mode_name = get_mode_name(mode);
+    QString label;
+    if (mode == LOGIC)
+        label = tr("Logic Analyzer");
+    else if (mode == ANALOG)
+        label = tr("Data Acquisition");
+    else if (mode == DSO)
+        label = tr("Oscilloscope");
+    else
+        label = tr("Capture Mode");
+
+    const QString separator = iconPath.endsWith('/') ? QString() : QString("/");
+    _mode_btn->setIcon(QIcon(iconPath + separator + QString::fromLocal8Bit(mode_name->_logo)));
+    _mode_btn->setText(label);
+    _mode_btn->setAccessibleName(tr("Mode"));
+    _mode_btn->setAccessibleDescription(
+        tr("Current mode: %1. Opens a menu to switch capture mode.").arg(label));
+    _mode_btn->setToolTip(tr("Capture mode: %1 (click to switch)").arg(label));
+
+    for (auto &entry : _mode_list)
+        entry.first->setChecked(entry.second->mode == mode);
 }
 
 void DevMode::on_mode_change()
@@ -208,18 +247,7 @@ void DevMode::on_mode_change()
             _session->session_save();                                    
             _session->switch_work_mode(mode);
 
-            auto *mode_name = get_mode_name(mode);
-            QString icon_fname = iconPath + "/" + QString::fromLocal8Bit(mode_name->_logo);
-            
-            _mode_btn->setIcon(QIcon(icon_fname));
-            int cur_mode = mode_name->_mode;
-
-            if (cur_mode == LOGIC)
-                _mode_btn->setText(tr("Logic Analyzer"));
-            else if (cur_mode == ANALOG)
-                _mode_btn->setText(tr("Data Acquisition"));
-            else if (cur_mode == DSO)
-                _mode_btn->setText(tr("Oscilloscope"));
+            sync_mode_button(mode, iconPath);
                
             break;                
         }      

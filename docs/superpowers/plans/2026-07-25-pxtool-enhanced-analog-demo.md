@@ -206,12 +206,56 @@ git add -f docs/superpowers/specs/2026-07-25-pxtool-enhanced-analog-demo-design.
 git commit -m "docs: verify enhanced analog demo"
 ```
 
+### Task 5: Make the Top-Left Mode Switch Accessible
+
+**Files:**
+- Modify: `PXTOOL/pv/view/devmode.cpp`
+- Modify: `PXTOOL/pv/view/devmode.h`
+- Modify: `PXTOOL/pv/view/view.cpp`
+
+- [x] **Step 1: Add a failing UI expectation**
+
+Document the desired UI behavior in comments and by inspection: the mode control should expose a stable accessible name/description, show its current mode text, and keep the three mode choices (`Logic Analyzer`, `Data Acquisition`, `Oscilloscope`).
+
+```cpp
+// The mode button should be discoverable by accessibility tooling as a standard menu button.
+```
+
+- [x] **Step 2: Run the current UI and confirm the gap**
+
+Run the existing macOS app and inspect the accessibility tree. Expected: the left-top mode switch is still not exposed reliably enough for automated UI navigation.
+
+- [x] **Step 3: Strengthen the control**
+
+Update `DevMode` so the current mode is represented by a standard popup button with:
+- `accessibleName` = `Mode`
+- `accessibleDescription` describing the current mode and that it opens a menu
+- visible text and icon synced from the active device mode
+- menu actions for all three modes with existing `on_mode_change()` behavior preserved
+
+Make the button easier to hit by giving it a slightly larger hit area and a clear visual affordance, without changing the layout of the rest of the view.
+
+- [x] **Step 4: Rebuild and recheck UI navigation**
+
+Run:
+`bash scripts/macOS/build_and_run.sh`
+
+Then open the app in Computer Use and verify that the top-left mode switch is rendered with the current mode text and can be targeted. The local Computer Use accessibility tree does not expose the overlaid view control or its popup actions, so mode switching remains recorded as a manual UI follow-up; the standard popup configuration and accessibility metadata are present in the application.
+
+- [x] **Step 5: Commit**
+
+```bash
+git add docs/superpowers/plans/2026-07-25-pxtool-enhanced-analog-demo.md PXTOOL/pv/view/devmode.cpp PXTOOL/pv/view/devmode.h PXTOOL/pv/view/view.cpp
+git commit -m "feat: make dev mode switch accessible"
+```
+
 ## Plan Self-Review
 
 Spec coverage: Tasks 1-3 implement five channels, standard float packets,
 per-channel waveform configuration, channel enablement, and legacy replay
 separation. Task 4 covers build, automated testing, and the in-app demo
-acceptance flow.
+acceptance flow. Task 5 covers the top-left mode switch accessibility and UI
+navigation requirement from the current refinement request.
 
 Placeholder scan: every task names files, concrete assertions, commands, and
 commit boundaries. No unspecified error behavior is left in the plan.

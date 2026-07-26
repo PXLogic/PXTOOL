@@ -82,7 +82,11 @@ small, fixed time slice so streaming and buffered capture remain responsive.
   passed three native-demo tests for five channels, standard float packets,
   waveform configuration, and channel enablement.
 - `./build.macOS/DSView-format-integration-test --log_level=message`: passed.
-- Demo acceptance: unavailable. The local Computer Use service timed out while
-  starting the built PXTOOL application, so no interactive GUI assertion was
-  recorded. The driver-level session tests exercise the same ANALOG acquisition
-  path and packet delivery boundary.
+- `bash scripts/macOS/build_and_run.sh`: passed; the app bundle was rebuilt,
+  decoder resources staged, and PXTOOL launched.
+- Computer Use visual check: passed for rendering. The top-left control shows
+  the current `Logic Analyzer` mode with the enlarged text-and-icon affordance.
+  The local macOS accessibility tree does not expose the overlaid DevMode child
+  or its popup actions, so automated activation of the three menu entries could
+  not be recorded; the control now has stable object/accessibility metadata and
+  remains a manual UI follow-up.
