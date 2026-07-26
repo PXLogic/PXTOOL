@@ -26,9 +26,7 @@
 #include <QObject>
 #include <QStringList>
 
-extern "C" {
 #include "libsigrok.h"
-}
 
 namespace pv {
 namespace data {

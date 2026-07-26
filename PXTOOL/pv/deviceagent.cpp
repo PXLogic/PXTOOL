@@ -21,8 +21,10 @@
 
 #include "deviceagent.h"
 #include <assert.h>
+#include <glib.h>
 #include "log.h"
 #include "deviceagentcustomconfig.h"
+
 extern "C" {
 #include "libsigrok-internal.h"
 }

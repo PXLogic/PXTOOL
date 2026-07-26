@@ -21,6 +21,15 @@ namespace data {
 
 namespace {
 
+int variantTypeId(const QVariant &value)
+{
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+    return value.metaType().id();
+#else
+    return value.userType();
+#endif
+}
+
 QVariant variantToQVariant(GVariant *value)
 {
     if (g_variant_is_of_type(value, G_VARIANT_TYPE_BOOLEAN))
@@ -49,7 +58,7 @@ QVariant variantToQVariant(GVariant *value)
 
 bool matchesType(const QByteArray &typeSignature, const QVariant &value)
 {
-    const int type = value.metaType().id();
+    const int type = variantTypeId(value);
 
     if (typeSignature == "b")
         return type == QMetaType::Bool;
@@ -111,7 +120,7 @@ bool isEnumeratedValue(const QList<QVariant> &allowedValues,
 
 QByteArray typeSignatureForVariant(const QVariant &value)
 {
-    switch (value.metaType().id()) {
+    switch (variantTypeId(value)) {
     case QMetaType::Bool:
         return "b";
     case QMetaType::UChar:

@@ -25,6 +25,8 @@
 #include <QFileInfo>
 #include <QStringList>
 
+#include <glib.h>
+
 #include "../log.h"
 #include "../sigsession.h"
 

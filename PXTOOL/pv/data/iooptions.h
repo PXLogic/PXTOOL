@@ -19,9 +19,7 @@
 #include <QString>
 #include <QVariant>
 
-extern "C" {
 #include "libsigrok.h"
-}
 
 namespace pv {
 namespace data {
