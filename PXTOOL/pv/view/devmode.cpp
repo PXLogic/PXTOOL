@@ -44,6 +44,23 @@ static const struct dev_mode_name dev_mode_name_list[] =
     {ANALOG, "daq.svg"},
     {DSO, "osc.svg"},
 };
+
+static QIcon tinted_mode_icon(const QString &path, const QColor &color,
+                              const QSize &size)
+{
+    QPixmap source = QIcon(path).pixmap(size);
+    if (source.isNull())
+        return QIcon();
+
+    QPixmap tinted(source.size());
+    tinted.fill(Qt::transparent);
+    QPainter painter(&tinted);
+    painter.drawPixmap(0, 0, source);
+    painter.setCompositionMode(QPainter::CompositionMode_SourceIn);
+    painter.fillRect(tinted.rect(), color);
+    painter.end();
+    return QIcon(tinted);
+}
   
 namespace pv {
 namespace view {
@@ -87,7 +104,7 @@ DevMode::DevMode(QWidget *parent, SigSession *session) :
     _mode_btn->setToolTip(tr("Capture mode"));
     _mode_btn->setStatusTip(tr("Select Logic Analyzer, Data Acquisition, or Oscilloscope"));
     _mode_btn->setFocusPolicy(Qt::StrongFocus);
-    _mode_btn->setIconSize(QSize(16, 16));
+    _mode_btn->setIconSize(QSize(24, 18));
     _mode_btn->setContentsMargins(0, 0, 0, 0);
     _mode_btn->setMinimumHeight(28);
     _mode_btn->setMinimumWidth(150);
@@ -128,6 +145,9 @@ void DevMode::set_device()
     _close_button->setDisabled(true); 
 
     QString iconPath = GetIconPath() + "/";
+    const QColor modeColor(AppConfig::Instance().IsDarkStyle()
+                               ? QStringLiteral("#c084fc")
+                               : QStringLiteral("#7c3aed"));
     auto dev_mode_list  = _device_agent->get_device_mode_list();
 
     for (const GSList *l = dev_mode_list; l; l = l->next)
@@ -146,7 +166,8 @@ void DevMode::set_device()
         else if (md == DSO)
             label = tr("Oscilloscope");
 
-        _mode_btn->addItem(QIcon(iconPath + icon_name), label, md);
+        _mode_btn->addItem(tinted_mode_icon(iconPath + icon_name, modeColor,
+                                             QSize(24, 18)), label, md);
     }
     _updating_mode = false;
 
@@ -174,6 +195,11 @@ void DevMode::apply_mode_style()
     const int fontSize = qMax(1, qRound(AppConfig::Instance().appOptions.fontSize));
     const QString purple = AppConfig::Instance().IsDarkStyle()
         ? QStringLiteral("#a855f7") : QStringLiteral("#7c3aed");
+    const QString purpleBg = AppConfig::Instance().IsDarkStyle()
+        ? QStringLiteral("rgba(147, 51, 234, 0.20)")
+        : QStringLiteral("rgba(124, 58, 237, 0.12)");
+    const QString purpleBorder = AppConfig::Instance().IsDarkStyle()
+        ? QStringLiteral("#9333ea") : QStringLiteral("#7c3aed");
 
     QFont font = _mode_btn->font();
     font.setPixelSize(fontSize);
@@ -184,12 +210,15 @@ void DevMode::apply_mode_style()
         QStringLiteral("QComboBox#ModeButton, QComboBox#ModeButton:hover, "
                        "QComboBox#ModeButton:focus, QComboBox#ModeButton:on "
                        "{ background: transparent; border: none; color: %1; "
-                       "font-size: %2px; font-weight: 600; }"
+                       "font-size: %2px; font-weight: 600; padding: 3px 8px 6px 4px; }"
                        "QComboBox#ModeButton::drop-down { width: 0px; border: none; }"
                        "QComboBox#ModeButton::down-arrow { image: none; width: 0px; "
                        "height: 0px; }"
                        "QComboBox#ModeButton QAbstractItemView { color: %1; }")
             .arg(purple, QString::number(fontSize)));
+    setStyleSheet(QStringLiteral(
+        "QWidget#DevMode { background-color: %1; border: 1px solid %2; "
+        "border-radius: 4px; }" ).arg(purpleBg, purpleBorder));
 }
 
 void DevMode::paintEvent(QPaintEvent*)
