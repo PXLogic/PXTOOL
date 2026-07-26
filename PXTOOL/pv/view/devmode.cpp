@@ -77,6 +77,14 @@ DevMode::DevMode(QWidget *parent, SigSession *session) :
 
     _mode_btn = new DsComboBox(this);
     _mode_btn->setObjectName("ModeButton");
+    _mode_btn->setFrame(false);
+    // DevMode is an overlay selector; keep its compact appearance without
+    // the bordered button chrome used by the device-bar combos.
+    _mode_btn->setStyleSheet(
+        "QComboBox#ModeButton, QComboBox#ModeButton:hover, "
+        "QComboBox#ModeButton:focus, QComboBox#ModeButton:on "
+        "{ border: none; }"
+        "QComboBox#ModeButton::drop-down { border: none; }");
     // Keep the mode switch as a real popup button so keyboard and accessibility
     // clients can discover and activate it without relying on the icon.
     _mode_btn->setAccessibleName(tr("Mode"));
