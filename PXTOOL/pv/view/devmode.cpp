@@ -63,6 +63,21 @@ static QIcon tinted_mode_icon(const QString &path, const QColor &color,
     return QIcon(tinted);
 }
 
+static QIcon tinted_mode_icon(const QIcon &source, const QColor &color,
+                              const QSize &size)
+{
+    QPixmap pixmap = source.pixmap(size);
+    if (pixmap.isNull())
+        return QIcon();
+    QPixmap tinted(pixmap.size());
+    tinted.fill(Qt::transparent);
+    QPainter painter(&tinted);
+    painter.drawPixmap(0, 0, pixmap);
+    painter.setCompositionMode(QPainter::CompositionMode_SourceIn);
+    painter.fillRect(tinted.rect(), color);
+    return QIcon(tinted);
+}
+
 class DevModeComboBox final : public DsComboBox
 {
 public:
@@ -87,7 +102,11 @@ protected:
                                                  this);
         const QFontMetrics metrics(font());
         const QString text = currentText();
-        const QIcon icon = itemIcon(currentIndex());
+        const QColor modeColor(AppConfig::Instance().IsDarkStyle()
+                                   ? QStringLiteral("#c084fc")
+                                   : QStringLiteral("#7c3aed"));
+        const QIcon icon = tinted_mode_icon(itemIcon(currentIndex()), modeColor,
+                                            iconSize());
         const QSize requested = iconSize();
         const int textWidth = metrics.horizontalAdvance(text);
         const int gap = 6;
@@ -98,7 +117,12 @@ protected:
         icon.paint(&painter, QRect(x, y, requested.width(), requested.height()),
                    Qt::AlignCenter, QIcon::Normal, QIcon::On);
         x += requested.width() + gap;
-        painter.setPen(palette().color(QPalette::ButtonText));
+        const int mode = itemData(currentIndex()).toInt();
+        const QColor textColor = mode == DSO
+            ? QColor(QStringLiteral("#8ab4f8"))
+            : mode == ANALOG ? QColor(QStringLiteral("#9ca3af"))
+                              : QColor(QStringLiteral("#c084fc"));
+        painter.setPen(textColor);
         painter.setFont(font());
         painter.drawText(QRect(x, content.top(), textWidth, content.height()),
                          Qt::AlignVCenter | Qt::AlignLeft, text);
@@ -107,7 +131,7 @@ protected:
                                                       QStyle::SC_ComboBoxArrow,
                                                       this);
         const QColor arrowColor(AppConfig::Instance().IsDarkStyle()
-                                    ? QStringLiteral("#a855f7")
+                                    ? QStringLiteral("#c084fc")
                                     : QStringLiteral("#7c3aed"));
         QPen arrowPen(arrowColor, 1.8, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin);
         painter.setPen(arrowPen);
@@ -200,9 +224,7 @@ void DevMode::set_device()
     _close_button->setDisabled(true); 
 
     QString iconPath = GetIconPath() + "/";
-    const QColor modeColor(AppConfig::Instance().IsDarkStyle()
-                               ? QStringLiteral("#c084fc")
-                               : QStringLiteral("#7c3aed"));
+    const QColor menuIconColor(QStringLiteral("#f3f4f6"));
     auto dev_mode_list  = _device_agent->get_device_mode_list();
 
     for (const GSList *l = dev_mode_list; l; l = l->next)
@@ -221,7 +243,7 @@ void DevMode::set_device()
         else if (md == DSO)
             label = tr("Oscilloscope");
 
-        _mode_btn->addItem(tinted_mode_icon(iconPath + icon_name, modeColor,
+        _mode_btn->addItem(tinted_mode_icon(iconPath + icon_name, menuIconColor,
                                              QSize(32, 24)), label, md);
         QFont popupFont = _mode_btn->font();
         popupFont.setBold(false);
@@ -266,6 +288,16 @@ void DevMode::apply_mode_style()
         : QStringLiteral("rgba(124, 58, 237, 0.12)");
     const QString popupText = AppConfig::Instance().IsDarkStyle()
         ? QStringLiteral("#d1d5db") : QStringLiteral("#374151");
+    const int activeMode = _mode_btn->currentData().toInt();
+    QString modeBg = purpleBg;
+    QString modeText = QStringLiteral("#c084fc");
+    if (activeMode == ANALOG) {
+        modeBg = QStringLiteral("#1a1a1a");
+        modeText = QStringLiteral("#9ca3af");
+    } else if (activeMode == DSO) {
+        modeBg = QStringLiteral("#243a55");
+        modeText = QStringLiteral("#8ab4f8");
+    }
 
     QFont font = _mode_btn->font();
     font.setPixelSize(fontSize);
@@ -275,14 +307,15 @@ void DevMode::apply_mode_style()
     _mode_btn->setStyleSheet(
         QStringLiteral("QComboBox#ModeButton, QComboBox#ModeButton:hover, "
                        "QComboBox#ModeButton:focus, QComboBox#ModeButton:on "
-                       "{ background: transparent; border: none; color: %1; "
+                       "{ background: %4; border: none; border-radius: 4px; "
+                       "color: %6; "
                        "font-size: %2px; font-weight: 600; padding: 3px 8px 6px 4px; }"
-                       "QComboBox#ModeButton::drop-down { width: 18px; border: none; }"
+                       "QComboBox#ModeButton::drop-down { width: 24px; border: none; }"
                        "QComboBox#ModeButton::down-arrow { image: none; width: 0px; "
                        "height: 0px; }"
                        "QComboBox#ModeButton QAbstractItemView { color: %3; "
                        "font-size: %2px; font-weight: normal; text-decoration: none; }")
-            .arg(purple, QString::number(fontSize), popupText));
+            .arg(purple, QString::number(fontSize), popupText, modeBg, QString(), modeText));
     QFont popupFont = font;
     popupFont.setBold(false);
     popupFont.setUnderline(false);
@@ -293,7 +326,7 @@ void DevMode::apply_mode_style()
     _mode_btn->view()->setPalette(popupPalette);
     setStyleSheet(QStringLiteral(
         "QWidget#DevMode { background-color: %1; border: none; "
-        "border-radius: 4px; }" ).arg(purpleBg));
+        "border-radius: 4px; }" ).arg(modeBg));
 }
 
 void DevMode::paintEvent(QPaintEvent*)
@@ -355,6 +388,7 @@ void DevMode::on_mode_change(int index)
     _session->session_save();
     _session->switch_work_mode(mode);
     sync_mode_button(mode, iconPath);
+    apply_mode_style();
 
     UpdateFont();
 }
