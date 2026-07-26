@@ -138,6 +138,19 @@ BOOST_AUTO_TEST_CASE(generated_analog_packet_is_standard_float)
     close_native_demo(sdi);
 }
 
+BOOST_AUTO_TEST_CASE(generated_analog_data_is_packet_rate_limited)
+{
+    sr_dev_inst *sdi = open_native_demo();
+    const gint64 started_at = g_get_monotonic_time();
+    collect_native_analog(sdi, 1024);
+    const gint64 elapsed_us = g_get_monotonic_time() - started_at;
+
+    // The demo emits two 512-sample packets at 200 packets per second.
+    // A generator must not drain both packets in one event-loop burst.
+    BOOST_CHECK_GE(elapsed_us, 8 * G_TIME_SPAN_MILLISECOND);
+    close_native_demo(sdi);
+}
+
 BOOST_AUTO_TEST_CASE(analog_waveform_respects_configuration_and_enablement)
 {
     sr_dev_inst *sdi = open_native_demo();

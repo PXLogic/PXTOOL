@@ -90,7 +90,12 @@ enum {
 };
 
 #define SR_MAX_PROBENAME_LEN 32
-#define DS_MAX_ANALOG_PROBES_NUM 4
+/*
+ * Demo devices can expose more than the four analog inputs used by the
+ * original hardware targets. Keep the snapshot envelope storage large enough
+ * for the full virtual-device channel set (and future hardware variants).
+ */
+#define DS_MAX_ANALOG_PROBES_NUM 16
 #define DS_MAX_DSO_PROBES_NUM 2
 
 #define TriggerStages 16

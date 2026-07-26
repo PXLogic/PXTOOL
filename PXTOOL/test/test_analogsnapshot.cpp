@@ -32,4 +32,26 @@ BOOST_AUTO_TEST_CASE(keeps_float_channels_and_extrema)
     BOOST_CHECK_CLOSE(snapshot.channel_max(1), 20.0, 0.001);
 }
 
+BOOST_AUTO_TEST_CASE(supports_demo_five_channel_capture)
+{
+    const QVector<pv::data::AnalogChannelRef> channels = {
+        {"A0", 0}, {"A1", 1}, {"A2", 2}, {"A3", 3}, {"A4", 4}};
+    std::vector<float> samples;
+    for (int sample = 0; sample < 32; ++sample)
+        for (int channel = 0; channel < channels.size(); ++channel)
+            samples.push_back(static_cast<float>(sample + channel));
+
+    auto packet = pv::data::makeAnalogPacket(
+        channels, samples, 32, 1'000'000, SR_MQ_VOLTAGE, SR_UNIT_VOLT);
+    pv::data::AnalogSnapshot snapshot;
+    BOOST_REQUIRE(snapshot.first_payload(packet.analog, 32, packet.channels));
+    BOOST_CHECK_EQUAL(snapshot.channel_count(), 5U);
+    BOOST_CHECK_EQUAL(snapshot.sample_count(), 32U);
+
+    // Exercise the release path that previously freed corrupted envelope
+    // pointers after the fifth channel wrote past the four-channel array.
+    snapshot.clear();
+    BOOST_CHECK_EQUAL(snapshot.sample_count(), 0U);
+}
+
 BOOST_AUTO_TEST_SUITE_END()

@@ -2516,6 +2516,8 @@ static int receive_data_analog_generated(int fd, int revents,
     if (!vdev || !vdev->samplerate)
         return FALSE;
 
+    g_timer_start(packet_interval);
+
     for (item = sdi->channels; item; item = item->next) {
         struct sr_channel *channel = item->data;
         if (channel && channel->type == SR_CHANNEL_ANALOG && channel->enabled)
@@ -2588,6 +2590,8 @@ static int receive_data_analog_generated(int fd, int revents,
     packet.type = SR_DF_ANALOG;
     packet.status = SR_PKT_OK;
     packet.payload = &analog;
+
+    delay_time(vdev);
     ds_data_forward(sdi, &packet);
 
     vdev->analog_generated_samples += sample_count;

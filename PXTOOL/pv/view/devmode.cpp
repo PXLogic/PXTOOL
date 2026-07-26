@@ -102,42 +102,51 @@ protected:
                                                  this);
         const QFontMetrics metrics(font());
         const QString text = currentText();
-        const QColor modeColor(AppConfig::Instance().IsDarkStyle()
-                                   ? QStringLiteral("#c084fc")
-                                   : QStringLiteral("#7c3aed"));
+        const int mode = itemData(currentIndex()).toInt();
+        const QColor modeColor = mode == ANALOG
+            ? QColor(QStringLiteral("#4ade80"))
+            : mode == DSO
+                ? QColor(QStringLiteral("#60a5fa"))
+                : QColor(AppConfig::Instance().IsDarkStyle()
+                             ? QStringLiteral("#c084fc")
+                             : QStringLiteral("#7c3aed"));
         const QIcon icon = tinted_mode_icon(itemIcon(currentIndex()), modeColor,
                                             iconSize());
         const QSize requested = iconSize();
         const int textWidth = metrics.horizontalAdvance(text);
         const int gap = 6;
+        const int chevronHeight = 6;
+        const int chevronGap = 2;
+        const int groupHeight = qMax(requested.height(), metrics.height());
+        const int stackedHeight = groupHeight + chevronGap + chevronHeight;
+        const QRect groupRow(content.left(),
+            content.center().y() - stackedHeight / 2,
+            content.width(), groupHeight);
         const int groupWidth = requested.width() + gap + textWidth;
-        int x = content.center().x() - groupWidth / 2;
-        const int y = content.center().y() - requested.height() / 2;
+        int x = groupRow.center().x() - groupWidth / 2;
+        const int y = groupRow.center().y() - requested.height() / 2;
+        const QPoint arrowCenter(groupRow.center().x(),
+            groupRow.bottom() + chevronGap + chevronHeight / 2);
 
         icon.paint(&painter, QRect(x, y, requested.width(), requested.height()),
                    Qt::AlignCenter, QIcon::Normal, QIcon::On);
         x += requested.width() + gap;
-        const int mode = itemData(currentIndex()).toInt();
         const QColor textColor = mode == DSO
-            ? QColor(QStringLiteral("#8ab4f8"))
-            : mode == ANALOG ? QColor(QStringLiteral("#9ca3af"))
-                              : QColor(QStringLiteral("#c084fc"));
+            ? QColor(AppConfig::Instance().IsDarkStyle()
+                         ? QStringLiteral("#8ab4f8") : QStringLiteral("#2563eb"))
+            : mode == ANALOG
+                ? QColor(QStringLiteral("#4ade80"))
+                : QColor(AppConfig::Instance().IsDarkStyle()
+                             ? QStringLiteral("#c084fc") : QStringLiteral("#7c3aed"));
         painter.setPen(textColor);
         painter.setFont(font());
-        painter.drawText(QRect(x, content.top(), textWidth, content.height()),
+        painter.drawText(QRect(x, groupRow.top(), textWidth, groupRow.height()),
                          Qt::AlignVCenter | Qt::AlignLeft, text);
 
-        const QRect arrow = style()->subControlRect(QStyle::CC_ComboBox, &option,
-                                                      QStyle::SC_ComboBoxArrow,
-                                                      this);
-        const QColor arrowColor(AppConfig::Instance().IsDarkStyle()
-                                    ? QStringLiteral("#c084fc")
-                                    : QStringLiteral("#7c3aed"));
-        QPen arrowPen(arrowColor, 1.8, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin);
+        QPen arrowPen(textColor, 1.8, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin);
         painter.setPen(arrowPen);
-        const QPoint center = arrow.center();
-        painter.drawLine(center + QPoint(-4, -2), center + QPoint(0, 2));
-        painter.drawLine(center + QPoint(0, 2), center + QPoint(4, -2));
+        painter.drawLine(arrowCenter + QPoint(-4, -2), arrowCenter + QPoint(0, 2));
+        painter.drawLine(arrowCenter + QPoint(0, 2), arrowCenter + QPoint(4, -2));
     }
 };
   
@@ -185,7 +194,7 @@ DevMode::DevMode(QWidget *parent, SigSession *session) :
     _mode_btn->setFocusPolicy(Qt::StrongFocus);
     _mode_btn->setIconSize(QSize(32, 24));
     _mode_btn->setContentsMargins(0, 0, 0, 0);
-    _mode_btn->setMinimumHeight(28);
+    _mode_btn->setMinimumHeight(42);
     _mode_btn->setMinimumWidth(150);
     _mode_btn->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Preferred);
     _mode_btn->setPopupItemHeight(28);
@@ -281,22 +290,27 @@ void DevMode::apply_mode_style()
         return;
 
     const int fontSize = qMax(1, qRound(AppConfig::Instance().appOptions.fontSize));
-    const QString purple = AppConfig::Instance().IsDarkStyle()
-        ? QStringLiteral("#a855f7") : QStringLiteral("#7c3aed");
-    const QString purpleBg = AppConfig::Instance().IsDarkStyle()
+    const bool isDark = AppConfig::Instance().IsDarkStyle();
+    const QString purpleBg = isDark
         ? QStringLiteral("rgba(147, 51, 234, 0.20)")
-        : QStringLiteral("rgba(124, 58, 237, 0.12)");
-    const QString popupText = AppConfig::Instance().IsDarkStyle()
+        : QStringLiteral("rgba(147, 51, 234, 0.08)");
+    const QString popupText = isDark
         ? QStringLiteral("#d1d5db") : QStringLiteral("#374151");
     const int activeMode = _mode_btn->currentData().toInt();
     QString modeBg = purpleBg;
-    QString modeText = QStringLiteral("#c084fc");
+    QString modeText = isDark ? QStringLiteral("#c084fc")
+                              : QStringLiteral("#7c3aed");
+    QString modeHoverText = isDark ? QStringLiteral("#e9d5ff")
+                                   : QStringLiteral("#5b21b6");
     if (activeMode == ANALOG) {
-        modeBg = QStringLiteral("#1a1a1a");
-        modeText = QStringLiteral("#9ca3af");
+        modeBg = QStringLiteral("rgba(22, 163, 74, 0.10)");
+        modeText = QStringLiteral("#4ade80");
+        modeHoverText = QStringLiteral("#86efac");
     } else if (activeMode == DSO) {
-        modeBg = QStringLiteral("#243a55");
-        modeText = QStringLiteral("#8ab4f8");
+        modeBg = isDark ? QStringLiteral("rgba(59, 130, 246, 0.20)")
+                        : QStringLiteral("rgba(59, 130, 246, 0.08)");
+        modeText = isDark ? QStringLiteral("#8ab4f8") : QStringLiteral("#2563eb");
+        modeHoverText = isDark ? QStringLiteral("#dbeafe") : QStringLiteral("#1d4ed8");
     }
 
     QFont font = _mode_btn->font();
@@ -305,17 +319,21 @@ void DevMode::apply_mode_style()
     font.setUnderline(true);
     _mode_btn->setFont(font);
     _mode_btn->setStyleSheet(
-        QStringLiteral("QComboBox#ModeButton, QComboBox#ModeButton:hover, "
-                       "QComboBox#ModeButton:focus, QComboBox#ModeButton:on "
-                       "{ background: %4; border: none; border-radius: 4px; "
-                       "color: %6; "
-                       "font-size: %2px; font-weight: 600; padding: 3px 8px 6px 4px; }"
-                       "QComboBox#ModeButton::drop-down { width: 24px; border: none; }"
+        QStringLiteral("QComboBox#ModeButton { background: transparent; border: none; "
+                       "border-radius: 4px; color: %3; "
+                       "font-size: %1px; font-weight: 600; padding: 3px 8px 6px 4px; }"
+                       "QComboBox#ModeButton:hover, QComboBox#ModeButton:focus, "
+                       "QComboBox#ModeButton:on { background: transparent; border: none; "
+                       "color: %4; }"
+                       "QComboBox#ModeButton::drop-down { width: 0px; border: none; }"
                        "QComboBox#ModeButton::down-arrow { image: none; width: 0px; "
                        "height: 0px; }"
-                       "QComboBox#ModeButton QAbstractItemView { color: %3; "
-                       "font-size: %2px; font-weight: normal; text-decoration: none; }")
-            .arg(purple, QString::number(fontSize), popupText, modeBg, QString(), modeText));
+                       "QComboBox#ModeButton QAbstractItemView { color: %2; "
+                       "font-size: %1px; font-weight: normal; text-decoration: none; }"
+                       "QComboBox#ModeButton QAbstractItemView::item:hover, "
+                       "QComboBox#ModeButton QAbstractItemView::item:selected "
+                       "{ background-color: #7c3aed; color: #ffffff; }")
+            .arg(QString::number(fontSize), popupText, modeText, modeHoverText));
     QFont popupFont = font;
     popupFont.setBold(false);
     popupFont.setUnderline(false);
@@ -337,6 +355,13 @@ void DevMode::paintEvent(QPaintEvent*)
     o.initFrom(this);
     QPainter painter(this);
     style()->drawPrimitive(QStyle::PE_Widget, &o, &painter, this);
+}
+
+void DevMode::sync_mode_button_width()
+{
+    _mode_btn->setMinimumWidth(0);
+    _mode_btn->setMaximumWidth(QWIDGETSIZE_MAX);
+    _mode_btn->setFixedWidth(qMax(150, _mode_btn->sizeHint().width()));
 }
 
 void DevMode::sync_mode_button(int mode, const QString &iconPath)
@@ -462,6 +487,7 @@ void DevMode::UpdateFont()
 
     _mode_btn->setFont(font);
     apply_mode_style();
+    sync_mode_button_width();
 }
 
 } // namespace view

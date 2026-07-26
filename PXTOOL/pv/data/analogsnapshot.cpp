@@ -57,10 +57,16 @@ AnalogSnapshot::~AnalogSnapshot()
 
 void AnalogSnapshot::free_envelop()
 {
-    for (unsigned int i = 0; i < _channel_num; i++) {
+    // _channel_num describes the *new* packet during first_payload(). It can
+    // therefore be smaller than the channel count used to allocate the old
+    // envelopes. Iterate over the storage itself so every allocation is
+    // released exactly once, regardless of channel-count changes.
+    for (unsigned int i = 0; i < DS_MAX_ANALOG_PROBES_NUM; i++) {
         for(auto &e : _envelope_levels[i]) {
-            if (e.samples)
+            if (e.samples) {
                 free(e.samples);
+                e.samples = NULL;
+            }
         }
     }
     memset(_envelope_levels, 0, sizeof(_envelope_levels));
