@@ -23,6 +23,7 @@
 
 #include <QActionGroup>
 #include <QBitmap>
+#include <QList>
 #include <QPainter>
 #include <QEvent>
 
@@ -33,6 +34,7 @@
 #include "../view/trace.h"
 #include "../dialogs/applicationpardlg.h"
 #include "../config/appconfig.h"
+#include "../theme/thememanager.h"
 #include "../ui/fn.h"
 
 namespace pv {
@@ -76,17 +78,52 @@ TrigBar::TrigBar(SigSession *session, QWidget *parent) :
     
     _light_style = new QAction(this);
     _light_style->setObjectName(QString::fromUtf8("actionLight"));
-    _light_style->setCheckable(true);
 
-    QActionGroup *theme_actions = new QActionGroup(this);
-    theme_actions->setExclusive(true);
-    theme_actions->addAction(_light_style);
-    theme_actions->addAction(_dark_style);
+    _atom_style = new QAction(this);
+    _atom_style->setObjectName(QString::fromUtf8("actionAtom"));
+
+    _ayu_style = new QAction(this);
+    _ayu_style->setObjectName(QString::fromUtf8("actionAyu"));
+
+    _dark_cards_style = new QAction(this);
+    _dark_cards_style->setObjectName(QString::fromUtf8("actionDarkCards"));
+
+    _light_cards_style = new QAction(this);
+    _light_cards_style->setObjectName(QString::fromUtf8("actionLightCards"));
+
+    _theme_group = new QActionGroup(this);
+    _theme_group->setExclusive(true);
+
+    QList<QAction*> themeActions = {
+        _dark_style,
+        _light_style,
+        _atom_style,
+        _ayu_style,
+        _dark_cards_style,
+        _light_cards_style,
+    };
+    const QList<QString> themeIds = {
+        THEME_STYLE_DARK,
+        THEME_STYLE_LIGHT,
+        THEME_STYLE_ATOM,
+        THEME_STYLE_AYU,
+        THEME_STYLE_DARK_CARDS,
+        THEME_STYLE_LIGHT_CARDS,
+    };
+    for (int i = 0; i < themeActions.size(); ++i) {
+        themeActions[i]->setCheckable(true);
+        themeActions[i]->setData(themeIds[i]);
+        _theme_group->addAction(themeActions[i]);
+    }
      
     _themes = new QMenu(this);
     _themes->setObjectName(QString::fromUtf8("menuThemes"));
-    _themes->addAction(_light_style);
     _themes->addAction(_dark_style);
+    _themes->addAction(_light_style);
+    _themes->addAction(_atom_style);
+    _themes->addAction(_ayu_style);
+    _themes->addAction(_dark_cards_style);
+    _themes->addAction(_light_cards_style);
 
      _action_dispalyOptions = new QAction(this);
 
@@ -124,8 +161,12 @@ TrigBar::TrigBar(SigSession *session, QWidget *parent) :
     connect(_action_fft, SIGNAL(triggered()), this, SLOT(on_actionFft_triggered()));
     connect(_action_math, SIGNAL(triggered()), this, SLOT(on_actionMath_triggered()));
     connect(_action_lissajous, SIGNAL(triggered()), this, SLOT(on_actionLissajous_triggered()));
-    connect(_dark_style, SIGNAL(triggered()), this, SLOT(on_actionDark_triggered()));
-    connect(_light_style, SIGNAL(triggered()), this, SLOT(on_actionLight_triggered()));
+    connect(_dark_style, SIGNAL(triggered()), this, SLOT(on_theme_action_triggered()));
+    connect(_light_style, SIGNAL(triggered()), this, SLOT(on_theme_action_triggered()));
+    connect(_atom_style, SIGNAL(triggered()), this, SLOT(on_theme_action_triggered()));
+    connect(_ayu_style, SIGNAL(triggered()), this, SLOT(on_theme_action_triggered()));
+    connect(_dark_cards_style, SIGNAL(triggered()), this, SLOT(on_theme_action_triggered()));
+    connect(_light_cards_style, SIGNAL(triggered()), this, SLOT(on_theme_action_triggered()));
     connect(_action_dispalyOptions, SIGNAL(triggered()), this, SLOT(on_display_setting()));
 
     ADD_UI(this);
@@ -151,6 +192,10 @@ void TrigBar::retranslateUi()
    
     _dark_style->setText(tr("Dark"));
     _light_style->setText(tr("Light"));
+    _atom_style->setText(tr("Atom One Dark"));
+    _ayu_style->setText(tr("Ayu Light"));
+    _dark_cards_style->setText(tr("Dark Colored Cards"));
+    _light_cards_style->setText(tr("Light Colored Cards"));
 
     _action_fft->setText(tr("FFT"));
     _action_math->setText(tr("Math"));
@@ -174,11 +219,20 @@ void TrigBar::reStyle()
     _action_lissajous->setIcon(QIcon(iconPath+"/lissajous.svg"));
     _dark_style->setIcon(QIcon());
     _light_style->setIcon(QIcon());
+    _atom_style->setIcon(QIcon());
+    _ayu_style->setIcon(QIcon());
+    _dark_cards_style->setIcon(QIcon());
+    _light_cards_style->setIcon(QIcon());
 
     _action_dispalyOptions->setIcon(QIcon(iconPath+"/gear.svg"));
 
-     AppConfig &app = AppConfig::Instance();
-     QString icon_fname = iconPath +"/"+ app.frameOptions.style +".svg";  
+    AppConfig &app = AppConfig::Instance();
+    const QString themeId = pv::theme::ThemeManager::normalizeId(app.frameOptions.style);
+    const QList<QAction*> themeActions = _theme_group->actions();
+    for (QAction *action : themeActions)
+        action->setChecked(action->data().toString() == themeId);
+
+    QString icon_fname = iconPath + "/" + QString(app.IsDarkStyle() ? THEME_STYLE_DARK : THEME_STYLE_LIGHT) + ".svg";
     _themes->setIcon(QIcon(icon_fname));
     update_theme_actions();
 }
@@ -301,18 +355,21 @@ void TrigBar::on_actionMath_triggered()
 
 void TrigBar::on_actionDark_triggered()
 {
-    _dark_style->setChecked(true);
-    sig_setTheme(THEME_STYLE_DARK);
-    QString icon = GetIconPath() + "/" + THEME_STYLE_DARK + ".svg";
-    _themes->setIcon(QIcon(icon));
+    emit sig_setTheme(THEME_STYLE_DARK);
 }
 
 void TrigBar::on_actionLight_triggered()
 {
-    _light_style->setChecked(true);
-    sig_setTheme(THEME_STYLE_LIGHT);
-    QString icon = GetIconPath() + "/" + THEME_STYLE_LIGHT +".svg";
-    _themes->setIcon(QIcon(icon));
+    emit sig_setTheme(THEME_STYLE_LIGHT);
+}
+
+void TrigBar::on_theme_action_triggered()
+{
+    QAction *action = qobject_cast<QAction*>(sender());
+    if (!action)
+        return;
+
+    emit sig_setTheme(pv::theme::ThemeManager::normalizeId(action->data().toString()));
 }
 
 void TrigBar::on_actionLissajous_triggered()
@@ -379,9 +436,10 @@ void TrigBar::update_checked_status()
 
 void TrigBar::update_theme_actions()
 {
-    const QString style = AppConfig::Instance().frameOptions.style;
-    _dark_style->setChecked(style == THEME_STYLE_DARK);
-    _light_style->setChecked(style == THEME_STYLE_LIGHT);
+    const QString themeId = pv::theme::ThemeManager::normalizeId(AppConfig::Instance().frameOptions.style);
+    const QList<QAction*> themeActions = _theme_group->actions();
+    for (QAction *action : themeActions)
+        action->setChecked(action->data().toString() == themeId);
 }
 
 void TrigBar::UpdateLanguage()

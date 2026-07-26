@@ -89,10 +89,17 @@ public:
     void clear();
     void init();
 
-    void first_payload(const sr_datafeed_analog &analog,
+    bool first_payload(const sr_datafeed_analog &analog,
                        uint64_t total_sample_count, GSList *channels);
 
-	void append_payload(const sr_datafeed_analog &analog);
+    bool append_payload(const sr_datafeed_analog &analog);
+
+    bool is_float() const;
+    double sample_as_double(uint32_t channel_order, uint64_t sample_index) const;
+    double channel_min(uint32_t channel_order) const;
+    double channel_max(uint32_t channel_order) const;
+    uint32_t channel_count() const;
+    uint64_t sample_count() const;
 
     const uint8_t *get_samples(int64_t start_sample);
 
@@ -113,6 +120,8 @@ public:
 
 private:
     void append_data(void *data, uint64_t samples, uint16_t pitch);
+    void recompute_extrema();
+    uint64_t physical_sample_index(uint64_t sample_index) const;
     void free_envelop();
 	void reallocate_envelope(Envelope &l);
 	void append_payload_to_envelope_levels();
@@ -120,6 +129,9 @@ private:
 
 private:
     void *_data;
+    bool _is_float;
+    std::vector<double> _channel_mins;
+    std::vector<double> _channel_maxs;
     struct Envelope _envelope_levels[DS_MAX_ANALOG_PROBES_NUM][ScaleStepCount];
 	friend class AnalogSnapshotTest::Basic;
     std::vector<int>        _enabled_channel_indexs;

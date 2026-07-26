@@ -21,7 +21,7 @@ namespace data {
 
 namespace {
 
-int variantTypeId(const QVariant &value)
+int variantMetaTypeId(const QVariant &value)
 {
 #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
     return value.metaType().id();
@@ -58,7 +58,7 @@ QVariant variantToQVariant(GVariant *value)
 
 bool matchesType(const QByteArray &typeSignature, const QVariant &value)
 {
-    const int type = variantTypeId(value);
+    const int type = variantMetaTypeId(value);
 
     if (typeSignature == "b")
         return type == QMetaType::Bool;
@@ -73,9 +73,9 @@ bool matchesType(const QByteArray &typeSignature, const QVariant &value)
     if (typeSignature == "u")
         return type == QMetaType::UInt;
     if (typeSignature == "x")
-        return type == QMetaType::LongLong;
+        return type == QMetaType::LongLong || type == QMetaType::Long;
     if (typeSignature == "t")
-        return type == QMetaType::ULongLong;
+        return type == QMetaType::ULongLong || type == QMetaType::ULong;
     if (typeSignature == "d")
         return type == QMetaType::Double;
     if (typeSignature == "s")
@@ -120,30 +120,30 @@ bool isEnumeratedValue(const QList<QVariant> &allowedValues,
 
 QByteArray typeSignatureForVariant(const QVariant &value)
 {
-    switch (variantTypeId(value)) {
-    case QMetaType::Bool:
+    const int type = variantMetaTypeId(value);
+
+    if (type == QMetaType::Bool)
         return "b";
-    case QMetaType::UChar:
+    if (type == QMetaType::UChar)
         return "y";
-    case QMetaType::Short:
+    if (type == QMetaType::Short)
         return "n";
-    case QMetaType::UShort:
+    if (type == QMetaType::UShort)
         return "q";
-    case QMetaType::Int:
+    if (type == QMetaType::Int)
         return "i";
-    case QMetaType::UInt:
+    if (type == QMetaType::UInt)
         return "u";
-    case QMetaType::LongLong:
+    if (type == QMetaType::LongLong || type == QMetaType::Long)
         return "x";
-    case QMetaType::ULongLong:
+    if (type == QMetaType::ULongLong || type == QMetaType::ULong)
         return "t";
-    case QMetaType::Double:
+    if (type == QMetaType::Double)
         return "d";
-    case QMetaType::QString:
+    if (type == QMetaType::QString)
         return "s";
-    default:
-        throw std::invalid_argument("Unsupported libsigrok option type");
-    }
+
+    throw std::invalid_argument("Unsupported libsigrok option type");
 }
 
 } // namespace

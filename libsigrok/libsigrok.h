@@ -90,7 +90,12 @@ enum {
 };
 
 #define SR_MAX_PROBENAME_LEN 32
-#define DS_MAX_ANALOG_PROBES_NUM 4
+/*
+ * Demo devices can expose more than the four analog inputs used by the
+ * original hardware targets. Keep the snapshot envelope storage large enough
+ * for the full virtual-device channel set (and future hardware variants).
+ */
+#define DS_MAX_ANALOG_PROBES_NUM 16
 #define DS_MAX_DSO_PROBES_NUM 2
 
 #define TriggerStages 16
@@ -1062,6 +1067,12 @@ enum sr_config_option_id
      * to keep the UI open for testing.
      */
     SR_CONF_HAVE_ADVANCED_TRIGGER = 30108,
+
+    /** Signal-generator peak amplitude in the measured unit. */
+    SR_CONF_AMPLITUDE = 30109,
+
+    /** Signal-generator DC offset in the measured unit. */
+    SR_CONF_OFFSET = 30110,
 
 	/*--- Acquisition modes ---------------------------------------------*/
 

@@ -53,6 +53,40 @@ DeviceAgent::DeviceAgent()
     _custom_mode_list = nullptr;
 }
 
+void DeviceAgent::rebuild_custom_mode_list()
+{
+    free_custom_mode_list(_custom_mode_list);
+    _custom_mode_list = nullptr;
+    _custom_mode_entries.clear();
+    _custom_mode_entries.reserve(3);
+
+    bool has_logic = false;
+    bool has_analog = false;
+    bool has_dso = false;
+    for (const GSList *entry = get_channels(); entry; entry = entry->next) {
+        const sr_channel *channel = static_cast<const sr_channel *>(entry->data);
+        if (!channel)
+            continue;
+
+        has_logic |= channel->type == SR_CHANNEL_LOGIC;
+        has_analog |= channel->type == SR_CHANNEL_ANALOG;
+        has_dso |= channel->type == SR_CHANNEL_DSO;
+    }
+
+    const auto append = [this](int mode, const char *name, const char *acronym) {
+        _custom_mode_entries.push_back({mode, name, acronym});
+        _custom_mode_list = g_slist_append(_custom_mode_list,
+                                            &_custom_mode_entries.back());
+    };
+
+    if (has_logic)
+        append(LOGIC, "Logic Analyzer", "logic");
+    if (has_analog)
+        append(ANALOG, "Data Acquisition", "analog");
+    if (has_dso)
+        append(DSO, "Oscilloscope", "dso");
+}
+
 void DeviceAgent::update()
 {
     _dev_handle = NULL_HANDLE;
@@ -67,6 +101,7 @@ void DeviceAgent::update()
     _custom_sample_limit = 0;
     free_custom_mode_list(_custom_mode_list);
     _custom_mode_list = nullptr;
+    _custom_mode_entries.clear();
 
     struct ds_device_full_info info;
 
@@ -309,6 +344,7 @@ void DeviceAgent::release()
         _custom_sample_limit = 0;
         free_custom_mode_list(_custom_mode_list);
         _custom_mode_list = nullptr;
+        _custom_mode_entries.clear();
         return;
     }
 
@@ -357,10 +393,7 @@ void DeviceAgent::bind_custom_device(struct sr_dev_inst *di,
     _custom_sample_limit = sample_limit;
     free_custom_mode_list(_custom_mode_list);
     _custom_mode_list = nullptr;
-    _custom_mode_entry.mode = work_mode;
-    _custom_mode_entry.name = "Imported Data";
-    _custom_mode_entry.acronym = "import";
-    _custom_mode_list = g_slist_append(nullptr, &_custom_mode_entry);
+    rebuild_custom_mode_list();
 }
 
 bool DeviceAgent::have_enabled_channel()
@@ -968,7 +1001,6 @@ bool DeviceAgent::set_custom_config_variant(int key, GVariant *data)
         if (!g_variant_is_of_type(data, G_VARIANT_TYPE_INT16))
             return false;
         _custom_work_mode = g_variant_get_int16(data);
-        _custom_mode_entry.mode = _custom_work_mode;
         return true;
     case SR_CONF_STREAM:
         return g_variant_is_of_type(data, G_VARIANT_TYPE_BOOLEAN);

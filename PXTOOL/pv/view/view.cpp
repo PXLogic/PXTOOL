@@ -182,6 +182,11 @@ View::View(SigSession *session, pv::toolbars::SamplingBar *sampling_bar, QWidget
 
     setViewport(_viewcenter);
 
+    // DevMode is an interactive overlay at the top-left of the waveform.
+    // Raise it after creating the viewport hierarchy so mouse events reach
+    // the mode combo instead of the underlying waveform viewport.
+    _devmode->raise();
+
     _time_viewport->installEventFilter(this);
     _fft_viewport->installEventFilter(this);
 	_ruler->installEventFilter(this);
@@ -1143,6 +1148,9 @@ void View::update_margins()
             _viewcenter->y(),
             VScrollBarWidth,
             _viewcenter->height());
+        // Keep the top-left mode selector above the scroll-area viewport
+        // after every geometry/layout pass.
+        _devmode->raise();
     } 
 }
 

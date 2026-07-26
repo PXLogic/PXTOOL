@@ -21,6 +21,9 @@
  */
 
 #include <libsigrokdecode.h>
+extern "C" {
+#include "libsigrok-internal.h"
+}
 
 #include "sigsession.h"
 #include "mainwindow.h"
@@ -140,6 +143,7 @@ namespace pv
 
     SigSession::~SigSession()
     {
+        clear_analog_logic_conversions();
         for(auto p : _data_list){
             p->clear();
             delete p;
@@ -206,7 +210,19 @@ namespace pv
             return false;
         }
 
-        struct ds_device_base_info *dev = (array + count - 1);
+        int default_index = count - 1;
+        // Prefer PXTOOL's native virtual demo so the default work-mode selector
+        // exposes Logic Analyzer, Data Acquisition, and Oscilloscope. The
+        // upstream compatibility demo remains available in the Device combo,
+        // but intentionally only advertises its logic-only capability.
+        for (int i = 0; i < count; ++i) {
+            if (QString::fromUtf8(array[i].name) == QStringLiteral("Demo Device")) {
+                default_index = i;
+                break;
+            }
+        }
+
+        struct ds_device_base_info *dev = (array + default_index);
         ds_device_handle dev_handle = dev->handle;
 
         free(array);
@@ -579,6 +595,7 @@ namespace pv
         dsv_info("SigSession::start_capture() clearing data for session@%p", (void*)this);
         _capture_data->clear();
         _view_data->clear();
+        clear_analog_logic_conversions();
         invalidate_glitch_filter_state();
         _is_stream_mode = false;
         _capture_times = 0;
@@ -886,6 +903,16 @@ namespace pv
         return _signals;
     } 
 
+    std::vector<view::Signal*> SigSession::decoder_input_signals() const
+    {
+        std::vector<view::Signal*> result;
+        for (auto *signal : _signals) {
+            if (signal->signal_type() == SR_CHANNEL_LOGIC && signal->enabled())
+                result.push_back(signal);
+        }
+        return result;
+    }
+
     void SigSession::check_update()
     {
         ds_lock_guard lock(_data_mutex);
@@ -922,6 +949,7 @@ namespace pv
         unsigned int analog_probe_count = 0;
 
         dsv_info("SigSession::init_signals() clearing data for session@%p", (void*)this);
+        clear_analog_logic_conversions();
         _capture_data->clear();
         _view_data->clear();
         invalidate_glitch_filter_state();
@@ -1017,6 +1045,110 @@ namespace pv
                  (unsigned long long)_signals.size(),
                  (unsigned long long)cur_snap_samplerate(),
                  (unsigned long long)cur_samplelimits());
+    }
+
+    bool SigSession::set_analog_logic_conversion(
+        int analog_index, const data::AnalogToLogic::Config &config)
+    {
+        set_analog_logic_config(analog_index, config);
+        if (!_view_data || config.mode == data::AnalogToLogic::Mode::Disabled) {
+            auto it = _derived_logic.find(analog_index);
+            if (it != _derived_logic.end()) {
+                remove_derived_logic_signal(it->second.channel->index);
+                if (it->second.device)
+                    sr_dev_inst_free(it->second.device);
+                _derived_logic.erase(it);
+            }
+            return false;
+        }
+
+        const int order = _view_data->get_analog()->get_ch_order(analog_index);
+        if (order < 0 || !_view_data->get_analog()->have_data())
+            return false;
+
+        auto &derived = _derived_logic[analog_index];
+        if (!derived.device) {
+            derived.device = sr_dev_inst_new(LOGIC, SR_ST_INACTIVE,
+                                              "PXTOOL", "Derived Logic", "1");
+            if (!derived.device)
+                return false;
+            derived.channel = sr_channel_new(
+                derived.device, DerivedLogicIndexBase + analog_index,
+                SR_CHANNEL_LOGIC, TRUE, "Analog Logic");
+            if (!derived.channel) {
+                sr_dev_inst_free(derived.device);
+                derived.device = nullptr;
+                return false;
+            }
+        }
+        if (!derived.snapshot)
+            derived.snapshot = std::make_unique<data::LogicSnapshot>();
+        try {
+            if (!data::AnalogToLogic::build_snapshot(
+                    *_view_data->get_analog(), order, config,
+                    derived.channel, *derived.snapshot))
+                return false;
+        } catch (...) {
+            return false;
+        }
+        derived.config = config;
+        bool signal_exists = false;
+        for (auto *signal : _signals) {
+            if (signal->get_index() == derived.channel->index) {
+                signal_exists = true;
+                break;
+            }
+        }
+        if (!signal_exists) {
+            _signals.push_back(new view::LogicSignal(
+                derived.snapshot.get(), derived.channel));
+            make_channels_view_index();
+        }
+        return true;
+    }
+
+    void SigSession::set_analog_logic_config(
+        int analog_index, const data::AnalogToLogic::Config &config)
+    {
+        if (config.mode == data::AnalogToLogic::Mode::Disabled)
+            _analog_logic_configs.erase(analog_index);
+        else
+            _analog_logic_configs[analog_index] = config;
+    }
+
+    bool SigSession::analog_logic_config(
+        int analog_index, data::AnalogToLogic::Config &config) const
+    {
+        const auto it = _analog_logic_configs.find(analog_index);
+        if (it == _analog_logic_configs.end())
+            return false;
+        config = it->second;
+        return true;
+    }
+
+    void SigSession::clear_analog_logic_conversions()
+    {
+        remove_all_derived_logic_signals();
+        for (auto &item : _derived_logic) {
+            if (item.second.device)
+                sr_dev_inst_free(item.second.device);
+        }
+        _derived_logic.clear();
+    }
+
+    data::LogicSnapshot *SigSession::get_derived_logic_snapshot(int index) const
+    {
+        const auto it = _derived_logic.find(index);
+        return it == _derived_logic.end() ? nullptr : it->second.snapshot.get();
+    }
+
+    std::vector<int> SigSession::get_derived_logic_indices() const
+    {
+        std::vector<int> result;
+        for (const auto &item : _derived_logic)
+            if (item.second.snapshot && item.second.snapshot->have_data())
+                result.push_back(item.second.channel->index);
+        return result;
     }
 
     void SigSession::reload()
@@ -1453,6 +1585,7 @@ namespace pv
             return; // This analog packet was not expected.
         }
 
+        bool accepted = false;
         if (_capture_data->get_analog()->last_ended())
         {
             // reset scale of analog signal
@@ -1465,12 +1598,21 @@ namespace pv
             }
 
             // first payload
-            _capture_data->get_analog()->first_payload(compatible, _device_agent.get_sample_limit(), _device_agent.get_channels());
+            accepted = _capture_data->get_analog()->first_payload(
+                compatible, _device_agent.get_sample_limit(),
+                _device_agent.get_channels());
         }
         else
         {
             // Append to the existing data snapshot
-            _capture_data->get_analog()->append_payload(compatible);
+            accepted = _capture_data->get_analog()->append_payload(compatible);
+        }
+
+        if (!accepted)
+        {
+            _error = Pkt_data_err;
+            _callback->session_error();
+            return;
         }
 
         if (_capture_data->get_analog()->memory_failed())
@@ -2565,7 +2707,11 @@ namespace pv
                         
                         _view_data = _capture_data;
                         invalidate_glitch_filter_state();
-                        attach_data_to_signal(_view_data); 
+                        attach_data_to_signal(_view_data);
+                        clear_analog_logic_conversions();
+                        const auto conversion_configs = _analog_logic_configs;
+                        for (const auto &entry : conversion_configs)
+                            set_analog_logic_conversion(entry.first, entry.second);
                         set_session_time(_trig_time);
 
                         _callback->receive_trigger(_view_data->_trig_pos); //Update trig position.
@@ -2728,6 +2874,31 @@ namespace pv
         _signals.clear();
     }
 
+    void SigSession::remove_derived_logic_signal(int index)
+    {
+        for (auto it = _signals.begin(); it != _signals.end(); ++it) {
+            if ((*it)->get_index() == index) {
+                (*it)->sig_released(*it);
+                DESTROY_QT_LATER(*it);
+                _signals.erase(it);
+                return;
+            }
+        }
+    }
+
+    void SigSession::remove_all_derived_logic_signals()
+    {
+        for (auto it = _signals.begin(); it != _signals.end();) {
+            if ((*it)->get_index() >= DerivedLogicIndexBase) {
+                (*it)->sig_released(*it);
+                DESTROY_QT_LATER(*it);
+                it = _signals.erase(it);
+            } else {
+                ++it;
+            }
+        }
+    }
+
     view::Signal* SigSession::get_signal_by_index(int index)
     {
         for (int i=0; i< (int)_signals.size(); i++)
@@ -2761,6 +2932,7 @@ namespace pv
         // Replacing view data invalidates any pending glitch-filter undo.
         invalidate_glitch_filter_state();
         _view_data->clear();
+        clear_analog_logic_conversions();
         data_updated();
     }
 

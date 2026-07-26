@@ -29,12 +29,14 @@
 #include <set>
 #include <QWidget>
 #include <QPushButton>
+#include <QComboBox>
 #include <QVector> 
 #include <QLabel>
 #include <libsigrok.h> 
 
 #include "../interface/icallbacks.h"
 #include "../ui/xtoolbutton.h"
+#include "../ui/dscombobox.h"
 #include "../ui/uimanager.h"
 
 struct dev_mode_name{
@@ -64,13 +66,16 @@ public:
     ~DevMode();
 
 private:
-	void paintEvent(QPaintEvent *event);
+    void paintEvent(QPaintEvent *event) override;
+    void sync_mode_button(int mode, const QString &iconPath);
+    void sync_mode_button_width();
+    void apply_mode_style();
 
 private:
-	void mousePressEvent(QMouseEvent * event);
-	void mouseReleaseEvent(QMouseEvent *event);
-	void mouseMoveEvent(QMouseEvent *event);
-	void leaveEvent(QEvent *event); 
+    void mousePressEvent(QMouseEvent * event) override;
+    void mouseReleaseEvent(QMouseEvent *event) override;
+    void mouseMoveEvent(QMouseEvent *event) override;
+    void leaveEvent(QEvent *event) override;
     const dev_mode_name* get_mode_name(int mode);
 
      //IUiWindow
@@ -80,7 +85,7 @@ private:
 
 public slots:
     void set_device();
-    void on_mode_change();
+    void on_mode_change(int index);
     void on_close();
 
 private slots:
@@ -89,9 +94,8 @@ private slots:
 
 private:
     SigSession *_session;
-    std::map <QAction *, const sr_dev_mode *> _mode_list;
-    XToolButton     *_mode_btn;
-    QMenu           *_pop_menu;
+    DsComboBox      *_mode_btn;
+    bool             _updating_mode;
     QPoint          _mouse_point;
     XToolButton     *_close_button;
     bool            _bFile;
