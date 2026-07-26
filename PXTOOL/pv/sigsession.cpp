@@ -210,7 +210,19 @@ namespace pv
             return false;
         }
 
-        struct ds_device_base_info *dev = (array + count - 1);
+        int default_index = count - 1;
+        // Prefer PXTOOL's native virtual demo so the default work-mode selector
+        // exposes Logic Analyzer, Data Acquisition, and Oscilloscope. The
+        // upstream compatibility demo remains available in the Device combo,
+        // but intentionally only advertises its logic-only capability.
+        for (int i = 0; i < count; ++i) {
+            if (QString::fromUtf8(array[i].name) == QStringLiteral("Demo Device")) {
+                default_index = i;
+                break;
+            }
+        }
+
+        struct ds_device_base_info *dev = (array + default_index);
         ds_device_handle dev_handle = dev->handle;
 
         free(array);
