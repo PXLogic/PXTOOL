@@ -482,6 +482,9 @@ void DecoderStack::do_decode_work()
                         break;
                 }
             }
+            if (_snapshot == NULL)
+                _snapshot = _session->get_derived_logic_snapshot(
+                    dec->first_probe_index());
             if (_snapshot != NULL)
                 break;
         }

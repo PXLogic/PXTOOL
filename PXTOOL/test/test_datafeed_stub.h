@@ -22,6 +22,7 @@
 #ifndef TEST_DATAFEED_STUB_H
 #define TEST_DATAFEED_STUB_H
 
+#include <stddef.h>
 #include <stdint.h>
 
 struct test_captured_datafeed_packet {
@@ -40,6 +41,11 @@ extern "C" {
 void test_datafeed_reset(void);
 const test_captured_datafeed_packet *test_datafeed_last_packet(void);
 uint64_t test_input_observer_sample_limit(void);
+bool test_input_observer_analog_is_standard_float(void);
+unsigned int test_input_observer_analog_channel_count(void);
+int test_input_observer_analog_channel_index(unsigned int index);
+size_t test_input_observer_analog_prefix_length(void);
+float test_input_observer_analog_prefix(unsigned int index);
 
 #ifdef __cplusplus
 }

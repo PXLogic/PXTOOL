@@ -21,6 +21,7 @@
  */
 
 #include <math.h>
+#include <cmath>
 #include "../view/analogsignal.h"
 #include "../data/analogsnapshot.h"
 #include "../view/view.h"
@@ -47,6 +48,10 @@ AnalogSignal::AnalogSignal(data::AnalogSnapshot *data, sr_channel *probe) :
     Signal(probe),
     _data(data),
     _rects(NULL),
+    _auto_range(true),
+    _volts_per_div(1.0),
+    _display_min(-5.0),
+    _display_max(5.0),
     _hover_en(false),
     _hover_index(0),
     _hover_point(QPointF(-1, -1)),
@@ -81,12 +86,25 @@ AnalogSignal::AnalogSignal(data::AnalogSnapshot *data, sr_channel *probe) :
     if (!ret) {
         dsv_err("ERROR: config_get SR_CONF_PROBE_OFFSET failed.");
     }
+
+    if (_data && _data->is_float()) {
+        const double lo = _data->channel_min(probe->index);
+        const double hi = _data->channel_max(probe->index);
+        const double span = (hi > lo) ? (hi - lo) : 1.0;
+        _scale = get_totalHeight() > 0 ? (float)(get_totalHeight() / span) : 1.0f;
+    } else {
+        _scale = 1.0f;
+    }
 }
 
 AnalogSignal::AnalogSignal(view::AnalogSignal *s, pv::data::AnalogSnapshot *data, sr_channel *probe) :
     Signal(*s, probe),
     _data(data),
     _rects(NULL),
+    _auto_range(s->auto_range()),
+    _volts_per_div(s->volts_per_div()),
+    _display_min(-5.0),
+    _display_max(5.0),
     _hover_en(false),
     _hover_index(0),
     _hover_point(QPointF(-1, -1)),
@@ -99,6 +117,39 @@ AnalogSignal::AnalogSignal(view::AnalogSignal *s, pv::data::AnalogSnapshot *data
     _zero_offset = s->get_zero_offset();
 
     _scale = s->get_scale();
+}
+
+void AnalogSignal::set_volts_per_div(double value)
+{
+    if (value > 0.0 && std::isfinite(value)) {
+        _volts_per_div = value;
+        _auto_range = false;
+    }
+}
+
+void AnalogSignal::update_display_range(int order, int height)
+{
+    if (!_data || !_data->is_float() || height <= 0)
+        return;
+
+    if (_auto_range) {
+        _display_min = _data->channel_min(order);
+        _display_max = _data->channel_max(order);
+        if (!std::isfinite(_display_min) || !std::isfinite(_display_max) ||
+            _display_min == _display_max) {
+            const double center = std::isfinite(_display_min) ? _display_min : 0.0;
+            _display_min = center - 0.5;
+            _display_max = center + 0.5;
+        }
+        const double padding = (_display_max - _display_min) * 0.05;
+        _display_min -= padding;
+        _display_max += padding;
+    } else {
+        const double span = NumSpanY * _volts_per_div;
+        _display_min = -span;
+        _display_max = span;
+    }
+    _scale = static_cast<float>(height / (_display_max - _display_min));
 }
 
 AnalogSignal::~AnalogSignal()
@@ -206,14 +257,20 @@ QPointF AnalogSignal::get_point(uint64_t index, float &value)
         return pt;
 
     const uint64_t ring_index = (uint64_t)(_data->get_ring_start() + floor(index)) % _data->get_sample_count();
-    value = *(_data->get_samples(ring_index) + order * _data->get_unit_bytes());
+    if (_data->is_float())
+        value = (float)_data->sample_as_double(order, index);
+    else
+        value = *(_data->get_samples(ring_index) + order * _data->get_unit_bytes());
 
     const int height = get_totalHeight();
     const float top = get_y() - height * 0.5;
     const float bottom = get_y() + height * 0.5;
+    update_display_range(order, height);
     const int hw_offset = get_hw_offset();
     const float x = (index / samples_per_pixel - pixels_offset);
-    const float y = min(max(top, get_zero_vpos() + (value - hw_offset)* _scale), bottom);
+    const float y = _data->is_float() ?
+        min(max(top, static_cast<float>(top + (_display_max - value) * _scale)), bottom) :
+        min(max(top, get_zero_vpos() + (value - hw_offset)* _scale), bottom);
     pt = QPointF(x, y);
 
     return pt;
@@ -404,7 +461,7 @@ void AnalogSignal::paint_mid(QPainter &p, int left, int right, QColor fore, QCol
     const int height = get_totalHeight();
     const float top = get_y() - height * 0.5;
     const float bottom = get_y() + height * 0.5;
-    const float zeroY = ratio2pos(get_zero_ratio());
+    float zeroY = ratio2pos(get_zero_ratio());
     const int width = right - left + 1;
 
     const double scale = _view->scale();
@@ -415,6 +472,10 @@ void AnalogSignal::paint_mid(QPainter &p, int left, int right, QColor fore, QCol
     const int order = _data->get_ch_order(get_index());
     if (order == -1)
         return;
+
+    update_display_range(order, height);
+    if (_data->is_float())
+        zeroY = static_cast<float>(top + _display_max * _scale);
 
     //The channel have no data.
     if (_data->has_enabled_channel(get_index()) == false){
@@ -437,7 +498,7 @@ void AnalogSignal::paint_mid(QPainter &p, int left, int right, QColor fore, QCol
     if (show_length <= 0)
         return;
 
-    if (samples_per_pixel < EnvelopeThreshold){
+    if (_data->is_float() || samples_per_pixel < EnvelopeThreshold){
         paint_trace(p, _data, zeroY,
             start_pixel, start_index, show_length,
             samples_per_pixel, order,
@@ -484,7 +545,8 @@ void AnalogSignal::paint_trace(QPainter &p,
     if (sample_count > 0) {
         const uint8_t unit_bytes = pshot->get_unit_bytes();
         const uint8_t *const samples = pshot->get_samples(0);
-        assert(samples);
+        if (!pshot->is_float())
+            assert(samples);
 
         p.setPen(_colour);
         //p.setPen(QPen(_colour, 2, Qt::SolidLine));
@@ -498,14 +560,17 @@ void AnalogSignal::paint_trace(QPainter &p,
         double  pixels_per_sample = 1.0/samples_per_pixel;
 
         for (int64_t sample = 0; sample < sample_count; sample++) {
-            uint64_t index = (yindex * channel_num + order) * unit_bytes;
-            float yvalue = samples[index];
-
-            for(uint8_t i = 1; i < unit_bytes; i++){
-                yvalue += (samples[++index] << i*8);
+            float yvalue;
+            if (pshot->is_float()) {
+                yvalue = (float)pshot->sample_as_double(order, yindex);
+                yvalue = zeroY - (float)(yvalue * _scale);
+            } else {
+                uint64_t index = (yindex * channel_num + order) * unit_bytes;
+                yvalue = samples[index];
+                for(uint8_t i = 1; i < unit_bytes; i++)
+                    yvalue += (samples[++index] << i*8);
+                yvalue = zeroY + (yvalue - hw_offset) * _scale;
             }
-
-            yvalue = zeroY + (yvalue - hw_offset) * _scale;
             yvalue = min(max(yvalue, top), bottom);
             *point++ = QPointF(x, yvalue);
 

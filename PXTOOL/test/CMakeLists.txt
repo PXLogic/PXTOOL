@@ -42,6 +42,8 @@ add_executable(DSView-test
     test_output_fixtures.cpp
     test_input_fixtures.cpp
     test_analogpacketadapter.cpp
+    test_analogsnapshot.cpp
+    test_analogtologic.cpp
     test_logsearch.cpp
     test_view_sampleconversion.cpp
     test_theme.cpp
@@ -55,12 +57,18 @@ add_executable(DSView-test
     ../pv/data/formatcapability.cpp
     ../pv/data/iooptions.cpp
     ../pv/data/analogpacketadapter.cpp
+    ../pv/data/snapshot.cpp
+    ../pv/data/analogsnapshot.cpp
+    ../pv/data/logicsnapshot.cpp
+    ../pv/data/spillmanager.cpp
+    ../pv/data/analogtologic.cpp
     ../pv/dialogs/inputoutputoptioneditor.cpp
     test_formatcapability_stubs.c
     test_upstream_io_stubs.c
     test_deviceagent_stubs.cpp
     ../pv/deviceagent.cpp
     ../../libsigrok/analog.c
+    ../../libsigrok/hardware/demo/demo.c
     ../../libsigrok/keyinfo.c
     ../../libsigrok/device_source.c
     ../../libsigrok/dsdevice.c
@@ -101,8 +109,13 @@ add_executable(DSView-test
     ../../libsigrok/output/wavedrom.c
     ../../libsigrok/strutil.c
     ../../common/log/xlog.c
+    ../../common/minizip/unzip.c
     ../../common/minizip/ioapi.c
     ../../common/minizip/zip.c
+)
+
+target_compile_definitions(DSView-test PRIVATE
+    DSVIEW_SOURCE_DIR="${CMAKE_SOURCE_DIR}"
 )
 
 # InputImporter and StoreSession operate on a real SigSession.  Their

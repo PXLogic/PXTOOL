@@ -9,7 +9,11 @@ namespace {
 
 std::string read_file(const char *path)
 {
-    std::ifstream input(path);
+#ifndef DSVIEW_SOURCE_DIR
+#define DSVIEW_SOURCE_DIR "."
+#endif
+    const std::string full_path = std::string(DSVIEW_SOURCE_DIR) + "/" + path;
+    std::ifstream input(full_path);
     std::ostringstream buffer;
     buffer << input.rdbuf();
     return buffer.str();

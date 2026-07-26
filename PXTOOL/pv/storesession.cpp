@@ -897,7 +897,7 @@ bool StoreSession::validateExportFormat()
 
     if (!analog_snapshot) {
         reason = tr("the active capture is not analog data");
-    } else if (analog_snapshot->get_unit_bytes() != 1) {
+    } else if (!analog_snapshot->is_float() && analog_snapshot->get_unit_bytes() != 1) {
         reason = tr("only 8-bit analog snapshots can be converted safely");
     } else if (_session->cur_snap_samplerate() == 0) {
         reason = tr("the sample rate is unavailable");
@@ -1460,11 +1460,24 @@ void StoreSession::export_exec(data::Snapshot *snapshot)
          
                 if (standard_analog_output) {
                     try {
-                        const auto samples =
-                            data::convertUnsigned8AnalogSamples(
+                        std::vector<float> samples;
+                        if (analog_snapshot->is_float()) {
+                            samples.reserve(static_cast<size_t>(size) * analog_channels.size());
+                            const uint64_t base = (j == 0 ? ring_start : 0) + i;
+                            for (uint64_t sample = 0; sample < size; ++sample) {
+                                for (int channel = 0; channel < analog_channels.size(); ++channel) {
+                                    const int order = analog_snapshot->get_ch_order(
+                                        analog_channels[channel].index);
+                                    samples.push_back(static_cast<float>(
+                                        analog_snapshot->sample_as_double(order, base + sample)));
+                                }
+                            }
+                        } else {
+                            samples = data::convertUnsigned8AnalogSamples(
                                 static_cast<const uint8_t *>(block_buffer[j]) +
                                     i * ch_count,
                                 size, ch_count, conversions);
+                        }
                         auto packet = data::makeAnalogPacket(
                             analog_channels, samples, size,
                             _session->cur_snap_samplerate(),

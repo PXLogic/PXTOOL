@@ -577,11 +577,68 @@ void Header::contextMenuEvent(QContextMenuEvent *event)
     if (!t)
         return;
 
-    if (_view.session().get_device()->get_work_mode() != LOGIC)
+    const int work_mode = _view.session().get_device()->get_work_mode();
+    if (work_mode != LOGIC && work_mode != ANALOG)
         return;
 
     if (_view.session().is_working())
         return;
+
+    if (work_mode == ANALOG) {
+        auto *analog = dynamic_cast<AnalogSignal *>(t);
+        if (!analog)
+            return;
+
+        QMenu menu(this);
+        QAction *auto_range = menu.addAction(tr("Auto Range"));
+        auto_range->setCheckable(true);
+        auto_range->setChecked(analog->auto_range());
+        QAction *vdiv = menu.addAction(tr("Set V/div..."));
+        QMenu *convert = menu.addMenu(tr("Analog to Logic"));
+        QAction *disable = convert->addAction(tr("Disabled"));
+        QAction *threshold = convert->addAction(tr("Threshold..."));
+        QAction *schmitt = convert->addAction(tr("Schmitt..."));
+        ui::apply_application_menu_font(&menu);
+
+        QAction *chosen = menu.exec(event->globalPos());
+        if (chosen == auto_range) {
+            analog->set_auto_range(auto_range->isChecked());
+        } else if (chosen == vdiv) {
+            bool accepted = false;
+            const double value = QInputDialog::getDouble(this, tr("V/div"),
+                tr("Volts per division"), analog->volts_per_div(), 1e-9, 1e9,
+                6, &accepted);
+            if (accepted)
+                analog->set_volts_per_div(value);
+        } else if (chosen == disable) {
+            data::AnalogToLogic::Config config;
+            config.mode = data::AnalogToLogic::Mode::Disabled;
+            _view.session().set_analog_logic_conversion(analog->get_index(), config);
+        } else if (chosen == threshold) {
+            bool accepted = false;
+            data::AnalogToLogic::Config config;
+            config.mode = data::AnalogToLogic::Mode::Threshold;
+            config.threshold = QInputDialog::getDouble(this, tr("Threshold"),
+                tr("Logic high threshold"), 0.0, -1e9, 1e9, 6, &accepted);
+            if (accepted)
+                _view.session().set_analog_logic_conversion(analog->get_index(), config);
+        } else if (chosen == schmitt) {
+            bool low_accepted = false;
+            bool high_accepted = false;
+            data::AnalogToLogic::Config config;
+            config.mode = data::AnalogToLogic::Mode::Schmitt;
+            config.low = QInputDialog::getDouble(this, tr("Schmitt"),
+                tr("Low threshold"), -0.1, -1e9, 1e9, 6, &low_accepted);
+            if (low_accepted)
+                config.high = QInputDialog::getDouble(this, tr("Schmitt"),
+                    tr("High threshold"), 0.1, config.low + 1e-9, 1e9, 6,
+                    &high_accepted);
+            if (low_accepted && high_accepted)
+                _view.session().set_analog_logic_conversion(analog->get_index(), config);
+        }
+        _view.signals_changed(nullptr);
+        return;
+    }
 
     QMenu menu(this);
     QAction *resetOne = menu.addAction(tr("Reset Row Height"));

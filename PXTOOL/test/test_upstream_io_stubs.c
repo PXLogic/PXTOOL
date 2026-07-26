@@ -13,10 +13,15 @@
 #include "libsigrok-internal.h"
 
 #include <stdbool.h>
+#include <stdlib.h>
 #include <string.h>
 
 static uint64_t test_samplerate;
 enum { TEST_LOGIC_PREFIX_CAPACITY = 256 };
+enum { TEST_ANALOG_PREFIX_CAPACITY = 256, TEST_ANALOG_CHANNEL_CAPACITY = 16 };
+
+char DS_USR_PATH[500];
+struct ds_trigger *trigger;
 
 static struct {
     unsigned int header_packets;
@@ -29,6 +34,11 @@ static struct {
     uint64_t sample_limit;
     uint8_t logic_prefix[TEST_LOGIC_PREFIX_CAPACITY];
     size_t logic_prefix_len;
+    bool analog_standard_float;
+    unsigned int analog_channel_count;
+    int analog_channel_indices[TEST_ANALOG_CHANNEL_CAPACITY];
+    float analog_prefix[TEST_ANALOG_PREFIX_CAPACITY];
+    size_t analog_prefix_len;
     bool saw_end;
 } test_input_observer;
 
@@ -146,8 +156,36 @@ void test_input_observer_record_packet(const struct sr_dev_inst *sdi,
     case SR_DF_ANALOG:
         analog = packet->payload;
         test_input_observer.analog_packets++;
-        if (analog)
+        if (analog) {
             test_input_observer.analog_samples += analog->num_samples;
+            test_input_observer.analog_standard_float = analog->encoding &&
+                analog->meaning && analog->meaning->channels &&
+                analog->encoding->is_float &&
+                analog->encoding->unitsize == sizeof(float);
+            if (test_input_observer.analog_standard_float) {
+                size_t count = (size_t)analog->num_samples *
+                    g_slist_length(analog->meaning->channels);
+                const GSList *channel_item;
+                unsigned int channel_index = 0;
+
+                test_input_observer.analog_channel_count =
+                    g_slist_length(analog->meaning->channels);
+                for (channel_item = analog->meaning->channels;
+                        channel_item && channel_index < TEST_ANALOG_CHANNEL_CAPACITY;
+                        channel_item = channel_item->next, channel_index++) {
+                    const struct sr_channel *channel = channel_item->data;
+                    test_input_observer.analog_channel_indices[channel_index] =
+                        channel ? channel->index : -1;
+                }
+                if (count > TEST_ANALOG_PREFIX_CAPACITY)
+                    count = TEST_ANALOG_PREFIX_CAPACITY;
+                if (count && analog->data) {
+                    memcpy(test_input_observer.analog_prefix, analog->data,
+                        count * sizeof(float));
+                    test_input_observer.analog_prefix_len = count;
+                }
+            }
+        }
         break;
     case SR_DF_END:
         test_input_observer.saw_end = true;
@@ -200,6 +238,36 @@ uint64_t test_input_observer_sample_limit(void)
 bool test_input_observer_saw_end(void)
 {
     return test_input_observer.saw_end;
+}
+
+bool test_input_observer_analog_is_standard_float(void)
+{
+    return test_input_observer.analog_standard_float;
+}
+
+unsigned int test_input_observer_analog_channel_count(void)
+{
+    return test_input_observer.analog_channel_count;
+}
+
+int test_input_observer_analog_channel_index(unsigned int index)
+{
+    if (index >= test_input_observer.analog_channel_count ||
+            index >= TEST_ANALOG_CHANNEL_CAPACITY)
+        return -1;
+    return test_input_observer.analog_channel_indices[index];
+}
+
+size_t test_input_observer_analog_prefix_length(void)
+{
+    return test_input_observer.analog_prefix_len;
+}
+
+float test_input_observer_analog_prefix(unsigned int index)
+{
+    if (index >= test_input_observer.analog_prefix_len)
+        return 0.0f;
+    return test_input_observer.analog_prefix[index];
 }
 
 size_t test_input_observer_logic_prefix_len(void)
