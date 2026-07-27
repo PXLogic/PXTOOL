@@ -15,9 +15,7 @@
 
 #include <QVariant>
 
-extern "C" {
 #include "libsigrok.h"
-}
 
 class QWidget;
 

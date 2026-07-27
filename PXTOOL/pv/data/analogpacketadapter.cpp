@@ -17,6 +17,8 @@
 #include <stdexcept>
 #include <utility>
 
+#include <glib.h>
+
 extern "C" {
 #include "libsigrok-internal.h"
 }
