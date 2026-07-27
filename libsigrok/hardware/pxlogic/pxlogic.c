@@ -511,6 +511,12 @@ static GSList *scan(GSList *options)
     return devices;
 }
 
+static const GSList *dev_mode_list(const struct sr_dev_inst *sdi)
+{
+    (void)sdi;
+    return g_slist_append(NULL, (gpointer)&sr_mode_list[0]);
+}
+
 SR_PRIV int firmware_config(struct libusb_device_handle *usbdevh, const char *name, unsigned int mode)
 {
     FILE *fw;
@@ -2033,6 +2039,7 @@ SR_PRIV struct sr_dev_driver px_driver_test_info = {
     .init = hw_init,
     .cleanup = hw_cleanup,
     .scan = scan,
+    .dev_mode_list = dev_mode_list,
     .config_get = config_get,
     .config_set = config_set,
     .config_list = config_list,
