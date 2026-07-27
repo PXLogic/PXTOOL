@@ -110,11 +110,12 @@ protected:
                 : QColor(AppConfig::Instance().IsDarkStyle()
                              ? QStringLiteral("#c084fc")
                              : QStringLiteral("#7c3aed"));
+        const QSize modeIconSize(43, 32);
         const QIcon icon = tinted_mode_icon(itemIcon(currentIndex()), modeColor,
-                                            iconSize());
-        const QSize requested = iconSize();
+                                            modeIconSize);
+        const QSize requested = modeIconSize;
         const int textWidth = metrics.horizontalAdvance(text);
-        const int gap = 6;
+        const int gap = 3;
         const int chevronHeight = 6;
         const int chevronGap = 2;
         const int groupHeight = qMax(requested.height(), metrics.height());
@@ -124,7 +125,7 @@ protected:
             content.width(), groupHeight);
         const int groupWidth = requested.width() + gap + textWidth;
         int x = groupRow.center().x() - groupWidth / 2;
-        const int y = groupRow.center().y() - requested.height() / 2;
+        const int y = groupRow.center().y() - requested.height() / 2 + 8;
         const QPoint arrowCenter(groupRow.center().x(),
             groupRow.bottom() + chevronGap + chevronHeight / 2);
 

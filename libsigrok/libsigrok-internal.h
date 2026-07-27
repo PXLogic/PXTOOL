@@ -296,10 +296,12 @@ static inline void write_dblle_inc(uint8_t **p, double x)
     *p += sizeof(x);
 }
 
+#ifndef __cplusplus
 #undef min
 #define min(a,b) ((a)<(b)?(a):(b))
 #undef max
 #define max(a,b) ((a)>(b)?(a):(b))
+#endif
 
 #define USB_EV_HOTPLUG_UNKNOW		0
 #define USB_EV_HOTPLUG_ATTACH		1
