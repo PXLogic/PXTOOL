@@ -4,6 +4,7 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 APP_NAME="PXTOOL"
 APP_PATH="${ROOT_DIR}/build.macOS/${APP_NAME}.app"
+SIGN_APP_SCRIPT="${ROOT_DIR}/scripts/macOS/sign-macos-app.sh"
 APP_WEBUI_PATH="${APP_PATH}/Contents/MacOS/webui/index.html"
 APP_CDECODER_DIR="${APP_PATH}/Contents/Resources/share/PXTOOL/cdecoders"
 SPI_MODULE_PATH="${ROOT_DIR}/build.macOS/spi.dylib"
@@ -14,6 +15,11 @@ SRD_C_DECODER_APP_DIR="${APP_PATH}/Contents/Resources/share/libsigrokdecode/deco
 # pv/config/appconfig.cpp (Qt QStandardPaths::AppDataLocation +
 # QCoreApplication organization/application name -> DreamSourceLab/PXTOOL).
 CDECODER_RUNTIME_DIR="${HOME}/Library/Application Support/DreamSourceLab/PXTOOL/cdecoders"
+
+cleanup_packaged_qt_artifacts() {
+    rm -f "${APP_PATH}/Contents/Resources/qt.conf"
+    rm -rf "${APP_PATH}/Contents/PlugIns"
+}
 
 cd "${ROOT_DIR}"
 
@@ -50,6 +56,11 @@ else
     cp -v "${APP_CDECODER_DIR}/spi.dylib" "${CDECODER_RUNTIME_DIR}/spi.dylib"
 fi
 
-echo "[4/4] Kill existing instance and launch"
+cleanup_packaged_qt_artifacts
+
+echo "[4/5] Re-sign app bundle"
+"${SIGN_APP_SCRIPT}" "${APP_PATH}" "${CDECODER_RUNTIME_DIR}/spi.dylib"
+
+echo "[5/5] Kill existing instance and launch"
 pkill -x "${APP_NAME}" 2>/dev/null && sleep 1 && echo "Killed running ${APP_NAME}" || echo "No running ${APP_NAME} found"
 open "${APP_PATH}"

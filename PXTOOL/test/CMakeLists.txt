@@ -64,11 +64,14 @@ add_executable(DSView-test
     ../pv/data/analogtologic.cpp
     ../pv/dialogs/inputoutputoptioneditor.cpp
     test_formatcapability_stubs.c
+    test_pxlogic_stubs.c
     test_upstream_io_stubs.c
     test_deviceagent_stubs.cpp
     ../pv/deviceagent.cpp
     ../../libsigrok/analog.c
     ../../libsigrok/hardware/demo/demo.c
+    ../../libsigrok/hardware/pxlogic/pxlogic.c
+    ../../libsigrok/hardware/pxlogic/usb_ctrl.c
     ../../libsigrok/keyinfo.c
     ../../libsigrok/device_source.c
     ../../libsigrok/dsdevice.c

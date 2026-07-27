@@ -204,6 +204,10 @@ SRD_API int srd_init(const char *path)
 	/* Add our own module to the list of built-in modules. */
 	PyImport_AppendInittab("sigrokdecode", PyInit_sigrokdecode);
 
+	/* The decoders live inside the app bundle on macOS. Do not let Python
+	 * mutate the signed bundle by writing bytecode cache files there. */
+	g_setenv("PYTHONDONTWRITEBYTECODE", "1", TRUE);
+
 	/* Initialize the Python interpreter. */
     Py_InitializeEx(0); 
 

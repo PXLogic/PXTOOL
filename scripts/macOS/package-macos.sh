@@ -19,6 +19,7 @@ DIST_DIR="${ROOT}/build.macOS"
 DIST_APP="${DIST_DIR}/PXTOOL.app"
 FRAMEWORKS_DIR="${DIST_APP}/Contents/Frameworks"
 DMG_OUT="${DIST_DIR}/PXTOOL.dmg"
+SIGN_APP_SCRIPT="${ROOT}/scripts/macOS/sign-macos-app.sh"
 
 SKIP_BUILD=0
 NO_DMG=0
@@ -28,6 +29,56 @@ for arg in "$@"; do
     --no-dmg)     NO_DMG=1 ;;
   esac
 done
+
+detach_mounted_dmg() {
+  local image_path="$1"
+  local device
+
+  command -v hdiutil >/dev/null 2>&1 || return 0
+
+  device=$(hdiutil info 2>/dev/null | awk -v image_path="$image_path" '
+    /^[[:space:]]*image-path[[:space:]]*:/ {
+      current = $0
+      sub(/^[^:]*:[[:space:]]*/, "", current)
+    }
+    current == image_path && /^[[:space:]]*dev-entry[[:space:]]*:/ {
+      device = $0
+      sub(/^[^:]*:[[:space:]]*/, "", device)
+      print device
+      exit
+    }
+  ')
+
+  if [ -n "$device" ]; then
+    hdiutil detach "$device" >/dev/null 2>&1 || \
+      hdiutil detach "$device" -force >/dev/null 2>&1 || true
+  fi
+}
+
+remove_dmg_artifact() {
+  local artifact="$1"
+
+  if [ -e "$artifact" ]; then
+    detach_mounted_dmg "$artifact"
+    rm -f "$artifact"
+  fi
+}
+
+cleanup_dmg_artifacts() {
+  local dmg_out="$1"
+  local dmg_dir
+  local dmg_name
+  local stale_rw
+
+  dmg_dir="$(dirname "$dmg_out")"
+  dmg_name="$(basename "$dmg_out")"
+
+  remove_dmg_artifact "$dmg_out"
+  for stale_rw in "$dmg_dir"/rw.*."$dmg_name"; do
+    [ -e "$stale_rw" ] || continue
+    remove_dmg_artifact "$stale_rw"
+  done
+}
 
 # Step 1: Build
 if [ $SKIP_BUILD -eq 0 ]; then
@@ -178,7 +229,7 @@ if [ -d "$FRAMEWORKS_DIR/Python.framework" ]; then
 fi
 
 echo "  Re-signing app bundle..."
-codesign --force --deep --sign - "$DIST_APP" 2>&1 | grep -v "^$" || true
+"$SIGN_APP_SCRIPT" "$DIST_APP"
 
 # Final check for any remaining homebrew paths
 BROKEN=$(otool -L "$DIST_APP/Contents/MacOS/PXTOOL" 2>/dev/null \
@@ -198,6 +249,7 @@ if [ $NO_DMG -eq 0 ]; then
   # Get version from Info.plist
   VERSION=$(defaults read "$DIST_APP/Contents/Info.plist" CFBundleShortVersionString 2>/dev/null || echo "1.0")
   DMG_OUT="${DIST_DIR}/PXTOOL-${VERSION}-arm64-macOS.dmg"
+  cleanup_dmg_artifacts "$DMG_OUT"
 
   create-dmg \
     --volname "PXTOOL ${VERSION}" \

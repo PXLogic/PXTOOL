@@ -29,6 +29,7 @@ extern "C" {
 #include "libsigrok-internal.h"
 extern SR_PRIV struct sr_dev_driver upstream_demo_driver_info;
 extern SR_PRIV struct sr_dev_driver demo_driver_info;
+extern SR_PRIV struct sr_dev_driver px_driver_test_info;
 extern char DS_USR_PATH[500];
 
 void test_input_observer_reset(void);
@@ -273,6 +274,20 @@ BOOST_AUTO_TEST_CASE(acquisition_emits_configured_sample_limit)
 #else
     BOOST_TEST_MESSAGE("upstream compat demo is disabled for this build");
 #endif
+}
+
+BOOST_AUTO_TEST_CASE(pxlogic_exposes_logic_as_its_only_work_mode)
+{
+    BOOST_REQUIRE(px_driver_test_info.dev_mode_list != nullptr);
+
+    const GSList *modes = px_driver_test_info.dev_mode_list(nullptr);
+    BOOST_REQUIRE(modes != nullptr);
+    BOOST_CHECK_EQUAL(g_slist_length(const_cast<GSList *>(modes)), 1U);
+
+    const sr_dev_mode *mode = static_cast<const sr_dev_mode *>(modes->data);
+    BOOST_REQUIRE(mode != nullptr);
+    BOOST_CHECK_EQUAL(mode->mode, LOGIC);
+    g_slist_free(const_cast<GSList *>(modes));
 }
 
 BOOST_AUTO_TEST_SUITE_END()
