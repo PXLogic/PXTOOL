@@ -21,12 +21,14 @@
 
 #include "libsigrok-internal.h"
 
+#ifndef HAVE_UPSTREAM_FX2LAFW
 char DS_RES_PATH[500];
 
 void ds_set_last_error(int error)
 {
     (void)error;
 }
+#endif
 
 GSList *sr_usb_find(libusb_context *usb_ctx, const char *conn)
 {
