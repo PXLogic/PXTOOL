@@ -45,4 +45,10 @@ BOOST_AUTO_TEST_CASE(mso_selector_name_is_available)
                       std::string("Mixed Signal Oscilloscope"));
 }
 
+BOOST_AUTO_TEST_CASE(mso_button_label_is_compact)
+{
+    BOOST_CHECK_EQUAL(pv::view::DevMode::button_label_for_mode(MSO).toStdString(),
+                      std::string("Mixed Signal"));
+}
+
 BOOST_AUTO_TEST_SUITE_END()

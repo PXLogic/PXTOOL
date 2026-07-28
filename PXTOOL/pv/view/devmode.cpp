@@ -102,8 +102,8 @@ protected:
                                                  QStyle::SC_ComboBoxEditField,
                                                  this);
         const QFontMetrics metrics(font());
-        const QString text = currentText();
         const int mode = itemData(currentIndex()).toInt();
+        const QString text = pv::view::DevMode::button_label_for_mode(mode);
         const QColor modeColor = mode == ANALOG
             ? QColor(QStringLiteral("#4ade80"))
             : mode == DSO

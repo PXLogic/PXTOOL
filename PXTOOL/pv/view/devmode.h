@@ -81,6 +81,12 @@ public:
         }
     }
 
+    static QString button_label_for_mode(int mode)
+    {
+        return mode == MSO ? QStringLiteral("Mixed Signal")
+                           : display_name_for_mode(mode);
+    }
+
 private:
     void paintEvent(QPaintEvent *event) override;
     void sync_mode_button(int mode, const QString &iconPath);
