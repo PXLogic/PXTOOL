@@ -188,7 +188,18 @@ public:
         return mode == LOGIC || mode == MSO;
     }
     static bool is_dso_mode(int mode) { return mode == DSO; }
-    static bool channel_type_visible_in_mode(int mode, int channel_type);
+    static bool channel_type_visible_in_mode(int mode, int channel_type) {
+        if (mode == LOGIC)
+            return channel_type == SR_CHANNEL_LOGIC;
+        if (mode == ANALOG)
+            return channel_type == SR_CHANNEL_ANALOG;
+        if (mode == DSO)
+            return channel_type == SR_CHANNEL_DSO;
+        if (mode == MSO)
+            return channel_type == SR_CHANNEL_LOGIC ||
+                   channel_type == SR_CHANNEL_ANALOG;
+        return false;
+    }
 
     uint64_t cur_samplerate();
     uint64_t cur_snap_samplerate();

@@ -2753,6 +2753,13 @@ namespace pv
 
             _device_agent.set_config_int16(SR_CONF_DEVICE_MODE, mode);
 
+            for (GSList *l = _device_agent.get_channels(); l; l = l->next) {
+                sr_channel *probe = (sr_channel *)l->data;
+                const bool enabled = channel_type_visible_in_mode(mode, probe->type);
+                if (probe->enabled != enabled)
+                    _device_agent.enable_probe(probe, enabled);
+            }
+
             if (is_logic_capable_mode(cur_mode)){
                 clear_all_decode_task2();
                 clear_decode_result();
@@ -3039,23 +3046,6 @@ namespace pv
     void SigSession::apply_samplerate()
     {
         on_load_config_end();
-    }
-
-    bool SigSession::channel_type_visible_in_mode(int mode, int channel_type)
-    {
-        switch (mode) {
-        case LOGIC:
-            return channel_type == SR_CHANNEL_LOGIC;
-        case ANALOG:
-            return channel_type == SR_CHANNEL_ANALOG;
-        case DSO:
-            return channel_type == SR_CHANNEL_DSO;
-        case MSO:
-            return channel_type == SR_CHANNEL_LOGIC ||
-                   channel_type == SR_CHANNEL_ANALOG;
-        default:
-            return false;
-        }
     }
 
     SigSession::DiskCacheStatus SigSession::disk_cache_status() const
