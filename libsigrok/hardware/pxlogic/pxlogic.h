@@ -464,6 +464,8 @@ static const uint32_t drvopts[] = {
 
 static const uint32_t devopts[] = {
     SR_CONF_OPERATION_MODE   | SR_CONF_GET | SR_CONF_SET | SR_CONF_LIST,
+    SR_CONF_STREAM           | SR_CONF_GET,
+    SR_CONF_LOOP_MODE        | SR_CONF_GET | SR_CONF_SET,
     SR_CONF_CHANNEL_MODE    | SR_CONF_GET | SR_CONF_SET | SR_CONF_LIST,
     SR_CONF_VLD_CH_NUM      | SR_CONF_GET,
     SR_CONF_SAMPLERATE      | SR_CONF_GET | SR_CONF_SET | SR_CONF_LIST,

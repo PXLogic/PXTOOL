@@ -338,8 +338,9 @@ struct sr_context {
 static const struct sr_dev_mode sr_mode_list[] =
 {
     {LOGIC,"Logic Analyzer","la"},
-    {ANALOG, "Data Acquisition", "daq"},
     {DSO, "Oscilloscope", "osc"},
+    {ANALOG, "Data Acquisition", "daq"},
+    {MSO, "Mixed Signal Oscilloscope", "mso"},
 };
 
 enum sr_dev_driver_type

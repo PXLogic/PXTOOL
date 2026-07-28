@@ -482,7 +482,15 @@ namespace pv
         _callback->update_capture();
 
         set_cur_snap_samplerate(_device_agent.get_sample_rate());
-        set_cur_samplelimits(_device_agent.get_sample_limit());
+
+        uint64_t sample_limit = _device_agent.get_sample_limit();
+        if (_is_stream_mode && !_disk_cache_settings.enabled) {
+            const uint64_t channel_count = std::max<uint64_t>(
+                1, get_ch_num(SR_CHANNEL_LOGIC));
+            const uint64_t stream_window_samples = SR_MB(1) * 8 / channel_count;
+            sample_limit = std::max(sample_limit, stream_window_samples);
+        }
+        set_cur_samplelimits(sample_limit);
 
         _data_updated = false;
         _trigger_flag = false;
@@ -509,15 +517,18 @@ namespace pv
             }
         }   
 
-        // update current hw offset
+        // Signal visual state requires an attached waveform view. Headless
+        // import/export sessions still need to acquire their data without it.
         for (auto s : _signals)
-        {  
-            if (s->signal_type() == SR_CHANNEL_DSO){   
+        {
+            if (!s->get_view())
+                continue;
+            if (s->signal_type() == SR_CHANNEL_DSO){
                 auto sig = (view::DsoSignal*)s;
                 sig->set_zero_ratio(sig->get_zero_ratio());
                 sig->set_stop_scale(1);
-            }            
-            else if (s->signal_type() == SR_CHANNEL_ANALOG){  
+            }
+            else if (s->signal_type() == SR_CHANNEL_ANALOG){
                 auto sig = (view::AnalogSignal*)s;
                 sig->set_zero_ratio(sig->get_zero_ratio());
             }
@@ -609,7 +620,7 @@ namespace pv
         set_session_time(QDateTime::currentDateTime());
 
         int mode = _device_agent.get_work_mode();
-        if (mode == LOGIC)
+        if (is_logic_capable_mode(mode))
         {
             if (is_repeat_mode()
                     && _device_agent.is_hardware() 
@@ -695,7 +706,7 @@ namespace pv
         bool bAddDecoder = false;
         bool bSwapBuffer = false;
         const bool suspend_live_decode_for_disk_cache =
-            mode == LOGIC && _is_stream_mode && _disk_cache_settings.enabled
+            is_logic_capable_mode(mode) && _is_stream_mode && _disk_cache_settings.enabled
             && _device_agent.is_demo()
             && _device_agent.get_demo_operation_mode() == "random";
    
@@ -735,7 +746,7 @@ namespace pv
             }
         }
 
-        if (mode == LOGIC && _device_agent.is_hardware() 
+        if (is_logic_capable_mode(mode) && _device_agent.is_hardware()
             && _device_agent.get_hardware_operation_mode() == LO_OP_BUFFER)
         {
             _trig_check_timer.Start(200);
@@ -777,7 +788,7 @@ namespace pv
             return false;
         }
 
-        if (mode == LOGIC)
+        if (is_logic_capable_mode(mode))
         {
             for (auto de : _decode_traces){
                 if (bAddDecoder){
@@ -817,7 +828,7 @@ namespace pv
         }
 
         bool wait_upload = false;
-        if (is_single_mode() && _device_agent.get_work_mode() == LOGIC)
+        if (is_single_mode() && is_logic_capable_mode(_device_agent.get_work_mode()))
         { 
            _device_agent.get_config_bool(SR_CONF_WAIT_UPLOAD, wait_upload);
         }
@@ -889,7 +900,7 @@ namespace pv
             else
                 progress = captured_cnt * 100.0 / sample_limits;
 
-            if (progress == 100 && mode == LOGIC && _capture_data->get_logic()->have_data() == false){
+            if (progress == 100 && is_logic_capable_mode(mode) && _capture_data->get_logic()->have_data() == false){
                 progress = 0;
             }
 
@@ -989,15 +1000,7 @@ namespace pv
             sr_channel *probe = (sr_channel *)l->data;
             assert(probe); 
 
-            if (mode == LOGIC && probe->type != SR_CHANNEL_LOGIC){
-                continue;
-            }
-            
-            if (mode == ANALOG && probe->type != SR_CHANNEL_ANALOG){
-                continue;
-            }
-
-            if (mode == DSO && probe->type != SR_CHANNEL_DSO){
+            if (!channel_type_visible_in_mode(mode, probe->type)) {
                 continue;
             }
 
@@ -1179,11 +1182,7 @@ namespace pv
   
             signal = NULL; 
 
-            if (mode == LOGIC && probe->type != SR_CHANNEL_LOGIC){
-                continue;
-            }
-
-            if (mode == ANALOG && probe->type != SR_CHANNEL_ANALOG){
+            if (!channel_type_visible_in_mode(mode, probe->type)) {
                 continue;
             }
  
@@ -1267,7 +1266,7 @@ namespace pv
                 }
             }
         }
-        else if (mode == LOGIC || mode == ANALOG){
+        else if (is_logic_capable_mode(mode) || mode == ANALOG){
             dsv_info("ERROR: Unable to create any channel.");
             _signals.clear();
         }
@@ -1431,13 +1430,14 @@ namespace pv
                                               QString::number((qulonglong)QDateTime::currentMSecsSinceEpoch()).toStdString());
             }
 
-            _capture_data->get_logic()->set_loop(is_loop_mode() && !_spill_manager);
+            _capture_data->get_logic()->set_loop(
+                (is_loop_mode() || _is_stream_mode) && !_spill_manager);
             _capture_data->get_logic()->set_spill_manager(_spill_manager);
 
             bool bNotFree = is_decoding() && _view_data == _capture_data;
 
-            _capture_data->get_logic()->first_payload(o, 
-                            _device_agent.get_sample_limit(),
+            _capture_data->get_logic()->first_payload(o,
+                            cur_samplelimits(),
                             _device_agent.get_channels(),
                             !bNotFree);
 
@@ -2442,7 +2442,7 @@ namespace pv
         _device_status = ST_STOPPED;
         _is_working = false;
 
-        if (mode == LOGIC)
+        if (is_logic_capable_mode(mode))
             OnMessage(DSV_MSG_REV_END_PACKET);
         else if (_callback)
             _callback->frame_ended();
@@ -2655,7 +2655,7 @@ namespace pv
 
         case DSV_MSG_REV_END_PACKET:
             {
-                if (_device_agent.get_work_mode() == LOGIC)
+                if (is_logic_capable_mode(_device_agent.get_work_mode()))
                 {  
                     bool bAddDecoder = false;
                     bool bSwapBuffer = false;
@@ -2765,13 +2765,20 @@ namespace pv
 
             _device_agent.set_config_int16(SR_CONF_DEVICE_MODE, mode);
 
-            if (cur_mode == LOGIC){
+            for (GSList *l = _device_agent.get_channels(); l; l = l->next) {
+                sr_channel *probe = (sr_channel *)l->data;
+                const bool enabled = channel_type_visible_in_mode(mode, probe->type);
+                if (probe->enabled != enabled)
+                    _device_agent.enable_probe(probe, enabled);
+            }
+
+            if (is_logic_capable_mode(cur_mode)){
                 clear_all_decode_task2();
                 clear_decode_result();
             }
 
             _is_stream_mode = false;
-            if (mode == LOGIC){
+            if (is_logic_capable_mode(mode)){
                 if (_device_agent.is_hardware()){
                     _is_stream_mode = _device_agent.is_stream_mode();
                 }
@@ -3019,7 +3026,7 @@ namespace pv
     int64_t SigSession::get_ring_sample_count()
     {
         int mode = _device_agent.get_work_mode();
-        if (mode == LOGIC){
+        if (is_logic_capable_mode(mode)){
             return _view_data->get_logic()->get_ring_sample_count();
         }
         else if (mode == DSO){

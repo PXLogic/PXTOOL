@@ -65,6 +65,28 @@ public:
 
     ~DevMode();
 
+    static QString display_name_for_mode(int mode)
+    {
+        switch (mode) {
+        case LOGIC:
+            return QStringLiteral("Logic Analyzer");
+        case ANALOG:
+            return QStringLiteral("Data Acquisition");
+        case DSO:
+            return QStringLiteral("Oscilloscope");
+        case MSO:
+            return QStringLiteral("Mixed Signal Oscilloscope");
+        default:
+            return QStringLiteral("Capture Mode");
+        }
+    }
+
+    static QString button_label_for_mode(int mode)
+    {
+        return mode == MSO ? QStringLiteral("Mixed Signal")
+                           : display_name_for_mode(mode);
+    }
+
 private:
     void paintEvent(QPaintEvent *event) override;
     void sync_mode_button(int mode, const QString &iconPath);

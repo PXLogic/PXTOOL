@@ -133,7 +133,7 @@ pv::view::Trace* Header::get_mTrace(int &action, const QPoint &pt)
 
 Trace* Header::get_resize_trace(const QPoint &pt)
 {
-    if (_view.session().get_device()->get_work_mode() != LOGIC)
+    if (!_view.is_logic_rendering_mode())
         return nullptr;
     if (_view.session().is_working())
         return nullptr;
@@ -331,8 +331,7 @@ void Header::mouseReleaseEvent(QMouseEvent *event)
     }
 
     // Make view index by Y value;
-    int mode = _view.session().get_device()->get_work_mode();    
-    if (_moveFlag && mode == LOGIC)
+    if (_moveFlag && _view.is_logic_rendering_mode())
     {
         std::vector<Trace*> traces;
 
@@ -479,7 +478,7 @@ void Header::mouseMoveEvent(QMouseEvent *event)
 {
 	assert(event);
 
-    if (_view.session().is_working() && _view.session().get_device()->get_work_mode() == LOGIC){
+    if (_view.session().is_working() && _view.is_logic_rendering_mode()){
         //Disable the hover status of trig button on left pannel.
         return;
     }
@@ -578,13 +577,14 @@ void Header::contextMenuEvent(QContextMenuEvent *event)
         return;
 
     const int work_mode = _view.session().get_device()->get_work_mode();
-    if (work_mode != LOGIC && work_mode != ANALOG)
+    if (work_mode != LOGIC && work_mode != ANALOG && work_mode != MSO)
         return;
 
     if (_view.session().is_working())
         return;
 
-    if (work_mode == ANALOG) {
+    if (work_mode == ANALOG ||
+        (work_mode == MSO && dynamic_cast<AnalogSignal *>(t))) {
         auto *analog = dynamic_cast<AnalogSignal *>(t);
         if (!analog)
             return;

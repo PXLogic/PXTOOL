@@ -228,6 +228,7 @@ struct session_vdev
     //time
     uint64_t packet_len;
     gdouble packet_time;
+    uint64_t logic_packet_len;
 
     //status
     gboolean instant;
@@ -240,6 +241,11 @@ struct session_vdev
 
     //post
     uint64_t post_data_len;
+    int logic_enabled_probes;
+    int analog_enabled_probes;
+    gboolean logic_done;
+    gboolean analog_done;
+    gboolean end_sent;
 
     //logic
     uint64_t logci_cur_packet_num;  //dso or analog

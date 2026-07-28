@@ -222,6 +222,7 @@ public:
      * cursorList
      */
     std::list<Cursor*>& get_cursorList();
+    bool is_logic_rendering_mode() const;
 
     void add_cursor(QColor color, uint64_t sampleIndex);
     void add_cursor(uint64_t sampleIndex);

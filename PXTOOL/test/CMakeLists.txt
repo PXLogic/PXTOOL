@@ -33,6 +33,7 @@ add_executable(DSView-test
     test.cpp
     test_channeltint.cpp
     test_channelvisibility.cpp
+    test_mso_mode.cpp
     test_datafeed_stub.cpp
     test_deviceagent_capability.cpp
     test_device_switch_order.cpp

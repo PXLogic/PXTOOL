@@ -1328,7 +1328,7 @@ namespace pv
                 }
             }
 
-            if (_device_agent->get_work_mode() == LOGIC && _view != NULL){
+            if (SigSession::is_logic_capable_mode(_device_agent->get_work_mode()) && _view != NULL){
                 if (_session->is_realtime_refresh())
                     _view->auto_set_max_scale();
             }
@@ -1395,7 +1395,7 @@ namespace pv
                 }
             }
 
-            if (_device_agent->get_work_mode() == LOGIC && _session->is_realtime_refresh()){
+            if (SigSession::is_logic_capable_mode(_device_agent->get_work_mode()) && _session->is_realtime_refresh()){
                 if (_view != NULL)
                     _view->auto_set_max_scale();
             }

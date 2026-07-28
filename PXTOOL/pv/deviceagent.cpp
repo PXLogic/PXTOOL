@@ -58,7 +58,7 @@ void DeviceAgent::rebuild_custom_mode_list()
     free_custom_mode_list(_custom_mode_list);
     _custom_mode_list = nullptr;
     _custom_mode_entries.clear();
-    _custom_mode_entries.reserve(3);
+    _custom_mode_entries.reserve(4);
 
     bool has_logic = false;
     bool has_analog = false;
@@ -79,6 +79,8 @@ void DeviceAgent::rebuild_custom_mode_list()
                                             &_custom_mode_entries.back());
     };
 
+    if (has_logic && has_analog)
+        append(MSO, "Mixed Signal Oscilloscope", "mso");
     if (has_logic)
         append(LOGIC, "Logic Analyzer", "logic");
     if (has_analog)
@@ -505,6 +507,7 @@ GSList *DeviceAgent::get_channels()
         case SR_CONF_SAMPLERATE:
         case SR_CONF_LIMIT_SAMPLES:
         case SR_CONF_OPERATION_MODE:
+        case SR_CONF_DEVICE_MODE:
         case SR_CONF_STREAM:
             return true;
         default:
@@ -973,6 +976,7 @@ GVariant *DeviceAgent::custom_config_variant(int key) const
     case SR_CONF_LIMIT_SAMPLES:
         return g_variant_ref_sink(g_variant_new_uint64(_custom_sample_limit));
     case SR_CONF_OPERATION_MODE:
+    case SR_CONF_DEVICE_MODE:
         return g_variant_ref_sink(g_variant_new_int16(_custom_work_mode));
     case SR_CONF_STREAM:
         return g_variant_ref_sink(g_variant_new_boolean(FALSE));
@@ -998,6 +1002,7 @@ bool DeviceAgent::set_custom_config_variant(int key, GVariant *data)
         _custom_sample_limit = g_variant_get_uint64(data);
         return true;
     case SR_CONF_OPERATION_MODE:
+    case SR_CONF_DEVICE_MODE:
         if (!g_variant_is_of_type(data, G_VARIANT_TYPE_INT16))
             return false;
         _custom_work_mode = g_variant_get_int16(data);

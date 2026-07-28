@@ -168,7 +168,7 @@ bool Viewport::event(QEvent *event)
 
 Trace* Viewport::get_divider_trace(const QPoint &pt)
 {
-    if (_view.session().get_device()->get_work_mode() != LOGIC)
+    if (!_view.is_logic_rendering_mode())
         return nullptr;
     if (_view.session().is_working())
         return nullptr;
@@ -226,9 +226,7 @@ void Viewport::doPaint()
             break;
     } 
 
-    int mode = _view.session().get_device()->get_work_mode();
-
-    if (mode == LOGIC || _view.session().is_instant()) 
+    if (_view.is_logic_rendering_mode() || _view.session().is_instant())
     {
         if (_view.session().is_init_status())
         {
@@ -294,7 +292,7 @@ void Viewport::doPaint()
             _curSignalHeight = _view.get_signalHeight();
 
     // Draw channel divider lines in LOGIC mode (highlight synced with header via view)
-    if (_view.session().get_device()->get_work_mode() == LOGIC && _type == TIME_VIEW) {
+    if (_view.is_logic_rendering_mode() && _type == TIME_VIEW) {
         const int vw = _view.get_view_width();
         Trace* active_divider = _view.get_hovered_divider();
 
@@ -359,7 +357,7 @@ void Viewport::paintSignals(QPainter &p, QColor fore, QColor back)
     std::vector<Trace*> traces;
     _view.get_traces(_type, traces);
 
-    if (_view.session().get_device()->get_work_mode() == LOGIC) 
+    if (_view.is_logic_rendering_mode())
     {
         bool bFirst = true;
         uint64_t end_align_sample;
@@ -576,7 +574,7 @@ void Viewport::paintProgress(QPainter &p, QColor fore, QColor back)
 {
     (void)back;
 
-    if (_view.session().get_device()->get_work_mode() == LOGIC
+    if (_view.is_logic_rendering_mode()
         && _view.session().is_repeat_mode()){
         return;
     }
@@ -698,7 +696,7 @@ void Viewport::mousePressEvent(QMouseEvent *event)
         && event->button() == Qt::RightButton
         && _view.session().is_stopped_status())
     {
-        if (_view.session().get_device()->get_work_mode() == LOGIC) {
+        if (_view.is_logic_rendering_mode()) {
             set_action(LOGIC_ZOOM);
         }
         else if (_view.session().get_device()->get_work_mode() == DSO) {
@@ -854,7 +852,7 @@ void Viewport:: mouseMoveEvent(QMouseEvent *event)
     }
 
     // Show split cursor when hovering over a divider line, sync highlight with header
-    if (_action_type == NO_ACTION && _type == TIME_VIEW && mode == LOGIC) {
+    if (_action_type == NO_ACTION && _type == TIME_VIEW && _view.is_logic_rendering_mode()) {
         Trace *ht = get_divider_trace(event->pos());
         if (ht) {
             setCursor(Qt::SplitVCursor);
@@ -902,7 +900,7 @@ void Viewport:: mouseMoveEvent(QMouseEvent *event)
                     bool logic = false;
 
                    for(auto s : _view.session().get_signals()) {                     
-                        if (mode == LOGIC && s->signal_type() == SR_CHANNEL_LOGIC) {
+                        if (_view.is_logic_rendering_mode() && s->signal_type() == SR_CHANNEL_LOGIC) {
                             view::LogicSignal *logicSig = (view::LogicSignal*)s;
                             if (logicSig->measure(event->pos(), index0, index1, index2)) {
                                 logic = true;
@@ -1280,7 +1278,7 @@ void Viewport::mouseReleaseEvent(QMouseEvent *event)
 
     int mode = _view.session().get_device()->get_work_mode();
 
-    if (mode == LOGIC){
+    if (_view.is_logic_rendering_mode()){
         onLogicMouseRelease(event);
     }
     else if (mode == DSO){
@@ -1336,7 +1334,7 @@ void Viewport::mouseDoubleClickEvent(QMouseEvent *event)
 
     int mode = _view.session().get_device()->get_work_mode();
 
-    if (mode == LOGIC)
+    if (_view.is_logic_rendering_mode())
     {
         if (event->button() == Qt::RightButton) {
             if (_view.scale() == _view.get_maxscale())
@@ -1349,7 +1347,7 @@ void Viewport::mouseDoubleClickEvent(QMouseEvent *event)
             uint64_t index;
             uint64_t index0 = 0, index1 = 0, index2 = 0;
 
-            if (mode == LOGIC) {
+            if (_view.is_logic_rendering_mode()) {
                 for(auto s : _view.session().get_signals()) {
                     if (s->signal_type() == SR_CHANNEL_LOGIC) {
                         view::LogicSignal *logicSig  = (view::LogicSignal*)s;
@@ -1602,7 +1600,7 @@ void Viewport::set_receive_len(quint64 length)
 
     int mode = _view.session().get_device()->get_work_mode();
 
-    if (mode == LOGIC)
+    if (_view.is_logic_rendering_mode())
     {   
         if (_view.session().get_device()->is_file() == false)
         {
@@ -1637,7 +1635,7 @@ void Viewport::set_receive_len(quint64 length)
         }      
     }
 
-    if (mode == LOGIC && AppConfig::Instance().appOptions.autoScrollLatestData
+    if (_view.is_logic_rendering_mode() && AppConfig::Instance().appOptions.autoScrollLatestData
         && _view.session().is_realtime_refresh())
     {
         _view.scroll_to_logic_last_data_time();
@@ -2141,7 +2139,7 @@ void Viewport::on_trigger_timer()
 
     if (!_is_checked_trig)
     {
-        if (_view.session().get_device()->get_work_mode() == LOGIC
+        if (_view.is_logic_rendering_mode()
             && _view.session().get_device()->is_file() == false)
         {
             if (_view.session().is_triged()){
@@ -2212,7 +2210,7 @@ LogicSignal* Viewport::get_hovered_logic_signal(const QPoint &pos)
 {
     if (_type != TIME_VIEW)
         return nullptr;
-    if (_view.session().get_device()->get_work_mode() != LOGIC)
+    if (!_view.is_logic_rendering_mode())
         return nullptr;
     if (!_view.session().is_stopped_status())
         return nullptr;
@@ -2244,7 +2242,7 @@ void Viewport::update_edge_nav_buttons()
     }
 
     if (_type != TIME_VIEW ||
-        _view.session().get_device()->get_work_mode() != LOGIC ||
+        !_view.is_logic_rendering_mode() ||
         !_view.session().is_stopped_status()) {
         _prev_edge_btn->hide();
         _next_edge_btn->hide();
