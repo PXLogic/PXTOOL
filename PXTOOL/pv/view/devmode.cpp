@@ -354,9 +354,7 @@ void DevMode::paintEvent(QPaintEvent*)
 
 void DevMode::sync_mode_button_width()
 {
-    _mode_btn->setMinimumWidth(0);
-    _mode_btn->setMaximumWidth(QWIDGETSIZE_MAX);
-    _mode_btn->setFixedWidth(qMax(150, _mode_btn->sizeHint().width()));
+    _mode_btn->setFixedWidth(150);
 }
 
 void DevMode::sync_mode_button(int mode, const QString &iconPath)
