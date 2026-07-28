@@ -75,6 +75,7 @@ private:
     void save_dso(pv::data::DsoSnapshot *dso_snapshot);
     void save_mso(pv::data::LogicSnapshot *logic_snapshot,
                   pv::data::AnalogSnapshot *analog_snapshot);
+    void abort_save(const QString &error = QString());
     bool meta_gen(data::Snapshot *snapshot, std::string &str);
     void export_proc(pv::data::Snapshot *snapshot);
     void export_exec(pv::data::Snapshot *snapshot);

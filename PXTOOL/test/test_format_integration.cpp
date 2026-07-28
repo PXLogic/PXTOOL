@@ -27,10 +27,12 @@
 #include <QCoreApplication>
 #include <QFile>
 #include <QFileInfo>
+#include <QThread>
 #include <QTemporaryDir>
 
 #include <zlib.h>
 
+#include "pv/ZipMaker.h"
 #include "pv/data/inputimporter.h"
 #include "pv/data/formatcapability.h"
 #include "pv/data/logicsnapshot.h"
@@ -68,7 +70,7 @@ public:
     void cur_snap_samplerate_changed() override {}
     void signals_changed() override {}
     void receive_trigger(quint64) override {}
-    void frame_ended() override {}
+    void frame_ended() override { ++frame_ended_count; }
     void frame_began() override { ++frame_began_count; }
     void show_region(uint64_t, uint64_t, bool) override {}
     void show_wait_trigger() override {}
@@ -82,6 +84,16 @@ public:
     unsigned int data_updated_count = 0;
     unsigned int frame_began_count = 0;
     unsigned int header_count = 0;
+    unsigned int frame_ended_count = 0;
+};
+
+class TestSessionDataGetter final : public ISessionDataGetter {
+public:
+    bool genSessionData(std::string &data) override
+    {
+        data = "{}";
+        return true;
+    }
 };
 
 struct CanonicalSession {
@@ -153,6 +165,65 @@ QString writeFixture(QTemporaryDir &temporary, const QString &name,
     BOOST_REQUIRE(file.open(QIODevice::WriteOnly));
     BOOST_REQUIRE_EQUAL(file.write(bytes), bytes.size());
     return path;
+}
+
+QString writeMsoArchive(QTemporaryDir &temporary, const QString &name)
+{
+    const QString path = temporary.filePath(name);
+    const QByteArray header =
+        "[version]\n"
+        "version = 3\n"
+        "[header]\n"
+        "device mode = 3\n"
+        "capturefile = data\n"
+        "total samples = 64\n"
+        "mso logic samples = 64\n"
+        "mso logic probes = 1\n"
+        "mso logic blocks = 1\n"
+        "mso analog samples = 4\n"
+        "mso analog probes = 1\n"
+        "mso analog blocks = 1\n"
+        "mso analog bits = 16\n"
+        "samplerate = 1 MHz\n"
+        "logic probe0 = D0\n"
+        "analog probe0 = A0\n";
+    const QByteArray logic(8, static_cast<char>(0x55));
+    const QByteArray analog = QByteArray::fromHex("34127856bc9af0de");
+    const QByteArray session("{}");
+    const QByteArray decoders("[]");
+
+    ZipMaker archive;
+    const std::string native_path = path.toUtf8().toStdString();
+    BOOST_REQUIRE(archive.CreateNew(native_path.c_str(), false));
+    BOOST_REQUIRE(archive.AddFromBuffer("header", header.constData(), header.size()));
+    BOOST_REQUIRE(archive.AddFromBuffer("session", session.constData(), session.size()));
+    BOOST_REQUIRE(archive.AddFromBuffer("decoders", decoders.constData(), decoders.size()));
+    BOOST_REQUIRE(archive.AddFromBuffer("L-0/0", logic.constData(), logic.size()));
+    BOOST_REQUIRE(archive.AddFromBuffer("A-0/0", analog.constData(), analog.size()));
+    BOOST_REQUIRE(archive.Close());
+    return path;
+}
+
+ds_device_handle addMsoArchiveDevice(const QString &path)
+{
+    BOOST_REQUIRE_EQUAL(ds_device_from_file(path.toUtf8().constData()), SR_OK);
+    ds_device_base_info *devices = nullptr;
+    int count = 0;
+    BOOST_REQUIRE_EQUAL(ds_get_device_list(&devices, &count), SR_OK);
+    BOOST_REQUIRE(devices != nullptr);
+    BOOST_REQUIRE(count > 0);
+    const ds_device_handle handle = devices[count - 1].handle;
+    free(devices);
+    return handle;
+}
+
+void waitForCaptureEnd(HeadlessSessionCallback &callback)
+{
+    for (int attempt = 0; attempt < 100 && callback.frame_ended_count == 0; ++attempt) {
+        QCoreApplication::processEvents();
+        QThread::msleep(10);
+    }
+    BOOST_REQUIRE_EQUAL(callback.frame_ended_count, 1U);
 }
 
 void appendU32(QByteArray &data, uint32_t value)
@@ -332,6 +403,78 @@ BOOST_AUTO_TEST_CASE(store_session_uses_explicit_output_file_name)
     store.setOutputFileName(path);
 
     BOOST_CHECK_EQUAL(store.GetFileName().toStdString(), path.toStdString());
+}
+
+BOOST_AUTO_TEST_CASE(mso_archive_round_trip_replays_logic_and_analog)
+{
+    auto &canonical = canonicalSession();
+    struct RestoreCurrentSession {
+        pv::SigSession *session;
+        ~RestoreCurrentSession() { session->set_as_current(); }
+    } restore_current{canonical.session.get()};
+    QTemporaryDir temporary;
+    BOOST_REQUIRE(temporary.isValid());
+
+    HeadlessSessionCallback callback;
+    pv::SigSession session;
+    session.set_callback(&callback);
+    session.set_as_current();
+    const ds_device_handle handle = addMsoArchiveDevice(
+        writeMsoArchive(temporary, QStringLiteral("mso-source.pxs")));
+    BOOST_REQUIRE(session.set_device(handle));
+    session.set_as_current();
+    BOOST_REQUIRE_EQUAL(session.get_device()->get_work_mode(), MSO);
+    BOOST_REQUIRE(session.start_capture(true));
+    waitForCaptureEnd(callback);
+
+    BOOST_CHECK_EQUAL(callback.header_count, 1U);
+    BOOST_CHECK_EQUAL(session.get_ch_num(SR_CHANNEL_LOGIC), 1);
+    BOOST_CHECK_EQUAL(session.get_ch_num(SR_CHANNEL_ANALOG), 1);
+
+    auto *logic = dynamic_cast<pv::data::LogicSnapshot *>(
+        session.get_snapshot(SR_CHANNEL_LOGIC));
+    auto *analog = dynamic_cast<pv::data::AnalogSnapshot *>(
+        session.get_snapshot(SR_CHANNEL_ANALOG));
+    BOOST_REQUIRE(logic != nullptr);
+    BOOST_REQUIRE(analog != nullptr);
+    BOOST_CHECK_EQUAL(logic->get_sample_count(), 64ULL);
+    BOOST_CHECK(logic->get_sample(0, 0));
+    BOOST_CHECK(!logic->get_sample(1, 0));
+    BOOST_CHECK_EQUAL(analog->get_sample_count(), 4ULL);
+    BOOST_CHECK_EQUAL(analog->get_unit_bytes(), 2U);
+    BOOST_CHECK_EQUAL(analog->sample_as_double(0, 0), 0x1234);
+
+    TestSessionDataGetter getter;
+    pv::StoreSession store(&session);
+    store._sessionDataGetter = &getter;
+    const QString saved_path = temporary.filePath(QStringLiteral("mso-saved.pxs"));
+    store.setOutputFileName(saved_path);
+    BOOST_REQUIRE_MESSAGE(store.save_start(), store.error().toStdString());
+    store.wait();
+    BOOST_REQUIRE_MESSAGE(store.error().isEmpty(), store.error().toStdString());
+    BOOST_REQUIRE(QFileInfo(saved_path).size() > 0);
+    HeadlessSessionCallback restored_callback;
+    pv::SigSession restored;
+    restored.set_callback(&restored_callback);
+    restored.set_as_current();
+    BOOST_REQUIRE(restored.set_device(addMsoArchiveDevice(saved_path)));
+    restored.set_as_current();
+    BOOST_REQUIRE(restored.start_capture(true));
+    waitForCaptureEnd(restored_callback);
+
+    BOOST_CHECK_EQUAL(restored.get_ch_num(SR_CHANNEL_LOGIC), 1);
+    BOOST_CHECK_EQUAL(restored.get_ch_num(SR_CHANNEL_ANALOG), 1);
+    auto *restored_logic = dynamic_cast<pv::data::LogicSnapshot *>(
+        restored.get_snapshot(SR_CHANNEL_LOGIC));
+    auto *restored_analog = dynamic_cast<pv::data::AnalogSnapshot *>(
+        restored.get_snapshot(SR_CHANNEL_ANALOG));
+    BOOST_REQUIRE(restored_logic != nullptr);
+    BOOST_REQUIRE(restored_analog != nullptr);
+    BOOST_CHECK_EQUAL(restored_logic->get_sample_count(), 64ULL);
+    BOOST_CHECK(restored_logic->get_sample(0, 0));
+    BOOST_CHECK_EQUAL(restored_analog->get_sample_count(), 4ULL);
+    BOOST_CHECK_EQUAL(restored_analog->get_unit_bytes(), 2U);
+    BOOST_CHECK_EQUAL(restored_analog->sample_as_double(0, 3), 0xdef0);
 }
 
 BOOST_AUTO_TEST_CASE(canonical_csv_imports_as_expected_logic_capture)

@@ -168,7 +168,7 @@ bool Viewport::event(QEvent *event)
 
 Trace* Viewport::get_divider_trace(const QPoint &pt)
 {
-    if (_view.session().get_device()->get_work_mode() != LOGIC)
+    if (!_view.is_logic_rendering_mode())
         return nullptr;
     if (_view.session().is_working())
         return nullptr;
@@ -2210,7 +2210,7 @@ LogicSignal* Viewport::get_hovered_logic_signal(const QPoint &pos)
 {
     if (_type != TIME_VIEW)
         return nullptr;
-    if (_view.session().get_device()->get_work_mode() != LOGIC)
+    if (!_view.is_logic_rendering_mode())
         return nullptr;
     if (!_view.session().is_stopped_status())
         return nullptr;
@@ -2242,7 +2242,7 @@ void Viewport::update_edge_nav_buttons()
     }
 
     if (_type != TIME_VIEW ||
-        _view.session().get_device()->get_work_mode() != LOGIC ||
+        !_view.is_logic_rendering_mode() ||
         !_view.session().is_stopped_status()) {
         _prev_edge_btn->hide();
         _next_edge_btn->hide();

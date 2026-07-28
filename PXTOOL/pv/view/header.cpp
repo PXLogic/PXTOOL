@@ -133,7 +133,7 @@ pv::view::Trace* Header::get_mTrace(int &action, const QPoint &pt)
 
 Trace* Header::get_resize_trace(const QPoint &pt)
 {
-    if (_view.session().get_device()->get_work_mode() != LOGIC)
+    if (!_view.is_logic_rendering_mode())
         return nullptr;
     if (_view.session().is_working())
         return nullptr;

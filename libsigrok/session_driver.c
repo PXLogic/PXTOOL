@@ -119,6 +119,15 @@ struct session_vdev
     uint64_t max_timebase;
     uint64_t min_timebase;
     uint8_t unit_bits;
+    uint64_t mso_logic_samples;
+    uint64_t mso_analog_samples;
+    int mso_logic_probes;
+    int mso_analog_probes;
+    int mso_logic_blocks;
+    int mso_analog_blocks;
+    uint8_t mso_analog_unit_bits;
+    int mso_phase;
+    int mso_block;
     uint32_t ref_min;
     uint32_t ref_max;
     uint8_t max_height;
@@ -233,6 +242,195 @@ static void send_error_packet(const struct sr_dev_inst *cb_sdi, struct session_v
     ds_data_forward(cb_sdi, packet);
     sr_session_source_remove(-1);
     close_archive(vdev);
+}
+
+static int mso_channel_index(const struct sr_dev_inst *sdi, int type, int order)
+{
+    const GSList *channels;
+
+    for (channels = sdi->channels; channels; channels = channels->next) {
+        const struct sr_channel *probe = channels->data;
+        if (probe->type == type && probe->enabled && order-- == 0)
+            return probe->index;
+    }
+
+    return -1;
+}
+
+static gboolean mso_resize_packet_buffer(struct session_vdev *vdev, uint64_t size)
+{
+    struct session_packet_buffer *buffer = vdev->packet_buffer;
+
+    if (size > SIZE_MAX - 1)
+        return FALSE;
+    if (buffer->post_buf_len >= size)
+        return TRUE;
+
+    safe_free(buffer->post_buf);
+    buffer->post_buf = malloc((size_t)size + 1);
+    if (!buffer->post_buf)
+        return FALSE;
+    buffer->post_buf_len = size;
+    return TRUE;
+}
+
+static gboolean mso_read_chunk(struct session_vdev *vdev, const char *name,
+                                void *data, uint64_t size)
+{
+    int ret;
+
+    if (unzLocateFile(vdev->archive, name, 0) != UNZ_OK) {
+        sr_err("can't locate zip inner file:\"%s\"", name);
+        return FALSE;
+    }
+    if (unzOpenCurrentFile(vdev->archive) != UNZ_OK) {
+        sr_err("can't open zip inner file:\"%s\"", name);
+        return FALSE;
+    }
+    ret = unzReadCurrentFile(vdev->archive, data, (unsigned int)size);
+    unzCloseCurrentFile(vdev->archive);
+    if (ret != (int)size) {
+        sr_err("can't read zip inner file:\"%s\"", name);
+        return FALSE;
+    }
+    return TRUE;
+}
+
+static int receive_data_mso(int fd, int revents, const struct sr_dev_inst *sdi)
+{
+    struct session_vdev *vdev = sdi->priv;
+    struct session_packet_buffer *buffer;
+    struct sr_datafeed_packet packet;
+    struct sr_datafeed_logic logic;
+    struct sr_datafeed_analog analog = {0};
+    unz_file_info64 info;
+    char file_name[32];
+    int channel, index;
+    uint64_t chunk_size = 0, offset, output_size;
+
+    (void)fd;
+    packet.status = SR_PKT_OK;
+
+    if (!vdev || !vdev->archive || vdev->mso_logic_probes < 1 ||
+        vdev->mso_analog_probes < 1 || vdev->mso_logic_blocks < 1 ||
+        vdev->mso_analog_blocks < 1 || vdev->mso_analog_unit_bits == 0) {
+        sr_err("invalid MSO session metadata");
+        send_error_packet(sdi, vdev, &packet);
+        return FALSE;
+    }
+
+    if (!vdev->packet_buffer) {
+        vdev->packet_buffer = calloc(1, sizeof(struct session_packet_buffer));
+        if (!vdev->packet_buffer) {
+            send_error_packet(sdi, vdev, &packet);
+            return FALSE;
+        }
+    }
+    buffer = vdev->packet_buffer;
+
+    if (vdev->mso_phase == 0 && vdev->mso_block < vdev->mso_logic_blocks) {
+        for (channel = 0; channel < vdev->mso_logic_probes; ++channel) {
+            index = mso_channel_index(sdi, SR_CHANNEL_LOGIC, channel);
+            if (index < 0) {
+                sr_err("MSO logic channel metadata does not match channels");
+                send_error_packet(sdi, vdev, &packet);
+                return FALSE;
+            }
+            snprintf(file_name, sizeof(file_name), "L-%d/%d", index, vdev->mso_block);
+            if (unzLocateFile(vdev->archive, file_name, 0) != UNZ_OK ||
+                unzGetCurrentFileInfo64(vdev->archive, &info, NULL, 0, NULL, 0, NULL, 0) != UNZ_OK) {
+                sr_err("can't inspect zip inner file:\"%s\"", file_name);
+                send_error_packet(sdi, vdev, &packet);
+                return FALSE;
+            }
+            if (channel == 0) {
+                chunk_size = info.uncompressed_size;
+                if (chunk_size == 0 || chunk_size % 8 != 0 ||
+                    chunk_size > SIZE_MAX / (size_t)vdev->mso_logic_probes) {
+                    sr_err("invalid MSO logic chunk size");
+                    send_error_packet(sdi, vdev, &packet);
+                    return FALSE;
+                }
+            } else if (info.uncompressed_size != chunk_size) {
+                sr_err("MSO logic chunk sizes differ in one block");
+                send_error_packet(sdi, vdev, &packet);
+                return FALSE;
+            }
+            safe_free(buffer->block_bufs[channel]);
+            buffer->block_bufs[channel] = malloc((size_t)chunk_size);
+            if (!buffer->block_bufs[channel] ||
+                !mso_read_chunk(vdev, file_name, buffer->block_bufs[channel], chunk_size)) {
+                send_error_packet(sdi, vdev, &packet);
+                return FALSE;
+            }
+        }
+
+        output_size = chunk_size * (uint64_t)vdev->mso_logic_probes;
+        if (!mso_resize_packet_buffer(vdev, output_size)) {
+            send_error_packet(sdi, vdev, &packet);
+            return FALSE;
+        }
+        for (offset = 0; offset < chunk_size; offset += 8) {
+            for (channel = 0; channel < vdev->mso_logic_probes; ++channel) {
+                memcpy((uint8_t *)buffer->post_buf +
+                           (offset / 8 * vdev->mso_logic_probes + channel) * 8,
+                       (uint8_t *)buffer->block_bufs[channel] + offset, 8);
+            }
+        }
+
+        packet.type = SR_DF_LOGIC;
+        packet.payload = &logic;
+        logic.length = output_size;
+        logic.format = LA_CROSS_DATA;
+        logic.index = 0;
+        logic.order = 0;
+        logic.data = buffer->post_buf;
+        ds_data_forward(sdi, &packet);
+        vdev->mso_block++;
+        return TRUE;
+    }
+
+    if (vdev->mso_phase == 0) {
+        vdev->mso_phase = 1;
+        vdev->mso_block = 0;
+    }
+
+    if (vdev->mso_phase == 1 && vdev->mso_block < vdev->mso_analog_blocks) {
+        const uint64_t bytes_per_sample =
+            ((uint64_t)vdev->mso_analog_unit_bits + 7) / 8 * vdev->mso_analog_probes;
+
+        snprintf(file_name, sizeof(file_name), "A-0/%d", vdev->mso_block);
+        if (unzLocateFile(vdev->archive, file_name, 0) != UNZ_OK ||
+            unzGetCurrentFileInfo64(vdev->archive, &info, NULL, 0, NULL, 0, NULL, 0) != UNZ_OK ||
+            info.uncompressed_size == 0 || info.uncompressed_size % bytes_per_sample != 0 ||
+            !mso_resize_packet_buffer(vdev, info.uncompressed_size) ||
+            !mso_read_chunk(vdev, file_name, buffer->post_buf, info.uncompressed_size)) {
+            sr_err("invalid MSO analog chunk:\"%s\"", file_name);
+            send_error_packet(sdi, vdev, &packet);
+            return FALSE;
+        }
+
+        packet.type = SR_DF_ANALOG;
+        packet.payload = &analog;
+        analog.probes = sdi->channels;
+        analog.num_samples = info.uncompressed_size / bytes_per_sample;
+        analog.unit_bits = vdev->mso_analog_unit_bits;
+        analog.unit_pitch = 1;
+        analog.mq = SR_MQ_VOLTAGE;
+        analog.unit = SR_UNIT_VOLT;
+        analog.mqflags = SR_MQFLAG_AC;
+        analog.data = buffer->post_buf;
+        ds_data_forward(sdi, &packet);
+        vdev->mso_block++;
+        return TRUE;
+    }
+
+    packet.type = SR_DF_END;
+    ds_data_forward(sdi, &packet);
+    sr_session_source_remove(-1);
+    close_archive(vdev);
+    free_temp_buffer(vdev);
+    return revents == -1 ? FALSE : TRUE;
 }
 
 static int receive_data(int fd, int revents, const struct sr_dev_inst *sdi)
@@ -1381,6 +1579,8 @@ static int dev_acquisition_start(struct sr_dev_inst *sdi, void *cb_data)
     // reset status
     vdev->cur_block = 0;
     vdev->cur_channel = 0;
+    vdev->mso_phase = 0;
+    vdev->mso_block = 0;
 
     if (vdev->archive != NULL)
     {
@@ -1448,7 +1648,10 @@ static int dev_acquisition_start(struct sr_dev_inst *sdi, void *cb_data)
     }
 
     /* freewheeling source */
-    if ((sdi->mode == LOGIC && vdev->version > 1) 
+    if (sdi->mode == MSO) {
+        sr_session_source_add(-1, 0, 0, receive_data_mso, sdi);
+    }
+    else if ((sdi->mode == LOGIC && vdev->version > 1)
             || (sdi->mode == DSO && vdev->version > 2)){
         sr_session_source_add(-1, 0, 0, receive_data_logic_dso_v2, sdi);
     }
@@ -1590,9 +1793,11 @@ static int sr_load_virtual_device_session(struct sr_dev_inst *sdi)
     int channel_type = SR_CHANNEL_LOGIC;
     double tmp_double;
     int version = 1;
+    struct session_vdev *vdev;
 
     assert(sdi);
     assert(sdi->path);
+    vdev = sdi->priv;
 
     if (sdi->dev_type != DEV_TYPE_FILELOG)
     {
@@ -1702,6 +1907,34 @@ static int sr_load_virtual_device_session(struct sr_dev_inst *sdi)
                     sdi->driver->config_set(SR_CONF_LIMIT_SAMPLES,
                                             g_variant_new_uint64(tmp_u64), sdi, NULL, NULL);
                 }
+                else if (!strcmp(keys[j], "mso logic samples") && sdi->mode == MSO)
+                {
+                    vdev->mso_logic_samples = strtoull(val, NULL, 10);
+                }
+                else if (!strcmp(keys[j], "mso logic probes") && sdi->mode == MSO)
+                {
+                    vdev->mso_logic_probes = strtoul(val, NULL, 10);
+                }
+                else if (!strcmp(keys[j], "mso logic blocks") && sdi->mode == MSO)
+                {
+                    vdev->mso_logic_blocks = strtoul(val, NULL, 10);
+                }
+                else if (!strcmp(keys[j], "mso analog samples") && sdi->mode == MSO)
+                {
+                    vdev->mso_analog_samples = strtoull(val, NULL, 10);
+                }
+                else if (!strcmp(keys[j], "mso analog probes") && sdi->mode == MSO)
+                {
+                    vdev->mso_analog_probes = strtoul(val, NULL, 10);
+                }
+                else if (!strcmp(keys[j], "mso analog blocks") && sdi->mode == MSO)
+                {
+                    vdev->mso_analog_blocks = strtoul(val, NULL, 10);
+                }
+                else if (!strcmp(keys[j], "mso analog bits") && sdi->mode == MSO)
+                {
+                    vdev->mso_analog_unit_bits = strtoul(val, NULL, 10);
+                }
                 else if (!strcmp(keys[j], "hDiv"))
                 {
                     tmp_u64 = strtoull(val, NULL, 10);
@@ -1778,7 +2011,7 @@ static int sr_load_virtual_device_session(struct sr_dev_inst *sdi)
                         }
                     }
                 }
-                else if (!strncmp(keys[j], "logic probe", 11) && mode == MSO)
+                else if (!strncmp(keys[j], "logic probe", 11) && sdi->mode == MSO)
                 {
                     tmp_u64 = strtoul(keys[j] + 11, NULL, 10);
                     if (!(probe = sr_channel_new(sdi, tmp_u64, SR_CHANNEL_LOGIC, TRUE, val)))
@@ -1788,7 +2021,7 @@ static int sr_load_virtual_device_session(struct sr_dev_inst *sdi)
                         return SR_ERR;
                     }
                 }
-                else if (!strncmp(keys[j], "analog probe", 12) && mode == MSO)
+                else if (!strncmp(keys[j], "analog probe", 12) && sdi->mode == MSO)
                 {
                     tmp_u64 = strtoul(keys[j] + 12, NULL, 10);
                     if (!(probe = sr_channel_new(sdi, tmp_u64, SR_CHANNEL_ANALOG, TRUE, val)))
@@ -2078,6 +2311,23 @@ static int sr_load_virtual_device_session(struct sr_dev_inst *sdi)
                                                 g_variant_new_double(tmp_double), sdi, probe, NULL);
                     }
                 }
+            }
+            if (sdi->mode == MSO) {
+                const uint64_t sample_limit = MAX(vdev->mso_logic_samples,
+                                                  vdev->mso_analog_samples);
+                if (vdev->mso_logic_probes < 1 || vdev->mso_analog_probes < 1 ||
+                    vdev->mso_logic_blocks < 1 || vdev->mso_analog_blocks < 1 ||
+                    vdev->mso_analog_unit_bits == 0 || sample_limit == 0) {
+                    sr_err("MSO session metadata is incomplete");
+                    g_strfreev(keys);
+                    g_strfreev(sections);
+                    g_key_file_free(kf);
+                    g_free(metafile);
+                    return SR_ERR;
+                }
+                vdev->num_probes = vdev->mso_logic_probes + vdev->mso_analog_probes;
+                sdi->driver->config_set(SR_CONF_LIMIT_SAMPLES,
+                                        g_variant_new_uint64(sample_limit), sdi, NULL, NULL);
             }
             g_strfreev(keys);
         }

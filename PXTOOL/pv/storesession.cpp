@@ -183,6 +183,9 @@ bool StoreSession::append_output(QFile &file, GString *chunk)
 bool StoreSession::save_start()
 { 
     assert(_sessionDataGetter);
+    _has_error = false;
+    _canceled = false;
+    _error.clear();
 
     std::set<int> type_set;
     for(auto s : _session->get_signals()) {
@@ -214,6 +217,13 @@ bool StoreSession::save_start()
     if (snapshot->empty()) {
         _error = tr("No data to save.");
         return false;
+    }
+    if (mixed_signal_session) {
+        const auto analog_snapshot = _session->get_snapshot(SR_CHANNEL_ANALOG);
+        if (!analog_snapshot || analog_snapshot->empty()) {
+            _error = tr("No data to save.");
+            return false;
+        }
     }
 
     std::string meta_data;
@@ -263,8 +273,19 @@ bool StoreSession::save_start()
          _error = tr("Generate zip file failed.");
     }
 
+    m_zipDoc.Release();
     QFile::remove(_file_name);
     return false;
+}
+
+void StoreSession::abort_save(const QString &error)
+{
+    if (!_has_error)
+        _has_error = true;
+    if (!error.isEmpty())
+        _error = error;
+    m_zipDoc.Release();
+    QFile::remove(_file_name);
 }
 
 void StoreSession::save_logic(pv::data::LogicSnapshot *logic_snapshot, bool finalize)
@@ -571,6 +592,8 @@ void StoreSession::save_proc(data::Snapshot *snapshot)
             _session->get_snapshot(SR_CHANNEL_ANALOG));
         if (logic_snapshot && analog_snapshot)
             save_mso(logic_snapshot, analog_snapshot);
+        else
+            abort_save(tr("Failed to save mixed signal data."));
     }
     else if ((logic_snapshot = dynamic_cast<data::LogicSnapshot*>(snapshot))) {
         save_logic(logic_snapshot);
@@ -592,17 +615,23 @@ void StoreSession::save_mso(data::LogicSnapshot *logic_snapshot,
                             data::AnalogSnapshot *analog_snapshot)
 {
     save_logic(logic_snapshot, false);
-    if (_has_error || _canceled)
+    if (_has_error || _canceled) {
+        abort_save();
         return;
+    }
     save_analog(analog_snapshot, false);
-    if (_has_error || _canceled)
+    if (_has_error || _canceled) {
+        abort_save();
         return;
+    }
 
     if (!m_zipDoc.Close()) {
         _has_error = true;
         _error = m_zipDoc.GetError();
     }
     m_zipDoc.Release();
+    if (_has_error)
+        QFile::remove(_file_name);
 }
 
 bool StoreSession::meta_gen(data::Snapshot *snapshot, std::string &str)
@@ -626,9 +655,17 @@ bool StoreSession::meta_gen(data::Snapshot *snapshot, std::string &str)
     }
  
     sprintf(meta, "capturefile = data\n"); str += meta;
-    sprintf(meta, "total samples = %" PRIu64 "\n", snapshot->get_sample_count()); str += meta;
+    uint64_t total_samples = snapshot->get_sample_count();
+    if (mode == MSO) {
+        const auto analog_snapshot = dynamic_cast<data::AnalogSnapshot *>(
+            _session->get_snapshot(SR_CHANNEL_ANALOG));
+        if (!analog_snapshot)
+            return false;
+        total_samples = std::max(total_samples, analog_snapshot->get_sample_count());
+    }
+    sprintf(meta, "total samples = %" PRIu64 "\n", total_samples); str += meta;
 
-    if (mode != LOGIC) {
+    if (mode != LOGIC && mode != MSO) {
         sprintf(meta, "total probes = %d\n", snapshot->get_channel_num()); str += meta;
         sprintf(meta, "total blocks = %d\n", snapshot->get_block_num()); str += meta;
     }
@@ -638,7 +675,8 @@ bool StoreSession::meta_gen(data::Snapshot *snapshot, std::string &str)
         uint16_t to_save_probes = 0;
         for (l = _session->get_device()->get_channels(); l; l = l->next) {
             probe = (struct sr_channel *)l->data;
-            if (probe->enabled && logic_snapshot->has_data(probe->index))
+            if (probe->type == SR_CHANNEL_LOGIC && probe->enabled &&
+                logic_snapshot->has_data(probe->index))
                 to_save_probes++;
         }
 
@@ -671,8 +709,40 @@ bool StoreSession::meta_gen(data::Snapshot *snapshot, std::string &str)
             block_count = end_block + 1;
         }
 
-        sprintf(meta, "total probes = %d\n", to_save_probes); str += meta;
-        sprintf(meta, "total blocks = %d\n", block_count); str += meta;
+        if (mode == MSO) {
+            const auto analog_snapshot = dynamic_cast<data::AnalogSnapshot *>(
+                _session->get_snapshot(SR_CHANNEL_ANALOG));
+            if (!analog_snapshot)
+                return false;
+            uint64_t saved_logic_samples = logic_snapshot->get_ring_sample_count();
+            if (start_index > 0 || end_index > 0) {
+                uint64_t saved_start = start_index - start_index % 64;
+                uint64_t saved_end = end_index;
+                if (saved_end != 0) {
+                    saved_end += (64 - saved_end % 64) % 64;
+                    if (saved_end > logic_snapshot->get_ring_sample_count())
+                        saved_end = 0;
+                }
+                saved_logic_samples = (saved_end == 0
+                    ? logic_snapshot->get_ring_sample_count() : saved_end) - saved_start;
+            }
+            sprintf(meta, "mso logic samples = %" PRIu64 "\n",
+                    saved_logic_samples); str += meta;
+            sprintf(meta, "mso logic probes = %d\n", to_save_probes); str += meta;
+            sprintf(meta, "mso logic blocks = %d\n", block_count); str += meta;
+            sprintf(meta, "mso analog samples = %" PRIu64 "\n",
+                    analog_snapshot->get_sample_count()); str += meta;
+            sprintf(meta, "mso analog probes = %u\n",
+                    analog_snapshot->get_channel_num()); str += meta;
+            sprintf(meta, "mso analog blocks = %d\n",
+                    analog_snapshot->get_block_num()); str += meta;
+            sprintf(meta, "mso analog bits = %u\n",
+                    analog_snapshot->get_unit_bytes() * 8); str += meta;
+        }
+        else {
+            sprintf(meta, "total probes = %d\n", to_save_probes); str += meta;
+            sprintf(meta, "total blocks = %d\n", block_count); str += meta;
+        }
     }
 
     s = sr_samplerate_string(_session->cur_snap_samplerate());
@@ -737,7 +807,8 @@ bool StoreSession::meta_gen(data::Snapshot *snapshot, std::string &str)
         data::Snapshot *probe_snapshot = snapshot;
         if (mode == MSO)
             probe_snapshot = _session->get_snapshot(probe->type);
-        if (!probe_snapshot || !probe_snapshot->has_data(probe->index))
+        if (!probe_snapshot ||
+            (mode != MSO && !probe_snapshot->has_data(probe->index)))
             continue;
 
         if (mode == LOGIC && !probe->enabled)

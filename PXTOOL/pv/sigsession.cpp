@@ -509,15 +509,18 @@ namespace pv
             }
         }   
 
-        // update current hw offset
+        // Signal visual state requires an attached waveform view. Headless
+        // import/export sessions still need to acquire their data without it.
         for (auto s : _signals)
-        {  
-            if (s->signal_type() == SR_CHANNEL_DSO){   
+        {
+            if (!s->get_view())
+                continue;
+            if (s->signal_type() == SR_CHANNEL_DSO){
                 auto sig = (view::DsoSignal*)s;
                 sig->set_zero_ratio(sig->get_zero_ratio());
                 sig->set_stop_scale(1);
-            }            
-            else if (s->signal_type() == SR_CHANNEL_ANALOG){  
+            }
+            else if (s->signal_type() == SR_CHANNEL_ANALOG){
                 auto sig = (view::AnalogSignal*)s;
                 sig->set_zero_ratio(sig->get_zero_ratio());
             }
@@ -609,7 +612,7 @@ namespace pv
         set_session_time(QDateTime::currentDateTime());
 
         int mode = _device_agent.get_work_mode();
-        if (mode == LOGIC)
+        if (is_logic_capable_mode(mode))
         {
             if (is_repeat_mode()
                     && _device_agent.is_hardware() 
@@ -695,7 +698,7 @@ namespace pv
         bool bAddDecoder = false;
         bool bSwapBuffer = false;
         const bool suspend_live_decode_for_disk_cache =
-            mode == LOGIC && _is_stream_mode && _disk_cache_settings.enabled
+            is_logic_capable_mode(mode) && _is_stream_mode && _disk_cache_settings.enabled
             && _device_agent.is_demo()
             && _device_agent.get_demo_operation_mode() == "random";
    
@@ -735,7 +738,7 @@ namespace pv
             }
         }
 
-        if (mode == LOGIC && _device_agent.is_hardware() 
+        if (is_logic_capable_mode(mode) && _device_agent.is_hardware()
             && _device_agent.get_hardware_operation_mode() == LO_OP_BUFFER)
         {
             _trig_check_timer.Start(200);
@@ -777,7 +780,7 @@ namespace pv
             return false;
         }
 
-        if (mode == LOGIC)
+        if (is_logic_capable_mode(mode))
         {
             for (auto de : _decode_traces){
                 if (bAddDecoder){
@@ -817,7 +820,7 @@ namespace pv
         }
 
         bool wait_upload = false;
-        if (is_single_mode() && _device_agent.get_work_mode() == LOGIC)
+        if (is_single_mode() && is_logic_capable_mode(_device_agent.get_work_mode()))
         { 
            _device_agent.get_config_bool(SR_CONF_WAIT_UPLOAD, wait_upload);
         }
@@ -889,7 +892,7 @@ namespace pv
             else
                 progress = captured_cnt * 100.0 / sample_limits;
 
-            if (progress == 100 && mode == LOGIC && _capture_data->get_logic()->have_data() == false){
+            if (progress == 100 && is_logic_capable_mode(mode) && _capture_data->get_logic()->have_data() == false){
                 progress = 0;
             }
 
@@ -1255,7 +1258,7 @@ namespace pv
                 }
             }
         }
-        else if (mode == LOGIC || mode == ANALOG){
+        else if (is_logic_capable_mode(mode) || mode == ANALOG){
             dsv_info("ERROR: Unable to create any channel.");
             _signals.clear();
         }
@@ -2430,7 +2433,7 @@ namespace pv
         _device_status = ST_STOPPED;
         _is_working = false;
 
-        if (mode == LOGIC)
+        if (is_logic_capable_mode(mode))
             OnMessage(DSV_MSG_REV_END_PACKET);
         else if (_callback)
             _callback->frame_ended();
@@ -2643,7 +2646,7 @@ namespace pv
 
         case DSV_MSG_REV_END_PACKET:
             {
-                if (_device_agent.get_work_mode() == LOGIC)
+                if (is_logic_capable_mode(_device_agent.get_work_mode()))
                 {  
                     bool bAddDecoder = false;
                     bool bSwapBuffer = false;
