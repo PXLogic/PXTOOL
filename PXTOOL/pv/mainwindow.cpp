@@ -1205,23 +1205,22 @@ namespace pv
         newItem.session->add_msg_listener(this);
         if (newItem.cb) newItem.cb->setActive(true);
 
+        _is_switching_session = false;
+
+        // Heavy device init for a freshly-created empty session — claim the
+        // requested handle, clear (already empty) view data, build signals.
+        // Do this before exposing the session to UI widgets: their synchronous
+        // refreshes may query the view time for DSO mode.
+        if (!_session->set_device(handle))
+            dsv_warn("switch_to_session_for_handle: set_device(handle=%llu) failed",
+                     (unsigned long long)handle);
+
         _sampling_bar->setSession(_session);
         _sampling_bar->set_view(_view);
         _sidebar_widget->setSession(_session);
         _sidebar_widget->setView(_view);
         _session->set_decoder_pannel(_sidebar_widget->protocol_widget());
 
-        _is_switching_session = false;
-
-        // Heavy device init for a freshly-created empty session — claim the
-        // requested handle, clear (already empty) view data, build signals.
-        if (!_session->set_device(handle))
-            dsv_warn("switch_to_session_for_handle: set_device(handle=%llu) failed",
-                     (unsigned long long)handle);
-
-        // Only expose the view after its session has a valid device. Showing
-        // it earlier can synchronously trigger resize/layout code that reads
-        // samplerate/timebase from an unbound DeviceAgent.
         _session_stack->setCurrentWidget(_view);
 
         update_toolbar_view_status();

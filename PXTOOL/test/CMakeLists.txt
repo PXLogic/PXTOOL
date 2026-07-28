@@ -35,6 +35,7 @@ add_executable(DSView-test
     test_channelvisibility.cpp
     test_datafeed_stub.cpp
     test_deviceagent_capability.cpp
+    test_device_switch_order.cpp
     test_device_source.cpp
     test_diskcachesettings.cpp
     test_formatcapability.cpp
