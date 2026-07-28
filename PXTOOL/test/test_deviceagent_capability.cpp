@@ -170,4 +170,22 @@ BOOST_AUTO_TEST_CASE(imported_device_modes_follow_channel_capabilities)
     agent.release();
 }
 
+BOOST_AUTO_TEST_CASE(custom_device_mode_updates_through_device_mode_config)
+{
+    sr_dev_inst *mixed_device = make_mixed_imported_device();
+    BOOST_REQUIRE(mixed_device != nullptr);
+
+    DeviceAgent agent;
+    agent.bind_custom_device(mixed_device, DEV_TYPE_DEMO, LOGIC,
+                             QStringLiteral("Mixed import"), QString(),
+                             QStringLiteral("import"), 1'000'000, 1024);
+
+    GVariant *mode = g_variant_ref_sink(g_variant_new_int16(MSO));
+    BOOST_REQUIRE(agent.set_config(SR_CONF_DEVICE_MODE, mode));
+    g_variant_unref(mode);
+    BOOST_CHECK_EQUAL(agent.get_work_mode(), MSO);
+
+    agent.release();
+}
+
 BOOST_AUTO_TEST_SUITE_END()
