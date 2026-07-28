@@ -184,6 +184,12 @@ public:
     bool stop_capture();
     bool switch_work_mode(int mode);
 
+    static bool is_logic_capable_mode(int mode) {
+        return mode == LOGIC || mode == MSO;
+    }
+    static bool is_dso_mode(int mode) { return mode == DSO; }
+    static bool channel_type_visible_in_mode(int mode, int channel_type);
+
     uint64_t cur_samplerate();
     uint64_t cur_snap_samplerate();
     uint64_t cur_samplelimits();

@@ -44,6 +44,7 @@ static const struct dev_mode_name dev_mode_name_list[] =
     {LOGIC, "la.svg"},
     {ANALOG, "daq.svg"},
     {DSO, "osc.svg"},
+    {MSO, "osc.svg"},
 };
 
 static QIcon tinted_mode_icon(const QString &path, const QColor &color,
@@ -252,6 +253,8 @@ void DevMode::set_device()
             label = tr("Data Acquisition");
         else if (md == DSO)
             label = tr("Oscilloscope");
+        else if (md == MSO)
+            label = tr("Mixed Signal Oscilloscope");
 
         _mode_btn->addItem(tinted_mode_icon(iconPath + icon_name, menuIconColor,
                                              QSize(32, 24)), label, md);
