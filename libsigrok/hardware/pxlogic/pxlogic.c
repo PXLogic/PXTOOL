@@ -922,6 +922,12 @@ static int config_get(int key, GVariant **data, const struct sr_dev_inst *sdi,
     case SR_CONF_OPERATION_MODE:
         *data = g_variant_new_int16(devc->op_mode);
         break;
+    case SR_CONF_STREAM:
+        *data = g_variant_new_boolean(devc->op_mode == OP_STREAM);
+        break;
+    case SR_CONF_LOOP_MODE:
+        *data = g_variant_new_boolean(devc->is_loop);
+        break;
 
     case SR_CONF_EX_TRIGGER_MATCH:
         *data = g_variant_new_int16(devc->ext_trig_mode);
@@ -1181,6 +1187,8 @@ static int config_set(int key, GVariant *data, struct sr_dev_inst *sdi,
         }
         sr_dbg("%s: setting pattern to %d",
             __func__, devc->op_mode);
+    } else if (key == SR_CONF_LOOP_MODE) {
+        devc->is_loop = g_variant_get_boolean(data);
     } else if (key == SR_CONF_EX_TRIGGER_MATCH) {
         nv = g_variant_get_int16(data);
         if (nv < PX_TRIGGER_CLOSE || nv > PX_TRIGGER_EDGE)
@@ -1836,8 +1844,7 @@ static void receive_transfer(struct libusb_transfer *transfer)
         if (samples_to_send > 0 && !devc->stop) {
             sending_now = samples_to_send;
             if (devc->mode == PXLOGIC_MODE_LOGIC) {
-                if (devc->op_mode == OP_BUFFER || (devc->op_mode == OP_STREAM && devc->is_loop == 0)
-                ) {
+                if (devc->op_mode == OP_BUFFER) {
                     if (devc->samples_counter + (sending_now * 8) / devc->ch_num >= devc->limit_samples) {
                         sending_now = (devc->limit_samples - devc->samples_counter) * devc->ch_num / 8;
                         devc->samples_counter = devc->limit_samples;
@@ -1885,7 +1892,9 @@ static void receive_transfer(struct libusb_transfer *transfer)
         }
     }
 
-    if ((devc->mode == PXLOGIC_MODE_LOGIC || devc->instant) && devc->limit_samples && devc->samples_counter >= devc->limit_samples
+    if (((devc->mode == PXLOGIC_MODE_LOGIC && devc->op_mode == OP_BUFFER) ||
+         devc->instant) && devc->limit_samples &&
+        devc->samples_counter >= devc->limit_samples
     ) {
         sr_dbg("last  transfer");
         devc->stop = TRUE;
@@ -1922,11 +1931,13 @@ static int receive_data2(int fd, int revents, const struct sr_dev_inst *sdi)
     drvc = di->priv;
     libusb_handle_events_timeout_completed(drvc->sr_ctx->libusb_ctx, &tv, &completed);
 
-    if ((devc->mode == PXLOGIC_MODE_LOGIC || devc->instant) && devc->limit_samples && devc->samples_counter >= devc->limit_samples) {
+    if ((devc->mode == PXLOGIC_MODE_LOGIC || devc->instant) && devc->limit_samples &&
+        devc->samples_counter >= devc->limit_samples) {
         return TRUE;
     }
 
-    if ((devc->mode == PXLOGIC_MODE_LOGIC || devc->instant) && devc->limit_samples && devc->samples_counter == 0) {
+    if ((devc->mode == PXLOGIC_MODE_LOGIC || devc->instant) && devc->limit_samples &&
+        devc->samples_counter == 0) {
         if (devc->cmd_data.trig_out_validset == 0) {
             ret = command_ctl_rddata(usb->devhdl, &(devc->cmd_data));
             if (ret == SR_OK) {

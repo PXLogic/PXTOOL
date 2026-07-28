@@ -903,6 +903,13 @@ SR_API int ds_stop_collect()
 	// Stop current session.
 	sr_session_stop();
 
+	/* A libusb hotplug callback can run from collect_proc. Joining the
+	 * current thread is fatal in GLib; collect_proc will finish once the
+	 * session source has processed the cancelled transfers. */
+	if (lib_ctx.collect_thread != NULL &&
+		g_thread_self() == lib_ctx.collect_thread)
+		return SR_OK;
+
 	// Wait the collect thread ends.
 	if (lib_ctx.collect_thread != NULL)
 		g_thread_join(lib_ctx.collect_thread);
@@ -932,6 +939,16 @@ SR_API int ds_release_actived_device()
 	}
 
 	if (ds_is_collecting()){
+		/* This path is reached from the libusb hotplug callback while
+		 * receive_data2() is running on collect_proc. Do not close the device
+		 * or destroy the session until collect_proc has dispatched transfer
+		 * cancellation and exited. process_detach_event() will mark the device
+		 * for delayed destruction on the hotplug thread. */
+		if (lib_ctx.collect_thread != NULL &&
+			g_thread_self() == lib_ctx.collect_thread) {
+			sr_session_stop();
+			return SR_OK;
+		}
 		ds_stop_collect();
 	}
 

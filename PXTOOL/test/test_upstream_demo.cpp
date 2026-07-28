@@ -24,6 +24,7 @@
 #include <cmath>
 #include <cstdio>
 #include <cstring>
+#include <thread>
 
 extern "C" {
 #include "libsigrok-internal.h"
@@ -43,6 +44,8 @@ unsigned int test_input_observer_analog_channel_count(void);
 int test_input_observer_analog_channel_index(unsigned int index);
 size_t test_input_observer_analog_prefix_length(void);
 float test_input_observer_analog_prefix(unsigned int index);
+int test_pxlogic_stream_config_state(void);
+int test_pxlogic_session_options_exclude_runtime_state(void);
 }
 
 BOOST_AUTO_TEST_SUITE(upstream_demo)
@@ -182,6 +185,57 @@ BOOST_AUTO_TEST_CASE(native_demo_mso_emits_logic_and_analog_before_one_end)
     BOOST_CHECK_GT(test_input_observer_logic_packets(), 0U);
     BOOST_CHECK_GT(test_input_observer_analog_packets(), 0U);
     BOOST_CHECK_EQUAL(test_input_observer_end_packets(), 1U);
+    close_native_demo(sdi);
+}
+
+BOOST_AUTO_TEST_CASE(native_demo_logic_emits_logic_before_end)
+{
+    sr_dev_inst *sdi = open_native_demo();
+    BOOST_REQUIRE_EQUAL(demo_driver_info.config_set(
+        SR_CONF_DEVICE_MODE, g_variant_new_int16(LOGIC), sdi, nullptr, nullptr), SR_OK);
+    BOOST_REQUIRE_EQUAL(demo_driver_info.config_set(
+        SR_CONF_LIMIT_SAMPLES, g_variant_new_uint64(32), sdi, nullptr, nullptr), SR_OK);
+
+    test_input_observer_reset();
+    BOOST_REQUIRE(sr_session_new() != nullptr);
+    BOOST_REQUIRE_EQUAL(demo_driver_info.dev_acquisition_start(sdi, nullptr), SR_OK);
+
+    int session_result = SR_ERR;
+    std::thread session_thread([&session_result]() {
+        session_result = sr_session_run();
+    });
+    g_usleep(20 * G_TIME_SPAN_MILLISECOND);
+    BOOST_REQUIRE_EQUAL(sr_session_stop(), SR_OK);
+    session_thread.join();
+
+    BOOST_CHECK_EQUAL(session_result, SR_OK);
+    BOOST_REQUIRE_EQUAL(sr_session_destroy(), SR_OK);
+
+    BOOST_CHECK_GT(test_input_observer_logic_packets(), 0U);
+    close_native_demo(sdi);
+}
+
+BOOST_AUTO_TEST_CASE(native_demo_mso_stop_ends_all_session_sources)
+{
+    sr_dev_inst *sdi = open_native_demo();
+    BOOST_REQUIRE_EQUAL(demo_driver_info.config_set(
+        SR_CONF_DEVICE_MODE, g_variant_new_int16(MSO), sdi, nullptr, nullptr), SR_OK);
+    BOOST_REQUIRE_EQUAL(demo_driver_info.config_set(
+        SR_CONF_LIMIT_SAMPLES, g_variant_new_uint64(1024 * 1024), sdi, nullptr, nullptr), SR_OK);
+
+    test_input_observer_reset();
+    BOOST_REQUIRE(sr_session_new() != nullptr);
+    BOOST_REQUIRE_EQUAL(demo_driver_info.dev_acquisition_start(sdi, nullptr), SR_OK);
+
+    const gint64 stopped_at = g_get_monotonic_time();
+    BOOST_REQUIRE_EQUAL(demo_driver_info.dev_acquisition_stop(sdi, nullptr), SR_OK);
+    const int session_result = sr_session_run();
+    const gint64 stop_elapsed_us = g_get_monotonic_time() - stopped_at;
+
+    BOOST_CHECK_EQUAL(session_result, SR_OK);
+    BOOST_CHECK_LT(stop_elapsed_us, 500 * G_TIME_SPAN_MILLISECOND);
+    BOOST_CHECK_EQUAL(test_input_observer_end_packets(), 1U);
+    BOOST_REQUIRE_EQUAL(sr_session_destroy(), SR_OK);
     close_native_demo(sdi);
 }
 
@@ -339,6 +393,16 @@ BOOST_AUTO_TEST_CASE(pxlogic_exposes_logic_as_its_only_work_mode)
     BOOST_REQUIRE(mode != nullptr);
     BOOST_CHECK_EQUAL(mode->mode, LOGIC);
     g_slist_free(const_cast<GSList *>(modes));
+}
+
+BOOST_AUTO_TEST_CASE(pxlogic_stream_configuration_tracks_stream_and_loop_state)
+{
+    BOOST_CHECK_EQUAL(test_pxlogic_stream_config_state(), 1);
+}
+
+BOOST_AUTO_TEST_CASE(pxlogic_session_options_exclude_runtime_state)
+{
+    BOOST_CHECK_EQUAL(test_pxlogic_session_options_exclude_runtime_state(), 1);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

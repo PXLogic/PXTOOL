@@ -1434,6 +1434,8 @@ static int config_list(int key, GVariant **data, const struct sr_dev_inst *sdi,
     return SR_OK;
 }
 
+static void mso_mark_done(const struct sr_dev_inst *sdi, gboolean logic_done);
+
 static int hw_dev_acquisition_start(struct sr_dev_inst *sdi,
         void *cb_data)
 {
@@ -1629,6 +1631,17 @@ static int hw_dev_acquisition_stop(const struct sr_dev_inst *sdi, void *cb_data)
     struct session_vdev *vdev = sdi->priv;
     struct sr_datafeed_packet packet;
     packet.status = SR_PKT_OK;
+
+    if (sdi->mode == MSO) {
+        /* MSO owns separate logic and analog session sources. Stopping must
+         * remove both before the global end packet is sent, otherwise their
+         * callbacks continue feeding data into snapshots already finalized. */
+        sr_session_source_remove(-2);
+        sr_session_source_remove(-3);
+        mso_mark_done(sdi, TRUE);
+        mso_mark_done(sdi, FALSE);
+        return SR_OK;
+    }
 
     if(sdi->mode != LOGIC)
     {
@@ -1875,7 +1888,7 @@ static int receive_data_logic_decoder(int fd, int revents, const struct sr_dev_i
             vdev->packet_buffer->block_read_positions[ch_index] = 0;
         }
 
-        vdev->packet_buffer->post_buf_len = chan_num * vdev->packet_len;
+        vdev->packet_buffer->post_buf_len = chan_num * vdev->logic_packet_len;
 
         vdev->packet_buffer->post_buf = malloc(vdev->packet_buffer->post_buf_len + 1);
         if (vdev->packet_buffer->post_buf == NULL)
@@ -1909,9 +1922,9 @@ static int receive_data_logic_decoder(int fd, int revents, const struct sr_dev_i
         max_probe_num = chan_num;
     }
 
-    if(pack_buffer->post_buf_len != chan_num * vdev->packet_len)
+    if(pack_buffer->post_buf_len != chan_num * vdev->logic_packet_len)
     {
-        pack_buffer->post_buf_len = chan_num * vdev->packet_len;
+        pack_buffer->post_buf_len = chan_num * vdev->logic_packet_len;
         safe_free(pack_buffer->post_buf);
 
         pack_buffer->post_buf = malloc(pack_buffer->post_buf_len);

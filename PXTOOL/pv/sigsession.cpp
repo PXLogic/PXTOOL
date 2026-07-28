@@ -482,7 +482,15 @@ namespace pv
         _callback->update_capture();
 
         set_cur_snap_samplerate(_device_agent.get_sample_rate());
-        set_cur_samplelimits(_device_agent.get_sample_limit());
+
+        uint64_t sample_limit = _device_agent.get_sample_limit();
+        if (_is_stream_mode && !_disk_cache_settings.enabled) {
+            const uint64_t channel_count = std::max<uint64_t>(
+                1, get_ch_num(SR_CHANNEL_LOGIC));
+            const uint64_t stream_window_samples = SR_MB(1) * 8 / channel_count;
+            sample_limit = std::max(sample_limit, stream_window_samples);
+        }
+        set_cur_samplelimits(sample_limit);
 
         _data_updated = false;
         _trigger_flag = false;
@@ -1422,13 +1430,14 @@ namespace pv
                                               QString::number((qulonglong)QDateTime::currentMSecsSinceEpoch()).toStdString());
             }
 
-            _capture_data->get_logic()->set_loop(is_loop_mode() && !_spill_manager);
+            _capture_data->get_logic()->set_loop(
+                (is_loop_mode() || _is_stream_mode) && !_spill_manager);
             _capture_data->get_logic()->set_spill_manager(_spill_manager);
 
             bool bNotFree = is_decoding() && _view_data == _capture_data;
 
-            _capture_data->get_logic()->first_payload(o, 
-                            _device_agent.get_sample_limit(),
+            _capture_data->get_logic()->first_payload(o,
+                            cur_samplelimits(),
                             _device_agent.get_channels(),
                             !bNotFree);
 
