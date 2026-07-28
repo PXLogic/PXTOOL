@@ -20,6 +20,7 @@
 #include <boost/test/unit_test.hpp>
 
 #include "../pv/sigsession.h"
+#include "../pv/view/devmode.h"
 
 using pv::SigSession;
 
@@ -36,6 +37,12 @@ BOOST_AUTO_TEST_CASE(mso_accepts_logic_and_analog_only)
     BOOST_CHECK(SigSession::channel_type_visible_in_mode(MSO, SR_CHANNEL_LOGIC));
     BOOST_CHECK(SigSession::channel_type_visible_in_mode(MSO, SR_CHANNEL_ANALOG));
     BOOST_CHECK(!SigSession::channel_type_visible_in_mode(MSO, SR_CHANNEL_DSO));
+}
+
+BOOST_AUTO_TEST_CASE(mso_selector_name_is_available)
+{
+    BOOST_CHECK_EQUAL(pv::view::DevMode::display_name_for_mode(MSO).toStdString(),
+                      std::string("Mixed Signal Oscilloscope"));
 }
 
 BOOST_AUTO_TEST_SUITE_END()

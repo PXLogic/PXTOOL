@@ -1778,6 +1778,26 @@ static int sr_load_virtual_device_session(struct sr_dev_inst *sdi)
                         }
                     }
                 }
+                else if (!strncmp(keys[j], "logic probe", 11) && mode == MSO)
+                {
+                    tmp_u64 = strtoul(keys[j] + 11, NULL, 10);
+                    if (!(probe = sr_channel_new(sdi, tmp_u64, SR_CHANNEL_LOGIC, TRUE, val)))
+                    {
+                        sr_err("%s: create logic channel failed", __func__);
+                        sr_dev_inst_free(sdi);
+                        return SR_ERR;
+                    }
+                }
+                else if (!strncmp(keys[j], "analog probe", 12) && mode == MSO)
+                {
+                    tmp_u64 = strtoul(keys[j] + 12, NULL, 10);
+                    if (!(probe = sr_channel_new(sdi, tmp_u64, SR_CHANNEL_ANALOG, TRUE, val)))
+                    {
+                        sr_err("%s: create analog channel failed", __func__);
+                        sr_dev_inst_free(sdi);
+                        return SR_ERR;
+                    }
+                }
                 else if (!strncmp(keys[j], "probe", 5))
                 {
                     enabled_probes++;

@@ -70,9 +70,11 @@ public:
 
 private:
     void save_proc(pv::data::Snapshot *snapshot);
-    void save_logic(pv::data::LogicSnapshot *logic_snapshot);
-    void save_analog(pv::data::AnalogSnapshot *analog_snapshot);
+    void save_logic(pv::data::LogicSnapshot *logic_snapshot, bool finalize = true);
+    void save_analog(pv::data::AnalogSnapshot *analog_snapshot, bool finalize = true);
     void save_dso(pv::data::DsoSnapshot *dso_snapshot);
+    void save_mso(pv::data::LogicSnapshot *logic_snapshot,
+                  pv::data::AnalogSnapshot *analog_snapshot);
     bool meta_gen(data::Snapshot *snapshot, std::string &str);
     void export_proc(pv::data::Snapshot *snapshot);
     void export_exec(pv::data::Snapshot *snapshot);

@@ -517,7 +517,7 @@ void View::frame_began()
 
 void View::receive_end()
 {
-    if (_device_agent->get_work_mode() == LOGIC) {
+    if (is_logic_rendering_mode()) {
         bool rle = false;
         uint64_t actual_samples;
         bool ret;
@@ -846,7 +846,7 @@ void View::signals_changed(const Trace* eventTrace)
         
         int mode = _device_agent->get_work_mode();
 
-        if (mode == LOGIC) {
+        if (is_logic_rendering_mode()) {
             int v;
             bool ret;
 
@@ -874,7 +874,7 @@ void View::signals_changed(const Trace* eventTrace)
         }
 
         // Apply height preset if set (LOGIC mode only)
-        if (mode == LOGIC) {
+        if (is_logic_rendering_mode()) {
             int mul = AppConfig::Instance().appOptions.signalHeightMultiple;
             if (mul > 0)
                 _signalHeight = mul * 30;
@@ -884,11 +884,17 @@ void View::signals_changed(const Trace* eventTrace)
         int next_v_offset = actualMargin;
         
         //Make list by view-index;
-        if (mode == LOGIC)
+        if (is_logic_rendering_mode())
         {   
+            const std::vector<Trace*> original_time_traces = time_traces;
             time_traces.clear();
 
             std::vector<Trace*> all_traces;
+
+            for(auto t : original_time_traces){
+                if (t->get_type() == SR_CHANNEL_ANALOG)
+                    all_traces.push_back(t);
+            }
 
             for(auto t : logic_traces){
                 all_traces.push_back(t);
@@ -962,7 +968,7 @@ bool View::eventFilter(QObject *object, QEvent *event)
             double cur_periods = (mouse_event->pos().x() + _offset) * _scale / _ruler->get_min_period();
             int integer_x = round(cur_periods) * _ruler->get_min_period() / _scale - _offset;
             double cur_deviate_x = qAbs(mouse_event->pos().x() - integer_x);
-            if (_device_agent->get_work_mode() == LOGIC &&
+            if (is_logic_rendering_mode() &&
                 cur_deviate_x < 10)
                 _hover_point = QPoint(integer_x, mouse_event->pos().y());
             else
@@ -1716,12 +1722,18 @@ void View::check_measure()
 
 std::list<Cursor*>& View::get_cursorList()
 {   
-    if (_session->get_device()->get_work_mode() == LOGIC){
+    if (is_logic_rendering_mode()){
         return _logic_cursors;
     }
     else{
         return _dso_cursors;
     }
+}
+
+bool View::is_logic_rendering_mode() const
+{
+    const int mode = _session->get_device()->get_work_mode();
+    return mode == LOGIC || mode == MSO;
 }
 
 bool View::header_is_draging()

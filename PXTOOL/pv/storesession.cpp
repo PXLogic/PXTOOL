@@ -189,7 +189,11 @@ bool StoreSession::save_start()
         type_set.insert(s->get_type());
     }
 
-    if (type_set.size() > 1) {
+    const bool mixed_signal_session =
+        _session->get_device()->get_work_mode() == MSO &&
+        type_set.size() == 2 &&
+        type_set.count(SR_CHANNEL_LOGIC) && type_set.count(SR_CHANNEL_ANALOG);
+    if (type_set.size() > 1 && !mixed_signal_session) {
         _error = tr("DSView does not currently support\nfile saving for multiple data types.");
         return false;
 
@@ -203,7 +207,8 @@ bool StoreSession::save_start()
         return false;
     }
 
-    const auto snapshot = _session->get_snapshot(*type_set.begin());
+    const auto snapshot = _session->get_snapshot(
+        mixed_signal_session ? SR_CHANNEL_LOGIC : *type_set.begin());
 	assert(snapshot);
     // Check we have data
     if (snapshot->empty()) {
@@ -262,7 +267,7 @@ bool StoreSession::save_start()
     return false;
 }
 
-void StoreSession::save_logic(pv::data::LogicSnapshot *logic_snapshot)
+void StoreSession::save_logic(pv::data::LogicSnapshot *logic_snapshot, bool finalize)
 {
     char chunk_name[20] = {0};
     uint16_t to_save_probes = 0;
@@ -398,7 +403,7 @@ void StoreSession::save_logic(pv::data::LogicSnapshot *logic_snapshot)
     if (_canceled || num == 0){
         QFile::remove(_file_name);
     }
-    else {
+    else if (finalize) {
         bool bret = m_zipDoc.Close();
         m_zipDoc.Release();
 
@@ -409,17 +414,13 @@ void StoreSession::save_logic(pv::data::LogicSnapshot *logic_snapshot)
     } 
 }
 
-void StoreSession::save_analog(pv::data::AnalogSnapshot *analog_snapshot)
+void StoreSession::save_analog(pv::data::AnalogSnapshot *analog_snapshot, bool finalize)
 {
     char chunk_name[20] = {0};
     int num = 0;
     int ret = SR_ERR;
 
-    int ch_type = -1;
-    for(auto s : _session->get_signals()) {
-        ch_type = s->get_type();
-        break;
-    }
+    const int ch_type = SR_CHANNEL_ANALOG;
 
     if (ch_type != -1) {
         num = analog_snapshot->get_block_num();
@@ -483,7 +484,7 @@ void StoreSession::save_analog(pv::data::AnalogSnapshot *analog_snapshot)
     if (_canceled || num == 0){
         QFile::remove(_file_name);
     }
-    else {
+    else if (finalize) {
         bool bret = m_zipDoc.Close();
         m_zipDoc.Release();
 
@@ -563,7 +564,15 @@ void StoreSession::save_proc(data::Snapshot *snapshot)
 
     dsv_info("save task start.");
 
-    if ((logic_snapshot = dynamic_cast<data::LogicSnapshot*>(snapshot))) {
+    if (_session->get_device()->get_work_mode() == MSO) {
+        logic_snapshot = dynamic_cast<data::LogicSnapshot*>(
+            _session->get_snapshot(SR_CHANNEL_LOGIC));
+        analog_snapshot = dynamic_cast<data::AnalogSnapshot*>(
+            _session->get_snapshot(SR_CHANNEL_ANALOG));
+        if (logic_snapshot && analog_snapshot)
+            save_mso(logic_snapshot, analog_snapshot);
+    }
+    else if ((logic_snapshot = dynamic_cast<data::LogicSnapshot*>(snapshot))) {
         save_logic(logic_snapshot);
     }
     else if ((analog_snapshot = dynamic_cast<data::AnalogSnapshot*>(snapshot))) {
@@ -577,6 +586,23 @@ void StoreSession::save_proc(data::Snapshot *snapshot)
 
     std::this_thread::sleep_for(std::chrono::milliseconds(300));
     _is_busy = false;   
+}
+
+void StoreSession::save_mso(data::LogicSnapshot *logic_snapshot,
+                            data::AnalogSnapshot *analog_snapshot)
+{
+    save_logic(logic_snapshot, false);
+    if (_has_error || _canceled)
+        return;
+    save_analog(analog_snapshot, false);
+    if (_has_error || _canceled)
+        return;
+
+    if (!m_zipDoc.Close()) {
+        _has_error = true;
+        _error = m_zipDoc.GetError();
+    }
+    m_zipDoc.Release();
 }
 
 bool StoreSession::meta_gen(data::Snapshot *snapshot, std::string &str)
@@ -708,13 +734,23 @@ bool StoreSession::meta_gen(data::Snapshot *snapshot, std::string &str)
         
         probe = (struct sr_channel *)l->data;
         
-        if (!snapshot->has_data(probe->index))
+        data::Snapshot *probe_snapshot = snapshot;
+        if (mode == MSO)
+            probe_snapshot = _session->get_snapshot(probe->type);
+        if (!probe_snapshot || !probe_snapshot->has_data(probe->index))
             continue;
 
         if (mode == LOGIC && !probe->enabled)
             continue;
 
-        if (probe->name)
+        if (mode == MSO && probe->name)
+        {
+            const char *prefix = probe->type == SR_CHANNEL_LOGIC
+                ? "logic probe" : "analog probe";
+            sprintf(meta, "%s%d = %s\n", prefix, probe->index, probe->name);
+            str += meta;
+        }
+        else if (probe->name)
         {
             int sigdex = (mode == LOGIC) ? probe->index : probecnt;
             sprintf(meta, "probe%d = %s\n", sigdex, probe->name);

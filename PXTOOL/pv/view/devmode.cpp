@@ -245,16 +245,7 @@ void DevMode::set_device()
         QString icon_name = QString::fromLocal8Bit(mode_name->_logo);
 
         int md = mode->mode;
-        QString label;
-
-        if (md == LOGIC)
-            label = tr("Logic Analyzer");
-        else if (md == ANALOG)
-            label = tr("Data Acquisition");
-        else if (md == DSO)
-            label = tr("Oscilloscope");
-        else if (md == MSO)
-            label = tr("Mixed Signal Oscilloscope");
+        const QString label = display_name_for_mode(md);
 
         _mode_btn->addItem(tinted_mode_icon(iconPath + icon_name, menuIconColor,
                                              QSize(32, 24)), label, md);
@@ -370,15 +361,7 @@ void DevMode::sync_mode_button_width()
 
 void DevMode::sync_mode_button(int mode, const QString &iconPath)
 {
-    QString label;
-    if (mode == LOGIC)
-        label = tr("Logic Analyzer");
-    else if (mode == ANALOG)
-        label = tr("Data Acquisition");
-    else if (mode == DSO)
-        label = tr("Oscilloscope");
-    else
-        label = tr("Capture Mode");
+    const QString label = display_name_for_mode(mode);
 
     (void)iconPath;
     const bool oldUpdating = _updating_mode;
