@@ -39,6 +39,7 @@ static struct {
     int analog_channel_indices[TEST_ANALOG_CHANNEL_CAPACITY];
     float analog_prefix[TEST_ANALOG_PREFIX_CAPACITY];
     size_t analog_prefix_len;
+    unsigned int end_packets;
     bool saw_end;
 } test_input_observer;
 
@@ -188,6 +189,7 @@ void test_input_observer_record_packet(const struct sr_dev_inst *sdi,
         }
         break;
     case SR_DF_END:
+        test_input_observer.end_packets++;
         test_input_observer.saw_end = true;
         break;
     default:
@@ -238,6 +240,11 @@ uint64_t test_input_observer_sample_limit(void)
 bool test_input_observer_saw_end(void)
 {
     return test_input_observer.saw_end;
+}
+
+unsigned int test_input_observer_end_packets(void)
+{
+    return test_input_observer.end_packets;
 }
 
 bool test_input_observer_analog_is_standard_float(void)
