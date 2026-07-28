@@ -51,6 +51,17 @@ sr_dev_inst *make_imported_device(sr_channeltype channel_type)
     return sdi;
 }
 
+sr_dev_inst *make_mixed_imported_device()
+{
+    sr_dev_inst *sdi = sr_dev_inst_new(LOGIC, SR_ST_INACTIVE,
+                                       "DSView", "Imported", "0.1");
+    if (sdi) {
+        sr_channel_new(sdi, 0, SR_CHANNEL_LOGIC, TRUE, "D0");
+        sr_channel_new(sdi, 1, SR_CHANNEL_ANALOG, TRUE, "A0");
+    }
+    return sdi;
+}
+
 } // namespace
 
 BOOST_AUTO_TEST_SUITE(deviceagent_capability)
@@ -130,6 +141,7 @@ BOOST_AUTO_TEST_CASE(imported_device_modes_follow_channel_capabilities)
                              QStringLiteral("import"), 1'000'000, 1024);
     BOOST_CHECK(has_mode(agent.get_device_mode_list(), LOGIC));
     BOOST_CHECK(!has_mode(agent.get_device_mode_list(), ANALOG));
+    BOOST_CHECK(!has_mode(agent.get_device_mode_list(), MSO));
 
     sr_dev_inst *analog_device = make_imported_device(SR_CHANNEL_ANALOG);
     BOOST_REQUIRE(analog_device != nullptr);
@@ -138,6 +150,22 @@ BOOST_AUTO_TEST_CASE(imported_device_modes_follow_channel_capabilities)
                              QStringLiteral("import"), 1'000'000, 1024);
     BOOST_CHECK(has_mode(agent.get_device_mode_list(), ANALOG));
     BOOST_CHECK(!has_mode(agent.get_device_mode_list(), LOGIC));
+    BOOST_CHECK(!has_mode(agent.get_device_mode_list(), MSO));
+
+    sr_dev_inst *mixed_device = make_mixed_imported_device();
+    BOOST_REQUIRE(mixed_device != nullptr);
+    agent.bind_custom_device(mixed_device, DEV_TYPE_DEMO, MSO,
+                             QStringLiteral("Mixed import"), QString(),
+                             QStringLiteral("import"), 1'000'000, 1024);
+    const GSList *mixed_modes = agent.get_device_mode_list();
+    BOOST_REQUIRE(mixed_modes != nullptr);
+    const sr_dev_mode *first_mode =
+        static_cast<const sr_dev_mode *>(mixed_modes->data);
+    BOOST_REQUIRE(first_mode != nullptr);
+    BOOST_CHECK_EQUAL(first_mode->mode, MSO);
+    BOOST_CHECK(has_mode(mixed_modes, MSO));
+    BOOST_CHECK(has_mode(mixed_modes, LOGIC));
+    BOOST_CHECK(has_mode(mixed_modes, ANALOG));
 
     agent.release();
 }

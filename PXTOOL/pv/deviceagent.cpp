@@ -58,7 +58,7 @@ void DeviceAgent::rebuild_custom_mode_list()
     free_custom_mode_list(_custom_mode_list);
     _custom_mode_list = nullptr;
     _custom_mode_entries.clear();
-    _custom_mode_entries.reserve(3);
+    _custom_mode_entries.reserve(4);
 
     bool has_logic = false;
     bool has_analog = false;
@@ -79,6 +79,8 @@ void DeviceAgent::rebuild_custom_mode_list()
                                             &_custom_mode_entries.back());
     };
 
+    if (has_logic && has_analog)
+        append(MSO, "Mixed Signal Oscilloscope", "mso");
     if (has_logic)
         append(LOGIC, "Logic Analyzer", "logic");
     if (has_analog)

@@ -646,6 +646,7 @@ enum OPERATION_MODE {
     LOGIC = 0,
     DSO = 1,
     ANALOG = 2,
+    MSO = 3,
 	UNKNOWN_DSL_MODE = 99,
 };
 
