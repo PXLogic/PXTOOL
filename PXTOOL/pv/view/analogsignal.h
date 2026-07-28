@@ -133,7 +133,9 @@ public:
      **/
     void paint_back(QPainter &p, int left, int right, QColor fore, QColor back);
 
-	/**
+    void paint_axis_labels(QPainter &p, int left, int right, QColor fore);
+
+    /**
 	 * Paints the signal with a QPainter
 	 * @param p the QPainter to paint into.
 	 * @param left the x-coordinate of the left edge of the signal.

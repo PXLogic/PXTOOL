@@ -409,8 +409,6 @@ void AnalogSignal::paint_back(QPainter &p, int left, int right, QColor fore, QCo
     const int DIVS = DS_CONF_DSO_VDIVS;
     const int minDIVS = 5;
     const double STEPS = height / (DIVS * minDIVS);
-    const double mapSteps = (get_mapMax() - get_mapMin()) / DIVS;
-    const QString mapUnit = get_mapUnit();
 
     QPen solidPen(fore);
     solidPen.setStyle(Qt::SolidLine);
@@ -419,34 +417,42 @@ void AnalogSignal::paint_back(QPainter &p, int left, int right, QColor fore, QCo
 
     // paint rule
     double y = get_y() - height * 0.5;
-    double mapValue = get_mapMax() + (get_zero_ratio() - 0.5) * (get_mapMax() - get_mapMin());
     for (i = 0; i < DIVS; i++) {
         p.drawLine(left, y, left+10, y);
-        if (i == 0 || i == DIVS/2)
-            p.drawText(QRectF(left+15, y-10, 100, 20),
-                       Qt::AlignLeft | Qt::AlignVCenter,
-                       QString::number(mapValue,'f',2)+mapUnit);
         p.drawLine(right, y, right-10, y);
-        if (i == 0 || i == DIVS/2)
-            p.drawText(QRectF(right-115, y-10, 100, 20),
-                       Qt::AlignRight | Qt::AlignVCenter,
-                       QString::number(mapValue,'f',2)+mapUnit);
         for (j = 0; j < minDIVS - 1; j++) {
             y += STEPS;
             p.drawLine(left, y, left+5, y);
             p.drawLine(right, y, right-5, y);
         }
         y += STEPS;
-        mapValue -= mapSteps;
     }
     p.drawLine(left, y, left+10, y);
-    p.drawText(QRectF(left+15, y-10, 100, 20),
-               Qt::AlignLeft | Qt::AlignVCenter,
-               QString::number(mapValue,'f',2)+mapUnit);
     p.drawLine(right, y, right-10, y);
-    p.drawText(QRectF(right-115, y-10, 100, 20),
-               Qt::AlignRight | Qt::AlignVCenter,
-               QString::number(mapValue,'f',2)+mapUnit);
+}
+
+void AnalogSignal::paint_axis_labels(QPainter &p, int left, int right,
+                                     QColor fore)
+{
+    const double height = get_totalHeight();
+    const int DIVS = DS_CONF_DSO_VDIVS;
+    const double step = height / DIVS;
+    const double mapStep = (get_mapMax() - get_mapMin()) / DIVS;
+    const QString mapUnit = get_mapUnit();
+
+    p.setPen(fore);
+    const double top = get_y() - height * 0.5;
+    const double topValue = get_mapMax() +
+        (get_zero_ratio() - 0.5) * (get_mapMax() - get_mapMin());
+    for (int division : {0, DIVS / 2, DIVS}) {
+        const double y = top + division * step;
+        const QString value = QString::number(topValue - division * mapStep,
+                                               'f', 2) + mapUnit;
+        p.drawText(QRectF(left + 15, y - 10, 100, 20),
+                   Qt::AlignLeft | Qt::AlignVCenter, value);
+        p.drawText(QRectF(right - 115, y - 10, 100, 20),
+                   Qt::AlignRight | Qt::AlignVCenter, value);
+    }
 }
 
 void AnalogSignal::paint_mid(QPainter &p, int left, int right, QColor fore, QColor back)
@@ -523,6 +529,7 @@ void AnalogSignal::paint_fore(QPainter &p, int left, int right, QColor fore, QCo
     p.drawLine(left, get_zero_vpos(), right, get_zero_vpos());
 
     fore.setAlpha(View::ForeAlpha);
+    paint_axis_labels(p, left, right, fore);
     if(enabled()) {
         // Paint measure
         if (_view->session().is_stopped_status())
