@@ -119,6 +119,13 @@ add_executable(DSView-test
     ../../common/minizip/zip.c
 )
 
+if(WIN32)
+    target_sources(DSView-test PRIVATE
+        test_wintaskbarprogress.cpp
+        ../pv/wintaskbarprogress.cpp
+    )
+endif()
+
 target_compile_definitions(DSView-test PRIVATE
     DSVIEW_SOURCE_DIR="${CMAKE_SOURCE_DIR}"
 )
@@ -214,6 +221,13 @@ target_link_libraries(DSView-test
     ${LIBUSB_1_LIBRARIES}
     ${ZLIB_LIBRARIES}
 )
+
+if(WIN32)
+    target_link_libraries(DSView-test PRIVATE
+        -lole32
+        -luuid
+    )
+endif()
 
 add_executable(srd-c-decoder-lifetime-test
     test_srd_c_decoder_lifetime.c

@@ -430,6 +430,7 @@ if(WIN32)
 	list(APPEND DSView_SOURCES
 		PXTOOL/pv/winnativewidget.cpp
 		PXTOOL/pv/winshadow.cpp
+		PXTOOL/pv/wintaskbarprogress.cpp
 	)
 endif ()
 
@@ -562,6 +563,7 @@ if(WIN32)
 	list(APPEND DSView_HEADERS
 		PXTOOL/pv/winnativewidget.h
 		PXTOOL/pv/winshadow.h
+		PXTOOL/pv/wintaskbarprogress.h
 	)
 endif ()
 
@@ -815,6 +817,10 @@ endif()
 else()
 	link_directories(${PKGDEPS_LIBRARY_DIRS})
 	list(APPEND DSVIEW_LINK_LIBS ${PKGDEPS_LIBRARIES})
+endif()
+
+if(WIN32)
+	list(APPEND DSVIEW_LINK_LIBS -lole32 -luuid)
 endif()
 
 add_executable(${PROJECT_NAME}
