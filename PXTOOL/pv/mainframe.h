@@ -31,8 +31,7 @@
 #include <QRect>
 
 #ifdef _WIN32
-#include <QWinTaskbarButton>
-#include <QWinTaskbarProgress>
+#include "wintaskbarprogress.h"
 #endif
 
 #include "toolbars/titlebar.h"
@@ -171,8 +170,7 @@ private:
     bool    _freezing; 
     // Taskbar Progress Effert for Win7 and Above
 #ifdef _WIN32
-    QWinTaskbarButton *_taskBtn;
-    QWinTaskbarProgress *_taskPrg;
+    WinTaskbarProgress _taskbarProgress;
 #endif
 
     bool    _is_win32_parent_window;
