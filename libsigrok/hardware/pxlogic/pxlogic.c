@@ -1795,13 +1795,29 @@ SR_PRIV int start_transfers(const struct sr_dev_inst *sdi)
     return SR_OK;
 }
 
+SR_PRIV int pxlogic_send_logic_packet(const struct sr_dev_inst *sdi,
+    uint8_t *data, uint64_t length, uint16_t unitsize)
+{
+    struct sr_datafeed_packet packet;
+    struct sr_datafeed_logic logic;
+
+    packet.type = SR_DF_LOGIC;
+    packet.status = SR_PKT_OK;
+    packet.payload = &logic;
+
+    logic.length = length;
+    logic.unitsize = unitsize;
+    logic.format = LA_CROSS_DATA;
+    logic.data = data;
+
+    return ds_data_forward(sdi, &packet);
+}
+
 /* Callback handling data */
 static void receive_transfer(struct libusb_transfer *transfer)
 {
     struct PX_context *devc = transfer->user_data;
     struct sr_dev_inst *sdi = devc->cb_data;
-    struct sr_datafeed_packet packet;
-    struct sr_datafeed_logic logic;
     uint64_t samples_to_send = 0, sending_now;
     (void)samples_to_send;
     uint64_t offset = 0;
@@ -1866,20 +1882,13 @@ static void receive_transfer(struct libusb_transfer *transfer)
                     int ch_num = devc->ch_num;
                     int unitsize = ch_num / 8;
 
-                    packet.type = SR_DF_LOGIC;
-                    packet.payload = &logic;
-
                     /* Forward raw channel-block (LA_CROSS_DATA) directly — no
                      * deinterleave in driver. Conversion to per-channel chunk
                      * tree is done by LogicSnapshot::append_cross_payload on
                      * the PXView side. This avoids the ~100ms/4MB deinterleave
                      * bottleneck on the USB receive path (v1.49 architecture). */
-                    logic.length = data_len;
-                    logic.unitsize = unitsize;
-                    logic.format = LA_CROSS_DATA;
-                    logic.data = transfer->buffer + offset;
-
-                    ds_data_forward(sdi, &packet);
+                    pxlogic_send_logic_packet(sdi, transfer->buffer + offset,
+                        data_len, unitsize);
                     devc->samples_counter_div2 = devc->samples_counter / 2;
                     devc->mstatus.trig_hit = 1;
                     devc->mstatus.vlen = devc->block_size;
