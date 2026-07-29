@@ -26,7 +26,8 @@ namespace pv {
 
 WinTaskbarProgress::WinTaskbarProgress() :
 	_taskbar(nullptr),
-	_window(nullptr)
+	_window(nullptr),
+	_com_initialized(false)
 {
 }
 
@@ -34,6 +35,8 @@ WinTaskbarProgress::~WinTaskbarProgress()
 {
 	if (_taskbar)
 		_taskbar->Release();
+	if (_com_initialized)
+		CoUninitialize();
 }
 
 int WinTaskbarProgress::normalizedValue(int value)
@@ -50,6 +53,14 @@ void WinTaskbarProgress::attach(HWND window)
 	_window = window;
 	if (!_window || _taskbar)
 		return;
+
+	if (!_com_initialized) {
+		const HRESULT result = CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
+		if (SUCCEEDED(result))
+			_com_initialized = true;
+		else if (result != RPC_E_CHANGED_MODE)
+			return;
+	}
 
 	ITaskbarList3* taskbar = nullptr;
 	if (FAILED(CoCreateInstance(CLSID_TaskbarList, nullptr,
@@ -69,8 +80,14 @@ void WinTaskbarProgress::setProgress(int value)
 	if (!_taskbar || !_window)
 		return;
 
+	const int normalized = normalizedValue(value);
+	if (normalized == 0) {
+		_taskbar->SetProgressState(_window, TBPF_NOPROGRESS);
+		return;
+	}
+
 	_taskbar->SetProgressState(_window, TBPF_NORMAL);
-	_taskbar->SetProgressValue(_window, normalizedValue(value), 100);
+	_taskbar->SetProgressValue(_window, normalized, 100);
 }
 
 } // namespace pv

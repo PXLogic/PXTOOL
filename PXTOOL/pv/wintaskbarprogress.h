@@ -44,6 +44,7 @@ public:
 private:
 	ITaskbarList3* _taskbar;
 	HWND _window;
+	bool _com_initialized;
 };
 
 } // namespace pv
