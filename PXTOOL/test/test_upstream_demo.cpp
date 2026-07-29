@@ -26,6 +26,8 @@
 #include <cstring>
 #include <thread>
 
+#include "test_datafeed_stub.h"
+
 extern "C" {
 #include "libsigrok-internal.h"
 extern SR_PRIV struct sr_dev_driver upstream_demo_driver_info;
@@ -46,6 +48,8 @@ size_t test_input_observer_analog_prefix_length(void);
 float test_input_observer_analog_prefix(unsigned int index);
 int test_pxlogic_stream_config_state(void);
 int test_pxlogic_session_options_exclude_runtime_state(void);
+int pxlogic_send_logic_packet(const struct sr_dev_inst *sdi,
+    uint8_t *data, uint64_t length, uint16_t unitsize);
 }
 
 BOOST_AUTO_TEST_SUITE(upstream_demo)
@@ -403,6 +407,24 @@ BOOST_AUTO_TEST_CASE(pxlogic_stream_configuration_tracks_stream_and_loop_state)
 BOOST_AUTO_TEST_CASE(pxlogic_session_options_exclude_runtime_state)
 {
     BOOST_CHECK_EQUAL(test_pxlogic_session_options_exclude_runtime_state(), 1);
+}
+
+BOOST_AUTO_TEST_CASE(pxlogic_logic_packets_have_success_status)
+{
+    sr_dev_inst sdi{};
+    uint8_t data[] = {0x12, 0x34};
+
+    test_datafeed_reset();
+    BOOST_REQUIRE_EQUAL(pxlogic_send_logic_packet(
+        &sdi, data, sizeof(data), 1), SR_OK);
+
+    const test_captured_datafeed_packet *packet = test_datafeed_last_packet();
+    BOOST_CHECK_EQUAL(packet->type, SR_DF_LOGIC);
+    BOOST_CHECK_EQUAL(packet->status, SR_PKT_OK);
+    BOOST_CHECK_EQUAL(packet->logic_length, sizeof(data));
+    BOOST_CHECK_EQUAL(packet->logic_format, LA_CROSS_DATA);
+    BOOST_CHECK_EQUAL(packet->logic_unitsize, 1);
+    BOOST_CHECK_EQUAL(packet->logic_data, data);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

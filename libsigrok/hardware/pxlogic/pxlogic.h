@@ -148,6 +148,9 @@ enum pxlogic_op_mode {
     OP_LPTEST = 4,
 };
 
+SR_PRIV int pxlogic_send_logic_packet(const struct sr_dev_inst *sdi,
+    uint8_t *data, uint64_t length, uint16_t unitsize);
+
 /* Task 8.4: fork LOGIC/DSO/ANALOG #defines deleted — code now uses
  * PXLOGIC_MODE_LOGIC/DSO/ANALOG directly (defined in enum
  * pxlogic_operation_mode above). */
