@@ -2594,6 +2594,13 @@ QWidget#decode_search_container QLineEdit#decode_ann_search_edit {
     selection-background-color: #7c3aed;
     padding: 0px;
 }
+QDialog#decode_ann_search_edit_popup QLineEdit {
+    background-color: #2a2a2a;
+    border: none;
+    color: #cccccc;
+    selection-background-color: #7c3aed;
+    padding: 0px 4px 2px 4px;
+}
 
 /* ── Decode Panel top toolbar: Decoder search trigger (dark) ──────── */
 QWidget#sidebar QLineEdit#decode_keyword_edit {
@@ -3180,6 +3187,32 @@ QDialog#diskCacheSettingsDialog QComboBox#disk_cache_combo QAbstractItemView {
     border: 1px solid #444444;
     color: #cccccc;
     selection-background-color: #7c3aed;
+}
+QDialog#protocolListDialog QComboBox QAbstractItemView::item {
+    min-height: 20px;
+    padding: 4px 12px;
+    border: 1px solid transparent;
+}
+QDialog#protocolListDialog QComboBox QAbstractItemView::item:selected {
+    background-color: #7c3aed;
+    color: #ffffff;
+}
+QDialog#protocolListDialog QComboBox QAbstractItemView::item:hover {
+    background-color: #7c3aed;
+    color: #ffffff;
+}
+QDialog#protocolExportDialog QComboBox QAbstractItemView::item {
+    min-height: 20px;
+    padding: 4px 12px;
+    border: 1px solid transparent;
+}
+QDialog#protocolExportDialog QComboBox QAbstractItemView::item:selected {
+    background-color: #7c3aed;
+    color: #ffffff;
+}
+QDialog#protocolExportDialog QComboBox QAbstractItemView::item:hover {
+    background-color: #7c3aed;
+    color: #ffffff;
 }
 QDialog#diskCacheSettingsDialog QComboBox#disk_cache_combo {
     padding-right: 28px;

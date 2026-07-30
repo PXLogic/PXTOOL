@@ -54,6 +54,20 @@ for TOOL in gcc g++ cmake mingw32-make; do
     fi
 done
 
+if [ ! -d "$MINGW_PREFIX/lib/cmake/Qt6" ]; then
+    echo "ERROR: Qt6 CMake package directory not found: $MINGW_PREFIX/lib/cmake/Qt6"
+    MISSING=1
+fi
+
+if ! command -v pacman &>/dev/null; then
+    echo "ERROR: pacman is required to verify the MSYS2 Qt6-only environment."
+    MISSING=1
+elif pacman -Qq | grep -q '^mingw-w64-x86_64-qt5-'; then
+    echo "ERROR: MSYS2 Qt5 packages are installed."
+    echo "       Run: bash scripts/windows/prepare_qt6_msys2.sh --purge-qt5"
+    MISSING=1
+fi
+
 if ! command -v npm &>/dev/null && ! [ -f "$MINGW_PREFIX/bin/npm.exe" ]; then
     echo "ERROR: Required tool not found: npm"
     echo "       npm is required to build the MCP browser Web Console."
@@ -90,6 +104,9 @@ elif [ "$SOURCE_DIR/CMakeLists.txt" -nt "CMakeCache.txt" ]; then
 elif ! grep -qx 'DSVIEW_ENABLE_UPSTREAM_COMPAT_DEMO:BOOL=ON' "CMakeCache.txt"; then
     NEED_CMAKE=1
     echo "[Step 1/2] Enabling upstream-compat demo and re-configuring with CMake..."
+elif grep -q 'Qt5' "CMakeCache.txt"; then
+    NEED_CMAKE=1
+    echo "[Step 1/2] Qt5 cache entries found, re-configuring with Qt6..."
 else
     echo "[Step 1/2] CMake already configured, skipping."
 fi
@@ -100,6 +117,7 @@ if [ $NEED_CMAKE -eq 1 ]; then
         -G "MinGW Makefiles" \
         -DCMAKE_BUILD_TYPE=Release \
         -DDSVIEW_ENABLE_UPSTREAM_COMPAT_DEMO=ON \
+        -DQt6_DIR="$MINGW_PREFIX/lib/cmake/Qt6" \
         -DCMAKE_C_COMPILER="$MINGW_PREFIX/bin/gcc.exe" \
         -DCMAKE_CXX_COMPILER="$MINGW_PREFIX/bin/g++.exe" \
         -DCMAKE_MAKE_PROGRAM="$MINGW_PREFIX/bin/mingw32-make.exe"
@@ -123,18 +141,14 @@ echo ""
 # --------------------------------------------------------------------------
 echo "[Step 1b/2] Compiling language files (.ts → .qm)..."
 LRELEASE_BIN=""
-for _candidate in \
-        "$MINGW_PREFIX/bin/lrelease.exe" \
-        "$MINGW_PREFIX/bin/lrelease-qt6.exe" \
-        "$MINGW_PREFIX/bin/lrelease.exe" \
-        lrelease lrelease-qt6; do
+for _candidate in "$MINGW_PREFIX/bin/lrelease.exe"; do
     if [ -f "$_candidate" ] || command -v "$_candidate" &>/dev/null; then
         LRELEASE_BIN="$_candidate"
         break
     fi
 done
 
-if [ -z "$LRELEASE_BIN" ]; then
+if [ -z "$LRELEASE_BIN" ] || ! "$LRELEASE_BIN" -version 2>&1 | grep -Eq '(lrelease|Qt) version 6'; then
     echo "  WARNING: lrelease not found — .qm files will NOT be regenerated."
     echo "  Install with: pacman -S mingw-w64-x86_64-qt6-tools"
 else

@@ -23,7 +23,6 @@
 #ifndef DSVIEW_PV_PROTOCOLLIST_H
 #define DSVIEW_PV_PROTOCOLLIST_H
 
-#include <QDialogButtonBox>
 #include <QFormLayout>
 #include <QVBoxLayout>
 #include <QLabel>
@@ -66,8 +65,6 @@ private:
     std::list<QLabel *> _show_label_list;
     QFormLayout *_flayout;
     QVBoxLayout *_layout;
-    QDialogButtonBox _button_box;
-
 };
 
 } // namespace dialogs

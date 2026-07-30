@@ -188,12 +188,11 @@ include_directories(${ZLIB_INCLUDE_DIRS})
 #-------------------------------------------------------------------------------
 if(WIN32 OR APPLE)
 	set(QT_VERSION_FORCE "6" CACHE STRING "Force the use of Qt6 by setting this option to 6" FORCE)
+else()
+	set(QT_VERSION_FORCE "" CACHE STRING "Force the use of Qt6 by setting this option to 6")
 endif()
 
-
-set(QT_VERSION_FORCE "" CACHE STRING "Force the use of Qt6 by setting this option to 6")
-
-if(NOT QT_VERSION_FORCE OR "${QT_VERSION_FORCE}" STREQUAL "5")
+if(NOT WIN32 AND NOT APPLE AND (NOT QT_VERSION_FORCE OR "${QT_VERSION_FORCE}" STREQUAL "5"))
 	find_package(Qt5Core QUIET)
 	if(Qt5Core_FOUND)
 		message("----- Qt5:")
