@@ -223,7 +223,7 @@ target_link_libraries(DSView-test
 )
 
 if(WIN32)
-    target_link_libraries(DSView-test PRIVATE
+    target_link_libraries(DSView-test
         -lole32
         -luuid
     )

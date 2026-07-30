@@ -1110,7 +1110,11 @@ QWidget* MainFrame::GetBodyView()
     return _mainWindow->GetBodyView();
 }
 
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+bool MainFrame::nativeEvent(const QByteArray &eventType, void *message, qintptr *result)
+#else
 bool MainFrame::nativeEvent(const QByteArray &eventType, void *message, long *result)
+#endif
 {
 #ifdef _WIN32
 

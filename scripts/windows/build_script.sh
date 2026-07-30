@@ -117,16 +117,17 @@ echo ""
 # Step 1b: Compile language files (.ts → .qm)
 # lrelease regenerates .qm in-place inside PXTOOL/languages/ so that
 # language.qrc embeds up-to-date translations when rcc runs during make.
-# Note: qt5_add_translation in CMakeLists.txt outputs to the build output dir,
+# Note: qt6_add_translation in CMakeLists.txt outputs to the build output dir,
 # a different location than the .qm files referenced by language.qrc —
 # therefore we must run lrelease here to update the source-dir .qm files.
 # --------------------------------------------------------------------------
 echo "[Step 1b/2] Compiling language files (.ts → .qm)..."
 LRELEASE_BIN=""
 for _candidate in \
-        "$MINGW_PREFIX/bin/lrelease-qt5.exe" \
         "$MINGW_PREFIX/bin/lrelease.exe" \
-        lrelease-qt5 lrelease; do
+        "$MINGW_PREFIX/bin/lrelease-qt6.exe" \
+        "$MINGW_PREFIX/bin/lrelease.exe" \
+        lrelease lrelease-qt6; do
     if [ -f "$_candidate" ] || command -v "$_candidate" &>/dev/null; then
         LRELEASE_BIN="$_candidate"
         break
@@ -135,7 +136,7 @@ done
 
 if [ -z "$LRELEASE_BIN" ]; then
     echo "  WARNING: lrelease not found — .qm files will NOT be regenerated."
-    echo "  Install with: pacman -S mingw-w64-x86_64-qt5-tools"
+    echo "  Install with: pacman -S mingw-w64-x86_64-qt6-tools"
 else
     echo "  Using: $LRELEASE_BIN"
     QM_UPDATED=0

@@ -23,10 +23,13 @@
 
 #include <string.h>
 #include <type_traits>
+#include <glib.h>
 
 extern "C" {
 #include "libsigrok-internal.h"
+}
 
+extern "C" {
 void test_input_observer_record_packet(const struct sr_dev_inst *sdi,
     const struct sr_datafeed_packet *packet);
 }

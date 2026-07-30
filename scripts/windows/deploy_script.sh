@@ -72,12 +72,12 @@ else
 fi
 
 # --------------------------------------------------------------------------
-# Step 2: Qt5 platform plugins
+# Step 2: Qt6 platform plugins
 # --------------------------------------------------------------------------
-echo "[2/8] Copying Qt5 plugins..."
+echo "[2/8] Copying Qt6 plugins..."
 if [ ! -d plugins ]; then
-    cp -r "$MINGW_PREFIX/share/qt5/plugins" ./plugins
-    echo "  -> Qt plugins copied from $MINGW_PREFIX/share/qt5/plugins"
+    cp -r "$MINGW_PREFIX/share/qt6/plugins" ./plugins
+    echo "  -> Qt plugins copied from $MINGW_PREFIX/share/qt6/plugins"
 else
     echo "  -> plugins/ already present, skipping."
 fi

@@ -2305,6 +2305,8 @@ void Viewport::update_edge_nav_buttons()
     _next_edge_btn->setEnabled(hasNext);
     _prev_edge_btn->setVisible(true);
     _next_edge_btn->setVisible(true);
+    _prev_edge_btn->raise();
+    _next_edge_btn->raise();
 }
 
 void Viewport::navigate_to_edge(EdgeNavButton::Direction dir)

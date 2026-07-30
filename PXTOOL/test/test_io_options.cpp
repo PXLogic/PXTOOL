@@ -25,6 +25,7 @@
 #include <QSpinBox>
 #include <QVariant>
 #include <QWidget>
+#include <glib.h>
 
 extern "C" {
 #include "libsigrok-internal.h"

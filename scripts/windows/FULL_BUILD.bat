@@ -17,8 +17,13 @@ if %ERRORLEVEL% EQU 0 (
 
 echo [Step 0b] Cleaning old build artifacts...
 rmdir /s /q build.windows\CMakeFiles 2>nul
+rmdir /s /q build.windows\PXTOOL 2>nul
+rmdir /s /q build.windows\plugins 2>nul
 del /f /q build.windows\CMakeCache.txt 2>nul
 del /f /q build.windows\PXTOOL.exe 2>nul
+del /f /q build.windows\Qt5*.dll 2>nul
+del /f /q build.windows\Qt6*.dll 2>nul
+del /f /q build.windows\qt.conf 2>nul
 echo Done.
 echo.
 

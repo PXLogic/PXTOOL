@@ -20,6 +20,7 @@
  */
 
 #include <boost/test/unit_test.hpp>
+#include <glib.h>
 
 extern "C" {
 #include "libsigrok-internal.h"

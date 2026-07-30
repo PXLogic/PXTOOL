@@ -186,8 +186,8 @@ include_directories(${ZLIB_INCLUDE_DIRS})
 #===============================================================================
 #= Qt5 or Qt6
 #-------------------------------------------------------------------------------
-if(APPLE)
-	set(QT_VERSION_FORCE Qt6)
+if(WIN32 OR APPLE)
+	set(QT_VERSION_FORCE "6" CACHE STRING "Force the use of Qt6 by setting this option to 6" FORCE)
 endif()
 
 
@@ -229,7 +229,7 @@ if(NOT Qt5Core_FOUND OR "${QT_VERSION_FORCE}" STREQUAL "6")
         find_package(Qt6Network REQUIRED)
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${Qt6Widgets_EXECUTABLE_COMPILE_FLAGS}")
 	set(QT_INCLUDE_DIRS ${Qt6Gui_INCLUDE_DIRS} ${Qt6Widgets_INCLUDE_DIRS} ${Qt6Network_INCLUDE_DIRS})
-        set(QT_LIBRARIES Qt6::Gui Qt6::Widgets Qt6::Svg Qt6::Network)
+	set(QT_LIBRARIES Qt6::Core Qt6::Gui Qt6::Widgets Qt6::Svg Qt6::Network)
 	add_definitions(${Qt6Gui_DEFINITIONS} ${Qt6Widgets_DEFINITIONS} ${Qt6Network_DEFINITIONS})
 
 	if(APPLE)
