@@ -484,7 +484,14 @@ namespace pv
         set_cur_snap_samplerate(_device_agent.get_sample_rate());
 
         uint64_t sample_limit = _device_agent.get_sample_limit();
-        if (_is_stream_mode && !_disk_cache_settings.enabled) {
+        if (_is_stream_mode && _disk_cache_settings.enabled &&
+            _disk_cache_settings.disk_limit_gb != 0) {
+            const uint64_t channel_count = std::max<uint64_t>(
+                1, get_ch_num(SR_CHANNEL_LOGIC));
+            sample_limit = std::max(sample_limit,
+                utility::DiskCacheSettings::stream_sample_limit(
+                    _disk_cache_settings.disk_limit_gb, channel_count));
+        } else if (_is_stream_mode && !_disk_cache_settings.enabled) {
             const uint64_t channel_count = std::max<uint64_t>(
                 1, get_ch_num(SR_CHANNEL_LOGIC));
             const uint64_t stream_window_samples = SR_MB(1) * 8 / channel_count;

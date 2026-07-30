@@ -49,4 +49,12 @@ BOOST_AUTO_TEST_CASE(format_size_text)
     BOOST_CHECK_EQUAL(DiskCacheSettings::format_disk_limit_text(1024).toStdString(), "1 TB");
 }
 
+BOOST_AUTO_TEST_CASE(stream_cache_capacity_uses_disk_limit)
+{
+    BOOST_CHECK_EQUAL(DiskCacheSettings::stream_sample_limit(24, 2),
+                      24ULL * 1024 * 1024 * 1024 * 4);
+    BOOST_CHECK_EQUAL(DiskCacheSettings::stream_sample_limit(1, 8),
+                      1024ULL * 1024 * 1024);
+}
+
 BOOST_AUTO_TEST_SUITE_END()

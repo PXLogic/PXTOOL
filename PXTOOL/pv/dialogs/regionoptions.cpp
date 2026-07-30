@@ -70,6 +70,10 @@ RegionOptions::RegionOptions(view::View *view, SigSession *session, QWidget *par
 
     QVBoxLayout *vlayout = new QVBoxLayout();
     vlayout->addLayout(hlayout);
+    auto *footer_divider = new QWidget(this);
+    footer_divider->setObjectName("dialog_footer_divider");
+    footer_divider->setFixedHeight(1);
+    vlayout->addWidget(footer_divider);
     vlayout->addWidget(&_button_box);
 
     layout()->addLayout(vlayout);

@@ -69,7 +69,7 @@ private slots:
     void onCheckForeWindow();
 
 private:
-    bool nativeEvent(const QByteArray &eventType, void *message, long *result) override; 
+    bool nativeEvent(const QByteArray &eventType, void *message, qintptr *result) override;
     void paintEvent(QPaintEvent *event) override;
  
     QWidget     *m_parent;

@@ -2542,6 +2542,13 @@ QWidget#decode_search_container QLineEdit#decode_ann_search_edit {
     selection-background-color: #7c3aed;
     padding: 0px;
 }
+QDialog#decode_ann_search_edit_popup QLineEdit {
+    background-color: #eeeeee;
+    border: none;
+    color: #333333;
+    selection-background-color: #7c3aed;
+    padding: 0px 4px 2px 4px;
+}
 
 /* ── Decode Panel top toolbar: Decoder search trigger (light) ───── */
 QWidget#sidebar QLineEdit#decode_keyword_edit {
@@ -3129,6 +3136,32 @@ QDialog#diskCacheSettingsDialog QComboBox#disk_cache_combo QAbstractItemView {
     color: #222222;
     selection-background-color: #7c3aed;
 }
+QDialog#protocolListDialog QComboBox QAbstractItemView::item {
+    min-height: 20px;
+    padding: 4px 12px;
+    border: 1px solid transparent;
+}
+QDialog#protocolListDialog QComboBox QAbstractItemView::item:selected {
+    background-color: #7c3aed;
+    color: #ffffff;
+}
+QDialog#protocolListDialog QComboBox QAbstractItemView::item:hover {
+    background-color: #7c3aed;
+    color: #ffffff;
+}
+QDialog#protocolExportDialog QComboBox QAbstractItemView::item {
+    min-height: 20px;
+    padding: 4px 12px;
+    border: 1px solid transparent;
+}
+QDialog#protocolExportDialog QComboBox QAbstractItemView::item:selected {
+    background-color: #7c3aed;
+    color: #ffffff;
+}
+QDialog#protocolExportDialog QComboBox QAbstractItemView::item:hover {
+    background-color: #7c3aed;
+    color: #ffffff;
+}
 QDialog#diskCacheSettingsDialog QComboBox#disk_cache_combo {
     padding-right: 28px;
 }
@@ -3306,6 +3339,34 @@ QPushButton#device_ok_btn {
     min-height: 24px;
 }
 QPushButton#device_ok_btn:hover {
+    background-color: #6d28d9;
+}
+QWidget#dialog_footer_divider {
+    background-color: #dddddd;
+    min-height: 1px;
+    max-height: 1px;
+}
+QPushButton#dialog_secondary_button {
+    background-color: transparent;
+    border: 1px solid #cccccc;
+    border-radius: 4px;
+    color: #333333;
+    padding: 4px 16px;
+    min-height: 24px;
+}
+QPushButton#dialog_secondary_button:hover {
+    background-color: #f5f5f5;
+    border-color: #aaaaaa;
+}
+QPushButton#dialog_primary_button {
+    background-color: #7c3aed;
+    border: none;
+    border-radius: 4px;
+    color: #ffffff;
+    padding: 4px 16px;
+    min-height: 24px;
+}
+QPushButton#dialog_primary_button:hover {
     background-color: #6d28d9;
 }
 

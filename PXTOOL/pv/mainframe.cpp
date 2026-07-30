@@ -49,10 +49,6 @@
 #include <QTimer>
 #include "ui/uimanager.h"
 
- #if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
- #include <QDesktopWidget>
- #endif
-
 #include "dsvdef.h"
 #include "config/appconfig.h"
 #include "ui/msgbox.h"
@@ -99,7 +95,6 @@ MainFrame::MainFrame()
 #ifdef _WIN32
     setWindowFlags(Qt::FramelessWindowHint);
     _is_win32_parent_window = true;
-    _taskBtn = NULL;
     isWin32 = true;
 #else
     setWindowFlags(Qt::Window | Qt::FramelessWindowHint | Qt::WindowSystemMenuHint);
@@ -179,7 +174,6 @@ MainFrame::MainFrame()
     }
 
 #ifdef _WIN32
-    _taskBtn = new QWinTaskbarButton(this);
 	connect(_mainWindow, SIGNAL(prgRate(int)), this, SLOT(setTaskbarProgress(int)));
 #endif
 
@@ -1040,10 +1034,7 @@ void MainFrame::ReadSettings()
 void MainFrame::showEvent(QShowEvent *event)
 {
     // Taskbar Progress Effert for Win7 and Above
-    if (_taskBtn && _taskBtn->window() == NULL) {
-        _taskBtn->setWindow(windowHandle());
-        _taskPrg = _taskBtn->progress();
-    }
+    _taskbarProgress.attach(reinterpret_cast<HWND>(winId()));
     event->accept();
 }
 #endif
@@ -1051,12 +1042,7 @@ void MainFrame::showEvent(QShowEvent *event)
 void MainFrame::setTaskbarProgress(int progress)
 {
 #ifdef _WIN32
-    if (progress > 0) {
-        _taskPrg->setVisible(true);
-        _taskPrg->setValue(progress);
-    } else {
-        _taskPrg->setVisible(false);
-    }
+    _taskbarProgress.setProgress(progress);
 #else
 	(void)progress;
 #endif
@@ -1124,7 +1110,11 @@ QWidget* MainFrame::GetBodyView()
     return _mainWindow->GetBodyView();
 }
 
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+bool MainFrame::nativeEvent(const QByteArray &eventType, void *message, qintptr *result)
+#else
 bool MainFrame::nativeEvent(const QByteArray &eventType, void *message, long *result)
+#endif
 {
 #ifdef _WIN32
 

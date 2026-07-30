@@ -43,9 +43,7 @@ namespace dialogs {
 
 ProtocolList::ProtocolList(QWidget *parent, SigSession *session) :
     DSDialog(parent),
-    _session(session),
-    _button_box(QDialogButtonBox::Ok,
-        Qt::Horizontal, this)
+    _session(session)
 {
     setObjectName("protocolListDialog");
     setTitle(tr("Protocol List Viewer"));
@@ -109,15 +107,15 @@ ProtocolList::ProtocolList(QWidget *parent, SigSession *session) :
     bot_sep->setFixedHeight(1);
     layout()->addWidget(bot_sep);
 
-    if (QPushButton *ok = _button_box.button(QDialogButtonBox::Ok))
-        ok->setObjectName("device_ok_btn");
+    auto *ok_btn = new QPushButton(tr("OK"), this);
+    ok_btn->setObjectName("device_ok_btn");
     auto *footer_lay = new QHBoxLayout();
     footer_lay->setContentsMargins(12, 10, 12, 10);
     footer_lay->addStretch();
-    footer_lay->addWidget(&_button_box);
+    footer_lay->addWidget(ok_btn);
     layout()->addLayout(footer_lay);
 
-    connect(&_button_box, SIGNAL(accepted()), this, SLOT(accept()));
+    connect(ok_btn, &QPushButton::clicked, this, &ProtocolList::accept);
     connect(_protocol_combobox, SIGNAL(currentIndexChanged(int)), this, SLOT(set_protocol(int)));
     set_protocol(_protocol_combobox->currentIndex());
     connect(_session->device_event_object(), SIGNAL(device_updated()), this, SLOT(reject()));

@@ -25,6 +25,7 @@
 #include <set>
 #include <string>
 #include <vector>
+#include <glib.h>
 
 #include "test_datafeed_stub.h"
 

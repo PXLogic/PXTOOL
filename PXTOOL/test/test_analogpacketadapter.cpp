@@ -14,6 +14,7 @@
 
 #include <stdexcept>
 #include <utility>
+#include <glib.h>
 
 #include "../pv/data/analogpacketadapter.h"
 
