@@ -215,6 +215,10 @@ FftOptions::FftOptions(QWidget *parent, SigSession *session) :
 
     _layout = new QVBoxLayout();
     _layout->addLayout(_glayout);
+    auto *footer_divider = new QWidget(this);
+    footer_divider->setObjectName("dialog_footer_divider");
+    footer_divider->setFixedHeight(1);
+    _layout->addWidget(footer_divider);
     _layout->addWidget(&_button_box);
 
     layout()->addLayout(_layout);

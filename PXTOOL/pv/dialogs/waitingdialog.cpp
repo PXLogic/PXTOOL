@@ -24,6 +24,7 @@
 
 #include <QMovie>
 #include <QAbstractButton>
+#include <QPushButton>
 #include <QFuture>
 #include <QProgressDialog>
 #include <QtConcurrent/QtConcurrent>
@@ -86,6 +87,10 @@ WaitingDialog::WaitingDialog(QWidget *parent, SigSession *session, int key) :
     mlayout->addWidget(warning_tips, Qt::AlignHCenter);
     mlayout->addWidget(label, Qt::AlignHCenter);
     mlayout->addWidget(tips, Qt::AlignHCenter);
+    auto *footer_divider = new QWidget(this);
+    footer_divider->setObjectName("dialog_footer_divider");
+    footer_divider->setFixedHeight(1);
+    mlayout->addWidget(footer_divider);
     mlayout->addWidget(&_button_box);
 
     layout()->addLayout(mlayout);
@@ -203,7 +208,8 @@ void WaitingDialog::changeText()
                 timer->stop();
                 tips->setAlignment(Qt::AlignHCenter);
                 tips->setText(tr("Finished!"));
-                _button_box.addButton(QDialogButtonBox::Save);
+                QPushButton *save_button = _button_box.addButton(QDialogButtonBox::Save);
+                save_button->setObjectName("dialog_primary_button");
             }
         }
     } 

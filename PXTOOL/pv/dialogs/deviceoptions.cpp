@@ -93,7 +93,7 @@ void ChannelLabel::paintEvent(QPaintEvent *)
 
     p.setPen(QPen(border, 1.5));
     p.setBrush(bg);
-    p.drawRoundedRect(QRectF(rect()).adjusted(1.5, 1.5, -1.5, -1.5), 6, 6);
+    p.drawRoundedRect(QRectF(rect()).adjusted(1.5, 1.5, -1.5, -1.5), 4, 4);
 
     p.setPen(checked ? Qt::white : QColor(160, 160, 160));
     QFont f = font();

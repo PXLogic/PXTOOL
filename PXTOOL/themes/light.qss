@@ -3308,6 +3308,34 @@ QPushButton#device_ok_btn {
 QPushButton#device_ok_btn:hover {
     background-color: #6d28d9;
 }
+QWidget#dialog_footer_divider {
+    background-color: #dddddd;
+    min-height: 1px;
+    max-height: 1px;
+}
+QPushButton#dialog_secondary_button {
+    background-color: transparent;
+    border: 1px solid #cccccc;
+    border-radius: 4px;
+    color: #333333;
+    padding: 4px 16px;
+    min-height: 24px;
+}
+QPushButton#dialog_secondary_button:hover {
+    background-color: #f5f5f5;
+    border-color: #aaaaaa;
+}
+QPushButton#dialog_primary_button {
+    background-color: #7c3aed;
+    border: none;
+    border-radius: 4px;
+    color: #ffffff;
+    padding: 4px 16px;
+    min-height: 24px;
+}
+QPushButton#dialog_primary_button:hover {
+    background-color: #6d28d9;
+}
 
 /* ΓöÇΓöÇ Message / DSMessageBox (light) ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ */
 QDialog#dsMessageBoxDialog QMessageBox#dsMessageBoxInner {

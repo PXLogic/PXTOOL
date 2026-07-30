@@ -151,7 +151,11 @@ MathOptions::MathOptions(SigSession *session, QWidget *parent) :
     _layout->addWidget(_src1_group, 3, 0, 1, 1);
     _layout->addWidget(_src2_group, 3, 1, 1, 1);
     _layout->addWidget(new QLabel(this), 4, 1, 1, 1);
-    _layout->addWidget(&_button_box, 5, 1, 1, 1, Qt::AlignHCenter | Qt::AlignBottom);
+    auto *footer_divider = new QWidget(this);
+    footer_divider->setObjectName("dialog_footer_divider");
+    footer_divider->setFixedHeight(1);
+    _layout->addWidget(footer_divider, 5, 0, 1, 2);
+    _layout->addWidget(&_button_box, 6, 1, 1, 1, Qt::AlignHCenter | Qt::AlignBottom);
 
     layout()->addLayout(_layout);
 

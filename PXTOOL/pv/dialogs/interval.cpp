@@ -51,7 +51,11 @@ Interval::Interval(QWidget *parent) :
     glayout->addWidget(_interval_label, 0, 0);
     glayout->addWidget(_interval_spinBox, 0, 1);
     glayout->addWidget(_interval_slider, 1, 0, 1, 3);
-    glayout->addWidget(&_button_box, 2, 2);
+    auto *footer_divider = new QWidget(this);
+    footer_divider->setObjectName("dialog_footer_divider");
+    footer_divider->setFixedHeight(1);
+    glayout->addWidget(footer_divider, 2, 0, 1, 3);
+    glayout->addWidget(&_button_box, 3, 2);
 
     layout()->addLayout(glayout);
     setTitle(tr("Repetitive Interval"));
