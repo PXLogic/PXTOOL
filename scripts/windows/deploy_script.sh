@@ -54,6 +54,7 @@ fi
 
 DEPLOYMENT_PLUGIN_DIRS=(
     plugins
+    accessible
     assetimporters
     platforms
     platforminputcontexts
