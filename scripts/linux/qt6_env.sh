@@ -28,6 +28,11 @@ qt6_init() {
         echo "ERROR: qmake6 did not report Qt6 tool and library directories." >&2
         return 1
     fi
+    if [ ! -x "${qt6_bin_dir}/qmake6" ]; then
+        echo "ERROR: Qt6 qmake6 was not found in its reported tool directory: ${qt6_bin_dir}/qmake6" >&2
+        return 1
+    fi
+    qmake_bin="${qt6_bin_dir}/qmake6"
 
     local qt6_cmake_dir="${qt6_lib_dir}/cmake/Qt6"
     if [ ! -f "${qt6_cmake_dir}/Qt6Config.cmake" ]; then
