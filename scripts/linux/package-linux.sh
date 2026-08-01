@@ -90,6 +90,49 @@ fi
 STAGED_APP="${STAGE_DIR}/usr/bin/PXTOOL"
 qt6_verify_elf_dependencies "${STAGED_APP}"
 
+qt6_verify_staged_elf_dependencies() {
+    local staged_file
+    local dynamic_output
+    local needed
+    local dependency
+    local dependency_lower
+
+    if ! command -v readelf >/dev/null 2>&1; then
+        echo "ERROR: readelf is required for staged ELF validation." >&2
+        return 1
+    fi
+
+    if ! find "${STAGE_DIR}" \( -type f -o -type l \) -print0 |
+        while IFS= read -r -d '' staged_file; do
+            if ! readelf -h -- "${staged_file}" >/dev/null 2>&1; then
+                continue
+            fi
+
+            # Static ELF files have no dynamic section and need no DT_NEEDED scan.
+            if ! dynamic_output="$(readelf -d -- "${staged_file}" 2>/dev/null)"; then
+                continue
+            fi
+            needed="$(sed -n 's/.*Shared library: \[\([^]]*\)\].*/\1/p' <<<"${dynamic_output}")"
+
+            while IFS= read -r dependency; do
+                [ -n "${dependency}" ] || continue
+                dependency_lower="${dependency,,}"
+                if [[ "${dependency_lower}" =~ ^libqt([0-9]+)?[^/]*\.so([.]|$) ]] &&
+                    [[ ! "${dependency_lower}" =~ ^libqt6[^/]*\.so([.]|$) ]]; then
+                    echo "ERROR: staged ELF has a non-Qt6 Qt dependency:" >&2
+                    echo "  file: ${staged_file}" >&2
+                    echo "  dependency: ${dependency}" >&2
+                    exit 1
+                fi
+            done <<<"${needed}"
+        done; then
+        echo "ERROR: staged ELF dependency validation failed under ${STAGE_DIR}." >&2
+        return 1
+    fi
+}
+
+qt6_verify_staged_elf_dependencies
+
 echo "[4/4] Create Debian package"
 rm -rf "${DIST_DIR}"
 mkdir -p "${DIST_DIR}"
@@ -102,7 +145,7 @@ Section: electronics
 Priority: optional
 Architecture: ${DEB_ARCH}
 Maintainer: DreamSourceLab <support@dreamsourcelab.com>
-Depends: libc6, libstdc++6, libqt6core6t64 | libqt6core6, libqt6gui6, libqt6widgets6, libqt6network6, libqt6svg6, libglib2.0-0, libusb-1.0-0, zlib1g, libfftw3-double3
+Depends: libc6, libstdc++6, libqt6core6t64 | libqt6core6, libqt6gui6, libqt6widgets6, libqt6network6, libqt6svg6, qt6-qpa-plugins, libglib2.0-0, libusb-1.0-0, zlib1g, libfftw3-double3
 Description: PXTOOL logic analyzer application
  PXTOOL is a Qt-based logic analyzer application with bundled decoders,
  firmware resources, desktop integration, and udev rules for USB access.
