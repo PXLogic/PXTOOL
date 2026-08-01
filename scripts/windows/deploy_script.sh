@@ -54,19 +54,36 @@ fi
 
 DEPLOYMENT_PLUGIN_DIRS=(
     plugins
+    assetimporters
     platforms
+    platforminputcontexts
+    platformthemes
     imageformats
     iconengines
     styles
     generic
+    geoservices
+    multimedia
+    positioning
+    qml
+    qmltooling
+    renderers
+    sceneparsers
+    sensors
+    texttospeech
+    virtualkeyboard
+    webview
     tls
     bearer
+    canbus
     printsupport
     sqldrivers
     networkinformation
-    platformthemes
     xcbglintegrations
     egldeviceintegrations
+    wayland-decoration-client
+    wayland-graphics-integration-client
+    wayland-shell-integration
     translations
 )
 for plugin_dir in "${DEPLOYMENT_PLUGIN_DIRS[@]}"; do

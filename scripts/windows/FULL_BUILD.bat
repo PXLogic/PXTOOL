@@ -18,7 +18,7 @@ if %ERRORLEVEL% EQU 0 (
 echo [Step 0b] Cleaning old build artifacts...
 rmdir /s /q build.windows\CMakeFiles 2>nul
 rmdir /s /q build.windows\PXTOOL 2>nul
-for %%D in (plugins platforms imageformats iconengines styles generic tls bearer printsupport sqldrivers networkinformation platformthemes xcbglintegrations egldeviceintegrations translations) do rmdir /s /q "build.windows\%%D" 2>nul
+for %%D in (plugins assetimporters platforms platforminputcontexts platformthemes imageformats iconengines styles generic geoservices multimedia positioning qml qmltooling renderers sceneparsers sensors texttospeech virtualkeyboard webview tls bearer canbus printsupport sqldrivers networkinformation xcbglintegrations egldeviceintegrations wayland-decoration-client wayland-graphics-integration-client wayland-shell-integration translations) do rmdir /s /q "build.windows\%%D" 2>nul
 del /f /q build.windows\CMakeCache.txt 2>nul
 del /f /q build.windows\PXTOOL.exe 2>nul
 del /f /q build.windows\Qt*.dll 2>nul
