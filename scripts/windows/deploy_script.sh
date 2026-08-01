@@ -189,23 +189,35 @@ scan_pe_dependencies() {
 }
 
 verify_staged_pe_tree() {
-    local candidate require_qt6
-    local -a pe_candidates=()
+    local candidate require_qt6 scan_status candidate_list
 
-    mapfile -d '' -t pe_candidates < <(
-        find -L . -type f \( \
+    if ! candidate_list="$(mktemp "${TMPDIR:-/tmp}/pxtool-pe.XXXXXX")"; then
+        echo "ERROR: unable to create a temporary PE validation list."
+        return 1
+    fi
+    if ! find -L . -type f \( \
             -iname '*.exe' -o \
             -iname '*.dll' -o \
             -iname '*.ocx' \
-        \) -print0
-    )
-    for candidate in "${pe_candidates[@]}"; do
+        \) -print0 >"${candidate_list}"; then
+        rm -f "${candidate_list}"
+        echo "ERROR: unable to enumerate staged PE files."
+        return 1
+    fi
+
+    scan_status=0
+    while IFS= read -r -d '' candidate; do
         require_qt6=0
         if [ "$candidate" = "./PXTOOL.exe" ]; then
             require_qt6=1
         fi
-        scan_pe_dependencies "$candidate" "$require_qt6" || return 1
-    done
+        if ! scan_pe_dependencies "$candidate" "$require_qt6"; then
+            scan_status=1
+            break
+        fi
+    done <"${candidate_list}"
+    rm -f "${candidate_list}"
+    return "${scan_status}"
 }
 
 verify_staged_pe_tree

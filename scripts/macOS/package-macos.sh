@@ -207,7 +207,7 @@ verify_qt_framework() {
     echo "ERROR: could not read Qt framework version: $framework_dir"
     return 1
   fi
-  if [[ ! "$version" =~ ^6[.][0-9]+ ]]; then
+  if [[ ! "$version" =~ ^6[.][0-9]+([.][0-9]+)?$ ]]; then
     echo "ERROR: Qt framework is not version 6.x: $framework_dir ($version)"
     return 1
   fi
@@ -257,7 +257,8 @@ verify_macho_file() {
       fi
       qt_import_found=1
     elif [[ "$dependency_lower" =~ (^|/)(lib)?qt[^/]*[.]dylib$ ]]; then
-      qt_import_found=1
+      echo "ERROR: unversioned Qt dylib cannot be verified as Qt6: $candidate ($dependency)"
+      return 1
     fi
   done <<<"$dependency_list"
 
@@ -308,19 +309,13 @@ verify_macos_qt_bundle() {
 
   if ! find -L "$app" -type f -print0 | while IFS= read -r -d '' candidate; do
     if [ ! -r "$candidate" ]; then
-      if is_expected_macho_candidate "$candidate" "$app"; then
-        echo "ERROR: expected Mach-O candidate is not readable: $candidate"
-        exit 1
-      fi
-      continue
+      echo "ERROR: bundle file is not readable: $candidate"
+      exit 1
     fi
     if ! file_description="$(file -b "$candidate" 2>&1)"; then
-      if is_expected_macho_candidate "$candidate" "$app"; then
-        echo "ERROR: file could not inspect expected Mach-O candidate: $candidate"
-        printf '%s\n' "$file_description"
-        exit 1
-      fi
-      continue
+      echo "ERROR: file could not inspect bundle candidate: $candidate"
+      printf '%s\n' "$file_description"
+      exit 1
     fi
     if [[ "$file_description" == *Mach-O* ]]; then
       require_qt=0
@@ -336,6 +331,15 @@ verify_macos_qt_bundle() {
       exit 1
     fi
   done; then
+    return 1
+  fi
+
+  local legacy_qt_artifact
+  legacy_qt_artifact="$(find -L "$app" -type f \( \
+    -iname '*qt[0-9]*' -o -ipath '*qt[0-9]*' \
+  \) ! -ipath '*qt6*' -print -quit 2>/dev/null || true)"
+  if [ -n "$legacy_qt_artifact" ]; then
+    echo "ERROR: non-Qt6 Qt artifact remains in app bundle: $legacy_qt_artifact"
     return 1
   fi
 }
@@ -367,6 +371,14 @@ if [ "$BUILD_APP" != "$DIST_APP" ]; then
 elif [ ! -d "$DIST_APP" ]; then
   echo "ERROR: built app not found at $DIST_APP"
   exit 1
+else
+  # Keep non-Qt frameworks such as Python, but force macdeployqt to rebuild
+  # the Qt frameworks and plugin tree instead of reusing stale deployment data.
+  rm -rf "$DIST_APP/Contents/PlugIns"
+  if [ -d "$FRAMEWORKS_DIR" ]; then
+    find "$FRAMEWORKS_DIR" -type d -name 'Qt*.framework' -prune -exec rm -rf {} +
+    find "$FRAMEWORKS_DIR" -type f -iname '*qt*.dylib' -exec rm -f {} +
+  fi
 fi
 
 # The build tree may contain symlinks back into package-root (e.g. share ->).
