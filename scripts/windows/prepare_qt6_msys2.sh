@@ -2,15 +2,15 @@
 set -euo pipefail
 
 usage() {
-    echo "Usage: $0 [--purge-qt5]"
+    echo "Usage: $0 [--purge-legacy-qt]"
 }
 
 case "${1:-}" in
     "")
-        PURGE_QT5=0
+        PURGE_LEGACY_QT=0
         ;;
-    --purge-qt5)
-        PURGE_QT5=1
+    --purge-legacy-qt)
+        PURGE_LEGACY_QT=1
         ;;
     *)
         usage
@@ -23,32 +23,36 @@ pacman -Syu --needed \
     mingw-w64-x86_64-qt6-svg \
     mingw-w64-x86_64-qt6-tools
 
-mapfile -t qt5_packages < <(pacman -Qq | grep '^mingw-w64-x86_64-qt5-' || true)
+mapfile -t legacy_qt_packages < <(
+    pacman -Qq | grep -E '^mingw-w64-x86_64-qt[0-9]+-' \
+        | grep -v '^mingw-w64-x86_64-qt6-' || true
+)
 
-if [ "${#qt5_packages[@]}" -eq 0 ]; then
-    echo "No MSYS2 Qt5 packages are installed."
+if [ "${#legacy_qt_packages[@]}" -eq 0 ]; then
+    echo "No legacy MSYS2 Qt packages are installed."
     exit 0
 fi
 
-printf 'Installed Qt5 packages:\n'
-printf '  %s\n' "${qt5_packages[@]}"
+printf 'Installed legacy MSYS2 Qt packages:\n'
+printf '  %s\n' "${legacy_qt_packages[@]}"
 
-if [ "$PURGE_QT5" -eq 0 ]; then
-    echo "Run '$0 --purge-qt5' to remove these packages."
+if [ "$PURGE_LEGACY_QT" -eq 0 ]; then
+    echo "Run '$0 --purge-legacy-qt' to remove these packages."
     exit 0
 fi
 
-read -r -p "Remove the listed Qt5 packages and unused dependencies? [y/N] " response
+read -r -p "Remove the listed legacy Qt packages and unused dependencies? [y/N] " response
 if [ "$response" != "y" ] && [ "$response" != "Y" ]; then
-    echo "Qt5 packages were not removed."
+    echo "Legacy Qt packages were not removed."
     exit 1
 fi
 
-pacman -Rns -- "${qt5_packages[@]}"
+pacman -Rns -- "${legacy_qt_packages[@]}"
 
-if pacman -Qq | grep -q '^mingw-w64-x86_64-qt5-'; then
-    echo "ERROR: Qt5 packages remain installed."
+if pacman -Qq | grep -E '^mingw-w64-x86_64-qt[0-9]+-' \
+    | grep -v '^mingw-w64-x86_64-qt6-' >/dev/null; then
+    echo "ERROR: Legacy Qt packages remain installed."
     exit 1
 fi
 
-echo "MSYS2 Qt5 packages removed; Windows builds now use Qt6 only."
+echo "Legacy MSYS2 Qt packages removed; Windows builds now use Qt6 only."

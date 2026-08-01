@@ -38,8 +38,8 @@ echo ""
 
 # --------------------------------------------------------------------------
 # Step 1: Runtime DLL dependencies (MinGW64)
-# Only copy exact dependencies. A full bin-directory fallback can deploy Qt5
-# merely because it remains installed in MSYS2.
+# Only copy exact dependencies. A full bin-directory fallback can deploy
+# legacy Qt merely because it remains installed in MSYS2.
 # --------------------------------------------------------------------------
 WINDEPLOYQT="$MINGW_PREFIX/bin/windeployqt6.exe"
 if [ ! -x "$WINDEPLOYQT" ]; then
@@ -52,14 +52,22 @@ if ! ldd PXTOOL.exe >/dev/null 2>&1; then
 fi
 
 rm -rf plugins
-rm -f Qt5*.dll Qt6*.dll qt.conf
+rm -f Qt*.dll Qt*.DLL qt.conf
 
 echo "[1/8] Copying runtime DLL dependencies..."
 COPIED=0
 while IFS= read -r dll_path; do
     dll_name=$(basename "$dll_path")
     case "$dll_name" in
-        Qt5*.dll) echo "ERROR: Qt5 dependency reported by ldd: $dll_name"; exit 1 ;;
+        Qt[0-9]*.dll|Qt[0-9]*.DLL)
+            case "$dll_name" in
+                Qt6*.dll|Qt6*.DLL) ;;
+                *)
+                    echo "ERROR: non-Qt6 dependency reported by ldd: $dll_name"
+                    exit 1
+                    ;;
+            esac
+            ;;
     esac
     cp -f "$dll_path" "./$dll_name"
     COPIED=$((COPIED + 1))
@@ -83,19 +91,27 @@ Plugins = .
 EOF
 echo "  -> qt.conf written."
 
-if find . -type f -iname 'Qt5*.dll' -print -quit | grep -q .; then
-    echo "ERROR: Qt5 DLL residue found in deployment."
+if find . -type f -iname 'qt[0-9]*.dll' ! -iname 'qt6*.dll' -print -quit | grep -q .; then
+    echo "ERROR: non-Qt6 versioned Qt DLL residue found in deployment."
     exit 1
 fi
-if find . -type f -ipath '*qt5*' -print -quit | grep -q .; then
-    echo "ERROR: Qt5 plugin residue found in deployment."
+if find . -type f -ipath '*qt[0-9]*' ! -ipath '*qt6*' -print -quit | grep -q .; then
+    echo "ERROR: non-Qt6 versioned Qt file residue found in deployment."
     exit 1
 fi
-if objdump -p PXTOOL.exe | grep -q 'Qt5'; then
-    echo "ERROR: PXTOOL.exe imports Qt5."
+
+legacy_qt_imports="$(
+    objdump -p PXTOOL.exe \
+        | grep -Eio 'Qt[0-9]+[^[:space:]]*\.dll' \
+        | grep -Eiv '^Qt6([^0-9]|$)' || true
+)"
+if [ -n "$legacy_qt_imports" ]; then
+    echo "ERROR: PXTOOL.exe imports a non-Qt6 versioned Qt library."
+    printf '  %s\n' "$legacy_qt_imports"
     exit 1
 fi
-if ! objdump -p PXTOOL.exe | grep -q 'Qt6'; then
+if ! objdump -p PXTOOL.exe \
+    | grep -Eiq '(^|[[:space:]])Qt6[^[:space:]]*\.dll([[:space:]]|$)'; then
     echo "ERROR: PXTOOL.exe does not import Qt6."
     exit 1
 fi

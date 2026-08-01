@@ -62,10 +62,17 @@ fi
 if ! command -v pacman &>/dev/null; then
     echo "ERROR: pacman is required to verify the MSYS2 Qt6-only environment."
     MISSING=1
-elif pacman -Qq | grep -q '^mingw-w64-x86_64-qt5-'; then
-    echo "ERROR: MSYS2 Qt5 packages are installed."
-    echo "       Run: bash scripts/windows/prepare_qt6_msys2.sh --purge-qt5"
-    MISSING=1
+else
+    mapfile -t legacy_qt_packages < <(
+        pacman -Qq | grep -E '^mingw-w64-x86_64-qt[0-9]+-' \
+            | grep -v '^mingw-w64-x86_64-qt6-' || true
+    )
+    if [ "${#legacy_qt_packages[@]}" -gt 0 ]; then
+        echo "ERROR: Legacy MSYS2 Qt packages are installed."
+        printf '       %s\n' "${legacy_qt_packages[@]}"
+        echo "       Run: bash scripts/windows/prepare_qt6_msys2.sh --purge-legacy-qt"
+        MISSING=1
+    fi
 fi
 
 if ! command -v npm &>/dev/null && ! [ -f "$MINGW_PREFIX/bin/npm.exe" ]; then
@@ -104,11 +111,14 @@ elif [ "$SOURCE_DIR/CMakeLists.txt" -nt "CMakeCache.txt" ]; then
 elif ! grep -qx 'DSVIEW_ENABLE_UPSTREAM_COMPAT_DEMO:BOOL=ON' "CMakeCache.txt"; then
     NEED_CMAKE=1
     echo "[Step 1/2] Enabling upstream-compat demo and re-configuring with CMake..."
-elif grep -q 'Qt5' "CMakeCache.txt"; then
-    NEED_CMAKE=1
-    echo "[Step 1/2] Qt5 cache entries found, re-configuring with Qt6..."
 else
-    echo "[Step 1/2] CMake already configured, skipping."
+    legacy_qt_cache_refs="$(grep -Eio 'qt[0-9]+' CMakeCache.txt | sort -fu | grep -Eiv '^qt6$' || true)"
+    if [ -n "$legacy_qt_cache_refs" ]; then
+        NEED_CMAKE=1
+        echo "[Step 1/2] Legacy Qt cache entries found, re-configuring with Qt6..."
+    else
+        echo "[Step 1/2] CMake already configured, skipping."
+    fi
 fi
 
 if [ $NEED_CMAKE -eq 1 ]; then

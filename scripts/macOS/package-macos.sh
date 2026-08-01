@@ -158,7 +158,18 @@ else
 fi
 
 # Step 3: macdeployqt - bundle Qt frameworks
-MACDEPLOYQT="$(which macdeployqt)"
+MACDEPLOYQT="$(command -v macdeployqt || true)"
+if [ -z "$MACDEPLOYQT" ]; then
+  echo "ERROR: macdeployqt was not found on PATH."
+  exit 1
+fi
+MACDEPLOYQT_VERSION="$("$MACDEPLOYQT" -version 2>&1 || true)"
+if ! printf '%s\n' "$MACDEPLOYQT_VERSION" \
+    | grep -Eiq '(^|[^[:digit:]])(macdeployqt[[:space:]]+|version[[:space:]]+)6([.]|[^[:digit:]]|$)'; then
+  echo "ERROR: macdeployqt 6 is required."
+  printf '%s\n' "$MACDEPLOYQT_VERSION"
+  exit 1
+fi
 MACDEPLOYQT_LOG="$(mktemp)"
 MACDEPLOYQT_ARGS=("$DIST_APP" -verbose=1 -no-codesign)
 for libpath in /opt/homebrew/lib /opt/homebrew/Frameworks; do
