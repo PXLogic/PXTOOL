@@ -24,7 +24,7 @@ pacman -Syu --needed \
     mingw-w64-x86_64-qt6-tools
 
 query_legacy_qt_packages() {
-    local installed_packages pacman_status
+    local installed_packages pacman_status legacy_qt_candidates filter_status
 
     if installed_packages="$(pacman -Qq)"; then
         pacman_status=0
@@ -36,9 +36,27 @@ query_legacy_qt_packages() {
         return "$pacman_status"
     fi
 
-    printf '%s\n' "$installed_packages" \
-        | grep -E '^mingw-w64-x86_64-qt[0-9]+-' \
-        | grep -v '^mingw-w64-x86_64-qt6-' || true
+    if legacy_qt_candidates="$(grep -E '^mingw-w64-x86_64-qt[0-9]+-' <<< "$installed_packages")"; then
+        :
+    else
+        filter_status=$?
+        if [ "$filter_status" -gt 1 ]; then
+            echo "ERROR: failed to filter MSYS2 packages for Qt packages." >&2
+            return "$filter_status"
+        fi
+        return 0
+    fi
+
+    if grep -v '^mingw-w64-x86_64-qt6-' <<< "$legacy_qt_candidates"; then
+        :
+    else
+        filter_status=$?
+        if [ "$filter_status" -gt 1 ]; then
+            echo "ERROR: failed to filter legacy Qt packages." >&2
+            return "$filter_status"
+        fi
+    fi
+    return 0
 }
 
 legacy_qt_output=""

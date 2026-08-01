@@ -532,14 +532,29 @@ fi
 echo "  Re-signing app bundle..."
 "$SIGN_APP_SCRIPT" "$DIST_APP"
 
-# Final check for any remaining homebrew paths
-BROKEN=$(otool -L "$DIST_APP/Contents/MacOS/PXTOOL" 2>/dev/null \
-  | grep -E "/opt/homebrew|/usr/local" | grep -v "^/usr/local/lib/libSystem" \
-  | awk '{print $1}' || true)
+# Final check for any remaining external dependencies.
+MACHO_DEPENDENCIES=""
+if MACHO_DEPENDENCIES="$(otool -L "$DIST_APP/Contents/MacOS/PXTOOL" 2>&1)"; then
+  :
+else
+  OTOOL_STATUS=$?
+  echo "ERROR: unable to inspect PXTOOL Mach-O dependencies (status $OTOOL_STATUS)."
+  printf '%s\n' "$MACHO_DEPENDENCIES"
+  exit "$OTOOL_STATUS"
+fi
+
+BROKEN=""
+if BROKEN="$(printf '%s\n' "$MACHO_DEPENDENCIES" | awk 'NR > 1 && ($1 ~ /^\/opt\/homebrew\// || $1 ~ /^\/usr\/local\//) { print $1 }')"; then
+  :
+else
+  echo "ERROR: unable to scan PXTOOL Mach-O dependencies for external paths."
+  exit 1
+fi
 
 if [ -n "$BROKEN" ]; then
-  echo "  WARNING: The following libs still reference homebrew paths:"
+  echo "ERROR: The following libs still reference external paths:"
   echo "$BROKEN" | sed 's/^/    /'
+  exit 1
 else
   echo "  All external libs resolved."
 fi
