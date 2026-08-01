@@ -48,6 +48,8 @@ done
 
 cd "${ROOT_DIR}"
 
+qt6_prepare_build_dir "${BUILD_DIR}"
+
 if ! command -v dpkg-deb >/dev/null 2>&1; then
     echo "ERROR: dpkg-deb is required to create a .deb package."
     exit 1
@@ -94,6 +96,7 @@ qt6_verify_staged_elf_dependencies() {
     local staged_file
     local program_headers
     local dynamic_output
+    local magic_bytes
     local needed
     local dependency
     local dependency_lower
@@ -105,8 +108,20 @@ qt6_verify_staged_elf_dependencies() {
 
     if ! find "${STAGE_DIR}" \( -type f -o -type l \) -print0 |
         while IFS= read -r -d '' staged_file; do
-            if ! readelf -h -- "${staged_file}" >/dev/null 2>&1; then
+            if ! magic_bytes="$(od -An -tx1 -N4 -- "${staged_file}" 2>/dev/null)"; then
+                echo "ERROR: unable to read staged file while checking ELF magic:" >&2
+                echo "  file: ${staged_file}" >&2
+                exit 1
+            fi
+            magic_bytes="${magic_bytes//[[:space:]]/}"
+            if [ "${magic_bytes}" != "7f454c46" ]; then
                 continue
+            fi
+
+            if ! readelf -h -- "${staged_file}" >/dev/null 2>&1; then
+                echo "ERROR: unable to inspect ELF header for staged file:" >&2
+                echo "  file: ${staged_file}" >&2
+                exit 1
             fi
 
             if ! program_headers="$(readelf -l -- "${staged_file}" 2>/dev/null)"; then
