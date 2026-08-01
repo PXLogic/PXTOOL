@@ -63,10 +63,34 @@ if ! command -v pacman &>/dev/null; then
     echo "ERROR: pacman is required to verify the MSYS2 Qt6-only environment."
     MISSING=1
 else
-    mapfile -t legacy_qt_packages < <(
-        pacman -Qq | grep -E '^mingw-w64-x86_64-qt[0-9]+-' \
+    query_legacy_qt_packages() {
+        local installed_packages pacman_status
+
+        if installed_packages="$(pacman -Qq)"; then
+            pacman_status=0
+        else
+            pacman_status=$?
+        fi
+        if [ "$pacman_status" -ne 0 ]; then
+            echo "ERROR: pacman -Qq failed; cannot verify the MSYS2 Qt environment." >&2
+            return "$pacman_status"
+        fi
+
+        printf '%s\n' "$installed_packages" \
+            | grep -E '^mingw-w64-x86_64-qt[0-9]+-' \
             | grep -v '^mingw-w64-x86_64-qt6-' || true
-    )
+    }
+
+    legacy_qt_output=""
+    if legacy_qt_output="$(query_legacy_qt_packages)"; then
+        legacy_qt_packages=()
+        if [ -n "$legacy_qt_output" ]; then
+            mapfile -t legacy_qt_packages <<< "$legacy_qt_output"
+        fi
+    else
+        MISSING=1
+        legacy_qt_packages=()
+    fi
     if [ "${#legacy_qt_packages[@]}" -gt 0 ]; then
         echo "ERROR: Legacy MSYS2 Qt packages are installed."
         printf '       %s\n' "${legacy_qt_packages[@]}"

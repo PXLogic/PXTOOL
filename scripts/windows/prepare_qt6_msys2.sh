@@ -23,10 +23,33 @@ pacman -Syu --needed \
     mingw-w64-x86_64-qt6-svg \
     mingw-w64-x86_64-qt6-tools
 
-mapfile -t legacy_qt_packages < <(
-    pacman -Qq | grep -E '^mingw-w64-x86_64-qt[0-9]+-' \
+query_legacy_qt_packages() {
+    local installed_packages pacman_status
+
+    if installed_packages="$(pacman -Qq)"; then
+        pacman_status=0
+    else
+        pacman_status=$?
+    fi
+    if [ "$pacman_status" -ne 0 ]; then
+        echo "ERROR: pacman -Qq failed; cannot verify the MSYS2 Qt environment." >&2
+        return "$pacman_status"
+    fi
+
+    printf '%s\n' "$installed_packages" \
+        | grep -E '^mingw-w64-x86_64-qt[0-9]+-' \
         | grep -v '^mingw-w64-x86_64-qt6-' || true
-)
+}
+
+legacy_qt_output=""
+if ! legacy_qt_output="$(query_legacy_qt_packages)"; then
+    echo "ERROR: Unable to verify installed legacy MSYS2 Qt packages." >&2
+    exit 1
+fi
+legacy_qt_packages=()
+if [ -n "$legacy_qt_output" ]; then
+    mapfile -t legacy_qt_packages <<< "$legacy_qt_output"
+fi
 
 if [ "${#legacy_qt_packages[@]}" -eq 0 ]; then
     echo "No legacy MSYS2 Qt packages are installed."
@@ -49,9 +72,13 @@ fi
 
 pacman -Rns -- "${legacy_qt_packages[@]}"
 
-if pacman -Qq | grep -E '^mingw-w64-x86_64-qt[0-9]+-' \
-    | grep -v '^mingw-w64-x86_64-qt6-' >/dev/null; then
+if ! remaining_legacy_qt="$(query_legacy_qt_packages)"; then
+    echo "ERROR: Unable to verify the post-purge MSYS2 Qt package state." >&2
+    exit 1
+fi
+if [ -n "$remaining_legacy_qt" ]; then
     echo "ERROR: Legacy Qt packages remain installed."
+    printf '  %s\n' "$remaining_legacy_qt"
     exit 1
 fi
 
