@@ -514,7 +514,6 @@ float AppConfig::GetDefaultFontSize()
     // Target ~12 effective physical pixels so Chinese characters are legible
     // on any screen, regardless of its DPI / Windows scaling factor.
     //
-    // With AA_EnableHighDpiScaling:
     //   setPixelSize(n) uses LOGICAL pixels; physical = n × devicePixelRatio
     //
     //  96 DPI / 100% → scale=1.00 → logical 12 → 12 physical  ✓
