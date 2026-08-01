@@ -184,63 +184,26 @@ message(STATUS "	 libraries:" ${ZLIB_LIBRARIES})
 include_directories(${ZLIB_INCLUDE_DIRS})
 
 #===============================================================================
-#= Qt5 or Qt6
+#= Qt6
 #-------------------------------------------------------------------------------
-if(WIN32 OR APPLE)
-	set(QT_VERSION_FORCE "6" CACHE STRING "Force the use of Qt6 by setting this option to 6" FORCE)
-else()
-	set(QT_VERSION_FORCE "" CACHE STRING "Force the use of Qt6 by setting this option to 6")
-endif()
+find_package(Qt6 REQUIRED COMPONENTS Core Gui Widgets Svg Network)
 
-if(NOT WIN32 AND NOT APPLE AND (NOT QT_VERSION_FORCE OR "${QT_VERSION_FORCE}" STREQUAL "5"))
-	find_package(Qt5Core QUIET)
-	if(Qt5Core_FOUND)
-		message("----- Qt5:")
-		message(STATUS "	 includes:" ${Qt5Core_INCLUDE_DIRS})
-		#find_package(Qt5WinExtras REQUIRED)
-		find_package(Qt5Widgets REQUIRED)
-		find_package(Qt5Gui REQUIRED)
-		find_package(Qt5Svg REQUIRED)
-		find_package(Qt5Network REQUIRED)
-		# win32
-		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${Qt5Widgets_EXECUTABLE_COMPILE_FLAGS}")
-		if (WIN32)
-			find_package(Qt5WinExtras REQUIRED)
-			message(STATUS "	 libraries:" ${Qt5WinExtras_LIBRARIES})
-			set(QT_INCLUDE_DIRS ${Qt5Gui_INCLUDE_DIRS} ${Qt5Widgets_INCLUDE_DIRS} ${Qt5WinExtras_INCLUDE_DIRS} ${Qt5Svg_INCLUDE_DIRS} ${Qt5Network_INCLUDE_DIRS})
-			set(QT_LIBRARIES Qt5::Gui Qt5::Widgets Qt5::WinExtras Qt5::Svg Qt5::Network)
-			add_definitions(${Qt5Gui_DEFINITIONS} ${Qt5Widgets_DEFINITIONS} ${Qt5WinExtras_DEFINITIONS} ${Qt5Svg_DEFINITIONS} ${Qt5Network_DEFINITIONS})
-		else()
-			set(QT_INCLUDE_DIRS ${Qt5Gui_INCLUDE_DIRS} ${Qt5Widgets_INCLUDE_DIRS} ${Qt5Network_INCLUDE_DIRS})
-			set(QT_LIBRARIES Qt5::Gui Qt5::Widgets Qt5::Network)
-			add_definitions(${Qt5Gui_DEFINITIONS} ${Qt5Widgets_DEFINITIONS} ${Qt5Network_DEFINITIONS})
-		endif()
-	endif()
-endif()
+message("----- Qt6:")
+message(STATUS "	 includes:" ${Qt6Core_INCLUDE_DIRS})
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${Qt6Widgets_EXECUTABLE_COMPILE_FLAGS}")
+set(QT_INCLUDE_DIRS
+    ${Qt6Core_INCLUDE_DIRS}
+    ${Qt6Gui_INCLUDE_DIRS}
+    ${Qt6Widgets_INCLUDE_DIRS}
+    ${Qt6Svg_INCLUDE_DIRS}
+    ${Qt6Network_INCLUDE_DIRS}
+)
+set(QT_LIBRARIES Qt6::Core Qt6::Gui Qt6::Widgets Qt6::Svg Qt6::Network)
+add_definitions(${Qt6Gui_DEFINITIONS} ${Qt6Widgets_DEFINITIONS} ${Qt6Network_DEFINITIONS})
 
-if(NOT Qt5Core_FOUND OR "${QT_VERSION_FORCE}" STREQUAL "6")
-	find_package(Qt6 REQUIRED COMPONENTS Core)
-    message("----- Qt6:")
-	message(STATUS "	 includes:" ${Qt6Core_INCLUDE_DIRS})
-        find_package(Qt6Widgets REQUIRED)
-        find_package(Qt6Gui REQUIRED)
-        find_package(Qt6Svg REQUIRED)
-        find_package(Qt6Network REQUIRED)
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${Qt6Widgets_EXECUTABLE_COMPILE_FLAGS}")
-	set(QT_INCLUDE_DIRS ${Qt6Gui_INCLUDE_DIRS} ${Qt6Widgets_INCLUDE_DIRS} ${Qt6Network_INCLUDE_DIRS})
-	set(QT_LIBRARIES Qt6::Core Qt6::Gui Qt6::Widgets Qt6::Svg Qt6::Network)
-	add_definitions(${Qt6Gui_DEFINITIONS} ${Qt6Widgets_DEFINITIONS} ${Qt6Network_DEFINITIONS})
-
-	if(APPLE)
-		find_package(Qt6DBus REQUIRED)
-		set(QT_LIBRARIES ${QT_LIBRARIES} Qt6::DBus)
-	endif()
-endif()
-
-if(NOT Qt5Core_FOUND AND NOT Qt6Core_FOUND)
-	message("Error!The qt5 or qt6 can't find, if them has been installed, please append the install path to CMAKE_PREFIX_PATH, the command as:")
-	message("list(APPEND CMAKE_PREFIX_PATH \"xxx install path\")" )
-	message(FATAL_ERROR  "Can't find Qt5 or Qt6!")
+if(APPLE)
+    find_package(Qt6 REQUIRED COMPONENTS DBus)
+    list(APPEND QT_LIBRARIES Qt6::DBus)
 endif()
 
 find_package(nlohmann_json 3.2.0 QUIET)
@@ -722,33 +685,17 @@ if(WIN32)
 endif()
 
 # Qt Linguist: compile zh_CN.ts → zh_CN.qm during build
-if(Qt5Core_FOUND)
-	find_package(Qt5 COMPONENTS LinguistTools QUIET)
-elseif(Qt6Core_FOUND)
-	find_package(Qt6 COMPONENTS LinguistTools QUIET)
-endif()
+find_package(Qt6 REQUIRED COMPONENTS LinguistTools)
 
 set(DSVIEW_TS_FILES
     PXTOOL/languages/zh_CN.ts
     PXTOOL/languages/zh_TW.ts
 )
-if(Qt5LinguistTools_FOUND)
-	qt5_add_translation(DSVIEW_QM_FILES ${DSVIEW_TS_FILES})
-elseif(Qt6LinguistTools_FOUND)
-	qt6_add_translation(DSVIEW_QM_FILES ${DSVIEW_TS_FILES})
-endif()
+qt6_add_translation(DSVIEW_QM_FILES ${DSVIEW_TS_FILES})
 
-if(Qt5Core_FOUND)
-	qt5_wrap_cpp(DSView_HEADERS_MOC ${DSView_HEADERS})
-	qt5_wrap_ui(DSView_FORMS_HEADERS ${DSView_FORMS})
-	qt5_add_resources(DSView_RESOURCES_RCC ${DSView_RESOURCES})
-endif()
-
-if(Qt6Core_FOUND)
-	qt6_wrap_cpp(DSView_HEADERS_MOC ${DSView_HEADERS})
-	qt6_wrap_ui(DSView_FORMS_HEADERS ${DSView_FORMS})
-	qt6_add_resources(DSView_RESOURCES_RCC ${DSView_RESOURCES})
-endif()
+qt6_wrap_cpp(DSView_HEADERS_MOC ${DSView_HEADERS})
+qt6_wrap_ui(DSView_FORMS_HEADERS ${DSView_FORMS})
+qt6_add_resources(DSView_RESOURCES_RCC ${DSView_RESOURCES})
 
 
 add_definitions(${QT_DEFINITIONS})
