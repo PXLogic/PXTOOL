@@ -10,6 +10,10 @@ set -euo pipefail
 #   build.linux/package/pxtool_<version>_<arch>.deb
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+# shellcheck source=scripts/linux/qt6_env.sh
+source "${ROOT_DIR}/scripts/linux/qt6_env.sh"
+qt6_init
+
 BUILD_DIR="${ROOT_DIR}/build"
 OUTPUT_DIR="${ROOT_DIR}/build.linux"
 STAGE_DIR="${OUTPUT_DIR}/package-root"
@@ -51,7 +55,8 @@ fi
 
 if [ "${SKIP_BUILD}" -eq 0 ]; then
     echo "[1/4] Configure"
-    CMAKE_ARGS=(-S "${ROOT_DIR}" -B "${BUILD_DIR}" -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr)
+    CMAKE_ARGS=(-S "${ROOT_DIR}" -B "${BUILD_DIR}" -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr -DQt6_DIR="${QT6_CMAKE_DIR}")
+    qt6_prepare_build_dir "${BUILD_DIR}"
     if [ ! -f "${BUILD_DIR}/CMakeCache.txt" ] && command -v ninja >/dev/null 2>&1; then
         CMAKE_ARGS+=(-G Ninja)
     fi
@@ -82,6 +87,9 @@ if [ ! -d "${STAGE_DIR}/usr/share/libsigrokdecode/decoders/c_decoders" ]; then
     exit 1
 fi
 
+STAGED_APP="${STAGE_DIR}/usr/bin/PXTOOL"
+qt6_verify_elf_dependencies "${STAGED_APP}"
+
 echo "[4/4] Create Debian package"
 rm -rf "${DIST_DIR}"
 mkdir -p "${DIST_DIR}"
@@ -94,7 +102,7 @@ Section: electronics
 Priority: optional
 Architecture: ${DEB_ARCH}
 Maintainer: DreamSourceLab <support@dreamsourcelab.com>
-Depends: libc6, libstdc++6, libqt5core5a, libqt5gui5, libqt5widgets5, libqt5svg5, libglib2.0-0, libusb-1.0-0, zlib1g, libfftw3-double3
+Depends: libc6, libstdc++6, libqt6core6t64 | libqt6core6, libqt6gui6, libqt6widgets6, libqt6network6, libqt6svg6, libglib2.0-0, libusb-1.0-0, zlib1g, libfftw3-double3
 Description: PXTOOL logic analyzer application
  PXTOOL is a Qt-based logic analyzer application with bundled decoders,
  firmware resources, desktop integration, and udev rules for USB access.
