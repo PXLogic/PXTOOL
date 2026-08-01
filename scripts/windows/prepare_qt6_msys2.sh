@@ -60,8 +60,9 @@ printf 'Installed legacy MSYS2 Qt packages:\n'
 printf '  %s\n' "${legacy_qt_packages[@]}"
 
 if [ "$PURGE_LEGACY_QT" -eq 0 ]; then
+    echo "ERROR: Legacy Qt packages must be removed before using the Qt6-only build environment."
     echo "Run '$0 --purge-legacy-qt' to remove these packages."
-    exit 0
+    exit 1
 fi
 
 read -r -p "Remove the listed legacy Qt packages and unused dependencies? [y/N] " response

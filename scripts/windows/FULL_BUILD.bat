@@ -16,8 +16,15 @@ if %ERRORLEVEL% EQU 0 (
 )
 
 echo [Step 0b] Cleaning old build artifacts...
-rmdir /s /q build.windows\CMakeFiles 2>nul
-rmdir /s /q build.windows\PXTOOL 2>nul
+for %%D in (CMakeFiles PXTOOL) do (
+    if exist "build.windows\%%D\" (
+        rmdir /s /q "build.windows\%%D" 2>nul
+        if exist "build.windows\%%D\" (
+            echo [ERROR] Could not remove stale build directory: build.windows\%%D
+            exit /b 1
+        )
+    )
+)
 for %%D in (plugins accessible assetimporters platforms platforminputcontexts platformthemes imageformats iconengines styles generic geoservices multimedia positioning qml qmltooling renderers sceneparsers sensors texttospeech virtualkeyboard webview tls bearer canbus printsupport sqldrivers networkinformation xcbglintegrations egldeviceintegrations wayland-decoration-client wayland-graphics-integration-client wayland-shell-integration translations) do (
     rmdir /s /q "build.windows\%%D" 2>nul
     if exist "build.windows\%%D\" (
@@ -25,10 +32,22 @@ for %%D in (plugins accessible assetimporters platforms platforminputcontexts pl
         exit /b 1
     )
 )
-del /f /q build.windows\CMakeCache.txt 2>nul
-del /f /q build.windows\PXTOOL.exe 2>nul
-del /f /q build.windows\Qt*.dll 2>nul
-del /f /q build.windows\qt.conf 2>nul
+for %%F in (CMakeCache.txt PXTOOL.exe qt.conf) do (
+    if exist "build.windows\%%F" (
+        del /f /q "build.windows\%%F" 2>nul
+        if exist "build.windows\%%F" (
+            echo [ERROR] Could not remove stale build artifact: build.windows\%%F
+            exit /b 1
+        )
+    )
+)
+if exist "build.windows\Qt*.dll" (
+    del /f /q build.windows\Qt*.dll 2>nul
+    if exist "build.windows\Qt*.dll" (
+        echo [ERROR] Could not remove stale Qt runtime DLLs from build.windows
+        exit /b 1
+    )
+)
 echo Done.
 echo.
 
@@ -61,6 +80,7 @@ if %ERRORLEVEL% NEQ 0 (
 echo.
 echo [Package] Creating release zip...
 powershell -NoProfile -ExecutionPolicy Bypass -Command ^
+  "$ErrorActionPreference = 'Stop'; try { " ^
   "$root = '%CD%'; " ^
   "$cmake = Get-Content \"$root\CMakeLists.txt\" -Raw; " ^
   "$major = [regex]::Match($cmake, 'set\(DS_VERSION_MAJOR\s+(\S+)\)').Groups[1].Value; " ^
@@ -71,12 +91,13 @@ powershell -NoProfile -ExecutionPolicy Bypass -Command ^
   "$zipPath = \"$root\$zipName\"; " ^
   "Write-Host \"  Version : $ver\"; " ^
   "Write-Host \"  Output  : $zipPath\"; " ^
-  "Get-ChildItem \"$root\" -Filter 'PXTOOL-*-win64.zip' | ForEach-Object { Remove-Item $_.FullName -Force; Write-Host \"  Deleted : $($_.Name)\" }; " ^
+  "Get-ChildItem \"$root\" -Filter 'PXTOOL-*-win64.zip' | ForEach-Object { Remove-Item $_.FullName -Force -ErrorAction Stop; Write-Host \"  Deleted : $($_.Name)\" }; " ^
   "$buildDir = \"$root\build.windows\"; " ^
   "if (-not (Test-Path $buildDir)) { Write-Host 'ERROR: build.windows not found'; exit 1 }; " ^
   "if (-not (Test-Path \"$buildDir\webui\index.html\")) { Write-Host 'ERROR: build.windows\webui\index.html missing'; exit 1 }; " ^
-  "Compress-Archive -Path \"$buildDir\*\" -DestinationPath $zipPath -CompressionLevel Optimal; " ^
-  "Write-Host \"  Done: $zipName ($([math]::Round((Get-Item $zipPath).Length/1MB,1)) MB)\""
+  "Compress-Archive -Path \"$buildDir\*\" -DestinationPath $zipPath -CompressionLevel Optimal -ErrorAction Stop; " ^
+  "Write-Host \"  Done: $zipName ($([math]::Round((Get-Item $zipPath).Length/1MB,1)) MB)\"; " ^
+  "} catch { exit 1 }"
 
 if %ERRORLEVEL% NEQ 0 (
     echo.

@@ -334,10 +334,17 @@ verify_macos_qt_bundle() {
     return 1
   fi
 
-  local legacy_qt_artifact
-  legacy_qt_artifact="$(find -L "$app" -type f \( \
+  local legacy_qt_artifact legacy_qt_scan_status
+  if legacy_qt_artifact="$(find -L "$app" -type f \( \
     -iname '*qt[0-9]*' -o -ipath '*qt[0-9]*' \
-  \) ! -ipath '*qt6*' -print -quit 2>/dev/null || true)"
+  \) ! -ipath '*qt6*' -print -quit 2>&1)"; then
+    :
+  else
+    legacy_qt_scan_status=$?
+    echo "ERROR: failed to scan app bundle for legacy Qt artifacts (status $legacy_qt_scan_status)."
+    printf '%s\n' "$legacy_qt_artifact"
+    return "$legacy_qt_scan_status"
+  fi
   if [ -n "$legacy_qt_artifact" ]; then
     echo "ERROR: non-Qt6 Qt artifact remains in app bundle: $legacy_qt_artifact"
     return 1

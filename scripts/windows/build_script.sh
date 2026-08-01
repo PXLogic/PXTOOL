@@ -143,35 +143,60 @@ cd build.windows
 # CMake configuration
 # Only run CMake if CMakeCache.txt is missing or CMakeLists.txt is newer.
 # --------------------------------------------------------------------------
-NEED_CMAKE=0
-if [ ! -f "CMakeCache.txt" ]; then
-    NEED_CMAKE=1
-    echo "[Step 1/2] Configuring with CMake (first time setup)..."
-elif [ "$SOURCE_DIR/CMakeLists.txt" -nt "CMakeCache.txt" ]; then
-    NEED_CMAKE=1
-    echo "[Step 1/2] CMakeLists.txt changed — re-configuring with CMake..."
-elif ! grep -qx 'DSVIEW_ENABLE_UPSTREAM_COMPAT_DEMO:BOOL=ON' "CMakeCache.txt"; then
-    NEED_CMAKE=1
-    echo "[Step 1/2] Enabling upstream-compat demo and re-configuring with CMake..."
-else
+find_legacy_qt_cache_refs() {
+    local qt_cache_refs qt_cache_scan_status qt_cache_ref legacy_qt_cache_refs
+
     if [ ! -r "CMakeCache.txt" ]; then
         echo "ERROR: CMakeCache.txt is not readable; cannot verify the Qt6 build cache."
-        exit 1
+        return 1
     fi
-    qt_cache_refs=""
     if qt_cache_refs="$(grep -Eio 'qt[0-9]+' CMakeCache.txt)"; then
         :
     else
         qt_cache_scan_status=$?
         if [ "$qt_cache_scan_status" -gt 1 ]; then
             echo "ERROR: failed to scan CMakeCache.txt for legacy Qt references."
-            exit 1
+            return "$qt_cache_scan_status"
         fi
     fi
-    legacy_qt_cache_refs="$(printf '%s\n' "$qt_cache_refs" | sort -fu | awk 'tolower($0) != "qt6"')"
+
+    legacy_qt_cache_refs=""
+    while IFS= read -r qt_cache_ref; do
+        [ -n "$qt_cache_ref" ] || continue
+        if [ "${qt_cache_ref,,}" != "qt6" ]; then
+            legacy_qt_cache_refs+="${legacy_qt_cache_refs:+$'\n'}$qt_cache_ref"
+        fi
+    done <<< "$qt_cache_refs"
+    printf '%s\n' "$legacy_qt_cache_refs"
+}
+
+NEED_CMAKE=0
+if [ ! -f "CMakeCache.txt" ]; then
+    NEED_CMAKE=1
+    echo "[Step 1/2] Configuring with CMake (first time setup)..."
+else
+    if ! legacy_qt_cache_refs="$(find_legacy_qt_cache_refs)"; then
+        echo "ERROR: Cannot verify the existing CMake cache as Qt6-only."
+        exit 1
+    fi
     if [ -n "$legacy_qt_cache_refs" ]; then
         NEED_CMAKE=1
-        echo "[Step 1/2] Legacy Qt cache entries found, re-configuring with Qt6..."
+        echo "[Step 1/2] Legacy Qt cache entries found, clearing CMake state and re-configuring with Qt6..."
+        if ! rm -rf -- CMakeCache.txt CMakeFiles; then
+            echo "ERROR: failed to remove legacy CMake cache state."
+            exit 1
+        fi
+        if [ -e "CMakeCache.txt" ] || [ -L "CMakeCache.txt" ] \
+            || [ -e "CMakeFiles" ] || [ -L "CMakeFiles" ]; then
+            echo "ERROR: legacy CMake cache state remains after cleanup."
+            exit 1
+        fi
+    elif [ "$SOURCE_DIR/CMakeLists.txt" -nt "CMakeCache.txt" ]; then
+        NEED_CMAKE=1
+        echo "[Step 1/2] CMakeLists.txt changed — re-configuring with CMake..."
+    elif ! grep -qx 'DSVIEW_ENABLE_UPSTREAM_COMPAT_DEMO:BOOL=ON' "CMakeCache.txt"; then
+        NEED_CMAKE=1
+        echo "[Step 1/2] Enabling upstream-compat demo and re-configuring with CMake..."
     else
         echo "[Step 1/2] CMake already configured, skipping."
     fi
@@ -193,6 +218,16 @@ if [ $NEED_CMAKE -eq 1 ]; then
         echo "ERROR: CMake configuration failed."
         exit 1
     fi
+fi
+
+if ! legacy_qt_cache_refs="$(find_legacy_qt_cache_refs)"; then
+    echo "ERROR: Cannot verify the configured CMake cache as Qt6-only."
+    exit 1
+fi
+if [ -n "$legacy_qt_cache_refs" ]; then
+    echo "ERROR: CMake reconfiguration left legacy Qt cache entries:"
+    printf '       %s\n' "$legacy_qt_cache_refs"
+    exit 1
 fi
 
 echo ""

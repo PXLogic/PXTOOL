@@ -153,14 +153,32 @@ Plugins = .
 EOF
 echo "  -> qt.conf written."
 
-if find . -type f -iname 'qt[0-9]*.dll' ! -iname 'qt6*.dll' -print -quit | grep -q .; then
-    echo "ERROR: non-Qt6 versioned Qt DLL residue found in deployment."
-    exit 1
-fi
-if find . -type f -ipath '*qt[0-9]*' ! -ipath '*qt6*' -print -quit | grep -q .; then
-    echo "ERROR: non-Qt6 versioned Qt file residue found in deployment."
-    exit 1
-fi
+scan_for_legacy_qt_artifact() {
+    local error_message="$1"
+    local legacy_qt_artifact legacy_qt_scan_status
+    shift
+
+    if legacy_qt_artifact="$(find "$@" -print -quit 2>&1)"; then
+        if [ -n "$legacy_qt_artifact" ]; then
+            echo "ERROR: $error_message"
+            printf '       %s\n' "$legacy_qt_artifact"
+            return 1
+        fi
+        return 0
+    fi
+
+    legacy_qt_scan_status=$?
+    echo "ERROR: failed to scan deployment for legacy Qt artifacts (status $legacy_qt_scan_status)."
+    printf '%s\n' "$legacy_qt_artifact"
+    return "$legacy_qt_scan_status"
+}
+
+scan_for_legacy_qt_artifact \
+    "non-Qt6 versioned Qt DLL residue found in deployment." \
+    . -type f -iname 'qt[0-9]*.dll' ! -iname 'qt6*.dll'
+scan_for_legacy_qt_artifact \
+    "non-Qt6 versioned Qt file residue found in deployment." \
+    . -type f -ipath '*qt[0-9]*' ! -ipath '*qt6*'
 
 if ! command -v objdump >/dev/null 2>&1; then
     echo "ERROR: objdump is required to validate staged PE dependencies."
