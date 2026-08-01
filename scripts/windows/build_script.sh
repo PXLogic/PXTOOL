@@ -136,7 +136,21 @@ elif ! grep -qx 'DSVIEW_ENABLE_UPSTREAM_COMPAT_DEMO:BOOL=ON' "CMakeCache.txt"; t
     NEED_CMAKE=1
     echo "[Step 1/2] Enabling upstream-compat demo and re-configuring with CMake..."
 else
-    legacy_qt_cache_refs="$(grep -Eio 'qt[0-9]+' CMakeCache.txt | sort -fu | grep -Eiv '^qt6$' || true)"
+    if [ ! -r "CMakeCache.txt" ]; then
+        echo "ERROR: CMakeCache.txt is not readable; cannot verify the Qt6 build cache."
+        exit 1
+    fi
+    qt_cache_refs=""
+    if qt_cache_refs="$(grep -Eio 'qt[0-9]+' CMakeCache.txt)"; then
+        :
+    else
+        qt_cache_scan_status=$?
+        if [ "$qt_cache_scan_status" -gt 1 ]; then
+            echo "ERROR: failed to scan CMakeCache.txt for legacy Qt references."
+            exit 1
+        fi
+    fi
+    legacy_qt_cache_refs="$(printf '%s\n' "$qt_cache_refs" | sort -fu | awk 'tolower($0) != "qt6"')"
     if [ -n "$legacy_qt_cache_refs" ]; then
         NEED_CMAKE=1
         echo "[Step 1/2] Legacy Qt cache entries found, re-configuring with Qt6..."
