@@ -147,37 +147,11 @@ int main(int argc, char *argv[])
         open_file = argvFinal[argcFinal - 1];		
 	}
 
-	//----------------------HightDpiScaling
-#if QT_VERSION >= QT_VERSION_CHECK(5,6,0)
-bool bHighScale = true;
-
-#ifdef _WIN32
-	int argc1 = 0;
- 	QApplication *a1 = new QApplication(argc1, NULL);
-	float sk = QGuiApplication::primaryScreen()->logicalDotsPerInch() / 96;
-	int sy = QGuiApplication::primaryScreen()->size().height(); //screen rect height
-    delete a1;
-	a1 = NULL;
-
-	if (sk >= 1.5 && sy <= 1080){
-		QApplication::setAttribute(Qt::AA_DisableHighDpiScaling);
-        QApplication::setAttribute(Qt::AA_UseHighDpiPixmaps);
-		bHighScale = false;
-	} 
-#endif
-	if (bHighScale){
-		QApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
-      	QApplication::setAttribute(Qt::AA_UseHighDpiPixmaps);
-	}
-
-#if QT_VERSION >= QT_VERSION_CHECK(5,14,0)
 	// Pass fractional scale factors through as-is so non-integer DPI screens
 	// (e.g. 1.5×) are not rounded, which would cause blurry text on secondary
 	// monitors whose scale factor differs from the primary display.
 	QGuiApplication::setHighDpiScaleFactorRoundingPolicy(
 		Qt::HighDpiScaleFactorRoundingPolicy::PassThrough);
-#endif
-#endif
 
 	//----------------------init app
     QApplication a(argcFinal, argvFinal);

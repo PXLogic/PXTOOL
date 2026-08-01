@@ -42,8 +42,6 @@ namespace path{
     std::string ToUnicodePath(QString path)
     {
         // Modern Windows APIs work fine with UTF-8 paths.
-        // The old QTextCodec::codecForName("System") approach is deprecated and
-        // unreliable in Qt 5.15+, so just use UTF-8 directly.
         return path.toUtf8().toStdString();
     }
 }

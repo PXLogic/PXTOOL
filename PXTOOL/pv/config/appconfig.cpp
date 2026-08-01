@@ -648,11 +648,7 @@ QString GetFirmwareDir()
 
 QString GetUserDataDir()
 {
-    #if QT_VERSION >= 0x050400
     return QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
-    #else
-    return QStandardPaths::writableLocation(QStandardPaths::DataLocation);
-    #endif
 }
 
 QString GetDecodeScriptDir()
@@ -725,9 +721,5 @@ QString GetBundledCDecodeDir()
 
 QString GetProfileDir()
 {
- #if QT_VERSION >= 0x050400
     return QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
-    #else
-    return QStandardPaths::writableLocation(QStandardPaths::DataLocation);
-    #endif
 }
