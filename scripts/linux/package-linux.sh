@@ -92,6 +92,7 @@ qt6_verify_elf_dependencies "${STAGED_APP}"
 
 qt6_verify_staged_elf_dependencies() {
     local staged_file
+    local program_headers
     local dynamic_output
     local needed
     local dependency
@@ -108,9 +109,21 @@ qt6_verify_staged_elf_dependencies() {
                 continue
             fi
 
-            # Static ELF files have no dynamic section and need no DT_NEEDED scan.
-            if ! dynamic_output="$(readelf -d -- "${staged_file}" 2>/dev/null)"; then
+            if ! program_headers="$(readelf -l -- "${staged_file}" 2>/dev/null)"; then
+                echo "ERROR: unable to inspect ELF program headers for staged file:" >&2
+                echo "  file: ${staged_file}" >&2
+                exit 1
+            fi
+
+            # Static ELF files have no DYNAMIC program header and need no DT_NEEDED scan.
+            if ! grep -Eq '^[[:space:]]*DYNAMIC([[:space:]]|$)' <<<"${program_headers}"; then
                 continue
+            fi
+
+            if ! dynamic_output="$(readelf -d -- "${staged_file}" 2>/dev/null)"; then
+                echo "ERROR: unable to inspect the dynamic section for staged file:" >&2
+                echo "  file: ${staged_file}" >&2
+                exit 1
             fi
             needed="$(sed -n 's/.*Shared library: \[\([^]]*\)\].*/\1/p' <<<"${dynamic_output}")"
 
