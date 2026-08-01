@@ -863,17 +863,10 @@ void DeviceOptionsDock::logic_probes(QVBoxLayout &layout)
     line_lay->addWidget(disable_all);
 
     const int hPad = 28;
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
     enable_all->setMinimumWidth(
         enable_all->fontMetrics().horizontalAdvance(enable_all->text()) + hPad);
     disable_all->setMinimumWidth(
         disable_all->fontMetrics().horizontalAdvance(disable_all->text()) + hPad);
-#else
-    enable_all->setMinimumWidth(
-        enable_all->fontMetrics().width(enable_all->text()) + hPad);
-    disable_all->setMinimumWidth(
-        disable_all->fontMetrics().width(disable_all->text()) + hPad);
-#endif
 
     contentHeight += enable_all->sizeHint().height();
     contentHeight += channel_pannel->minimumSizeHint().height();

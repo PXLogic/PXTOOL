@@ -61,11 +61,7 @@ ViewStatus::ViewStatus(SigSession *session, View &parent) :
 void ViewStatus::paintEvent(QPaintEvent *)
 {
     QStyleOption opt;
- #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
-      opt.initFrom(this);
- #else
-      opt.init(this);
- #endif
+    opt.initFrom(this);
 
     QPainter p(this);
     style()->drawPrimitive(QStyle::PE_Widget, &opt, &p, this);

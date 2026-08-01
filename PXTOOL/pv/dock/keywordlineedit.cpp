@@ -118,12 +118,7 @@ void KeyLineEdit::wheelEvent(QWheelEvent *event)
         {
             int v = new_text.toInt();
             int old_v = v;
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
             if (event->angleDelta().y() > 0){
-#else
-            if (event->delta() > 0){
-#endif
-            //if (event->delta() > 0){
                 v++;
             }
             else{
