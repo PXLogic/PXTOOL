@@ -173,12 +173,16 @@ scan_for_legacy_qt_artifact() {
     return "$legacy_qt_scan_status"
 }
 
-scan_for_legacy_qt_artifact \
-    "non-Qt6 versioned Qt DLL residue found in deployment." \
-    . -type f -iname 'qt[0-9]*.dll' ! -iname 'qt6*.dll'
-scan_for_legacy_qt_artifact \
-    "non-Qt6 versioned Qt file residue found in deployment." \
-    . -type f -ipath '*qt[0-9]*' ! -ipath '*qt6*'
+verify_staged_qt_artifacts() {
+    scan_for_legacy_qt_artifact \
+        "non-Qt6 versioned Qt file residue found in deployment." \
+        . -type f -iname '*qt[0-9]*' ! -iname '*qt6*'
+    scan_for_legacy_qt_artifact \
+        "non-Qt6 versioned Qt path residue found in deployment." \
+        . -type f -ipath '*qt[0-9]*' ! -ipath '*qt6*'
+}
+
+verify_staged_qt_artifacts
 
 if ! command -v objdump >/dev/null 2>&1; then
     echo "ERROR: objdump is required to validate staged PE dependencies."
@@ -188,7 +192,7 @@ fi
 scan_pe_dependencies() {
     local candidate="$1"
     local require_qt6="${2:-0}"
-    local pe_dump import_name import_lower qt6_found=0
+    local pe_dump import_name import_lower import_file_name qt6_found=0
     local -a qt_imports=()
 
     if [ ! -r "$candidate" ]; then
@@ -208,8 +212,9 @@ scan_pe_dependencies() {
     for import_name in "${qt_imports[@]}"; do
         [ -n "$import_name" ] || continue
         import_lower="${import_name,,}"
-        if [[ "$import_lower" =~ ^qt[0-9]+[^[:space:]]*\.dll$ ]]; then
-            if [[ "$import_lower" =~ ^qt6([^0-9]|$) ]]; then
+        import_file_name="$(basename "$import_lower")"
+        if [[ "$import_file_name" =~ ^(lib)?qt[0-9]+[^[:space:]]*\.dll$ ]]; then
+            if [[ "$import_file_name" =~ ^(lib)?qt6([^0-9]|$) ]]; then
                 qt6_found=1
             else
                 echo "ERROR: non-Qt6 versioned Qt import in $candidate: $import_name"
@@ -302,6 +307,7 @@ sync_dir "$SOURCE_DIR/PXTOOL/themes" ./themes "themes/"
 if [ -d "$SOURCE_DIR/PXTOOL/lang" ]; then
     sync_dir "$SOURCE_DIR/PXTOOL/lang" ./lang "lang/ (optional disk translations)"
 fi
+verify_staged_qt_artifacts
 
 # --------------------------------------------------------------------------
 # Step 5: Python protocol decoders (libsigrokdecode)
@@ -321,6 +327,7 @@ if [ -d "$BUILD_DIR/decoders/c_decoders" ]; then
 else
     echo "  -> WARNING: built C decoder directory not found at $BUILD_DIR/decoders/c_decoders"
 fi
+verify_staged_qt_artifacts
 
 # --------------------------------------------------------------------------
 # Step 6: Bundle Python standard library
@@ -402,6 +409,7 @@ fi
 
 echo "  Verifying final staged PE dependencies..."
 verify_staged_pe_tree
+verify_staged_qt_artifacts
 
 # --------------------------------------------------------------------------
 # Done

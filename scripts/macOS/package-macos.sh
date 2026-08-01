@@ -164,28 +164,11 @@ read_plist_value() {
   return 1
 }
 
-find_qt_framework_dir() {
-  local framework_name="$1"
-  local framework_dir
-
-  framework_dir="$FRAMEWORKS_DIR/$framework_name"
-  if [ -d "$framework_dir" ]; then
-    printf '%s\n' "$framework_dir"
-    return 0
-  fi
-
-  framework_dir="$(find -L "$FRAMEWORKS_DIR" -type d -name "$framework_name" -print -quit 2>/dev/null || true)"
-  if [ -n "$framework_dir" ]; then
-    printf '%s\n' "$framework_dir"
-    return 0
-  fi
-  return 1
-}
-
 verify_qt_framework() {
-  local framework_name="$1"
-  local framework_lower
-  local framework_dir plist version
+  local framework_dir="$1"
+  local framework_name framework_lower plist version
+
+  framework_name="${framework_dir##*/}"
 
   framework_lower="$(printf '%s' "$framework_name" | tr '[:upper:]' '[:lower:]')"
 
@@ -195,10 +178,6 @@ verify_qt_framework() {
     return 1
   fi
 
-  if ! framework_dir="$(find_qt_framework_dir "$framework_name")"; then
-    echo "ERROR: Qt framework is not bundled: $framework_name"
-    return 1
-  fi
   if ! plist="$(find_framework_info_plist "$framework_dir")"; then
     echo "ERROR: Qt framework has no readable Info.plist: $framework_dir"
     return 1
@@ -210,6 +189,90 @@ verify_qt_framework() {
   if [[ ! "$version" =~ ^6[.][0-9]+([.][0-9]+)?$ ]]; then
     echo "ERROR: Qt framework is not version 6.x: $framework_dir ($version)"
     return 1
+  fi
+}
+
+resolve_macho_framework_import() {
+  local candidate="$1"
+  local dependency="$2"
+  local candidate_dir executable_dir rpath rpaths resolved
+
+  candidate_dir="$(cd "$(dirname "$candidate")" && pwd -P)"
+  executable_dir="$(cd "$FRAMEWORKS_DIR/../MacOS" && pwd -P)"
+
+  case "$dependency" in
+    @rpath/*)
+      rpaths="$(otool -l "$candidate" 2>/dev/null | awk '
+        $1 == "cmd" && $2 == "LC_RPATH" { found = 1; next }
+        found && $1 == "path" { print $2; found = 0 }
+      ')"
+      while IFS= read -r rpath; do
+        [ -n "$rpath" ] || continue
+        case "$rpath" in
+          @loader_path/*) rpath="$candidate_dir/${rpath#@loader_path/}" ;;
+          @executable_path/*) rpath="$executable_dir/${rpath#@executable_path/}" ;;
+          /*) ;;
+          *) continue ;;
+        esac
+        resolved="$rpath/${dependency#@rpath/}"
+        if [ -e "$resolved" ]; then
+          printf '%s/%s\n' "$(cd "$(dirname "$resolved")" && pwd -P)" "$(basename "$resolved")"
+          return 0
+        fi
+      done <<<"$rpaths"
+      ;;
+    @loader_path/*)
+      resolved="$candidate_dir/${dependency#@loader_path/}"
+      ;;
+    @executable_path/*)
+      resolved="$executable_dir/${dependency#@executable_path/}"
+      ;;
+    /*)
+      resolved="$dependency"
+      ;;
+    *)
+      return 1
+      ;;
+  esac
+
+  if [ -e "$resolved" ]; then
+    printf '%s/%s\n' "$(cd "$(dirname "$resolved")" && pwd -P)" "$(basename "$resolved")"
+    return 0
+  fi
+  return 1
+}
+
+verify_framework_import() {
+  local candidate="$1"
+  local dependency="$2"
+  local framework_path="$3"
+  local resolved_dependency framework_dir frameworks_dir framework_name framework_lower
+
+  case "$dependency" in
+    /System/Library/Frameworks/*)
+      return 0
+      ;;
+  esac
+
+  if ! resolved_dependency="$(resolve_macho_framework_import "$candidate" "$dependency")"; then
+    echo "ERROR: external or unresolved framework import in Mach-O candidate: $candidate ($dependency)"
+    return 1
+  fi
+
+  framework_dir="${resolved_dependency%%.framework/*}.framework"
+  frameworks_dir="$(cd "$FRAMEWORKS_DIR" && pwd -P)"
+  case "$framework_dir" in
+    "$frameworks_dir"/*) ;;
+    *)
+      echo "ERROR: external framework import in Mach-O candidate: $candidate ($dependency)"
+      return 1
+      ;;
+  esac
+
+  framework_name="${framework_path##*/}"
+  framework_lower="$(printf '%s' "$framework_name" | tr '[:upper:]' '[:lower:]')"
+  if [[ "$framework_lower" == qt*.framework ]]; then
+    verify_qt_framework "$framework_dir"
   fi
 }
 
@@ -243,13 +306,15 @@ verify_macho_file() {
       fi
     fi
 
-    if [[ "$dependency" =~ (/[Qq][Tt][^/]*[.]framework)(/|$) ]]; then
+    if [[ "$dependency" =~ (.*[.]framework)(/|$) ]]; then
       framework_path="${BASH_REMATCH[1]}"
       framework_name="${framework_path##*/}"
-      if ! verify_qt_framework "$framework_name"; then
+      if ! verify_framework_import "$candidate" "$dependency" "$framework_path"; then
         return 1
       fi
-      qt_import_found=1
+      if [[ "$(printf '%s' "$framework_name" | tr '[:upper:]' '[:lower:]')" == qt*.framework ]]; then
+        qt_import_found=1
+      fi
     elif [[ "$dependency_lower" =~ (^|/)(lib)?qt[0-9]+ ]]; then
       if [[ ! "$dependency_lower" =~ (^|/)(lib)?qt6([^0-9]|$) ]]; then
         echo "ERROR: non-Qt6 import in Mach-O candidate: $candidate ($dependency)"
@@ -295,7 +360,7 @@ verify_macos_qt_bundle() {
     framework_name="${framework_dir##*/}"
     framework_lower="$(printf '%s' "$framework_name" | tr '[:upper:]' '[:lower:]')"
     if [[ "$framework_lower" == qt*.framework ]]; then
-      if ! verify_qt_framework "$framework_name"; then
+      if ! verify_qt_framework "$framework_dir"; then
         return 1
       fi
       qt_framework_count=$((qt_framework_count + 1))
