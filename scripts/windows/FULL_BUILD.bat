@@ -18,7 +18,13 @@ if %ERRORLEVEL% EQU 0 (
 echo [Step 0b] Cleaning old build artifacts...
 rmdir /s /q build.windows\CMakeFiles 2>nul
 rmdir /s /q build.windows\PXTOOL 2>nul
-for %%D in (plugins accessible assetimporters platforms platforminputcontexts platformthemes imageformats iconengines styles generic geoservices multimedia positioning qml qmltooling renderers sceneparsers sensors texttospeech virtualkeyboard webview tls bearer canbus printsupport sqldrivers networkinformation xcbglintegrations egldeviceintegrations wayland-decoration-client wayland-graphics-integration-client wayland-shell-integration translations) do rmdir /s /q "build.windows\%%D" 2>nul
+for %%D in (plugins accessible assetimporters platforms platforminputcontexts platformthemes imageformats iconengines styles generic geoservices multimedia positioning qml qmltooling renderers sceneparsers sensors texttospeech virtualkeyboard webview tls bearer canbus printsupport sqldrivers networkinformation xcbglintegrations egldeviceintegrations wayland-decoration-client wayland-graphics-integration-client wayland-shell-integration translations) do (
+    rmdir /s /q "build.windows\%%D" 2>nul
+    if exist "build.windows\%%D\" (
+        echo [ERROR] Could not remove stale deployment directory: build.windows\%%D
+        exit /b 1
+    )
+)
 del /f /q build.windows\CMakeCache.txt 2>nul
 del /f /q build.windows\PXTOOL.exe 2>nul
 del /f /q build.windows\Qt*.dll 2>nul
