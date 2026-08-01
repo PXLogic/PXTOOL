@@ -475,7 +475,7 @@ bool MainFrame::eventFilter(QObject *object, QEvent *event)
  
         QPoint pt;
         int k = 1;
-        pt = mouse_event->globalPos(); 
+        pt = mouse_event->globalPosition().toPoint();
 
         int datX = pt.x() - _clickPos.x();
         int datY = pt.y() - _clickPos.y();
@@ -579,7 +579,7 @@ bool MainFrame::eventFilter(QObject *object, QEvent *event)
             _bDraging = true;
         _timer.start(50); 
 
-        _clickPos = mouse_event->globalPos();
+        _clickPos = mouse_event->globalPosition().toPoint();
         _dragStartRegion = GetFormRegion();
     } 
     else if (type == QEvent::MouseButtonRelease) {

@@ -227,10 +227,10 @@ void TitleBar::mousePressEvent(QMouseEvent* event)
 
     if(event->button() == Qt::LeftButton && ableMove && _is_able_drag) 
     {
-        int x = event->pos().x();
-        int y = event->pos().y(); 
+        int x = event->position().toPoint().x();
+        int y = event->position().toPoint().y();
         
-        if (!canStartDragAt(event->pos())) {
+        if (!canStartDragAt(event->position().toPoint())) {
             QWidget::mousePressEvent(event);
             return;
         }
