@@ -1,22 +1,23 @@
 #!/bin/bash
+set -euo pipefail
 # =============================================================================
 # PXTOOL Deploy Script
 # Copies all runtime dependencies to build.windows after compilation.
 # Run this once after BUILD, or when dependencies change.
 # =============================================================================
 
-export PATH="/mingw64/bin:/usr/bin:/bin:$PATH"
-
 # Resolve the MinGW64 prefix.
-# /mingw64 is the canonical path inside a MinGW64 shell, but its /lib may not
-# be fully exposed in all shell environments; fall back to the absolute path.
-if [ -d /mingw64/lib ] && ls /mingw64/lib/python* >/dev/null 2>&1; then
+# /mingw64 is the canonical path inside a MinGW64 shell. Some installations
+# expose the same tree through the absolute /c/msys64 path instead.
+if [ -d /mingw64/bin ] && [ -d /mingw64/lib ]; then
     MINGW_PREFIX=/mingw64
-elif [ -d /c/msys64/mingw64/lib ] && ls /c/msys64/mingw64/lib/python* >/dev/null 2>&1; then
+elif [ -d /c/msys64/mingw64/bin ] && [ -d /c/msys64/mingw64/lib ]; then
     MINGW_PREFIX=/c/msys64/mingw64
 else
-    MINGW_PREFIX=/mingw64  # last resort
+    echo "ERROR: MinGW64 installation was not found at /mingw64 or /c/msys64/mingw64."
+    exit 1
 fi
+export PATH="$MINGW_PREFIX/bin:/usr/bin:/bin:$PATH"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SOURCE_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
@@ -38,8 +39,8 @@ echo ""
 
 # --------------------------------------------------------------------------
 # Step 1: Runtime DLL dependencies (MinGW64)
-# Only copy exact dependencies. A full bin-directory fallback can deploy Qt5
-# merely because it remains installed in MSYS2.
+# Only copy exact dependencies. A full bin-directory fallback can deploy
+# legacy Qt merely because it remains installed in MSYS2.
 # --------------------------------------------------------------------------
 WINDEPLOYQT="$MINGW_PREFIX/bin/windeployqt6.exe"
 if [ ! -x "$WINDEPLOYQT" ]; then
@@ -51,26 +52,95 @@ if ! ldd PXTOOL.exe >/dev/null 2>&1; then
     exit 1
 fi
 
-rm -rf plugins
-rm -f Qt5*.dll Qt6*.dll qt.conf
+DEPLOYMENT_PLUGIN_DIRS=(
+    plugins
+    accessible
+    assetimporters
+    platforms
+    platforminputcontexts
+    platformthemes
+    imageformats
+    iconengines
+    styles
+    generic
+    geoservices
+    multimedia
+    positioning
+    qml
+    qmltooling
+    renderers
+    sceneparsers
+    sensors
+    texttospeech
+    virtualkeyboard
+    webview
+    tls
+    bearer
+    canbus
+    printsupport
+    sqldrivers
+    networkinformation
+    xcbglintegrations
+    egldeviceintegrations
+    wayland-decoration-client
+    wayland-graphics-integration-client
+    wayland-shell-integration
+    translations
+)
+for plugin_dir in "${DEPLOYMENT_PLUGIN_DIRS[@]}"; do
+    rm -rf -- "$plugin_dir"
+done
+rm -f Qt*.dll Qt*.DLL qt.conf
 
 echo "[1/8] Copying runtime DLL dependencies..."
 COPIED=0
+if ! LDD_OUTPUT="$(ldd PXTOOL.exe 2>&1)"; then
+    echo "ERROR: ldd failed while identifying MinGW runtime dependencies."
+    printf '%s\n' "$LDD_OUTPUT"
+    exit 1
+fi
 while IFS= read -r dll_path; do
+    [ -n "$dll_path" ] || continue
     dll_name=$(basename "$dll_path")
     case "$dll_name" in
-        Qt5*.dll) echo "ERROR: Qt5 dependency reported by ldd: $dll_name"; exit 1 ;;
+        Qt[0-9]*.dll|Qt[0-9]*.DLL)
+            case "$dll_name" in
+                Qt6*.dll|Qt6*.DLL) ;;
+                *)
+                    echo "ERROR: non-Qt6 dependency reported by ldd: $dll_name"
+                    exit 1
+                    ;;
+            esac
+            ;;
     esac
-    cp -f "$dll_path" "./$dll_name"
+    if ! cp -f "$dll_path" "./$dll_name"; then
+        echo "ERROR: failed to copy runtime dependency: $dll_path"
+        exit 1
+    fi
     COPIED=$((COPIED + 1))
-done < <(ldd PXTOOL.exe 2>/dev/null | awk '/\/mingw64\// {print $3}' | grep -v '^$')
+done < <(
+    printf '%s\n' "$LDD_OUTPUT" \
+        | awk -v prefix="$MINGW_PREFIX" '
+            {
+                for (i = 1; i <= NF; i++) {
+                    if (index($i, prefix "/") == 1) {
+                        print $i
+                        next
+                    }
+                }
+            }
+        '
+)
 echo "  -> Copied: $COPIED non-Qt runtime DLLs"
 
 # --------------------------------------------------------------------------
 # Step 2: Qt6 runtime and plugins
 # --------------------------------------------------------------------------
 echo "[2/8] Deploying Qt6 runtime and plugins..."
-"$WINDEPLOYQT" --release --no-translations --no-compiler-runtime ./PXTOOL.exe
+if ! "$WINDEPLOYQT" --release --no-translations --no-compiler-runtime ./PXTOOL.exe; then
+    echo "ERROR: Qt6 deployment tool failed: $WINDEPLOYQT"
+    exit 1
+fi
 
 # --------------------------------------------------------------------------
 # Step 3: qt.conf (tells Qt where to find plugins relative to exe)
@@ -83,22 +153,115 @@ Plugins = .
 EOF
 echo "  -> qt.conf written."
 
-if find . -type f -iname 'Qt5*.dll' -print -quit | grep -q .; then
-    echo "ERROR: Qt5 DLL residue found in deployment."
+scan_for_legacy_qt_artifact() {
+    local error_message="$1"
+    local legacy_qt_artifact legacy_qt_scan_status
+    shift
+
+    if legacy_qt_artifact="$(find "$@" -print -quit 2>&1)"; then
+        if [ -n "$legacy_qt_artifact" ]; then
+            echo "ERROR: $error_message"
+            printf '       %s\n' "$legacy_qt_artifact"
+            return 1
+        fi
+        return 0
+    fi
+
+    legacy_qt_scan_status=$?
+    echo "ERROR: failed to scan deployment for legacy Qt artifacts (status $legacy_qt_scan_status)."
+    printf '%s\n' "$legacy_qt_artifact"
+    return "$legacy_qt_scan_status"
+}
+
+verify_staged_qt_artifacts() {
+    scan_for_legacy_qt_artifact \
+        "non-Qt6 versioned Qt file residue found in deployment." \
+        . -type f -iname '*qt[0-9]*' ! -iname '*qt6*'
+    scan_for_legacy_qt_artifact \
+        "non-Qt6 versioned Qt path residue found in deployment." \
+        . -type f -ipath '*qt[0-9]*' ! -ipath '*qt6*'
+}
+
+verify_staged_qt_artifacts
+
+if ! command -v objdump >/dev/null 2>&1; then
+    echo "ERROR: objdump is required to validate staged PE dependencies."
     exit 1
 fi
-if find . -type f -ipath '*qt5*' -print -quit | grep -q .; then
-    echo "ERROR: Qt5 plugin residue found in deployment."
-    exit 1
-fi
-if objdump -p PXTOOL.exe | grep -q 'Qt5'; then
-    echo "ERROR: PXTOOL.exe imports Qt5."
-    exit 1
-fi
-if ! objdump -p PXTOOL.exe | grep -q 'Qt6'; then
-    echo "ERROR: PXTOOL.exe does not import Qt6."
-    exit 1
-fi
+
+scan_pe_dependencies() {
+    local candidate="$1"
+    local require_qt6="${2:-0}"
+    local pe_dump import_name import_lower import_file_name qt6_found=0
+    local -a qt_imports=()
+
+    if [ ! -r "$candidate" ]; then
+        echo "ERROR: staged PE candidate is not readable: $candidate"
+        return 1
+    fi
+    if ! pe_dump="$(objdump -p "$candidate" 2>&1)"; then
+        echo "ERROR: objdump could not inspect staged PE candidate: $candidate"
+        printf '%s\n' "$pe_dump"
+        return 1
+    fi
+
+    mapfile -t qt_imports < <(
+        printf '%s\n' "$pe_dump" \
+            | awk 'tolower($1) == "dll" && tolower($2) == "name:" { print $3 }'
+    )
+    for import_name in "${qt_imports[@]}"; do
+        [ -n "$import_name" ] || continue
+        import_lower="${import_name,,}"
+        import_file_name="$(basename "$import_lower")"
+        if [[ "$import_file_name" =~ ^(lib)?qt[0-9]+[^[:space:]]*\.dll$ ]]; then
+            if [[ "$import_file_name" =~ ^(lib)?qt6([^0-9]|$) ]]; then
+                qt6_found=1
+            else
+                echo "ERROR: non-Qt6 versioned Qt import in $candidate: $import_name"
+                return 1
+            fi
+        fi
+    done
+
+    if [ "$require_qt6" -eq 1 ] && [ "$qt6_found" -eq 0 ]; then
+        echo "ERROR: PXTOOL.exe does not import Qt6."
+        return 1
+    fi
+}
+
+verify_staged_pe_tree() {
+    local candidate require_qt6 scan_status candidate_list
+
+    if ! candidate_list="$(mktemp "${TMPDIR:-/tmp}/pxtool-pe.XXXXXX")"; then
+        echo "ERROR: unable to create a temporary PE validation list."
+        return 1
+    fi
+    if ! find -L . -type f \( \
+            -iname '*.exe' -o \
+            -iname '*.dll' -o \
+            -iname '*.ocx' \
+        \) -print0 >"${candidate_list}"; then
+        rm -f "${candidate_list}"
+        echo "ERROR: unable to enumerate staged PE files."
+        return 1
+    fi
+
+    scan_status=0
+    while IFS= read -r -d '' candidate; do
+        require_qt6=0
+        if [ "$candidate" = "./PXTOOL.exe" ]; then
+            require_qt6=1
+        fi
+        if ! scan_pe_dependencies "$candidate" "$require_qt6"; then
+            scan_status=1
+            break
+        fi
+    done <"${candidate_list}"
+    rm -f "${candidate_list}"
+    return "${scan_status}"
+}
+
+verify_staged_pe_tree
 
 # --------------------------------------------------------------------------
 # Step 4: Resource directories (res, demo, themes)
@@ -144,6 +307,7 @@ sync_dir "$SOURCE_DIR/PXTOOL/themes" ./themes "themes/"
 if [ -d "$SOURCE_DIR/PXTOOL/lang" ]; then
     sync_dir "$SOURCE_DIR/PXTOOL/lang" ./lang "lang/ (optional disk translations)"
 fi
+verify_staged_qt_artifacts
 
 # --------------------------------------------------------------------------
 # Step 5: Python protocol decoders (libsigrokdecode)
@@ -163,6 +327,7 @@ if [ -d "$BUILD_DIR/decoders/c_decoders" ]; then
 else
     echo "  -> WARNING: built C decoder directory not found at $BUILD_DIR/decoders/c_decoders"
 fi
+verify_staged_qt_artifacts
 
 # --------------------------------------------------------------------------
 # Step 6: Bundle Python standard library
@@ -241,6 +406,10 @@ if [ -f spi.dll ]; then
 else
     echo "  -> WARNING: spi.dll not found in build.windows (C decoders may not show [C]/[Py] options)"
 fi
+
+echo "  Verifying final staged PE dependencies..."
+verify_staged_pe_tree
+verify_staged_qt_artifacts
 
 # --------------------------------------------------------------------------
 # Done

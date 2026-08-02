@@ -382,8 +382,7 @@ void Header::wheelEvent(QWheelEvent *event)
     QPoint pos;
     (void)x;
     (void)y;
-     
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+
     x = (int)event->position().x();
     y = (int)event->position().y();    
     int anglex = event->angleDelta().x();
@@ -400,12 +399,6 @@ void Header::wheelEvent(QWheelEvent *event)
         delta = anglex;
         isVertical = false; //hori direction
     }
-#else
-    x = event->x();
-    delta = event->delta();
-    isVertical = event->orientation() == Qt::Vertical;
-    pos = event->pos(); 
-#endif
 
     if (isVertical)
     {

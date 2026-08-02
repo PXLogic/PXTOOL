@@ -21,13 +21,7 @@ set(DSVIEW_TEST_QRC
     ../themes/breeze.qrc
 )
 
-if(Qt5Core_FOUND)
-    qt5_add_resources(DSVIEW_TEST_RESOURCES ${DSVIEW_TEST_QRC})
-endif()
-
-if(Qt6Core_FOUND)
-    qt6_add_resources(DSVIEW_TEST_RESOURCES ${DSVIEW_TEST_QRC})
-endif()
+qt6_add_resources(DSVIEW_TEST_RESOURCES ${DSVIEW_TEST_QRC})
 
 add_executable(DSView-test
     test.cpp

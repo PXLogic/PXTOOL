@@ -1846,27 +1846,18 @@ namespace pv
         (void)y;
 
 #ifdef _WIN32
-    #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
         QScreen *screen = QGuiApplication::screenAt(QPoint(x, y));
         if (!screen)
             screen = QGuiApplication::primaryScreen();
         QPixmap pixmap = screen ? screen->grabWindow(0, x, y, w, h) : QPixmap();
-    #else
-        QPixmap pixmap = QPixmap::grabWidget(parentWidget());
-    #endif
-#elif __APPLE__ 
+#elif __APPLE__
         x += MainFrame::Margin;
         y += MainFrame::Margin;
         w -= MainFrame::Margin * 2;
         h -= MainFrame::Margin * 2;
 
-    #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
         QPixmap pixmap = QGuiApplication::primaryScreen()->grabWindow(winId(), x, y, w, h);
-    #else
-        QScreen *screen = windowHandle() ? windowHandle()->screen() : QGuiApplication::primaryScreen();
-        QPixmap pixmap = screen ? screen->grabWindow(winId(), x, y, w, h) : QPixmap();
-    #endif       
-#else       
+#else
         QPixmap pixmap = QGuiApplication::primaryScreen()->grabWindow(winId());
 #endif
 

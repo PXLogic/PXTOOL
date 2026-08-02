@@ -995,11 +995,7 @@ void MeasureDock::adjust_form_size(QWidget *wid)
     QFontMetrics fm(font); 
     //int max_label_width = fm.horizontalAdvance(str) + 100;
 
-    #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
-        int max_label_width = fm.horizontalAdvance(str) + 100;
-    #else
-        int max_label_width = fm.width(str) + 100;
-    #endif
+    int max_label_width = fm.horizontalAdvance(str) + 100;
 
     auto labels = wid->findChildren<QLabel*>();
     for(auto o : labels)
@@ -1012,11 +1008,7 @@ void MeasureDock::adjust_form_size(QWidget *wid)
 
     //int mouse_info_label_width = fm.horizontalAdvance("############");
 
-    #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
-        int mouse_info_label_width = fm.horizontalAdvance("############");
-    #else
-        int mouse_info_label_width = fm.width("############");
-    #endif
+    int mouse_info_label_width = fm.horizontalAdvance("############");
 
     _width_label->setFixedWidth(mouse_info_label_width);
     _period_label->setFixedWidth(mouse_info_label_width);

@@ -23,11 +23,7 @@ namespace {
 
 int variantMetaTypeId(const QVariant &value)
 {
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
     return value.metaType().id();
-#else
-    return value.userType();
-#endif
 }
 
 QVariant variantToQVariant(GVariant *value)

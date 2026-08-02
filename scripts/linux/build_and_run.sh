@@ -2,6 +2,10 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+# shellcheck source=scripts/linux/qt6_env.sh
+source "${ROOT_DIR}/scripts/linux/qt6_env.sh"
+qt6_init
+
 BUILD_DIR="${ROOT_DIR}/build"
 OUTPUT_DIR="${ROOT_DIR}/build.linux"
 APP_PATH="${OUTPUT_DIR}/PXTOOL"
@@ -20,7 +24,9 @@ CMAKE_ARGS=(
     -B "${BUILD_DIR}"
     -DCMAKE_BUILD_TYPE=RelWithDebInfo
     -DDSVIEW_ENABLE_UPSTREAM_COMPAT_DEMO=ON
+    -DQt6_DIR="${QT6_CMAKE_DIR}"
 )
+qt6_prepare_build_dir "${BUILD_DIR}"
 if [ ! -f "${BUILD_DIR}/CMakeCache.txt" ] && command -v ninja >/dev/null 2>&1; then
     CMAKE_ARGS+=(-G Ninja)
 fi

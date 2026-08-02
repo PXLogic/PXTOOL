@@ -80,6 +80,342 @@ cleanup_dmg_artifacts() {
   done
 }
 
+is_expected_macho_candidate() {
+  local candidate="$1"
+  local app="$2"
+  local relative framework_root framework_name
+
+  if [ "$candidate" = "$app/Contents/MacOS/PXTOOL" ]; then
+    return 0
+  fi
+
+  case "$candidate" in
+    "$app/Contents/MacOS/"*)
+      relative="${candidate#"$app/Contents/MacOS/"}"
+      [ "$relative" != */* ]
+      return
+      ;;
+    "$app/Contents/Frameworks/"*|"$app/Contents/PlugIns/"*)
+      case "$candidate" in
+        *.dylib|*.bundle|*.so)
+          return 0
+          ;;
+      esac
+      if [[ "$candidate" == *.framework/* ]]; then
+        framework_root="${candidate%%.framework/*}.framework"
+        framework_name="${framework_root##*/}"
+        framework_name="${framework_name%.framework}"
+        [ "${candidate##*/}" = "$framework_name" ]
+        return
+      fi
+      ;;
+  esac
+
+  return 1
+}
+
+find_framework_info_plist() {
+  local framework="$1"
+  local plist
+
+  for plist in \
+    "$framework/Resources/Info.plist" \
+    "$framework/Versions/Current/Resources/Info.plist"; do
+    if [ -f "$plist" ]; then
+      printf '%s\n' "$plist"
+      return 0
+    fi
+  done
+
+  plist="$(find -L "$framework" -type f -path '*/Resources/Info.plist' -print -quit 2>/dev/null || true)"
+  if [ -n "$plist" ]; then
+    printf '%s\n' "$plist"
+    return 0
+  fi
+  return 1
+}
+
+read_plist_value() {
+  local plist="$1"
+  local value
+
+  if command -v plutil >/dev/null 2>&1; then
+    if value="$(plutil -extract CFBundleShortVersionString raw -o - "$plist" 2>/dev/null)"; then
+      printf '%s\n' "$value"
+      return 0
+    fi
+    if value="$(plutil -extract CFBundleVersion raw -o - "$plist" 2>/dev/null)"; then
+      printf '%s\n' "$value"
+      return 0
+    fi
+  fi
+
+  if [ -x /usr/libexec/PlistBuddy ]; then
+    if value="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$plist" 2>/dev/null)"; then
+      printf '%s\n' "$value"
+      return 0
+    fi
+    if value="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$plist" 2>/dev/null)"; then
+      printf '%s\n' "$value"
+      return 0
+    fi
+  fi
+
+  return 1
+}
+
+verify_qt_framework() {
+  local framework_dir="$1"
+  local framework_name framework_lower plist version
+
+  framework_name="${framework_dir##*/}"
+
+  framework_lower="$(printf '%s' "$framework_name" | tr '[:upper:]' '[:lower:]')"
+
+  if [[ "$framework_lower" =~ ^qt[0-9]+ ]] \
+      && [[ ! "$framework_lower" =~ ^qt6([^0-9]|$) ]]; then
+    echo "ERROR: non-Qt6 framework imported or bundled: $framework_name"
+    return 1
+  fi
+
+  if ! plist="$(find_framework_info_plist "$framework_dir")"; then
+    echo "ERROR: Qt framework has no readable Info.plist: $framework_dir"
+    return 1
+  fi
+  if ! version="$(read_plist_value "$plist")"; then
+    echo "ERROR: could not read Qt framework version: $framework_dir"
+    return 1
+  fi
+  if [[ ! "$version" =~ ^6[.][0-9]+([.][0-9]+)?$ ]]; then
+    echo "ERROR: Qt framework is not version 6.x: $framework_dir ($version)"
+    return 1
+  fi
+}
+
+resolve_macho_framework_import() {
+  local candidate="$1"
+  local dependency="$2"
+  local candidate_dir executable_dir rpath rpaths resolved
+
+  candidate_dir="$(cd "$(dirname "$candidate")" && pwd -P)"
+  executable_dir="$(cd "$FRAMEWORKS_DIR/../MacOS" && pwd -P)"
+
+  case "$dependency" in
+    @rpath/*)
+      rpaths="$(otool -l "$candidate" 2>/dev/null | awk '
+        $1 == "cmd" && $2 == "LC_RPATH" { found = 1; next }
+        found && $1 == "path" { print $2; found = 0 }
+      ')"
+      while IFS= read -r rpath; do
+        [ -n "$rpath" ] || continue
+        case "$rpath" in
+          @loader_path/*) rpath="$candidate_dir/${rpath#@loader_path/}" ;;
+          @executable_path/*) rpath="$executable_dir/${rpath#@executable_path/}" ;;
+          /*) ;;
+          *) continue ;;
+        esac
+        resolved="$rpath/${dependency#@rpath/}"
+        if [ -e "$resolved" ]; then
+          printf '%s/%s\n' "$(cd "$(dirname "$resolved")" && pwd -P)" "$(basename "$resolved")"
+          return 0
+        fi
+      done <<<"$rpaths"
+      ;;
+    @loader_path/*)
+      resolved="$candidate_dir/${dependency#@loader_path/}"
+      ;;
+    @executable_path/*)
+      resolved="$executable_dir/${dependency#@executable_path/}"
+      ;;
+    /*)
+      resolved="$dependency"
+      ;;
+    *)
+      return 1
+      ;;
+  esac
+
+  if [ -e "$resolved" ]; then
+    printf '%s/%s\n' "$(cd "$(dirname "$resolved")" && pwd -P)" "$(basename "$resolved")"
+    return 0
+  fi
+  return 1
+}
+
+verify_framework_import() {
+  local candidate="$1"
+  local dependency="$2"
+  local framework_path="$3"
+  local resolved_dependency framework_dir frameworks_dir framework_name framework_lower
+
+  case "$dependency" in
+    /System/Library/Frameworks/*)
+      return 0
+      ;;
+  esac
+
+  if ! resolved_dependency="$(resolve_macho_framework_import "$candidate" "$dependency")"; then
+    echo "ERROR: external or unresolved framework import in Mach-O candidate: $candidate ($dependency)"
+    return 1
+  fi
+
+  framework_dir="${resolved_dependency%%.framework/*}.framework"
+  frameworks_dir="$(cd "$FRAMEWORKS_DIR" && pwd -P)"
+  case "$framework_dir" in
+    "$frameworks_dir"/*) ;;
+    *)
+      echo "ERROR: external framework import in Mach-O candidate: $candidate ($dependency)"
+      return 1
+      ;;
+  esac
+
+  framework_name="${framework_path##*/}"
+  framework_lower="$(printf '%s' "$framework_name" | tr '[:upper:]' '[:lower:]')"
+  if [[ "$framework_lower" == qt*.framework ]]; then
+    verify_qt_framework "$framework_dir"
+  fi
+}
+
+verify_macho_file() {
+  local candidate="$1"
+  local require_qt="${2:-0}"
+  local macho_dependencies dependency dependency_lower framework_path framework_name qt_major
+  local qt_import_found=0
+  local dependency_list
+
+  if [ ! -r "$candidate" ]; then
+    echo "ERROR: Mach-O candidate is not readable: $candidate"
+    return 1
+  fi
+  if ! macho_dependencies="$(otool -L "$candidate" 2>&1)"; then
+    echo "ERROR: otool could not inspect Mach-O candidate: $candidate"
+    printf '%s\n' "$macho_dependencies"
+    return 1
+  fi
+
+  dependency_list="$(printf '%s\n' "$macho_dependencies" | awk 'NR > 1 { print $1 }')"
+  while IFS= read -r dependency; do
+    [ -n "$dependency" ] || continue
+    dependency_lower="$(printf '%s' "$dependency" | tr '[:upper:]' '[:lower:]')"
+
+    if [[ "$dependency_lower" =~ qt[@_-]?([0-9]+) ]]; then
+      qt_major="${BASH_REMATCH[1]}"
+      if [ "$qt_major" != 6 ]; then
+        echo "ERROR: non-Qt6 import in Mach-O candidate: $candidate ($dependency)"
+        return 1
+      fi
+    fi
+
+    if [[ "$dependency" =~ (.*[.]framework)(/|$) ]]; then
+      framework_path="${BASH_REMATCH[1]}"
+      framework_name="${framework_path##*/}"
+      if ! verify_framework_import "$candidate" "$dependency" "$framework_path"; then
+        return 1
+      fi
+      if [[ "$(printf '%s' "$framework_name" | tr '[:upper:]' '[:lower:]')" == qt*.framework ]]; then
+        qt_import_found=1
+      fi
+    elif [[ "$dependency_lower" =~ (^|/)(lib)?qt[0-9]+ ]]; then
+      if [[ ! "$dependency_lower" =~ (^|/)(lib)?qt6([^0-9]|$) ]]; then
+        echo "ERROR: non-Qt6 import in Mach-O candidate: $candidate ($dependency)"
+        return 1
+      fi
+      qt_import_found=1
+    elif [[ "$dependency_lower" =~ (^|/)(lib)?qt[^/]*[.]dylib$ ]]; then
+      echo "ERROR: unversioned Qt dylib cannot be verified as Qt6: $candidate ($dependency)"
+      return 1
+    fi
+  done <<<"$dependency_list"
+
+  if [ "$require_qt" -eq 1 ] && [ "$qt_import_found" -eq 0 ]; then
+    echo "ERROR: main PXTOOL executable does not import Qt."
+    return 1
+  fi
+}
+
+verify_macos_qt_bundle() {
+  local app="$1"
+  local main_executable="$app/Contents/MacOS/PXTOOL"
+  local framework_dir framework_name framework_lower candidate file_description require_qt
+  local qt_framework_count=0
+
+  if [ ! -r "$main_executable" ]; then
+    echo "ERROR: main PXTOOL executable is missing or unreadable: $main_executable"
+    return 1
+  fi
+  if ! command -v file >/dev/null 2>&1 || ! command -v otool >/dev/null 2>&1; then
+    echo "ERROR: file and otool are required to validate the macOS bundle."
+    return 1
+  fi
+  if ! command -v plutil >/dev/null 2>&1 && [ ! -x /usr/libexec/PlistBuddy ]; then
+    echo "ERROR: plutil or PlistBuddy is required to validate Qt framework versions."
+    return 1
+  fi
+  if [ ! -d "$FRAMEWORKS_DIR" ]; then
+    echo "ERROR: Qt framework directory is missing: $FRAMEWORKS_DIR"
+    return 1
+  fi
+
+  while IFS= read -r -d '' framework_dir; do
+    framework_name="${framework_dir##*/}"
+    framework_lower="$(printf '%s' "$framework_name" | tr '[:upper:]' '[:lower:]')"
+    if [[ "$framework_lower" == qt*.framework ]]; then
+      if ! verify_qt_framework "$framework_dir"; then
+        return 1
+      fi
+      qt_framework_count=$((qt_framework_count + 1))
+    fi
+  done < <(find -L "$FRAMEWORKS_DIR" -type d -name '*.framework' -print0)
+
+  if [ "$qt_framework_count" -eq 0 ]; then
+    echo "ERROR: no Qt6 framework was found in the app bundle."
+    return 1
+  fi
+
+  if ! find -L "$app" -type f -print0 | while IFS= read -r -d '' candidate; do
+    if [ ! -r "$candidate" ]; then
+      echo "ERROR: bundle file is not readable: $candidate"
+      exit 1
+    fi
+    if ! file_description="$(file -b "$candidate" 2>&1)"; then
+      echo "ERROR: file could not inspect bundle candidate: $candidate"
+      printf '%s\n' "$file_description"
+      exit 1
+    fi
+    if [[ "$file_description" == *Mach-O* ]]; then
+      require_qt=0
+      if [ "$candidate" = "$main_executable" ]; then
+        require_qt=1
+      fi
+      if ! verify_macho_file "$candidate" "$require_qt"; then
+        exit 1
+      fi
+    elif is_expected_macho_candidate "$candidate" "$app"; then
+      echo "ERROR: expected Mach-O candidate is invalid: $candidate"
+      printf '%s\n' "$file_description"
+      exit 1
+    fi
+  done; then
+    return 1
+  fi
+
+  local legacy_qt_artifact legacy_qt_scan_status
+  if legacy_qt_artifact="$(find -L "$app" -type f \( \
+    -iname '*qt[0-9]*' -o -ipath '*qt[0-9]*' \
+  \) ! -ipath '*qt6*' -print -quit 2>&1)"; then
+    :
+  else
+    legacy_qt_scan_status=$?
+    echo "ERROR: failed to scan app bundle for legacy Qt artifacts (status $legacy_qt_scan_status)."
+    printf '%s\n' "$legacy_qt_artifact"
+    return "$legacy_qt_scan_status"
+  fi
+  if [ -n "$legacy_qt_artifact" ]; then
+    echo "ERROR: non-Qt6 Qt artifact remains in app bundle: $legacy_qt_artifact"
+    return 1
+  fi
+}
+
 # Step 1: Build
 if [ $SKIP_BUILD -eq 0 ]; then
   echo "[1/6] Building PXTOOL..."
@@ -107,6 +443,14 @@ if [ "$BUILD_APP" != "$DIST_APP" ]; then
 elif [ ! -d "$DIST_APP" ]; then
   echo "ERROR: built app not found at $DIST_APP"
   exit 1
+else
+  # Keep non-Qt frameworks such as Python, but force macdeployqt to rebuild
+  # the Qt frameworks and plugin tree instead of reusing stale deployment data.
+  rm -rf "$DIST_APP/Contents/PlugIns"
+  if [ -d "$FRAMEWORKS_DIR" ]; then
+    find "$FRAMEWORKS_DIR" -type d -name 'Qt*.framework' -prune -exec rm -rf {} +
+    find "$FRAMEWORKS_DIR" -type f -iname '*qt*.dylib' -exec rm -f {} +
+  fi
 fi
 
 # The build tree may contain symlinks back into package-root (e.g. share ->).
@@ -158,7 +502,25 @@ else
 fi
 
 # Step 3: macdeployqt - bundle Qt frameworks
-MACDEPLOYQT="$(which macdeployqt)"
+MACDEPLOYQT="$(command -v macdeployqt || true)"
+if [ -z "$MACDEPLOYQT" ]; then
+  echo "ERROR: macdeployqt was not found on PATH."
+  exit 1
+fi
+if MACDEPLOYQT_VERSION="$("$MACDEPLOYQT" -version 2>&1)"; then
+  :
+else
+  MACDEPLOYQT_VERSION_STATUS=$?
+  echo "ERROR: macdeployqt -version failed (status $MACDEPLOYQT_VERSION_STATUS)."
+  printf '%s\n' "$MACDEPLOYQT_VERSION"
+  exit "$MACDEPLOYQT_VERSION_STATUS"
+fi
+if ! printf '%s\n' "$MACDEPLOYQT_VERSION" \
+    | grep -Eq '^[[:space:]]*macdeployqt[[:space:]]+6([.][0-9]+){1,2}[[:space:]]*$'; then
+  echo "ERROR: macdeployqt 6 is required."
+  printf '%s\n' "$MACDEPLOYQT_VERSION"
+  exit 1
+fi
 MACDEPLOYQT_LOG="$(mktemp)"
 MACDEPLOYQT_ARGS=("$DIST_APP" -verbose=1 -no-codesign)
 for libpath in /opt/homebrew/lib /opt/homebrew/Frameworks; do
@@ -168,6 +530,7 @@ for libpath in /opt/homebrew/lib /opt/homebrew/Frameworks; do
 done
 if ! "$MACDEPLOYQT" "${MACDEPLOYQT_ARGS[@]}" >"$MACDEPLOYQT_LOG" 2>&1; then
   cat "$MACDEPLOYQT_LOG"
+  rm -f "$MACDEPLOYQT_LOG"
   exit 1
 fi
 awk '
@@ -194,6 +557,9 @@ echo "[4/6] Verifying rpath and macdeployqt-bundled dylibs..."
 # Ensure @executable_path/../Frameworks is in rpath for non-Qt libs
 install_name_tool -add_rpath "@executable_path/../Frameworks" \
   "$DIST_APP/Contents/MacOS/PXTOOL" 2>/dev/null || true
+
+echo "  Verifying all Mach-O files and Qt frameworks..."
+verify_macos_qt_bundle "$DIST_APP"
 
 # Confirm the key libs were bundled by macdeployqt
 for lib in libglib-2.0.0.dylib libusb-1.0.0.dylib libfftw3.3.dylib; do
@@ -231,14 +597,29 @@ fi
 echo "  Re-signing app bundle..."
 "$SIGN_APP_SCRIPT" "$DIST_APP"
 
-# Final check for any remaining homebrew paths
-BROKEN=$(otool -L "$DIST_APP/Contents/MacOS/PXTOOL" 2>/dev/null \
-  | grep -E "/opt/homebrew|/usr/local" | grep -v "^/usr/local/lib/libSystem" \
-  | awk '{print $1}' || true)
+# Final check for any remaining external dependencies.
+MACHO_DEPENDENCIES=""
+if MACHO_DEPENDENCIES="$(otool -L "$DIST_APP/Contents/MacOS/PXTOOL" 2>&1)"; then
+  :
+else
+  OTOOL_STATUS=$?
+  echo "ERROR: unable to inspect PXTOOL Mach-O dependencies (status $OTOOL_STATUS)."
+  printf '%s\n' "$MACHO_DEPENDENCIES"
+  exit "$OTOOL_STATUS"
+fi
+
+BROKEN=""
+if BROKEN="$(printf '%s\n' "$MACHO_DEPENDENCIES" | awk 'NR > 1 && ($1 ~ /^\/opt\/homebrew\// || $1 ~ /^\/usr\/local\//) { print $1 }')"; then
+  :
+else
+  echo "ERROR: unable to scan PXTOOL Mach-O dependencies for external paths."
+  exit 1
+fi
 
 if [ -n "$BROKEN" ]; then
-  echo "  WARNING: The following libs still reference homebrew paths:"
+  echo "ERROR: The following libs still reference external paths:"
   echo "$BROKEN" | sed 's/^/    /'
+  exit 1
 else
   echo "  All external libs resolved."
 fi

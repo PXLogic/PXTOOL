@@ -1421,7 +1421,6 @@ void Viewport::wheelEvent(QWheelEvent *event)
     int delta = 0;
     bool isVertical = true;
 
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
     x = (int)event->position().x(); 
     int anglex = event->angleDelta().x();
     int angley = event->angleDelta().y();
@@ -1434,11 +1433,6 @@ void Viewport::wheelEvent(QWheelEvent *event)
         delta = anglex;
         isVertical = false; //hori direction
     }
-#else
-    x = event->x();
-    delta = event->delta();
-    isVertical = event->orientation() == Qt::Vertical;
-#endif
 
     double zoom_scale = delta / 80;
 

@@ -62,10 +62,59 @@ fi
 if ! command -v pacman &>/dev/null; then
     echo "ERROR: pacman is required to verify the MSYS2 Qt6-only environment."
     MISSING=1
-elif pacman -Qq | grep -q '^mingw-w64-x86_64-qt5-'; then
-    echo "ERROR: MSYS2 Qt5 packages are installed."
-    echo "       Run: bash scripts/windows/prepare_qt6_msys2.sh --purge-qt5"
-    MISSING=1
+else
+    query_legacy_qt_packages() {
+        local installed_packages pacman_status legacy_qt_candidates filter_status
+
+        if installed_packages="$(pacman -Qq)"; then
+            pacman_status=0
+        else
+            pacman_status=$?
+        fi
+        if [ "$pacman_status" -ne 0 ]; then
+            echo "ERROR: pacman -Qq failed; cannot verify the MSYS2 Qt environment." >&2
+            return "$pacman_status"
+        fi
+
+        if legacy_qt_candidates="$(grep -E '^mingw-w64-x86_64-qt[0-9]+-' <<< "$installed_packages")"; then
+            :
+        else
+            filter_status=$?
+            if [ "$filter_status" -gt 1 ]; then
+                echo "ERROR: failed to filter MSYS2 packages for Qt packages." >&2
+                return "$filter_status"
+            fi
+            return 0
+        fi
+
+        if grep -v '^mingw-w64-x86_64-qt6-' <<< "$legacy_qt_candidates"; then
+            :
+        else
+            filter_status=$?
+            if [ "$filter_status" -gt 1 ]; then
+                echo "ERROR: failed to filter legacy Qt packages." >&2
+                return "$filter_status"
+            fi
+        fi
+        return 0
+    }
+
+    legacy_qt_output=""
+    if legacy_qt_output="$(query_legacy_qt_packages)"; then
+        legacy_qt_packages=()
+        if [ -n "$legacy_qt_output" ]; then
+            mapfile -t legacy_qt_packages <<< "$legacy_qt_output"
+        fi
+    else
+        MISSING=1
+        legacy_qt_packages=()
+    fi
+    if [ "${#legacy_qt_packages[@]}" -gt 0 ]; then
+        echo "ERROR: Legacy MSYS2 Qt packages are installed."
+        printf '       %s\n' "${legacy_qt_packages[@]}"
+        echo "       Run: bash scripts/windows/prepare_qt6_msys2.sh --purge-legacy-qt"
+        MISSING=1
+    fi
 fi
 
 if ! command -v npm &>/dev/null && ! [ -f "$MINGW_PREFIX/bin/npm.exe" ]; then
@@ -94,21 +143,63 @@ cd build.windows
 # CMake configuration
 # Only run CMake if CMakeCache.txt is missing or CMakeLists.txt is newer.
 # --------------------------------------------------------------------------
+find_legacy_qt_cache_refs() {
+    local qt_cache_refs qt_cache_scan_status qt_cache_ref legacy_qt_cache_refs
+
+    if [ ! -r "CMakeCache.txt" ]; then
+        echo "ERROR: CMakeCache.txt is not readable; cannot verify the Qt6 build cache."
+        return 1
+    fi
+    if qt_cache_refs="$(grep -Eio 'qt[0-9]+' CMakeCache.txt)"; then
+        :
+    else
+        qt_cache_scan_status=$?
+        if [ "$qt_cache_scan_status" -gt 1 ]; then
+            echo "ERROR: failed to scan CMakeCache.txt for legacy Qt references."
+            return "$qt_cache_scan_status"
+        fi
+    fi
+
+    legacy_qt_cache_refs=""
+    while IFS= read -r qt_cache_ref; do
+        [ -n "$qt_cache_ref" ] || continue
+        if [ "${qt_cache_ref,,}" != "qt6" ]; then
+            legacy_qt_cache_refs+="${legacy_qt_cache_refs:+$'\n'}$qt_cache_ref"
+        fi
+    done <<< "$qt_cache_refs"
+    printf '%s\n' "$legacy_qt_cache_refs"
+}
+
 NEED_CMAKE=0
 if [ ! -f "CMakeCache.txt" ]; then
     NEED_CMAKE=1
     echo "[Step 1/2] Configuring with CMake (first time setup)..."
-elif [ "$SOURCE_DIR/CMakeLists.txt" -nt "CMakeCache.txt" ]; then
-    NEED_CMAKE=1
-    echo "[Step 1/2] CMakeLists.txt changed — re-configuring with CMake..."
-elif ! grep -qx 'DSVIEW_ENABLE_UPSTREAM_COMPAT_DEMO:BOOL=ON' "CMakeCache.txt"; then
-    NEED_CMAKE=1
-    echo "[Step 1/2] Enabling upstream-compat demo and re-configuring with CMake..."
-elif grep -q 'Qt5' "CMakeCache.txt"; then
-    NEED_CMAKE=1
-    echo "[Step 1/2] Qt5 cache entries found, re-configuring with Qt6..."
 else
-    echo "[Step 1/2] CMake already configured, skipping."
+    if ! legacy_qt_cache_refs="$(find_legacy_qt_cache_refs)"; then
+        echo "ERROR: Cannot verify the existing CMake cache as Qt6-only."
+        exit 1
+    fi
+    if [ -n "$legacy_qt_cache_refs" ]; then
+        NEED_CMAKE=1
+        echo "[Step 1/2] Legacy Qt cache entries found, clearing CMake state and re-configuring with Qt6..."
+        if ! rm -rf -- CMakeCache.txt CMakeFiles; then
+            echo "ERROR: failed to remove legacy CMake cache state."
+            exit 1
+        fi
+        if [ -e "CMakeCache.txt" ] || [ -L "CMakeCache.txt" ] \
+            || [ -e "CMakeFiles" ] || [ -L "CMakeFiles" ]; then
+            echo "ERROR: legacy CMake cache state remains after cleanup."
+            exit 1
+        fi
+    elif [ "$SOURCE_DIR/CMakeLists.txt" -nt "CMakeCache.txt" ]; then
+        NEED_CMAKE=1
+        echo "[Step 1/2] CMakeLists.txt changed — re-configuring with CMake..."
+    elif ! grep -qx 'DSVIEW_ENABLE_UPSTREAM_COMPAT_DEMO:BOOL=ON' "CMakeCache.txt"; then
+        NEED_CMAKE=1
+        echo "[Step 1/2] Enabling upstream-compat demo and re-configuring with CMake..."
+    else
+        echo "[Step 1/2] CMake already configured, skipping."
+    fi
 fi
 
 if [ $NEED_CMAKE -eq 1 ]; then
@@ -127,6 +218,16 @@ if [ $NEED_CMAKE -eq 1 ]; then
         echo "ERROR: CMake configuration failed."
         exit 1
     fi
+fi
+
+if ! legacy_qt_cache_refs="$(find_legacy_qt_cache_refs)"; then
+    echo "ERROR: Cannot verify the configured CMake cache as Qt6-only."
+    exit 1
+fi
+if [ -n "$legacy_qt_cache_refs" ]; then
+    echo "ERROR: CMake reconfiguration left legacy Qt cache entries:"
+    printf '       %s\n' "$legacy_qt_cache_refs"
+    exit 1
 fi
 
 echo ""

@@ -227,10 +227,10 @@ void TitleBar::mousePressEvent(QMouseEvent* event)
 
     if(event->button() == Qt::LeftButton && ableMove && _is_able_drag) 
     {
-        int x = event->pos().x();
-        int y = event->pos().y(); 
+        int x = event->position().toPoint().x();
+        int y = event->position().toPoint().y();
         
-        if (!canStartDragAt(event->pos())) {
+        if (!canStartDragAt(event->position().toPoint())) {
             QWidget::mousePressEvent(event);
             return;
         }
@@ -239,7 +239,7 @@ void TitleBar::mousePressEvent(QMouseEvent* event)
         bool bClick = (x >= 6 && y >= 5 && x <= width() - 6);  //top window need resize hit check
  
         if (!bTopWidow || bClick ){
-#if defined(Q_OS_LINUX) && QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)
+#ifdef Q_OS_LINUX
             QWindow *window = this->window()->windowHandle();
             if (window && window->startSystemMove()) {
                 event->accept();
@@ -249,7 +249,7 @@ void TitleBar::mousePressEvent(QMouseEvent* event)
 
             _is_draging = true;             
 
-            _clickPos = event->globalPos(); 
+            _clickPos = event->globalPosition().toPoint();
 
             if (_titleParent != NULL){
                 _oldPos = _titleParent->GetParentPos();
@@ -274,8 +274,8 @@ void TitleBar::mouseMoveEvent(QMouseEvent *event)
         int datX = 0;
         int datY = 0;
 
-        datX = (event->globalPos().x() - _clickPos.x());
-        datY = (event->globalPos().y() - _clickPos.y());
+        datX = (event->globalPosition().toPoint().x() - _clickPos.x());
+        datY = (event->globalPosition().toPoint().y() - _clickPos.y());
 
         int x = _oldPos.x() + datX;
         int y = _oldPos.y() + datY;

@@ -10,6 +10,10 @@ set -euo pipefail
 #   build.linux/package/pxtool_<version>_<arch>.deb
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+# shellcheck source=scripts/linux/qt6_env.sh
+source "${ROOT_DIR}/scripts/linux/qt6_env.sh"
+qt6_init
+
 BUILD_DIR="${ROOT_DIR}/build"
 OUTPUT_DIR="${ROOT_DIR}/build.linux"
 STAGE_DIR="${OUTPUT_DIR}/package-root"
@@ -44,6 +48,8 @@ done
 
 cd "${ROOT_DIR}"
 
+qt6_prepare_build_dir "${BUILD_DIR}"
+
 if ! command -v dpkg-deb >/dev/null 2>&1; then
     echo "ERROR: dpkg-deb is required to create a .deb package."
     exit 1
@@ -51,7 +57,8 @@ fi
 
 if [ "${SKIP_BUILD}" -eq 0 ]; then
     echo "[1/4] Configure"
-    CMAKE_ARGS=(-S "${ROOT_DIR}" -B "${BUILD_DIR}" -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr)
+    CMAKE_ARGS=(-S "${ROOT_DIR}" -B "${BUILD_DIR}" -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr -DQt6_DIR="${QT6_CMAKE_DIR}")
+    qt6_prepare_build_dir "${BUILD_DIR}"
     if [ ! -f "${BUILD_DIR}/CMakeCache.txt" ] && command -v ninja >/dev/null 2>&1; then
         CMAKE_ARGS+=(-G Ninja)
     fi
@@ -82,6 +89,78 @@ if [ ! -d "${STAGE_DIR}/usr/share/libsigrokdecode/decoders/c_decoders" ]; then
     exit 1
 fi
 
+STAGED_APP="${STAGE_DIR}/usr/bin/PXTOOL"
+qt6_verify_elf_dependencies "${STAGED_APP}"
+
+qt6_verify_staged_elf_dependencies() {
+    local staged_file
+    local program_headers
+    local dynamic_output
+    local magic_bytes
+    local needed
+    local dependency
+    local dependency_lower
+
+    if ! command -v readelf >/dev/null 2>&1; then
+        echo "ERROR: readelf is required for staged ELF validation." >&2
+        return 1
+    fi
+
+    if ! find "${STAGE_DIR}" \( -type f -o -type l \) -print0 |
+        while IFS= read -r -d '' staged_file; do
+            if ! magic_bytes="$(od -An -tx1 -N4 -- "${staged_file}" 2>/dev/null)"; then
+                echo "ERROR: unable to read staged file while checking ELF magic:" >&2
+                echo "  file: ${staged_file}" >&2
+                exit 1
+            fi
+            magic_bytes="${magic_bytes//[[:space:]]/}"
+            if [ "${magic_bytes}" != "7f454c46" ]; then
+                continue
+            fi
+
+            if ! readelf -h -- "${staged_file}" >/dev/null 2>&1; then
+                echo "ERROR: unable to inspect ELF header for staged file:" >&2
+                echo "  file: ${staged_file}" >&2
+                exit 1
+            fi
+
+            if ! program_headers="$(readelf -l -- "${staged_file}" 2>/dev/null)"; then
+                echo "ERROR: unable to inspect ELF program headers for staged file:" >&2
+                echo "  file: ${staged_file}" >&2
+                exit 1
+            fi
+
+            # Static ELF files have no DYNAMIC program header and need no DT_NEEDED scan.
+            if ! grep -Eq '^[[:space:]]*DYNAMIC([[:space:]]|$)' <<<"${program_headers}"; then
+                continue
+            fi
+
+            if ! dynamic_output="$(readelf -d -- "${staged_file}" 2>/dev/null)"; then
+                echo "ERROR: unable to inspect the dynamic section for staged file:" >&2
+                echo "  file: ${staged_file}" >&2
+                exit 1
+            fi
+            needed="$(sed -n 's/.*Shared library: \[\([^]]*\)\].*/\1/p' <<<"${dynamic_output}")"
+
+            while IFS= read -r dependency; do
+                [ -n "${dependency}" ] || continue
+                dependency_lower="${dependency,,}"
+                if [[ "${dependency_lower}" =~ ^libqt([0-9]+)?[^/]*\.so([.]|$) ]] &&
+                    [[ ! "${dependency_lower}" =~ ^libqt6[^/]*\.so([.]|$) ]]; then
+                    echo "ERROR: staged ELF has a non-Qt6 Qt dependency:" >&2
+                    echo "  file: ${staged_file}" >&2
+                    echo "  dependency: ${dependency}" >&2
+                    exit 1
+                fi
+            done <<<"${needed}"
+        done; then
+        echo "ERROR: staged ELF dependency validation failed under ${STAGE_DIR}." >&2
+        return 1
+    fi
+}
+
+qt6_verify_staged_elf_dependencies
+
 echo "[4/4] Create Debian package"
 rm -rf "${DIST_DIR}"
 mkdir -p "${DIST_DIR}"
@@ -94,7 +173,7 @@ Section: electronics
 Priority: optional
 Architecture: ${DEB_ARCH}
 Maintainer: DreamSourceLab <support@dreamsourcelab.com>
-Depends: libc6, libstdc++6, libqt5core5a, libqt5gui5, libqt5widgets5, libqt5svg5, libglib2.0-0, libusb-1.0-0, zlib1g, libfftw3-double3
+Depends: libc6, libstdc++6, libqt6core6t64 | libqt6core6, libqt6gui6, libqt6widgets6, libqt6network6, libqt6svg6, qt6-qpa-plugins, libglib2.0-0, libusb-1.0-0, zlib1g, libfftw3-double3
 Description: PXTOOL logic analyzer application
  PXTOOL is a Qt-based logic analyzer application with bundled decoders,
  firmware resources, desktop integration, and udev rules for USB access.

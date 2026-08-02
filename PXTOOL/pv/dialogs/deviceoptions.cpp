@@ -463,17 +463,10 @@ void DeviceOptions::logic_probes(QVBoxLayout &layout)
     this->update_font();
 
     const int hPad = 28;
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
     enable_all_probes->setMinimumWidth(
         enable_all_probes->fontMetrics().horizontalAdvance(enable_all_probes->text()) + hPad);
     disable_all_probes->setMinimumWidth(
         disable_all_probes->fontMetrics().horizontalAdvance(disable_all_probes->text()) + hPad);
-#else
-    enable_all_probes->setMinimumWidth(
-        enable_all_probes->fontMetrics().width(enable_all_probes->text()) + hPad);
-    disable_all_probes->setMinimumWidth(
-        disable_all_probes->fontMetrics().width(disable_all_probes->text()) + hPad);
-#endif
 
     contentHeight += enable_all_probes->sizeHint().height();
     contentHeight += channel_line_height * row2 + 50;

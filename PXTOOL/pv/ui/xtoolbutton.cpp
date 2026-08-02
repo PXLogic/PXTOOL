@@ -79,11 +79,7 @@ void XToolButton::paintEvent(QPaintEvent *event)
 
     const int gap = 4;
     const QFontMetrics fm(font());
-#if QT_VERSION >= QT_VERSION_CHECK(5, 11, 0)
     const int textW = text.isEmpty() ? 0 : fm.horizontalAdvance(text);
-#else
-    const int textW = text.isEmpty() ? 0 : fm.width(text);
-#endif
     const int iconW = icon.isNull() ? 0 : iconSz.width();
     const int totalW = iconW + (icon.isNull() || text.isEmpty() ? 0 : gap) + textW;
     int x = qMax(0, (width() - totalW) / 2);
