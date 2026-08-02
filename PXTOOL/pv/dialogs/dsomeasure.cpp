@@ -71,6 +71,10 @@ DsoMeasure::DsoMeasure(SigSession *session, View &parent,
     }
 
     _layout.addWidget(_measure_tab);
+    auto *footer_divider = new QWidget(this);
+    footer_divider->setObjectName("dialog_footer_divider");
+    footer_divider->setFixedHeight(1);
+    _layout.addWidget(footer_divider);
     _layout.addWidget(&_button_box, Qt::AlignHCenter | Qt::AlignBottom);
 
     layout()->addLayout(&_layout);

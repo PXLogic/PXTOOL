@@ -24,7 +24,6 @@
 #include "winnativewidget.h"
 #include <QApplication>
 #include <QCoreApplication>
-#include <QDesktopWidget>
 #include <QScreen>
 #include <QGuiApplication>
 #include <QWindow>

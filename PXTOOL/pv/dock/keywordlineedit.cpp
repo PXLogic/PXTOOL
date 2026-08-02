@@ -258,6 +258,7 @@ void PopupLineEditInput::Popup(QWidget *editline)
 {
     assert(editline);
     _line = editline;
+    setObjectName(editline->objectName() + "_popup");
 
     _textInput->setFixedSize(editline->size());
     this->setFixedSize(editline->size());

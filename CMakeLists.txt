@@ -186,14 +186,13 @@ include_directories(${ZLIB_INCLUDE_DIRS})
 #===============================================================================
 #= Qt5 or Qt6
 #-------------------------------------------------------------------------------
-if(APPLE)
-	set(QT_VERSION_FORCE Qt6)
+if(WIN32 OR APPLE)
+	set(QT_VERSION_FORCE "6" CACHE STRING "Force the use of Qt6 by setting this option to 6" FORCE)
+else()
+	set(QT_VERSION_FORCE "" CACHE STRING "Force the use of Qt6 by setting this option to 6")
 endif()
 
-
-set(QT_VERSION_FORCE "" CACHE STRING "Force the use of Qt6 by setting this option to 6")
-
-if(NOT QT_VERSION_FORCE OR "${QT_VERSION_FORCE}" STREQUAL "5")
+if(NOT WIN32 AND NOT APPLE AND (NOT QT_VERSION_FORCE OR "${QT_VERSION_FORCE}" STREQUAL "5"))
 	find_package(Qt5Core QUIET)
 	if(Qt5Core_FOUND)
 		message("----- Qt5:")
@@ -229,7 +228,7 @@ if(NOT Qt5Core_FOUND OR "${QT_VERSION_FORCE}" STREQUAL "6")
         find_package(Qt6Network REQUIRED)
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${Qt6Widgets_EXECUTABLE_COMPILE_FLAGS}")
 	set(QT_INCLUDE_DIRS ${Qt6Gui_INCLUDE_DIRS} ${Qt6Widgets_INCLUDE_DIRS} ${Qt6Network_INCLUDE_DIRS})
-        set(QT_LIBRARIES Qt6::Gui Qt6::Widgets Qt6::Svg Qt6::Network)
+	set(QT_LIBRARIES Qt6::Core Qt6::Gui Qt6::Widgets Qt6::Svg Qt6::Network)
 	add_definitions(${Qt6Gui_DEFINITIONS} ${Qt6Widgets_DEFINITIONS} ${Qt6Network_DEFINITIONS})
 
 	if(APPLE)
@@ -430,6 +429,7 @@ if(WIN32)
 	list(APPEND DSView_SOURCES
 		PXTOOL/pv/winnativewidget.cpp
 		PXTOOL/pv/winshadow.cpp
+		PXTOOL/pv/wintaskbarprogress.cpp
 	)
 endif ()
 
@@ -562,6 +562,7 @@ if(WIN32)
 	list(APPEND DSView_HEADERS
 		PXTOOL/pv/winnativewidget.h
 		PXTOOL/pv/winshadow.h
+		PXTOOL/pv/wintaskbarprogress.h
 	)
 endif ()
 
@@ -815,6 +816,10 @@ endif()
 else()
 	link_directories(${PKGDEPS_LIBRARY_DIRS})
 	list(APPEND DSVIEW_LINK_LIBS ${PKGDEPS_LIBRARIES})
+endif()
+
+if(WIN32)
+	list(APPEND DSVIEW_LINK_LIBS -lole32 -luuid)
 endif()
 
 add_executable(${PROJECT_NAME}

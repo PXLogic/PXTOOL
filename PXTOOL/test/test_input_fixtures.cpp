@@ -19,6 +19,7 @@
 #include <QByteArray>
 #include <QFile>
 #include <QTemporaryFile>
+#include <glib.h>
 #include <zlib.h>
 #include "test_datafeed_stub.h"
 

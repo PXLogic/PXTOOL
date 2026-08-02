@@ -54,11 +54,6 @@
 #include <QDateTime>
 #include <functional>
 
-//include with qt5
-#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
-#include <QDesktopWidget>
-#endif
-
 #include "mainwindow.h"
 
 #include "data/logicsnapshot.h"
@@ -1850,9 +1845,12 @@ namespace pv
         (void)x;
         (void)y;
 
-#ifdef _WIN32 
+#ifdef _WIN32
     #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
-        QPixmap pixmap = QGuiApplication::primaryScreen()->grabWindow(QApplication::desktop->winId(), x, y, w, h);
+        QScreen *screen = QGuiApplication::screenAt(QPoint(x, y));
+        if (!screen)
+            screen = QGuiApplication::primaryScreen();
+        QPixmap pixmap = screen ? screen->grabWindow(0, x, y, w, h) : QPixmap();
     #else
         QPixmap pixmap = QPixmap::grabWidget(parentWidget());
     #endif
@@ -1865,9 +1863,8 @@ namespace pv
     #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
         QPixmap pixmap = QGuiApplication::primaryScreen()->grabWindow(winId(), x, y, w, h);
     #else
-        QDesktopWidget *desktop = QApplication::desktop();
-        int curMonitor = desktop->screenNumber(this);
-        QPixmap pixmap = QGuiApplication::screens().at(curMonitor)->grabWindow(winId(), x, y, w, h);
+        QScreen *screen = windowHandle() ? windowHandle()->screen() : QGuiApplication::primaryScreen();
+        QPixmap pixmap = screen ? screen->grabWindow(winId(), x, y, w, h) : QPixmap();
     #endif       
 #else       
         QPixmap pixmap = QGuiApplication::primaryScreen()->grabWindow(winId());

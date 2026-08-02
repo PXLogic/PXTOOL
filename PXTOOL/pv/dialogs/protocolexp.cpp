@@ -57,8 +57,6 @@ namespace dialogs {
 ProtocolExp::ProtocolExp(QWidget *parent, SigSession *session) :
     DSDialog(parent),
     _session(session),
-    _button_box(QDialogButtonBox::Ok | QDialogButtonBox::Cancel,
-        Qt::Horizontal, this),
     _export_cancel(false)
 {
     setObjectName("protocolExportDialog");
@@ -122,18 +120,20 @@ ProtocolExp::ProtocolExp(QWidget *parent, SigSession *session) :
     bot_sep->setFixedHeight(1);
     layout()->addWidget(bot_sep);
 
-    if (QPushButton *ok = _button_box.button(QDialogButtonBox::Ok))
-        ok->setObjectName("device_ok_btn");
-    if (QPushButton *cancel = _button_box.button(QDialogButtonBox::Cancel))
-        cancel->setObjectName("device_cancel_btn");
+    auto *cancel_btn = new QPushButton(tr("Cancel"), this);
+    cancel_btn->setObjectName("device_cancel_btn");
+    auto *ok_btn = new QPushButton(tr("OK"), this);
+    ok_btn->setObjectName("device_ok_btn");
     auto *footer_lay = new QHBoxLayout();
     footer_lay->setContentsMargins(12, 10, 12, 10);
     footer_lay->addStretch();
-    footer_lay->addWidget(&_button_box);
+    footer_lay->addWidget(cancel_btn);
+    footer_lay->addSpacing(8);
+    footer_lay->addWidget(ok_btn);
     layout()->addLayout(footer_lay);
 
-    connect(&_button_box, SIGNAL(accepted()), this, SLOT(accept()));
-    connect(&_button_box, SIGNAL(rejected()), this, SLOT(reject()));
+    connect(ok_btn, &QPushButton::clicked, this, &ProtocolExp::accept);
+    connect(cancel_btn, &QPushButton::clicked, this, &ProtocolExp::reject);
     connect(_session->device_event_object(), SIGNAL(device_updated()), this, SLOT(reject()));
 
 }

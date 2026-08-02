@@ -111,6 +111,9 @@ void DSDialog::normalize_button_box(QDialogButtonBox *button_box)
     if (!button_box || !button_box->layout())
         return;
 
+    if (button_box->objectName().isEmpty())
+        button_box->setObjectName("dialog_button_box");
+
     QPushButton *cancel_btn = button_box->button(QDialogButtonBox::Cancel);
     QPushButton *ok_btn = button_box->button(QDialogButtonBox::Ok);
     QPushButton *save_btn = button_box->button(QDialogButtonBox::Save);
@@ -122,6 +125,18 @@ void DSDialog::normalize_button_box(QDialogButtonBox *button_box)
     auto *btn_layout = qobject_cast<QBoxLayout *>(button_box->layout());
     if (!btn_layout)
         return;
+
+    const QList<QPushButton *> primary_buttons = {ok_btn, save_btn, yes_btn};
+    for (QPushButton *button : primary_buttons) {
+        if (button)
+            button->setObjectName("dialog_primary_button");
+    }
+
+    const QList<QPushButton *> secondary_buttons = {cancel_btn, no_btn};
+    for (QPushButton *button : secondary_buttons) {
+        if (button)
+            button->setObjectName("dialog_secondary_button");
+    }
 
     if (cancel_btn)
         btn_layout->removeWidget(cancel_btn);
@@ -190,6 +205,10 @@ int DSDialog::exec()
 { 
       //ok,cancel
     if (m_bBaseButton){
+        auto *footer_divider = new QWidget(this);
+        footer_divider->setObjectName("dialog_footer_divider");
+        footer_divider->setFixedHeight(1);
+        _main_layout->addWidget(footer_divider);
         _base_button = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel,Qt::Horizontal, this);
         normalize_button_box(_base_button);
          _main_layout->addWidget(_base_button);//, 5, 1, 1, 1, Qt::AlignHCenter | Qt::AlignBottom);

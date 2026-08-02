@@ -23,7 +23,6 @@
 #ifndef DSVIEW_PV_PROTOCOLEXP_H
 #define DSVIEW_PV_PROTOCOLEXP_H
 
-#include <QDialogButtonBox>
 #include <QFormLayout>
 #include <QVBoxLayout>
 #include <QLabel>
@@ -86,8 +85,6 @@ private:
     std::list<QLabel *> _row_label_list;
     QFormLayout *_flayout;
     QVBoxLayout *_layout;
-    QDialogButtonBox _button_box;
-
     bool _export_cancel;
     QString     _fileName; 
 };

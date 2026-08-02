@@ -25,12 +25,13 @@
 #include <cstdio>
 #include <cstring>
 #include <thread>
+#include <glib.h>
 
 #include "test_datafeed_stub.h"
 
 extern "C" {
 #include "libsigrok-internal.h"
-extern SR_PRIV struct sr_dev_driver upstream_demo_driver_info;
+                                                                                                                                                    extern SR_PRIV struct sr_dev_driver upstream_demo_driver_info;
 extern SR_PRIV struct sr_dev_driver demo_driver_info;
 extern SR_PRIV struct sr_dev_driver px_driver_test_info;
 extern char DS_USR_PATH[500];

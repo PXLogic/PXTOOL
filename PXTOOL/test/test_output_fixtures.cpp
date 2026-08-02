@@ -18,6 +18,7 @@
 #include <QByteArray>
 #include <QDir>
 #include <QTemporaryFile>
+#include <glib.h>
 
 extern "C" {
 #include "libsigrok-internal.h"

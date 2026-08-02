@@ -5,6 +5,8 @@
 # Run this once after BUILD, or when dependencies change.
 # =============================================================================
 
+export PATH="/mingw64/bin:/usr/bin:/bin:$PATH"
+
 # Resolve the MinGW64 prefix.
 # /mingw64 is the canonical path inside a MinGW64 shell, but its /lib may not
 # be fully exposed in all shell environments; fall back to the absolute path.
@@ -36,51 +38,39 @@ echo ""
 
 # --------------------------------------------------------------------------
 # Step 1: Runtime DLL dependencies (MinGW64)
-# Use ldd to find exact dependencies; fall back to copying all MinGW64 DLLs
-# if ldd is not available in the current shell environment.
+# Only copy exact dependencies. A full bin-directory fallback can deploy Qt5
+# merely because it remains installed in MSYS2.
 # --------------------------------------------------------------------------
+WINDEPLOYQT="$MINGW_PREFIX/bin/windeployqt6.exe"
+if [ ! -x "$WINDEPLOYQT" ]; then
+    echo "ERROR: Qt6 deployment tool not found: $WINDEPLOYQT"
+    exit 1
+fi
+if ! ldd PXTOOL.exe >/dev/null 2>&1; then
+    echo "ERROR: ldd is required to identify MinGW runtime dependencies."
+    exit 1
+fi
+
+rm -rf plugins
+rm -f Qt5*.dll Qt6*.dll qt.conf
+
 echo "[1/8] Copying runtime DLL dependencies..."
 COPIED=0
-SKIPPED=0
-
-# Try ldd first (works inside MinGW64 shell)
-LDD_LINES=$(ldd PXTOOL.exe 2>/dev/null | grep '/mingw64' | awk '{print $3}' | grep -v '^$' | wc -l)
-
-if [ "$LDD_LINES" -gt 0 ]; then
-    # Precise mode: only copy what ldd says is needed
-    while IFS= read -r dll_path; do
-        dll_name=$(basename "$dll_path")
-        if [ ! -f "./$dll_name" ]; then
-            cp "$dll_path" "./$dll_name" && COPIED=$((COPIED+1))
-        else
-            SKIPPED=$((SKIPPED+1))
-        fi
-    done < <(ldd PXTOOL.exe 2>/dev/null | grep '/mingw64' | awk '{print $3}' | grep -v '^$')
-    echo "  -> Copied: $COPIED DLLs, Skipped (already present): $SKIPPED"
-else
-    # Fallback: copy all MinGW64 DLLs (broader but safe)
-    echo "  -> ldd not available, copying all MinGW64 DLLs as fallback..."
-    for dll in "$MINGW_PREFIX/bin/"*.dll; do
-        dll_name=$(basename "$dll")
-        if [ ! -f "./$dll_name" ]; then
-            cp "$dll" "./$dll_name" && COPIED=$((COPIED+1))
-        else
-            SKIPPED=$((SKIPPED+1))
-        fi
-    done
-    echo "  -> Copied: $COPIED DLLs, Skipped (already present): $SKIPPED"
-fi
+while IFS= read -r dll_path; do
+    dll_name=$(basename "$dll_path")
+    case "$dll_name" in
+        Qt5*.dll) echo "ERROR: Qt5 dependency reported by ldd: $dll_name"; exit 1 ;;
+    esac
+    cp -f "$dll_path" "./$dll_name"
+    COPIED=$((COPIED + 1))
+done < <(ldd PXTOOL.exe 2>/dev/null | awk '/\/mingw64\// {print $3}' | grep -v '^$')
+echo "  -> Copied: $COPIED non-Qt runtime DLLs"
 
 # --------------------------------------------------------------------------
-# Step 2: Qt5 platform plugins
+# Step 2: Qt6 runtime and plugins
 # --------------------------------------------------------------------------
-echo "[2/8] Copying Qt5 plugins..."
-if [ ! -d plugins ]; then
-    cp -r "$MINGW_PREFIX/share/qt5/plugins" ./plugins
-    echo "  -> Qt plugins copied from $MINGW_PREFIX/share/qt5/plugins"
-else
-    echo "  -> plugins/ already present, skipping."
-fi
+echo "[2/8] Deploying Qt6 runtime and plugins..."
+"$WINDEPLOYQT" --release --no-translations --no-compiler-runtime ./PXTOOL.exe
 
 # --------------------------------------------------------------------------
 # Step 3: qt.conf (tells Qt where to find plugins relative to exe)
@@ -89,9 +79,26 @@ echo "[3/8] Writing qt.conf..."
 cat > qt.conf << 'EOF'
 [Paths]
 Prefix = .
-Plugins = ./plugins
+Plugins = .
 EOF
 echo "  -> qt.conf written."
+
+if find . -type f -iname 'Qt5*.dll' -print -quit | grep -q .; then
+    echo "ERROR: Qt5 DLL residue found in deployment."
+    exit 1
+fi
+if find . -type f -ipath '*qt5*' -print -quit | grep -q .; then
+    echo "ERROR: Qt5 plugin residue found in deployment."
+    exit 1
+fi
+if objdump -p PXTOOL.exe | grep -q 'Qt5'; then
+    echo "ERROR: PXTOOL.exe imports Qt5."
+    exit 1
+fi
+if ! objdump -p PXTOOL.exe | grep -q 'Qt6'; then
+    echo "ERROR: PXTOOL.exe does not import Qt6."
+    exit 1
+fi
 
 # --------------------------------------------------------------------------
 # Step 4: Resource directories (res, demo, themes)

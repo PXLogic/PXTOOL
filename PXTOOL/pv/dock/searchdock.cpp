@@ -190,7 +190,7 @@ void SearchDock::build_toggle_row(QWidget *host)
     _toggle_btn->setChecked(false);
     _toggle_btn->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
     _toggle_btn->setText(tr("Edit per-channel"));
-    _toggle_btn->setIcon(QIcon(":/icons/sidebar/chevron-right.svg"));
+    _toggle_btn->setIcon(QIcon(":/icons/sidebar/search-editor-collapsed.svg"));
     _toggle_btn->setIconSize(QSize(12, 12));
     _toggle_btn->setAutoRaise(true);
 
@@ -540,7 +540,7 @@ void SearchDock::on_toggle_editor(bool force_expand)
     }
     _toggle_btn->setIcon(QIcon(_editor_expanded
         ? ":/icons/sidebar/chevron-down.svg"
-        : ":/icons/sidebar/chevron-right.svg"));
+        : ":/icons/sidebar/search-editor-collapsed.svg"));
     _editor_container->setVisible(_editor_expanded);
     update_results_size();
 }
@@ -661,7 +661,7 @@ void SearchDock::reStyle()
     if (_toggle_btn) {
         _toggle_btn->setIcon(QIcon(_editor_expanded
             ? ":/icons/sidebar/chevron-down.svg"
-            : ":/icons/sidebar/chevron-right.svg"));
+            : ":/icons/sidebar/search-editor-collapsed.svg"));
     }
 }
 

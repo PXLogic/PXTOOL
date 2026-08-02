@@ -118,6 +118,92 @@ bool has_dsl_export_range_popup_device_sizing(const std::string &source)
         block.find("addRow(tr(\"Start*\")") != std::string::npos;
 }
 
+bool dialog_button_box_marks_primary_and_secondary_actions(const std::string &source)
+{
+    return source.find("setObjectName(\"dialog_primary_button\")") != std::string::npos &&
+        source.find("setObjectName(\"dialog_secondary_button\")") != std::string::npos;
+}
+
+bool dialog_footer_uses_purple_primary_action(const std::string &qss)
+{
+    const std::string primary = qss_block(qss, "QPushButton#dialog_primary_button");
+    const std::string footer = qss_block(qss, "QWidget#dialog_footer_divider");
+    return primary.find("#7c3aed") != std::string::npos &&
+        footer.find("min-height: 1px") != std::string::npos;
+}
+
+bool legacy_dialogs_have_full_width_footer_dividers(const std::string &source)
+{
+    static const char *const dialogs[] = {
+        "fftoptions.cpp", "lissajousoptions.cpp", "mathoptions.cpp",
+        "interval.cpp", "regionoptions.cpp", "dsomeasure.cpp", "waitingdialog.cpp"
+    };
+
+    for (const char *dialog : dialogs) {
+        if (read_file((std::string("PXTOOL/pv/dialogs/") + dialog).c_str())
+                .find("dialog_footer_divider") == std::string::npos)
+            return false;
+    }
+
+    return source.find("QWidget#dialog_footer_divider") != std::string::npos;
+}
+
+bool waiting_dialog_marks_late_save_action_as_primary()
+{
+    const std::string source = read_file("PXTOOL/pv/dialogs/waitingdialog.cpp");
+    return source.find("_button_box.addButton(QDialogButtonBox::Save)") != std::string::npos &&
+        source.find("save_button->setObjectName(\"dialog_primary_button\")") != std::string::npos;
+}
+
+bool has_compact_collapsed_search_editor_icon(const std::string &source)
+{
+    const std::string marker = "void SearchDock::on_toggle_editor(";
+    const std::string::size_type start = source.find(marker);
+    if (start == std::string::npos)
+        return false;
+
+    const std::string block = source.substr(start);
+    return block.find("search-editor-collapsed.svg") != std::string::npos;
+}
+
+bool popup_items_match_device_dropdown(const std::string &qss, const char *dialog)
+{
+    const std::string selector = std::string(dialog) + " QComboBox QAbstractItemView::item";
+    const std::string item = qss_block(qss, selector.c_str());
+    const std::string selected = qss_block(qss, (selector + ":selected").c_str());
+    const std::string hover = qss_block(qss, (selector + ":hover").c_str());
+    return item.find("min-height: 20px") != std::string::npos &&
+        item.find("padding: 4px 12px") != std::string::npos &&
+        item.find("border: 1px solid transparent") != std::string::npos &&
+        selected.find("background-color: #7c3aed") != std::string::npos &&
+        selected.find("color: #ffffff") != std::string::npos &&
+        hover.find("background-color: #7c3aed") != std::string::npos &&
+        hover.find("color: #ffffff") != std::string::npos;
+}
+
+bool protocol_dialog_uses_primary_push_button(const char *path)
+{
+    const std::string source = read_file(path);
+    return source.find("new QPushButton(tr(\"OK\"), this)") != std::string::npos &&
+        source.find("ok_btn->setObjectName(\"device_ok_btn\")") != std::string::npos &&
+        source.find("QDialogButtonBox") == std::string::npos;
+}
+
+bool popup_line_edit_inherits_source_object_name()
+{
+    const std::string source = read_file("PXTOOL/pv/dock/keywordlineedit.cpp");
+    return source.find("setObjectName(editline->objectName() + \"_popup\")") !=
+        std::string::npos;
+}
+
+bool has_centered_protocol_search_popup_cursor(const std::string &qss)
+{
+    const std::string block = qss_block(qss,
+        "QDialog#decode_ann_search_edit_popup QLineEdit");
+    return block.find("border: none") != std::string::npos &&
+        block.find("padding: 0px 4px 2px 4px") != std::string::npos;
+}
+
 } // namespace
 
 BOOST_AUTO_TEST_SUITE(theme_qss)
@@ -187,6 +273,79 @@ BOOST_AUTO_TEST_CASE(dsl_export_range_popup_matches_device_popup_sizing)
     const std::string source = read_file("PXTOOL/pv/dialogs/storeprogress.cpp");
 
     BOOST_TEST(has_dsl_export_range_popup_device_sizing(source));
+}
+
+BOOST_AUTO_TEST_CASE(dialog_button_boxes_use_standard_primary_and_secondary_actions)
+{
+    const std::string source = read_file("PXTOOL/pv/dialogs/dsdialog.cpp");
+
+    BOOST_TEST(dialog_button_box_marks_primary_and_secondary_actions(source));
+}
+
+BOOST_AUTO_TEST_CASE(dialog_button_box_footers_match_export_data_actions)
+{
+    const std::string light = read_file("PXTOOL/themes/light.qss");
+    const std::string dark = read_file("PXTOOL/themes/dark.qss");
+
+    BOOST_TEST(dialog_footer_uses_purple_primary_action(light));
+    BOOST_TEST(dialog_footer_uses_purple_primary_action(dark));
+}
+
+BOOST_AUTO_TEST_CASE(legacy_dialogs_define_full_width_footer_dividers)
+{
+    const std::string light = read_file("PXTOOL/themes/light.qss");
+    const std::string dark = read_file("PXTOOL/themes/dark.qss");
+
+    BOOST_TEST(legacy_dialogs_have_full_width_footer_dividers(light));
+    BOOST_TEST(legacy_dialogs_have_full_width_footer_dividers(dark));
+}
+
+BOOST_AUTO_TEST_CASE(waiting_dialog_save_action_uses_the_primary_style)
+{
+    BOOST_TEST(waiting_dialog_marks_late_save_action_as_primary());
+}
+
+BOOST_AUTO_TEST_CASE(search_editor_uses_a_compact_collapsed_icon)
+{
+    const std::string source = read_file("PXTOOL/pv/dock/searchdock.cpp");
+
+    BOOST_TEST(has_compact_collapsed_search_editor_icon(source));
+}
+
+BOOST_AUTO_TEST_CASE(protocol_list_popup_hover_matches_device_dropdown)
+{
+    const std::string light = read_file("PXTOOL/themes/light.qss");
+    const std::string dark = read_file("PXTOOL/themes/dark.qss");
+
+    BOOST_TEST(popup_items_match_device_dropdown(light, "QDialog#protocolListDialog"));
+    BOOST_TEST(popup_items_match_device_dropdown(dark, "QDialog#protocolListDialog"));
+}
+
+BOOST_AUTO_TEST_CASE(protocol_export_popup_hover_matches_device_dropdown)
+{
+    const std::string light = read_file("PXTOOL/themes/light.qss");
+    const std::string dark = read_file("PXTOOL/themes/dark.qss");
+
+    BOOST_TEST(popup_items_match_device_dropdown(light, "QDialog#protocolExportDialog"));
+    BOOST_TEST(popup_items_match_device_dropdown(dark, "QDialog#protocolExportDialog"));
+}
+
+BOOST_AUTO_TEST_CASE(protocol_dialog_ok_buttons_use_primary_style)
+{
+    BOOST_TEST(protocol_dialog_uses_primary_push_button(
+        "PXTOOL/pv/dialogs/protocollist.cpp"));
+    BOOST_TEST(protocol_dialog_uses_primary_push_button(
+        "PXTOOL/pv/dialogs/protocolexp.cpp"));
+}
+
+BOOST_AUTO_TEST_CASE(protocol_search_popup_centers_its_edit_cursor)
+{
+    const std::string light = read_file("PXTOOL/themes/light.qss");
+    const std::string dark = read_file("PXTOOL/themes/dark.qss");
+
+    BOOST_TEST(popup_line_edit_inherits_source_object_name());
+    BOOST_TEST(has_centered_protocol_search_popup_cursor(light));
+    BOOST_TEST(has_centered_protocol_search_popup_cursor(dark));
 }
 
 BOOST_AUTO_TEST_SUITE_END()

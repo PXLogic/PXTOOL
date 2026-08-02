@@ -45,6 +45,16 @@ struct DiskCacheSettings {
         return gb == 0 ? QStringLiteral("Unlimited") : format_gb_text(gb);
     }
 
+    static uint64_t stream_sample_limit(uint64_t disk_limit_gb,
+                                        uint64_t channel_count)
+    {
+        if (disk_limit_gb == 0 || channel_count == 0)
+            return 0;
+
+        return disk_limit_gb * 1024ULL * 1024ULL * 1024ULL * 8 /
+               channel_count;
+    }
+
     static bool parse_ram_limit_text(const QString& text, uint64_t& out_gb)
     {
         QString t = normalized_size_text(text);
