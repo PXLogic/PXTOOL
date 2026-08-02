@@ -22,6 +22,54 @@ Python decoders under `libsigrokdecode/`.
 
 ## Build Notes
 
+Run the platform commands from the PXTOOL repository root.
+
+### Linux (Debian/Ubuntu)
+
+Install the build dependencies:
+
+```bash
+sudo apt update
+sudo apt install git gcc g++ make cmake pkg-config \
+  qt6-base-dev qt6-svg-dev qt6-tools-dev qt6-l10n-tools \
+  libglib2.0-dev zlib1g-dev libusb-1.0-0-dev libboost-dev \
+  libfftw3-dev python3-dev libudev-dev \
+  libgl1-mesa-dev libxkbcommon-dev libvulkan-dev
+```
+
+Build and run PXTOOL with:
+
+```bash
+bash scripts/linux/build_and_run.sh
+```
+
+To create a Debian package instead, run:
+
+```bash
+bash scripts/linux/package-linux.sh
+```
+
+The Qt6 development packages are required even when the Qt runtime libraries
+are already installed. In particular, `qt6-svg-dev` provides the `Qt6Svg` CMake
+configuration and `qt6-tools-dev` provides `Qt6LinguistTools`.
+
+### Windows (MSYS2 MinGW64)
+
+Install the Qt6 MinGW64 toolchain and dependencies in MSYS2, then run the
+incremental build and deployment command from a Windows command prompt:
+
+```bat
+scripts\windows\BUILD.bat
+```
+
+For a clean rebuild followed by deployment and release ZIP creation, run:
+
+```bat
+scripts\windows\FULL_BUILD.bat
+```
+
+### macOS
+
 On macOS, the local app bundle is generated at:
 
 ```text
