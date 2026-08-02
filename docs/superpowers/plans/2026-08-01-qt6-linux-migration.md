@@ -8,6 +8,8 @@
 
 **Tech Stack:** CMake, Qt 6.10, C++17, Bash, Debian `dpkg-deb`/`readelf`, MSYS2 MinGW64, macOS `macdeployqt`, CTest.
 
+**Status (2026-08-02):** All tasks are complete. Active-source hygiene, functional testing, Qt6 toolchain checks, and Linux package validation pass. The Ubuntu host has no installed Qt5-family packages or `qtchooser`.
+
 ---
 
 ## File Map
@@ -47,7 +49,7 @@ No project documentation files are modified. The design and plan documents are p
 
 - Create: `scripts/linux/qt6_env.sh`
 
-- [ ] **Step 1: Create the helper with explicit Qt6 discovery and validation.**
+- [x] **Step 1: Create the helper with explicit Qt6 discovery and validation.**
 
 Add this complete implementation:
 
@@ -161,7 +163,7 @@ qt6_verify_elf_dependencies() {
 }
 ```
 
-- [ ] **Step 2: Run shell syntax and a real Qt6 discovery smoke test.**
+- [x] **Step 2: Run shell syntax and a real Qt6 discovery smoke test.**
 
 Run:
 
@@ -176,7 +178,7 @@ test -x "${QT6_BIN_DIR}/lrelease"
 
 Expected: `qt6_init` prints version `6.10.2`, the Qt6 tools directory, and the Qt6 CMake directory; all tests exit with status 0.
 
-- [ ] **Step 3: Commit the helper independently.**
+- [x] **Step 3: Commit the helper independently.**
 
 ```bash
 git add scripts/linux/qt6_env.sh
@@ -190,7 +192,7 @@ git commit -m "build: add shared Linux Qt6 environment checks"
 - Modify: `CMakeLists.txt:186-244,724-751`
 - Modify: `PXTOOL/test/CMakeLists.txt:20-30`
 
-- [ ] **Step 1: Replace the Qt selection block with one required Qt6 component lookup.**
+- [x] **Step 1: Replace the Qt selection block with one required Qt6 component lookup.**
 
 Replace the complete block beginning at `#= Qt5 or Qt6` and ending at the Qt availability error with:
 
@@ -221,7 +223,7 @@ endif()
 
 This removes `QT_VERSION_FORCE`, all Qt5 discovery variables, the Qt5 target list, and the dual-version fatal error. Keep the existing include-directory and target-linking structure below this block.
 
-- [ ] **Step 2: Make translation and Qt code generation unconditional Qt6.**
+- [x] **Step 2: Make translation and Qt code generation unconditional Qt6.**
 
 Replace the conditional generation blocks with:
 
@@ -240,7 +242,7 @@ qt6_wrap_ui(DSView_FORMS_HEADERS ${DSView_FORMS})
 qt6_add_resources(DSView_RESOURCES_RCC ${DSView_RESOURCES})
 ```
 
-- [ ] **Step 3: Make test resource generation unconditional Qt6.**
+- [x] **Step 3: Make test resource generation unconditional Qt6.**
 
 Replace lines 24-30 of `PXTOOL/test/CMakeLists.txt` with:
 
@@ -248,7 +250,7 @@ Replace lines 24-30 of `PXTOOL/test/CMakeLists.txt` with:
 qt6_add_resources(DSVIEW_TEST_RESOURCES ${DSVIEW_TEST_QRC})
 ```
 
-- [ ] **Step 4: Configure a minimal clean Qt6 tree before compiling.**
+- [x] **Step 4: Configure a minimal clean Qt6 tree before compiling.**
 
 Run:
 
@@ -262,7 +264,7 @@ cmake -S . -B build.qt6-config \
 
 Expected: configure succeeds, prints the Qt6 section, and does not create any `Qt5*` CMake package entries in `build.qt6-config/CMakeCache.txt`.
 
-- [ ] **Step 5: Commit the CMake-only conversion.**
+- [x] **Step 5: Commit the CMake-only conversion.**
 
 ```bash
 git add CMakeLists.txt PXTOOL/test/CMakeLists.txt
@@ -281,7 +283,7 @@ git commit -m "build: require Qt6 in CMake"
 - Modify: `PXTOOL/pv/mainwindow.cpp`
 - Modify: `PXTOOL/pv/toolbars/titlebar.cpp`
 
-- [ ] **Step 1: Simplify startup high-DPI setup.**
+- [x] **Step 1: Simplify startup high-DPI setup.**
 
 In `PXTOOL/main.cpp`, remove the `bHighScale` block, the temporary `QApplication`, and the `AA_DisableHighDpiScaling`, `AA_EnableHighDpiScaling`, and `AA_UseHighDpiPixmaps` calls. Keep the fractional scale policy as an unconditional Qt6 call before constructing the final application:
 
@@ -293,7 +295,7 @@ QGuiApplication::setHighDpiScaleFactorRoundingPolicy(
     Qt::HighDpiScaleFactorRoundingPolicy::PassThrough);
 ```
 
-- [ ] **Step 2: Remove Qt version checks from application paths and encoding.**
+- [x] **Step 2: Remove Qt version checks from application paths and encoding.**
 
 Replace both `GetUserDataDir()` and `GetProfileDir()` bodies in `appconfig.cpp` with:
 
@@ -327,7 +329,7 @@ void set_utf8(QTextStream &stream)
 
 Rewrite the Qt-version-specific comment in `path.cpp` without naming a Qt major/minor version; preserve the direct UTF-8 behavior.
 
-- [ ] **Step 3: Use the Qt6 native event signature consistently.**
+- [x] **Step 3: Use the Qt6 native event signature consistently.**
 
 In `mainframe.h`, replace the whole conditional declaration with:
 
@@ -362,7 +364,7 @@ bool MainFrame::nativeEvent(const QByteArray &eventType, void *message, qintptr 
 }
 ```
 
-- [ ] **Step 4: Keep only Qt6 screenshot implementations.**
+- [x] **Step 4: Keep only Qt6 screenshot implementations.**
 
 In `mainwindow.cpp`, remove the Qt5 alternatives under the Windows and macOS branches. Preserve the existing Qt6 statements:
 
@@ -383,11 +385,11 @@ In `mainwindow.cpp`, remove the Qt5 alternatives under the Windows and macOS bra
 #endif
 ```
 
-- [ ] **Step 5: Remove the Linux Qt version guard from title-bar movement.**
+- [x] **Step 5: Remove the Linux Qt version guard from title-bar movement.**
 
 Change `#if defined(Q_OS_LINUX) && QT_VERSION >= ...` to `#ifdef Q_OS_LINUX` and remove its matching Qt-only conditional lines. Keep `startSystemMove()` and the fallback drag path unchanged. If the Qt6 compiler reports the deprecated `globalPos()` call under the project warning policy, replace it with `event->globalPosition().toPoint()` without changing the stored coordinate semantics.
 
-- [ ] **Step 6: Build the affected source group with Qt6.**
+- [x] **Step 6: Build the affected source group with Qt6.**
 
 Run:
 
@@ -397,7 +399,7 @@ cmake --build build.qt6-config --target DSView --parallel 2
 
 Expected: compilation reaches the linker without Qt5 headers, `QTextCodec`, or Qt5 native-event signature errors. Fix only Qt6 compile errors exposed by this source group before proceeding.
 
-- [ ] **Step 7: Commit the startup and platform source conversion.**
+- [x] **Step 7: Commit the startup and platform source conversion.**
 
 ```bash
 git add PXTOOL/main.cpp PXTOOL/pv/config/appconfig.cpp \
@@ -424,7 +426,7 @@ git commit -m "refactor: remove Qt5 source compatibility paths"
 - Modify: `PXTOOL/pv/view/edge_nav_button.h`, `PXTOOL/pv/view/edge_nav_button.cpp`
 - Modify: `PXTOOL/pv/widgets/decodermenu.cpp`
 
-- [ ] **Step 1: Replace all Qt5 font metric branches.**
+- [x] **Step 1: Replace all Qt5 font metric branches.**
 
 In `xtoolbutton.cpp`, `deviceoptionsdock.cpp`, `measuredock.cpp`, and `dialogs/deviceoptions.cpp`, remove each Qt version conditional and retain the Qt6 expression. The resulting expressions must be:
 
@@ -440,7 +442,7 @@ disable_all_probes->fontMetrics().horizontalAdvance(disable_all_probes->text())
 
 Keep each file's existing padding and width calculations exactly as written.
 
-- [ ] **Step 2: Use Qt6 wheel APIs in the numeric editor and waveform views.**
+- [x] **Step 2: Use Qt6 wheel APIs in the numeric editor and waveform views.**
 
 In `keywordlineedit.cpp`, replace the conditional with:
 
@@ -454,7 +456,7 @@ if (event->angleDelta().y() > 0) {
 
 In `header.cpp` and `viewport.cpp`, remove the old `event->x()`, `event->delta()`, `event->orientation()`, and `event->pos()` branch. Retain the current Qt6 calculation that reads `event->position()` and `event->angleDelta()`, including horizontal-versus-vertical selection and the existing macOS wheel behavior. Remove only the Qt version preprocessor wrappers around that calculation and the old branch.
 
-- [ ] **Step 3: Remove Qt5-only headers and API alternatives.**
+- [x] **Step 3: Remove Qt5-only headers and API alternatives.**
 
 Apply these exact Qt6-only forms:
 
@@ -479,7 +481,7 @@ connect(&_mapper, SIGNAL(mappedObject(QObject*)), this, SLOT(on_action(QObject*)
 
 Remove `QRegExp`, `QRegExpValidator`, `QStyleOption::init`, and `QVariant::userType()` alternatives. Do not add a new wrapper abstraction.
 
-- [ ] **Step 4: Make `EdgeNavButton` Qt6-only.**
+- [x] **Step 4: Make `EdgeNavButton` Qt6-only.**
 
 In the header, include `<QEnterEvent>` unconditionally and declare:
 
@@ -498,7 +500,7 @@ void EdgeNavButton::enterEvent(QEnterEvent *event)
 }
 ```
 
-- [ ] **Step 5: Build and run the existing test target.**
+- [x] **Step 5: Build and run the existing test target.**
 
 Reconfigure the tree with tests enabled, then build and run it:
 
@@ -514,7 +516,7 @@ ctest --test-dir build.qt6-config --output-on-failure
 
 Expected: the Qt6 test executable builds and all registered tests pass. A failure caused by a removed Qt5 API is fixed in the corresponding file only; no Qt5 compatibility branch is reintroduced.
 
-- [ ] **Step 6: Commit the widget and event conversion.**
+- [x] **Step 6: Commit the widget and event conversion.**
 
 ```bash
 git add PXTOOL/pv/ui/xtoolbutton.cpp \
@@ -534,7 +536,7 @@ git commit -m "refactor: use Qt6 widget and event APIs"
 - Modify: `scripts/linux/build_and_run.sh`
 - Modify: `scripts/linux/package-linux.sh`
 
-- [ ] **Step 1: Source and initialize the Qt6 helper in both scripts.**
+- [x] **Step 1: Source and initialize the Qt6 helper in both scripts.**
 
 Immediately after each script computes `ROOT_DIR`, add:
 
@@ -552,7 +554,7 @@ qt6_prepare_build_dir "${BUILD_DIR}"
 
 This ensures a stale generated cache is removed before the new configure.
 
-- [ ] **Step 2: Pass the resolved Qt6 CMake package directory.**
+- [x] **Step 2: Pass the resolved Qt6 CMake package directory.**
 
 Append this argument to both `CMAKE_ARGS` arrays:
 
@@ -562,7 +564,7 @@ Append this argument to both `CMAKE_ARGS` arrays:
 
 Keep the existing build types, upstream demo setting, generator selection, web UI target, runtime staging, and launch behavior.
 
-- [ ] **Step 3: Change Linux Debian dependencies to Qt6.**
+- [x] **Step 3: Change Linux Debian dependencies to Qt6.**
 
 Replace the `Depends:` line in `package-linux.sh` with:
 
@@ -572,7 +574,7 @@ Depends: libc6, libstdc++6, libqt6core6t64 | libqt6core6, libqt6gui6, libqt6widg
 
 This keeps the current Ubuntu 26.04 core package name first and allows the older core package name as a Debian dependency alternative.
 
-- [ ] **Step 4: Validate the staged Linux executable before writing the package.**
+- [x] **Step 4: Validate the staged Linux executable before writing the package.**
 
 After `cmake --install` and the existing web UI/C decoder checks, add:
 
@@ -583,7 +585,7 @@ qt6_verify_elf_dependencies "${STAGED_APP}"
 
 The existing `readelf`-based helper must fail before `DEBIAN/control` is written when a Qt6 component is missing or a different Qt major version is present.
 
-- [ ] **Step 5: Add Linux shell validation.**
+- [x] **Step 5: Add Linux shell validation.**
 
 Run:
 
@@ -594,7 +596,7 @@ git diff --check
 
 Expected: all commands exit 0.
 
-- [ ] **Step 6: Commit the Linux script integration.**
+- [x] **Step 6: Commit the Linux script integration.**
 
 ```bash
 git add scripts/linux/qt6_env.sh scripts/linux/build_and_run.sh scripts/linux/package-linux.sh
@@ -611,7 +613,7 @@ git commit -m "build: make Linux scripts Qt6-only"
 - Modify: `scripts/windows/prepare_qt6_msys2.sh`
 - Modify: `scripts/macOS/package-macos.sh`
 
-- [ ] **Step 1: Make the MSYS2 preparation script detect only non-Qt6 packages generically.**
+- [x] **Step 1: Make the MSYS2 preparation script detect only non-Qt6 packages generically.**
 
 In `prepare_qt6_msys2.sh`:
 
@@ -630,7 +632,7 @@ mapfile -t legacy_qt_packages < <(
 - Keep the confirmation prompt and `pacman -Rns -- "${legacy_qt_packages[@]}"` removal.
 - Change all messages and the final verification to refer to legacy/non-Qt6 packages, without naming an older Qt major version.
 
-- [ ] **Step 2: Make the Windows build script reject any non-Qt6 package or cache entry.**
+- [x] **Step 2: Make the Windows build script reject any non-Qt6 package or cache entry.**
 
 Replace the package check with a `legacy_qt_packages` array using the same two-stage `grep` filter as Step 1. Replace the cache check with:
 
@@ -644,7 +646,7 @@ fi
 
 Keep `Qt6_DIR`, the Qt6 `lrelease` lookup, and the existing Qt6 package requirement unchanged.
 
-- [ ] **Step 3: Make Windows deployment use a Qt6 whitelist.**
+- [x] **Step 3: Make Windows deployment use a Qt6 whitelist.**
 
 In `deploy_script.sh`:
 
@@ -655,7 +657,7 @@ In `deploy_script.sh`:
 
 The resulting script must not copy or accept an unapproved Qt runtime.
 
-- [ ] **Step 4: Make the Windows full-build cleanup generic.**
+- [x] **Step 4: Make the Windows full-build cleanup generic.**
 
 Replace the two version-specific DLL deletion lines in `FULL_BUILD.bat` with:
 
@@ -665,7 +667,7 @@ del /f /q build.windows\Qt*.dll 2>nul
 
 The Qt6 deployment step will restore the required Qt6 DLLs afterward.
 
-- [ ] **Step 5: Verify macOS selects Qt6 `macdeployqt`.**
+- [x] **Step 5: Verify macOS selects Qt6 `macdeployqt`.**
 
 In `package-macos.sh`, resolve the command safely and fail if it is absent:
 
@@ -683,7 +685,7 @@ fi
 
 Keep the existing framework bundling and optional-plugin cleanup.
 
-- [ ] **Step 6: Check all touched shell scripts and batch edits.**
+- [x] **Step 6: Check all touched shell scripts and batch edits.**
 
 Run:
 
@@ -697,7 +699,7 @@ rg -n -i 'qt5|qt 5|qt_version_check\(5|qt5_' \
 
 Expected: the first command exits 0. The second command prints no active-code matches; documentation files remain outside the scan.
 
-- [ ] **Step 7: Commit the cross-platform deployment cleanup.**
+- [x] **Step 7: Commit the cross-platform deployment cleanup.**
 
 ```bash
 git add scripts/windows/build_script.sh scripts/windows/deploy_script.sh \
@@ -712,7 +714,7 @@ git commit -m "build: enforce Qt6-only desktop deployment"
 
 - System package state only; no repository files.
 
-- [ ] **Step 1: Install or refresh the Qt6 development and tooling packages first.**
+- [x] **Step 1: Install or refresh the Qt6 development and tooling packages first.**
 
 Run:
 
@@ -724,7 +726,7 @@ sudo apt-get install --reinstall \
 
 Expected: `qmake6`, Qt6 headers, Qt6 CMake files, Qt6 SVG development files, and Qt6 `lrelease` remain available.
 
-- [ ] **Step 2: Resolve and inspect the exact installed legacy package list.**
+- [x] **Step 2: Resolve and inspect the exact installed legacy package list.**
 
 Run this read-only package inventory:
 
@@ -739,7 +741,7 @@ printf '%s\n' "${legacy_qt_packages[@]}"
 
 Expected: the list contains only Qt5-family packages and `qtchooser`; no Qt6 package appears.
 
-- [ ] **Step 3: Simulate removal and inspect the package solver result.**
+- [x] **Step 3: Simulate removal and inspect the package solver result.**
 
 Run:
 
@@ -749,7 +751,7 @@ sudo apt-get -s purge "${legacy_qt_packages[@]}"
 
 Proceed only when the removal list contains the intended Qt5 packages and Qt5-only dependencies, does not remove Qt6 packages, and does not remove unrelated manually installed applications.
 
-- [ ] **Step 4: Purge the reviewed exact package list.**
+- [x] **Step 4: Purge the reviewed exact package list.**
 
 Run:
 
@@ -759,7 +761,7 @@ sudo apt-get purge "${legacy_qt_packages[@]}"
 
 Do not run an unrestricted `apt autoremove`. If the simulation identifies an additional package as a Qt5-only dependency, add that exact package to the reviewed command and repeat the simulation before purging it.
 
-- [ ] **Step 5: Verify the direct Qt6 tool entry points.**
+- [x] **Step 5: Verify the direct Qt6 tool entry points.**
 
 Run:
 
@@ -772,7 +774,7 @@ test -f "$(qmake6 -query QT_INSTALL_LIBS)/cmake/Qt6/Qt6Config.cmake"
 
 Expected: both tools report Qt6 6.10.2 and the Qt6 CMake package exists. A generic `qmake` or `lrelease` alias may be absent after removing `qtchooser`; all project scripts use the direct Qt6 paths.
 
-- [ ] **Step 6: Commit no system state to Git; record the verification in the final handoff.**
+- [x] **Step 6: Commit no system state to Git; record the verification in the final handoff.**
 
 The package transition is machine state, not repository content. Report the installed Qt6 version and the absence of Qt5 packages after the final build verification.
 
@@ -782,7 +784,7 @@ The package transition is machine state, not repository content. Report the inst
 
 - Generated only: `build.qt6`, `build.linux`, and package staging/output directories.
 
-- [ ] **Step 1: Run the active-code Qt5 scan and source hygiene checks.**
+- [x] **Step 1: Run the active-code Qt5 scan and source hygiene checks.**
 
 Run:
 
@@ -798,7 +800,7 @@ git diff --check
 
 Expected: the scan prints no matches and `git diff --check` exits 0. Historical docs can still contain their original Qt5 text.
 
-- [ ] **Step 2: Configure a clean Qt6 test build.**
+- [x] **Step 2: Configure a clean Qt6 test build.**
 
 Run:
 
@@ -812,7 +814,7 @@ cmake -S . -B build.qt6 \
 
 Expected: configuration succeeds with Qt6 and `rg -n -i 'qt[0-9]+' build.qt6/CMakeCache.txt | grep -v -i 'qt6'` prints no lines.
 
-- [ ] **Step 3: Build and test all configured targets.**
+- [x] **Step 3: Build and test all configured targets.**
 
 Run:
 
@@ -823,7 +825,7 @@ ctest --test-dir build.qt6 --output-on-failure
 
 Expected: the main executable, test executable, C decoders, and web UI dependencies build successfully; CTest reports all tests passed.
 
-- [ ] **Step 4: Build the Linux package through the production script.**
+- [x] **Step 4: Build the Linux package through the production script.**
 
 Run:
 
@@ -833,7 +835,7 @@ bash scripts/linux/package-linux.sh
 
 Expected: the script configures with the helper's Qt6 CMake directory, builds, stages resources, validates ELF dependencies, and creates `build.linux/package/pxtool_1.0.0_<arch>.deb`.
 
-- [ ] **Step 5: Inspect package metadata and ELF linkage.**
+- [x] **Step 5: Inspect package metadata and ELF linkage.**
 
 Run:
 
@@ -846,7 +848,7 @@ readelf -d build.linux/package-root/usr/bin/PXTOOL | sed -n 's/.*Shared library:
 
 Expected: `Depends` contains only Qt6 package names/alternatives; the ELF output contains `libQt6Core`, `libQt6Gui`, `libQt6Widgets`, `libQt6Network`, and `libQt6Svg`, with no other Qt major version.
 
-- [ ] **Step 6: Verify packaged resources remain complete.**
+- [x] **Step 6: Verify packaged resources remain complete.**
 
 Run:
 
@@ -858,7 +860,7 @@ test -f build.linux/package-root/usr/share/PXTOOL/logo.svg
 
 Expected: all three checks pass and the existing web UI, C decoder, and application logo remain installed.
 
-- [ ] **Step 7: Verify final repository and machine state.**
+- [x] **Step 7: Verify final repository and machine state.**
 
 Run:
 
@@ -873,7 +875,7 @@ git status --short
 
 Expected: the package scan prints no installed Qt5-family package, Qt6 tools report 6.10.2, and Git shows only the intended implementation changes plus the committed process documents.
 
-- [ ] **Step 8: Commit the verified implementation.**
+- [x] **Step 8: Commit the verified implementation.**
 
 ```bash
 git add CMakeLists.txt PXTOOL scripts/linux scripts/windows scripts/macOS
@@ -881,6 +883,8 @@ git commit -m "feat: migrate Linux builds to Qt6"
 ```
 
 ## Plan Self-Review
+
+**Execution alignment (2026-08-02):** The implementation, product-level verification, and host cleanup are complete. The host package scan produced no Qt5-family or `qtchooser` entries, while `qmake6` and `lrelease` both reported Qt 6.10.2. No `apt autoremove` was used.
 
 - Spec coverage: Qt6-only CMake and tests are covered by Task 2; source API cleanup by Tasks 3-4; Linux tool discovery, stale-cache handling, package dependencies, and ELF validation by Tasks 1 and 5; Windows/macOS deployment enforcement by Task 6; machine package migration by Task 7; full build, CTest, package, resource, and system verification by Task 8.
 - Completeness scan: this plan contains no unresolved markers or deferred implementation step; every code change has a target file and concrete replacement or command.
