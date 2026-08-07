@@ -22,12 +22,18 @@ export PATH="$MINGW_PREFIX/bin:/usr/bin:/bin:$PATH"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SOURCE_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
 BUILD_DIR="$SOURCE_DIR/build.windows"
+CLEANUP_STALE_INSTALL_CHECKS="$SCRIPT_DIR/cleanup_stale_install_checks.sh"
 
 cd "$BUILD_DIR" || { echo "ERROR: build.windows not found"; exit 1; }
 
 if [ ! -f PXTOOL.exe ]; then
     echo "ERROR: PXTOOL.exe not found in $BUILD_DIR"
     echo "Please run scripts/windows/BUILD.bat first."
+    exit 1
+fi
+
+if ! bash "$CLEANUP_STALE_INSTALL_CHECKS" "$BUILD_DIR"; then
+    echo "ERROR: failed to remove stale install verification directories."
     exit 1
 fi
 

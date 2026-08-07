@@ -25,6 +25,13 @@ for %%D in (CMakeFiles PXTOOL) do (
         )
     )
 )
+for /d %%D in ("build.windows\install-webui-check-*") do (
+    rmdir /s /q "%%~fD" 2>nul
+    if exist "%%~fD\" (
+        echo [ERROR] Could not remove stale install verification directory: %%~fD
+        exit /b 1
+    )
+)
 for %%D in (plugins accessible assetimporters platforms platforminputcontexts platformthemes imageformats iconengines styles generic geoservices multimedia positioning qml qmltooling renderers sceneparsers sensors texttospeech virtualkeyboard webview tls bearer canbus printsupport sqldrivers networkinformation xcbglintegrations egldeviceintegrations wayland-decoration-client wayland-graphics-integration-client wayland-shell-integration translations) do (
     rmdir /s /q "build.windows\%%D" 2>nul
     if exist "build.windows\%%D\" (
