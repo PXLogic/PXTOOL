@@ -20,6 +20,15 @@ DIST_APP="${DIST_DIR}/PXTOOL.app"
 FRAMEWORKS_DIR="${DIST_APP}/Contents/Frameworks"
 DMG_OUT="${DIST_DIR}/PXTOOL.dmg"
 SIGN_APP_SCRIPT="${ROOT}/scripts/macOS/sign-macos-app.sh"
+DMG_STAGE_DIR=""
+
+cleanup_dmg_stage() {
+  if [ -n "$DMG_STAGE_DIR" ] && [ -d "$DMG_STAGE_DIR" ]; then
+    rm -rf "$DMG_STAGE_DIR"
+  fi
+}
+
+trap cleanup_dmg_stage EXIT
 
 SKIP_BUILD=0
 NO_DMG=0
@@ -798,6 +807,9 @@ if [ $NO_DMG -eq 0 ]; then
   DMG_OUT="${DIST_DIR}/PXTOOL-${VERSION}-arm64-macOS.dmg"
   cleanup_dmg_artifacts "$DMG_OUT"
 
+  DMG_STAGE_DIR="$(mktemp -d "${TMPDIR:-/tmp}/pxtool-dmg.XXXXXX")"
+  cp -R "$DIST_APP" "$DMG_STAGE_DIR/PXTOOL.app"
+
   create-dmg \
     --volname "PXTOOL ${VERSION}" \
     --volicon "$DIST_APP/Contents/Resources/PXTOOL.icns" \
@@ -808,7 +820,7 @@ if [ $NO_DMG -eq 0 ]; then
     --hide-extension "PXTOOL.app" \
     --app-drop-link 450 180 \
     "$DMG_OUT" \
-    "$DIST_DIR" \
+    "$DMG_STAGE_DIR" \
     2>&1 | tail -5
 
   echo ""

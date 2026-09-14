@@ -41,6 +41,9 @@ mkdir -p \
   "$QT_LIBS_DIR/QtGui.framework/Versions/A" \
   "$PKG_APP/Contents/Resources"
 
+mkdir -p "$WORKDIR/build.macOS/decoders"
+touch "$WORKDIR/build.macOS/decoders/should-not-be-in-dmg"
+
 cp "$SOURCE_ROOT/scripts/macOS/package-macos.sh" "$SCRIPT_UNDER_TEST"
 cp "$SOURCE_ROOT/scripts/macOS/sign-macos-app.sh" "$SIGN_SCRIPT"
 chmod +x "$SCRIPT_UNDER_TEST"
@@ -203,6 +206,13 @@ args=("$@")
 out="${args[$#-2]}"
 src="${args[$#-1]}"
 base="$(basename "$out")"
+
+for entry in "$src"/*; do
+  [ "$(basename "$entry")" = "PXTOOL.app" ] || {
+    echo "unexpected DMG source entry: $entry" >&2
+    exit 1
+  }
+done
 
 if [ -e "$out" ]; then
   echo "hdiutil: convert failed - file already exists" >&2
