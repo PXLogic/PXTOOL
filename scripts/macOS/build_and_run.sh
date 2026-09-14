@@ -16,9 +16,63 @@ SRD_C_DECODER_APP_DIR="${APP_PATH}/Contents/Resources/share/libsigrokdecode/deco
 # QCoreApplication organization/application name -> DreamSourceLab/PXTOOL).
 CDECODER_RUNTIME_DIR="${HOME}/Library/Application Support/DreamSourceLab/PXTOOL/cdecoders"
 
+restore_local_qt_framework_imports() {
+    local executable="${APP_PATH}/Contents/MacOS/${APP_NAME}"
+    local qtpaths qt_libs dependencies dependency framework_suffix local_dependency install_name
+
+    qtpaths="$(command -v qtpaths6 || true)"
+    if [ -z "${qtpaths}" ]; then
+        echo "ERROR: qtpaths6 was not found on PATH."
+        return 1
+    fi
+    if ! qt_libs="$("${qtpaths}" --query QT_INSTALL_LIBS 2>&1)"; then
+        echo "ERROR: qtpaths6 could not report QT_INSTALL_LIBS."
+        printf '%s\n' "${qt_libs}"
+        return 1
+    fi
+    if ! dependencies="$(otool -L "${executable}" 2>&1)"; then
+        echo "ERROR: otool could not inspect ${executable}."
+        printf '%s\n' "${dependencies}"
+        return 1
+    fi
+
+    while IFS= read -r dependency; do
+        case "${dependency}" in
+            @executable_path/../Frameworks/Qt*.framework/*)
+                framework_suffix="${dependency#@executable_path/../Frameworks/}"
+                ;;
+            @rpath/Qt*.framework/*)
+                framework_suffix="${dependency#@rpath/}"
+                ;;
+            "${qt_libs}"/Qt*.framework/*)
+                framework_suffix="${dependency#"${qt_libs}"/}"
+                ;;
+            *)
+                continue
+                ;;
+        esac
+
+        local_dependency="${qt_libs}/${framework_suffix}"
+        if [ ! -f "${local_dependency}" ]; then
+            echo "ERROR: local Qt framework dependency is missing: ${local_dependency}"
+            return 1
+        fi
+        if ! install_name="$(otool -D "${local_dependency}" 2>&1 | awk 'NR == 2 { print; exit }')" \
+            || [ -z "${install_name}" ]; then
+            echo "ERROR: could not read Qt framework install name: ${local_dependency}"
+            return 1
+        fi
+        install_name_tool -change "${dependency}" "${install_name}" "${executable}"
+    done < <(printf '%s\n' "${dependencies}" | awk 'NR > 1 { print $1 }')
+}
+
 cleanup_packaged_qt_artifacts() {
     rm -f "${APP_PATH}/Contents/Resources/qt.conf"
     rm -rf "${APP_PATH}/Contents/PlugIns"
+    if [ -d "${APP_PATH}/Contents/Frameworks" ]; then
+        find "${APP_PATH}/Contents/Frameworks" -type d -name 'Qt*.framework' -prune -exec rm -rf {} +
+        find "${APP_PATH}/Contents/Frameworks" -type f -iname '*qt*.dylib' -delete
+    fi
 }
 
 cd "${ROOT_DIR}"
@@ -56,6 +110,7 @@ else
     cp -v "${APP_CDECODER_DIR}/spi.dylib" "${CDECODER_RUNTIME_DIR}/spi.dylib"
 fi
 
+restore_local_qt_framework_imports
 cleanup_packaged_qt_artifacts
 
 echo "[4/5] Re-sign app bundle"

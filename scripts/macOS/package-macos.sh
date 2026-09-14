@@ -64,6 +64,94 @@ remove_dmg_artifact() {
   fi
 }
 
+restore_local_qt_framework_imports() {
+  local executable="$1"
+  local qtpaths qt_libs dependencies dependency framework_suffix local_dependency install_name
+
+  qtpaths="$(command -v qtpaths6 || true)"
+  if [ -z "$qtpaths" ]; then
+    echo "ERROR: qtpaths6 was not found on PATH."
+    return 1
+  fi
+  if ! qt_libs="$("$qtpaths" --query QT_INSTALL_LIBS 2>&1)"; then
+    echo "ERROR: qtpaths6 could not report QT_INSTALL_LIBS."
+    printf '%s\n' "$qt_libs"
+    return 1
+  fi
+  if ! dependencies="$(otool -L "$executable" 2>&1)"; then
+    echo "ERROR: otool could not inspect $executable."
+    printf '%s\n' "$dependencies"
+    return 1
+  fi
+
+  while IFS= read -r dependency; do
+    case "$dependency" in
+      @executable_path/../Frameworks/Qt*.framework/*)
+        framework_suffix="${dependency#@executable_path/../Frameworks/}"
+        ;;
+      @rpath/Qt*.framework/*)
+        framework_suffix="${dependency#@rpath/}"
+        ;;
+      "$qt_libs"/Qt*.framework/*)
+        framework_suffix="${dependency#"$qt_libs"/}"
+        ;;
+      *)
+        continue
+        ;;
+    esac
+
+    local_dependency="$qt_libs/$framework_suffix"
+    if [ ! -f "$local_dependency" ]; then
+      echo "ERROR: local Qt framework dependency is missing: $local_dependency"
+      return 1
+    fi
+    if ! install_name="$(otool -D "$local_dependency" 2>&1 | awk 'NR == 2 { print; exit }')" \
+        || [ -z "$install_name" ]; then
+      echo "ERROR: could not read Qt framework install name: $local_dependency"
+      return 1
+    fi
+    install_name_tool -change "$dependency" "$install_name" "$executable"
+  done < <(printf '%s\n' "$dependencies" | awk 'NR > 1 { print $1 }')
+}
+
+restore_bundled_python_imports() {
+  local app="$1"
+  local python_framework="$app/Contents/Frameworks/Python.framework"
+  local version_dir python_library candidate replacement dependencies dependency
+
+  for version_dir in "$python_framework"/Versions/[0-9]*; do
+    [ -d "$version_dir" ] || continue
+    python_library="$version_dir/Python"
+    if [ -f "$python_library" ]; then
+      install_name_tool -id \
+        "@executable_path/../Frameworks/Python.framework/Versions/${version_dir##*/}/Python" \
+        "$python_library"
+    fi
+    for candidate in \
+      "$version_dir/bin/python${version_dir##*/}" \
+      "$version_dir/Resources/Python.app/Contents/MacOS/Python"; do
+      [ -f "$candidate" ] || continue
+      case "$candidate" in
+        */bin/*) replacement="@loader_path/../Python" ;;
+        *) replacement="@loader_path/../../../../Python" ;;
+      esac
+
+      if ! dependencies="$(otool -L "$candidate" 2>&1)"; then
+        echo "ERROR: otool could not inspect bundled Python helper: $candidate"
+        printf '%s\n' "$dependencies"
+        return 1
+      fi
+      while IFS= read -r dependency; do
+        case "$dependency" in
+          /opt/homebrew/*/Python.framework/Versions/*/Python|/usr/local/*/Python.framework/Versions/*/Python)
+            install_name_tool -change "$dependency" "$replacement" "$candidate"
+            ;;
+        esac
+      done < <(printf '%s\n' "$dependencies" | awk 'NR > 1 { print $1 }')
+    done
+  done
+}
+
 cleanup_dmg_artifacts() {
   local dmg_out="$1"
   local dmg_dir
@@ -92,7 +180,7 @@ is_expected_macho_candidate() {
   case "$candidate" in
     "$app/Contents/MacOS/"*)
       relative="${candidate#"$app/Contents/MacOS/"}"
-      [ "$relative" != */* ]
+      [[ "$relative" != */* ]]
       return
       ;;
     "$app/Contents/Frameworks/"*|"$app/Contents/PlugIns/"*)
@@ -372,7 +460,9 @@ verify_macos_qt_bundle() {
     return 1
   fi
 
-  if ! find -L "$app" -type f -print0 | while IFS= read -r -d '' candidate; do
+  if ! find "$app" -type f \( \
+    -perm -111 -o -name '*.dylib' -o -name '*.so' -o -name '*.bundle' \
+  \) -print0 | while IFS= read -r -d '' candidate; do
     if [ ! -r "$candidate" ]; then
       echo "ERROR: bundle file is not readable: $candidate"
       exit 1
@@ -416,19 +506,78 @@ verify_macos_qt_bundle() {
   fi
 }
 
+restore_macos_system_framework_imports() {
+  local app="$1"
+  local candidate file_description macho_dependencies dependency scan_root
+  local framework_name framework_suffix system_framework system_dependency
+  local -a scan_roots=()
+
+  for scan_root in \
+    "$app/Contents/MacOS" \
+    "$app/Contents/Frameworks" \
+    "$app/Contents/PlugIns"; do
+    [ -e "$scan_root" ] && scan_roots+=("$scan_root")
+  done
+
+  while IFS= read -r -d '' candidate; do
+    if ! file_description="$(file -b "$candidate" 2>&1)"; then
+      echo "ERROR: file could not inspect bundle candidate: $candidate"
+      printf '%s\n' "$file_description"
+      return 1
+    fi
+    [[ "$file_description" == *Mach-O* ]] || continue
+
+    if ! macho_dependencies="$(otool -L "$candidate" 2>&1)"; then
+      echo "ERROR: otool could not inspect Mach-O candidate: $candidate"
+      printf '%s\n' "$macho_dependencies"
+      return 1
+    fi
+
+    while IFS= read -r dependency; do
+      [ -n "$dependency" ] || continue
+      case "$dependency" in
+        @rpath/*.framework/*)
+          framework_name="${dependency#@rpath/}"
+          framework_name="${framework_name%%/*}"
+          framework_suffix="${dependency#@rpath/$framework_name/}"
+          ;;
+        *)
+          continue
+          ;;
+      esac
+
+      if [ -d "$app/Contents/Frameworks/$framework_name" ]; then
+        continue
+      fi
+
+      system_framework="/System/Library/Frameworks/$framework_name"
+      [ -d "$system_framework" ] || continue
+      system_dependency="$system_framework/$framework_suffix"
+
+      if ! install_name_tool -change "$dependency" "$system_dependency" "$candidate"; then
+        echo "ERROR: could not restore system framework import in: $candidate ($dependency)"
+        return 1
+      fi
+      echo "  Restored system framework: $dependency -> $system_dependency"
+    done < <(printf '%s\n' "$macho_dependencies" | awk 'NR > 1 { print $1 }')
+  done < <(find "${scan_roots[@]}" -type f \( \
+    -perm -111 -o -name '*.dylib' -o -name '*.so' -o -name '*.bundle' \
+  \) -print0)
+}
+
 # Step 1: Build
 if [ $SKIP_BUILD -eq 0 ]; then
   echo "[1/6] Building PXTOOL..."
   cd "$ROOT"
   cmake -DCMAKE_POLICY_VERSION_MINIMUM=3.5 -DCMAKE_INSTALL_PREFIX="$INSTALL_PREFIX" .
   make -j"$(sysctl -n hw.ncpu 2>/dev/null || echo 8)"
-  cmake --build "$ROOT" --target webui --parallel 1
+  cmake --build "$ROOT" --target stage_webui --parallel 1
   cmake --install .
 else
   echo "[1/6] Skipping build/install (--skip-build)"
   if [ ! -f "$ROOT/web/dist/index.html" ]; then
     echo "ERROR: --skip-build was used but web/dist/index.html is missing."
-    echo "       Run without --skip-build, or run: cmake --build $ROOT --target webui"
+    echo "       Run without --skip-build, or run: cmake --build $ROOT --target stage_webui"
     exit 1
   fi
 fi
@@ -446,6 +595,7 @@ elif [ ! -d "$DIST_APP" ]; then
 else
   # Keep non-Qt frameworks such as Python, but force macdeployqt to rebuild
   # the Qt frameworks and plugin tree instead of reusing stale deployment data.
+  restore_local_qt_framework_imports "$DIST_APP/Contents/MacOS/PXTOOL"
   rm -rf "$DIST_APP/Contents/PlugIns"
   if [ -d "$FRAMEWORKS_DIR" ]; then
     find "$FRAMEWORKS_DIR" -type d -name 'Qt*.framework' -prune -exec rm -rf {} +
@@ -501,22 +651,29 @@ else
   echo "  No Homebrew Python.framework reference found."
 fi
 
+restore_bundled_python_imports "$DIST_APP"
+
 # Step 3: macdeployqt - bundle Qt frameworks
 MACDEPLOYQT="$(command -v macdeployqt || true)"
 if [ -z "$MACDEPLOYQT" ]; then
   echo "ERROR: macdeployqt was not found on PATH."
   exit 1
 fi
-if MACDEPLOYQT_VERSION="$("$MACDEPLOYQT" -version 2>&1)"; then
+QTPATHS6="$(dirname "$MACDEPLOYQT")/qtpaths6"
+if [ ! -x "$QTPATHS6" ]; then
+  echo "ERROR: qtpaths6 was not found next to macdeployqt: $QTPATHS6"
+  exit 1
+fi
+if MACDEPLOYQT_VERSION="$("$QTPATHS6" --qt-version 2>&1)"; then
   :
 else
   MACDEPLOYQT_VERSION_STATUS=$?
-  echo "ERROR: macdeployqt -version failed (status $MACDEPLOYQT_VERSION_STATUS)."
+  echo "ERROR: qtpaths6 --qt-version failed (status $MACDEPLOYQT_VERSION_STATUS)."
   printf '%s\n' "$MACDEPLOYQT_VERSION"
   exit "$MACDEPLOYQT_VERSION_STATUS"
 fi
 if ! printf '%s\n' "$MACDEPLOYQT_VERSION" \
-    | grep -Eq '^[[:space:]]*macdeployqt[[:space:]]+6([.][0-9]+){1,2}[[:space:]]*$'; then
+    | grep -Eq '^[[:space:]]*6([.][0-9]+){1,2}[[:space:]]*$'; then
   echo "ERROR: macdeployqt 6 is required."
   printf '%s\n' "$MACDEPLOYQT_VERSION"
   exit 1
@@ -550,6 +707,15 @@ for plugin in \
     echo "  Removed optional plugin: ${plugin#$DIST_APP/Contents/PlugIns/}"
   fi
 done
+
+for framework in QtQml QtQmlMeta QtQmlModels QtQmlWorkerScript QtQuick; do
+  if [ -d "$FRAMEWORKS_DIR/$framework.framework" ]; then
+    rm -rf "$FRAMEWORKS_DIR/$framework.framework"
+    echo "  Removed optional framework: $framework.framework"
+  fi
+done
+
+restore_macos_system_framework_imports "$DIST_APP"
 
 # Step 4: Ensure rpath is set (macdeployqt handles Qt + most dylibs)
 echo "[4/6] Verifying rpath and macdeployqt-bundled dylibs..."

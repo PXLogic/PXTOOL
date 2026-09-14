@@ -16,6 +16,11 @@ BROKEN_SITE_PACKAGES="$APP/Contents/Frameworks/Python.framework/Versions/3.13/li
 PYCACHE_DIR="$APP/Contents/Resources/share/libsigrokdecode/decoders/spi/__pycache__"
 QT_CONF="$APP/Contents/Resources/qt.conf"
 QT_PLUGINS_DIR="$APP/Contents/PlugIns"
+QT_FRAMEWORK="$APP/Contents/Frameworks/QtGui.framework"
+QT_DYLIB="$APP/Contents/Frameworks/libQt6Example.dylib"
+QT_LIBS_DIR="$WORKDIR/qt/lib"
+QT_LOCAL_BINARY="$QT_LIBS_DIR/QtGui.framework/Versions/A/QtGui"
+QT_INSTALL_NAME="/opt/homebrew/opt/qtbase/lib/QtGui.framework/Versions/A/QtGui"
 SRD_C_DECODER_BUILD_DIR="$WORKDIR/build.macOS/decoders/c_decoders"
 
 mkdir -p \
@@ -24,6 +29,8 @@ mkdir -p \
   "$WORKDIR/home" \
   "$APP/Contents/MacOS/webui" \
   "$PY_DYNLOAD" \
+  "$QT_FRAMEWORK/Versions/A" \
+  "$QT_LIBS_DIR/QtGui.framework/Versions/A" \
   "$PYCACHE_DIR" \
   "$QT_PLUGINS_DIR/platforms" \
   "$APP/Contents/Resources/share/PXTOOL/cdecoders" \
@@ -40,6 +47,9 @@ touch "$PY_DYNLOAD/zlib.cpython-313-darwin.so"
 mkdir -p "$QT_PLUGINS_DIR/platforms"
 touch "$QT_PLUGINS_DIR/platforms/libqcocoa.dylib"
 touch "$QT_CONF"
+touch "$QT_FRAMEWORK/Versions/A/QtGui"
+touch "$QT_DYLIB"
+touch "$QT_LOCAL_BINARY"
 ln -s ../../../../../../lib/python3.13/site-packages "$BROKEN_SITE_PACKAGES"
 touch "$PYCACHE_DIR/__init__.cpython-313.pyc"
 touch "$WORKDIR/build.macOS/spi.dylib"
@@ -69,6 +79,31 @@ cat >"$FAKEBIN/codesign" <<'STUB'
 #!/usr/bin/env bash
 printf 'codesign %s\n' "$*" >>"$FAKE_CODESIGN_LOG"
 exit 0
+STUB
+
+cat >"$FAKEBIN/install_name_tool" <<'STUB'
+#!/usr/bin/env bash
+printf 'install_name_tool %s\n' "$*" >>"$FAKE_INSTALL_NAME_TOOL_LOG"
+exit 0
+STUB
+
+cat >"$FAKEBIN/otool" <<'STUB'
+#!/usr/bin/env bash
+if [ "${1:-}" = "-D" ]; then
+  printf '%s:\n%s\n' "${2:-}" "$FAKE_QT_INSTALL_NAME"
+  exit 0
+fi
+printf '%s:\n' "${2:-}"
+printf '\t@executable_path/../Frameworks/QtGui.framework/Versions/A/QtGui (compatibility version 6.0.0, current version 6.11.2)\n'
+STUB
+
+cat >"$FAKEBIN/qtpaths6" <<'STUB'
+#!/usr/bin/env bash
+if [ "${1:-}" = "--query" ] && [ "${2:-}" = "QT_INSTALL_LIBS" ]; then
+  printf '%s\n' "$FAKE_QT_LIBS_DIR"
+  exit 0
+fi
+exit 1
 STUB
 
 cat >"$FAKEBIN/file" <<'STUB'
@@ -108,10 +143,21 @@ STUB
 chmod +x "$FAKEBIN"/*
 
 if ! FAKE_CODESIGN_LOG="$WORKDIR/codesign.log" \
+  FAKE_INSTALL_NAME_TOOL_LOG="$WORKDIR/install-name-tool.log" \
   FAKE_OPEN_LOG="$WORKDIR/open.log" \
+  FAKE_QT_INSTALL_NAME="$QT_INSTALL_NAME" \
+  FAKE_QT_LIBS_DIR="$QT_LIBS_DIR" \
   HOME="$WORKDIR/home" \
   PATH="$FAKEBIN:$PATH" \
   "$SCRIPT_UNDER_TEST" >"$WORKDIR/run.log" 2>&1; then
+  cat "$WORKDIR/run.log" >&2
+  exit 1
+fi
+
+if ! grep -Fq -- \
+  "-change @executable_path/../Frameworks/QtGui.framework/Versions/A/QtGui $QT_INSTALL_NAME $APP/Contents/MacOS/PXTOOL" \
+  "$WORKDIR/install-name-tool.log"; then
+  echo "Expected build_and_run.sh to restore the local QtGui import before cleanup." >&2
   cat "$WORKDIR/run.log" >&2
   exit 1
 fi
@@ -136,6 +182,18 @@ fi
 
 if [ -e "$QT_CONF" ] || [ -e "$QT_PLUGINS_DIR" ]; then
   echo "Expected build_and_run.sh to remove packaged Qt deployment artifacts before launch." >&2
+  cat "$WORKDIR/run.log" >&2
+  exit 1
+fi
+
+if [ -e "$QT_FRAMEWORK" ] || [ -e "$QT_DYLIB" ]; then
+  echo "Expected build_and_run.sh to remove stale packaged Qt libraries before launch." >&2
+  cat "$WORKDIR/run.log" >&2
+  exit 1
+fi
+
+if [ ! -d "$APP/Contents/Frameworks/Python.framework" ]; then
+  echo "Expected build_and_run.sh to preserve non-Qt frameworks." >&2
   cat "$WORKDIR/run.log" >&2
   exit 1
 fi
