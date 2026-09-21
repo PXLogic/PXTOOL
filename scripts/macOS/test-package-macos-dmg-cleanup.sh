@@ -45,6 +45,7 @@ mkdir -p "$WORKDIR/build.macOS/decoders"
 touch "$WORKDIR/build.macOS/decoders/should-not-be-in-dmg"
 
 cp "$SOURCE_ROOT/scripts/macOS/package-macos.sh" "$SCRIPT_UNDER_TEST"
+cp "$SOURCE_ROOT/scripts/macOS/qt6_env.sh" "$WORKDIR/scripts/macOS/qt6_env.sh"
 cp "$SOURCE_ROOT/scripts/macOS/sign-macos-app.sh" "$SIGN_SCRIPT"
 chmod +x "$SCRIPT_UNDER_TEST"
 chmod +x "$SIGN_SCRIPT"
