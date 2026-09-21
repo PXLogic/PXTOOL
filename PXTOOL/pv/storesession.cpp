@@ -1792,13 +1792,26 @@ bool StoreSession::load_decoders(dock::ProtocolDock *widget, QJsonArray &dec_arr
 
         dec_index++;
 
-        if (dec_obj.contains("label")){
-            _session->set_decoder_row_label(dec_index, dec_obj["label"].toString());    
-        }
+        // dec_index is positional: it assumes the decoder just created through
+        // `widget` landed in _session->_decode_traces at this slot. That only
+        // holds while widget's session and _session are the same object. Verify
+        // instead of indexing blindly, so a mismatch degrades to "label and
+        // view_index not applied" plus a log line rather than a null deref.
+        view::DecodeTrace *dec_trace = _session->get_decoder_trace(dec_index);
 
-        if (dec_obj.contains("view_index")){
-            int chan_view_index = dec_obj["view_index"].toInt();
-            _session->get_decoder_trace(dec_index)->set_view_index(chan_view_index);
+        if (dec_trace == NULL){
+            dsv_err("StoreSession::load_decoders(): decoder %d (id \"%s\") is not in "
+                    "session@%p; skipping label/view_index.",
+                    dec_index, dec_obj["id"].toString().toUtf8().data(), (void*)_session);
+        }
+        else {
+            if (dec_obj.contains("label")){
+                _session->set_decoder_row_label(dec_index, dec_obj["label"].toString());
+            }
+
+            if (dec_obj.contains("view_index")){
+                dec_trace->set_view_index(dec_obj["view_index"].toInt());
+            }
         }
 
         std::list<int> bind_indexs;
