@@ -2223,7 +2223,16 @@ namespace pv
         {
             return _decode_traces[index];
         }
-        assert(false);
+
+        // Report the miss and return NULL. This used to be a bare assert(false)
+        // with no return statement: release builds define NDEBUG, so the assert
+        // vanished and control fell off the end of a non-void function. That is
+        // undefined behaviour, hidden at compile time by -Wno-return-type, and
+        // under -O2 it both produced a garbage/null return value and let the
+        // optimiser treat callers' "trace != NULL" guards as unreachable.
+        dsv_err("SigSession::get_decoder_trace(): index %d out of range (have %d) for session@%p",
+                index, (int)_decode_traces.size(), (void*)this);
+        return NULL;
     }
 
 
@@ -2952,7 +2961,15 @@ namespace pv
 
     void SigSession::set_trace_name(view::Trace *trace, QString name)
     {
+        // assert() alone is not a guard here: release builds define NDEBUG, and
+        // Trace::set_name is virtual, so a null trace faults on the vtable load.
         assert(trace);
+
+        if (trace == NULL){
+            dsv_err("SigSession::set_trace_name(): trace is null, name=\"%s\"",
+                    name.toUtf8().data());
+            return;
+        }
 
         trace->set_name(name);
 

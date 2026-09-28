@@ -37,6 +37,7 @@ mkdir -p \
   "$SRD_C_DECODER_BUILD_DIR"
 
 cp "$SOURCE_ROOT/scripts/macOS/build_and_run.sh" "$SCRIPT_UNDER_TEST"
+cp "$SOURCE_ROOT/scripts/macOS/qt6_env.sh" "$WORKDIR/scripts/macOS/qt6_env.sh"
 cp "$SOURCE_ROOT/scripts/macOS/sign-macos-app.sh" "$SIGN_SCRIPT" 2>/dev/null || true
 chmod +x "$SCRIPT_UNDER_TEST"
 [ ! -f "$SIGN_SCRIPT" ] || chmod +x "$SIGN_SCRIPT"

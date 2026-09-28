@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT_DIR="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 APP_NAME="PXTOOL"
 APP_PATH="${ROOT_DIR}/build.macOS/${APP_NAME}.app"
 SIGN_APP_SCRIPT="${ROOT_DIR}/scripts/macOS/sign-macos-app.sh"
@@ -16,9 +17,14 @@ SRD_C_DECODER_APP_DIR="${APP_PATH}/Contents/Resources/share/libsigrokdecode/deco
 # QCoreApplication organization/application name -> DreamSourceLab/PXTOOL).
 CDECODER_RUNTIME_DIR="${HOME}/Library/Application Support/DreamSourceLab/PXTOOL/cdecoders"
 
+# Qt tool discovery is shared with package-macos.sh.
+# shellcheck source=scripts/macOS/qt6_env.sh
+. "${SCRIPT_DIR}/qt6_env.sh"
+
 restore_local_qt_framework_imports() {
     local executable="${APP_PATH}/Contents/MacOS/${APP_NAME}"
     local qtpaths qt_libs dependencies dependency framework_suffix local_dependency install_name
+    local needs_local_qt_rpath=0
 
     qtpaths="$(command -v qtpaths6 || true)"
     if [ -z "${qtpaths}" ]; then
@@ -62,8 +68,21 @@ restore_local_qt_framework_imports() {
             echo "ERROR: could not read Qt framework install name: ${local_dependency}"
             return 1
         fi
-        install_name_tool -change "${dependency}" "${install_name}" "${executable}"
+        case "${install_name}" in
+            @rpath/*)
+                # A -change to the same @rpath value would do nothing; dyld has
+                # to resolve it through an rpath entry instead.
+                needs_local_qt_rpath=1
+                ;;
+            *)
+                install_name_tool -change "${dependency}" "${install_name}" "${executable}"
+                ;;
+        esac
     done < <(printf '%s\n' "${dependencies}" | awk 'NR > 1 { print $1 }')
+
+    if [ "${needs_local_qt_rpath}" -eq 1 ]; then
+        ensure_local_qt_rpath "${executable}" "${qt_libs}" || return 1
+    fi
 }
 
 cleanup_packaged_qt_artifacts() {
@@ -76,6 +95,8 @@ cleanup_packaged_qt_artifacts() {
 }
 
 cd "${ROOT_DIR}"
+
+require_qt6_tools_on_path "${ROOT_DIR}"
 
 echo "[1/4] Configure upstream-compat demo and build"
 CPU_COUNT="$(sysctl -n hw.ncpu 2>/dev/null || echo 8)"

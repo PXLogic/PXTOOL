@@ -64,19 +64,49 @@ should_sign_file() {
 
 sign_code_file() {
   local binary="$1"
+  local output
 
   [ -f "$binary" ] || return 0
   if should_sign_file "$binary"; then
-    codesign --force --sign - "$binary" >/dev/null 2>&1
+    if ! output="$(codesign --force --sign - "$binary" 2>&1)"; then
+      echo "ERROR: codesign failed for ${binary}" >&2
+      printf '%s\n' "$output" >&2
+      return 1
+    fi
     SIGNED_COUNT=$((SIGNED_COUNT + 1))
   fi
+}
+
+resolve_main_executable() {
+  local name=""
+
+  if [ -f "${APP_PATH}/Contents/Info.plist" ] && command -v plutil >/dev/null 2>&1; then
+    name="$(plutil -extract CFBundleExecutable raw -o - \
+      "${APP_PATH}/Contents/Info.plist" 2>/dev/null || true)"
+  fi
+  if [ -z "$name" ]; then
+    name="$(basename "${APP_PATH}")"
+    name="${name%.app}"
+  fi
+
+  printf '%s\n' "${APP_PATH}/Contents/MacOS/${name}"
 }
 
 remove_python_bytecode_caches
 remove_broken_symlinks
 
+MAIN_EXECUTABLE="$(resolve_main_executable)"
+
 SIGNED_COUNT=0
+# Sign nested code first. codesign validates the nested Mach-O files a bundle's
+# main executable references, so signing Contents/MacOS/<exe> while a dylib in
+# Contents/Frameworks is still unsigned fails with "code object is not signed at
+# all". find walks Contents/MacOS before Contents/Frameworks, so the main
+# executable is deliberately skipped here and signed last.
 while IFS= read -r -d '' candidate; do
+  if [ "$candidate" = "${MAIN_EXECUTABLE}" ]; then
+    continue
+  fi
   sign_code_file "$candidate"
 done < <(find "${APP_PATH}/Contents" -type f -print0)
 
@@ -84,6 +114,12 @@ for extra_binary in "$@"; do
   sign_code_file "$extra_binary"
 done
 
+sign_code_file "${MAIN_EXECUTABLE}"
+
 echo "  Signed ${SIGNED_COUNT} code files"
-codesign --force --deep --sign - "${APP_PATH}" >/dev/null 2>&1
+if ! BUNDLE_SIGN_OUTPUT="$(codesign --force --deep --sign - "${APP_PATH}" 2>&1)"; then
+  echo "ERROR: codesign failed for the app bundle: ${APP_PATH}" >&2
+  printf '%s\n' "${BUNDLE_SIGN_OUTPUT}" >&2
+  exit 1
+fi
 codesign --verify --deep --strict "${APP_PATH}"

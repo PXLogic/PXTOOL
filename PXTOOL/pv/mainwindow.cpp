@@ -1202,10 +1202,31 @@ namespace pv
 
         _is_switching_session = false;
 
+        // The decode UI must be rebound BEFORE set_device(), unlike the rest of
+        // the sidebar. set_device() broadcasts DSV_MSG_CURRENT_DEVICE_CHANGED
+        // synchronously (SigSession::broadcast_msg is a plain listener loop), and
+        // that handler drives decoder work through the protocol dock:
+        // del_all_protocol() and, for demo devices, load_demo_decoder_config() ->
+        // StoreSession::load_decoders(protocol_widget(), ...). load_decoders adds
+        // each decoder through the dock's session but then applies "label" and
+        // "view_index" to StoreSession's session by positional index. If the dock
+        // still pointed at the outgoing session, those two sessions would differ:
+        // the decoders would land on the outgoing session (wiping the previous
+        // tab's decode list on the way) while the index lookup ran against the
+        // incoming session's still-empty _decode_traces, yielding an out-of-range
+        // get_decoder_trace() and a null Trace dereference in set_trace_name().
+        // Binding here is safe on a device-less session: ProtocolDock::setSession
+        // only touches get_decoder_model(), the empty get_decode_signals() and
+        // is_working(). The _sidebar_widget->setSession() call below re-reaches
+        // this dock, but ProtocolDock::setSession early-returns when the session
+        // is unchanged, so the freshly loaded decoder list is left intact.
+        _sidebar_widget->protocol_widget()->setSession(_session);
+        _session->set_decoder_pannel(_sidebar_widget->protocol_widget());
+
         // Heavy device init for a freshly-created empty session — claim the
         // requested handle, clear (already empty) view data, build signals.
-        // Do this before exposing the session to UI widgets: their synchronous
-        // refreshes may query the view time for DSO mode.
+        // Do this before exposing the session to the remaining UI widgets: their
+        // synchronous refreshes may query the view time for DSO mode.
         if (!_session->set_device(handle))
             dsv_warn("switch_to_session_for_handle: set_device(handle=%llu) failed",
                      (unsigned long long)handle);

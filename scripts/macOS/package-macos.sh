@@ -11,7 +11,8 @@
 set -euo pipefail
 
 # Config
-ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 INSTALL_PREFIX="${ROOT}/package-root"
 BUILD_APP="${ROOT}/build.macOS/PXTOOL.app"
 PKG_ROOT="${INSTALL_PREFIX}/PXTOOL.app"
@@ -21,6 +22,13 @@ FRAMEWORKS_DIR="${DIST_APP}/Contents/Frameworks"
 DMG_OUT="${DIST_DIR}/PXTOOL.dmg"
 SIGN_APP_SCRIPT="${ROOT}/scripts/macOS/sign-macos-app.sh"
 DMG_STAGE_DIR=""
+
+# Qt tool discovery is shared with build_and_run.sh. Resolve it up front so that
+# qtpaths6 and macdeployqt are reachable regardless of how Qt was installed:
+# Homebrew puts them on PATH, the official installer and aqtinstall do not.
+# shellcheck source=scripts/macOS/qt6_env.sh
+. "${SCRIPT_DIR}/qt6_env.sh"
+require_qt6_tools_on_path "${ROOT}"
 
 cleanup_dmg_stage() {
   if [ -n "$DMG_STAGE_DIR" ] && [ -d "$DMG_STAGE_DIR" ]; then
@@ -159,6 +167,52 @@ restore_bundled_python_imports() {
       done < <(printf '%s\n' "$dependencies" | awk 'NR > 1 { print $1 }')
     done
   done
+}
+
+# Official Qt builds (online installer / aqtinstall) give their frameworks
+# @rpath install names, so macdeployqt leaves plugin imports as @rpath/... and
+# the plugin keeps its Qt-install rpath (@loader_path/../../lib), which does not
+# exist inside the bundle. Homebrew's Qt uses absolute install names, so its
+# plugins get rewritten to @executable_path/../Frameworks instead and never hit
+# this. Point every bundled plugin at Contents/Frameworks so the bundle resolves
+# on its own instead of relying on the main executable's run-path list.
+ensure_bundled_plugin_rpaths() {
+  local app="$1"
+  local plugins_dir="$app/Contents/PlugIns"
+  local candidate file_description relative depth up rpath existing
+
+  [ -d "$plugins_dir" ] || return 0
+
+  while IFS= read -r -d '' candidate; do
+    if ! file_description="$(file -b "$candidate" 2>&1)"; then
+      echo "ERROR: file could not inspect plugin candidate: $candidate"
+      printf '%s\n' "$file_description"
+      return 1
+    fi
+    [[ "$file_description" == *Mach-O* ]] || continue
+
+    relative="${candidate#"$app/Contents/"}"
+    depth="$(printf '%s' "$relative" | tr -cd '/' | wc -c | tr -d ' ')"
+    up=""
+    while [ "$depth" -gt 0 ]; do
+      up="../$up"
+      depth=$((depth - 1))
+    done
+    rpath="@loader_path/${up}Frameworks"
+
+    existing="$(otool -l "$candidate" 2>/dev/null | awk '
+      $1 == "cmd" && $2 == "LC_RPATH" { found = 1; next }
+      found && $1 == "path" { print $2; found = 0 }
+    ')"
+    if printf '%s\n' "$existing" | grep -qx -- "$rpath"; then
+      continue
+    fi
+    if ! install_name_tool -add_rpath "$rpath" "$candidate" 2>/dev/null; then
+      echo "ERROR: could not add bundle rpath to plugin: $candidate"
+      return 1
+    fi
+    echo "  Added bundle rpath to $relative: $rpath"
+  done < <(find "$plugins_dir" -type f \( -perm -111 -o -name '*.dylib' \) -print0)
 }
 
 cleanup_dmg_artifacts() {
@@ -632,8 +686,10 @@ mkdir -p "$FRAMEWORKS_DIR"
 install_name_tool -add_rpath "@executable_path/../Frameworks" \
   "$DIST_APP/Contents/MacOS/PXTOOL" 2>/dev/null || true
 
+# Match both Homebrew prefixes: /opt/homebrew (Apple Silicon) and /usr/local
+# (Intel). restore_bundled_python_imports() below already handles both.
 PY_HOMEBREW_LIB=$(otool -L "$DIST_APP/Contents/MacOS/PXTOOL" 2>/dev/null \
-  | grep -E "/opt/homebrew.*Python.framework.*/Python" | awk '{print $1}' || true)
+  | grep -E "(/opt/homebrew|/usr/local).*Python.framework.*/Python" | awk '{print $1}' || true)
 
 if [ -n "$PY_HOMEBREW_LIB" ]; then
   PY_VERSION=$(echo "$PY_HOMEBREW_LIB" | grep -oE "Versions/[0-9.]+" | head -1 | cut -d/ -f2)
@@ -688,8 +744,15 @@ if ! printf '%s\n' "$MACDEPLOYQT_VERSION" \
   exit 1
 fi
 MACDEPLOYQT_LOG="$(mktemp)"
-MACDEPLOYQT_ARGS=("$DIST_APP" -verbose=1 -no-codesign)
-for libpath in /opt/homebrew/lib /opt/homebrew/Frameworks; do
+MACDEPLOYQT_ARGS=("$DIST_APP" -verbose=1)
+# macdeployqt only learned -no-codesign in Qt 6.9. Older tools (the newest Qt
+# available on macOS 12 is 6.7) never sign the bundle themselves, so the flag is
+# a no-op there and must be omitted to avoid "Unknown argument".
+MACDEPLOYQT_HELP="$("$MACDEPLOYQT" 2>&1 || true)"
+if printf '%s\n' "$MACDEPLOYQT_HELP" | grep -q -- '-no-codesign'; then
+  MACDEPLOYQT_ARGS+=(-no-codesign)
+fi
+for libpath in /opt/homebrew/lib /opt/homebrew/Frameworks /usr/local/lib /usr/local/Frameworks; do
   if [ -d "$libpath" ]; then
     MACDEPLOYQT_ARGS+=("-libpath=$libpath")
   fi
@@ -725,6 +788,7 @@ for framework in QtQml QtQmlMeta QtQmlModels QtQmlWorkerScript QtQuick; do
 done
 
 restore_macos_system_framework_imports "$DIST_APP"
+ensure_bundled_plugin_rpaths "$DIST_APP"
 
 # Step 4: Ensure rpath is set (macdeployqt handles Qt + most dylibs)
 echo "[4/6] Verifying rpath and macdeployqt-bundled dylibs..."
@@ -804,7 +868,19 @@ if [ $NO_DMG -eq 0 ]; then
   echo "[6/6] Creating DMG..."
   # Get version from Info.plist
   VERSION=$(defaults read "$DIST_APP/Contents/Info.plist" CFBundleShortVersionString 2>/dev/null || echo "1.0")
-  DMG_OUT="${DIST_DIR}/PXTOOL-${VERSION}-arm64-macOS.dmg"
+
+  # Name the DMG after the architecture actually produced. This was hardcoded to
+  # arm64, which happens to be right on Apple Silicon but silently mislabelled
+  # x86_64 builds on Intel Macs as arm64 packages.
+  DMG_ARCH="$(file -b "$DIST_APP/Contents/MacOS/PXTOOL" 2>/dev/null || true)"
+  case "$DMG_ARCH" in
+    *universal*) DMG_ARCH="universal" ;;
+    *arm64*)     DMG_ARCH="arm64" ;;
+    *x86_64*)    DMG_ARCH="x86_64" ;;
+    *)           DMG_ARCH="$(uname -m)" ;;
+  esac
+
+  DMG_OUT="${DIST_DIR}/PXTOOL-${VERSION}-${DMG_ARCH}-macOS.dmg"
   cleanup_dmg_artifacts "$DMG_OUT"
 
   DMG_STAGE_DIR="$(mktemp -d "${TMPDIR:-/tmp}/pxtool-dmg.XXXXXX")"
