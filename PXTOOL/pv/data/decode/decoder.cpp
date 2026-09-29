@@ -43,6 +43,13 @@ Decoder::Decoder(const srd_decoder *const dec):
 
 Decoder::~Decoder()
 {
+    // _options and _options_back each hold their own reference (see commit()),
+    // so both have to be released.
+    for (auto i = _options.begin(); i != _options.end(); i++){
+        if ((*i).second)
+            g_variant_unref((*i).second);
+    }
+
     for (auto i = _options_back.begin(); i != _options_back.end(); i++){
         if ((*i).second)
             g_variant_unref((*i).second);
@@ -81,7 +88,32 @@ bool Decoder::commit()
 {
     if (_setted) {
         _probes = _probes_back;
-        _options = _options_back;
+
+        // Give _options its own references instead of shallow-copying the map.
+        //
+        // This used to be a plain "_options = _options_back", which left both
+        // maps pointing at the same GVariants while only _options_back held a
+        // reference. A later set_option() for the same id unrefs that value,
+        // dropping the last reference, so _options was left with a dangling
+        // pointer. The next g_variant_ref() on it -- in create_decoder_inst()
+        // or DecoderOptions::getter() -- was a use-after-free that corrupted
+        // glib's GVariantTypeInfo refcount, and the damage only surfaced at
+        // exit, when srd_decoder_unload_all() aborted inside
+        // g_variant_type_info_check(). Reproduced by picking a protocol decoder
+        // in the Decode dock and clicking around its options.
+        for (auto i = _options.begin(); i != _options.end(); i++){
+            if ((*i).second)
+                g_variant_unref((*i).second);
+        }
+        _options.clear();
+
+        for (auto i = _options_back.begin(); i != _options_back.end(); i++){
+            if ((*i).second == NULL)
+                continue;
+            g_variant_ref((*i).second);
+            _options[(*i).first] = (*i).second;
+        }
+
         _decode_start = _decode_start_back;
         _decode_end = _decode_end_back;
         _setted = false;

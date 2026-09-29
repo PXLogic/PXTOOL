@@ -176,6 +176,75 @@ restore_bundled_python_imports() {
 # plugins get rewritten to @executable_path/../Frameworks instead and never hit
 # this. Point every bundled plugin at Contents/Frameworks so the bundle resolves
 # on its own instead of relying on the main executable's run-path list.
+# macdeployqt rewrites Homebrew dependencies for Mach-O files it can reach by
+# walking load commands from the main executable. The C decoders under
+# Resources/share/libsigrokdecode/decoders/c_decoders are dlopen'd at runtime,
+# so it never sees them and they keep their absolute /usr/local/opt/glib/...
+# dependency. Two consequences, both bad:
+#
+#   * On a machine without Homebrew glib the decoders fail to dlopen at all, so
+#     every "(C)" protocol silently disappears.
+#   * On a machine that has it, the process ends up with TWO copies of glib --
+#     the bundled one for the app, the Homebrew one for the decoders. Each copy
+#     owns a private GVariantTypeInfo table, so an option GVariant created
+#     inside a decoder (srd_c_decoder_entry -> g_variant_new_string) is
+#     unreadable by the app: g_variant_is_of_type() from the other copy fails
+#     g_variant_type_info_check() and aborts. That is the crash seen when
+#     clicking a C decoder in the Decode dock (DecoderOptions -> bind_enum ->
+#     print_gvariant).
+#
+# Point these modules at the bundled copy instead, using @loader_path so the
+# depth of the module inside the bundle does not have to be hardcoded.
+rebind_dlopened_module_deps() {
+  local app="$1"
+  local frameworks="$app/Contents/Frameworks"
+  local module_dir="$app/Contents/Resources/share/libsigrokdecode/decoders/c_decoders"
+  local module file_description relative up depth dep base rebound=0 scanned=0
+
+  if [ ! -d "$module_dir" ]; then
+    echo "  No dlopen'd C decoder modules to rebind"
+    return 0
+  fi
+
+  while IFS= read -r -d '' module; do
+    if ! file_description="$(file -b "$module" 2>&1)"; then
+      echo "ERROR: file could not inspect C decoder module: $module"
+      printf '%s\n' "$file_description"
+      return 1
+    fi
+    [[ "$file_description" == *Mach-O* ]] || continue
+    scanned=$((scanned + 1))
+
+    # Number of directory levels between Contents/ and this module.
+    relative="${module#"$app/Contents/"}"
+    depth="$(printf '%s' "${relative%/*}" | awk -F/ '{print NF}')"
+    up=""
+    while [ "$depth" -gt 0 ]; do
+      up="../$up"
+      depth=$((depth - 1))
+    done
+
+    while IFS= read -r dep; do
+      case "$dep" in
+        /usr/local/*|/opt/homebrew/*) ;;
+        *) continue ;;
+      esac
+      base="${dep##*/}"
+      # Only redirect what is actually bundled; anything else must stay visible
+      # as a missing dependency rather than be silently pointed at nothing.
+      [ -f "$frameworks/$base" ] || continue
+      if ! install_name_tool -change "$dep" "@loader_path/${up}Frameworks/$base" \
+        "$module" 2>/dev/null; then
+        echo "ERROR: could not rebind $base in $module"
+        return 1
+      fi
+      rebound=$((rebound + 1))
+    done < <(otool -L "$module" 2>/dev/null | awk 'NR > 1 { print $1 }')
+  done < <(find "$module_dir" -type f -print0)
+
+  echo "  Rebound $rebound dependencies across $scanned dlopen'd C decoder modules"
+}
+
 ensure_bundled_plugin_rpaths() {
   local app="$1"
   local plugins_dir="$app/Contents/PlugIns"
@@ -789,6 +858,7 @@ done
 
 restore_macos_system_framework_imports "$DIST_APP"
 ensure_bundled_plugin_rpaths "$DIST_APP"
+rebind_dlopened_module_deps "$DIST_APP"
 
 # Step 4: Ensure rpath is set (macdeployqt handles Qt + most dylibs)
 echo "[4/6] Verifying rpath and macdeployqt-bundled dylibs..."
@@ -809,15 +879,10 @@ for lib in libglib-2.0.0.dylib libusb-1.0.0.dylib libfftw3.3.dylib; do
   fi
 done
 
-# Confirm bundled C decoders survived the copy from package-root/.
-CDECODERS_DIR="$DIST_APP/Contents/Resources/share/PXTOOL/cdecoders"
-for dylib in spi.dylib; do
-  if [ -f "$CDECODERS_DIR/$dylib" ]; then
-    echo "  OK: cdecoders/$dylib"
-  else
-    echo "  WARNING: cdecoders/$dylib missing - did 'make install' populate package-root?"
-  fi
-done
+# share/PXTOOL/cdecoders is the CDecoderRegistry plugin directory. It ships
+# empty -- no example plugin is bundled, so there is nothing to verify here.
+# Built-in C decoders live under share/libsigrokdecode/decoders/c_decoders,
+# checked below.
 SRD_CDECODERS_DIR="$DIST_APP/Contents/Resources/share/libsigrokdecode/decoders/c_decoders"
 if [ -d "$SRD_CDECODERS_DIR" ]; then
   SRD_CDECODER_COUNT=$(find "$SRD_CDECODERS_DIR" -type f -name "*.dylib" -o -name "*.so" | wc -l | tr -d ' ')
@@ -837,31 +902,51 @@ echo "  Re-signing app bundle..."
 "$SIGN_APP_SCRIPT" "$DIST_APP"
 
 # Final check for any remaining external dependencies.
-MACHO_DEPENDENCIES=""
-if MACHO_DEPENDENCIES="$(otool -L "$DIST_APP/Contents/MacOS/PXTOOL" 2>&1)"; then
-  :
-else
-  OTOOL_STATUS=$?
-  echo "ERROR: unable to inspect PXTOOL Mach-O dependencies (status $OTOOL_STATUS)."
-  printf '%s\n' "$MACHO_DEPENDENCIES"
-  exit "$OTOOL_STATUS"
-fi
-
+#
+# This used to inspect only Contents/MacOS/PXTOOL, which is why 215 dlopen'd C
+# decoders could keep an absolute /usr/local/opt/glib dependency while this step
+# still reported "All external libs resolved." Walk every Mach-O in the bundle:
+# one missed file is enough to break the app on a machine without Homebrew, or
+# to pull in a second copy of a library that has to be process-wide unique.
+echo "  Auditing every Mach-O in the bundle for external dependencies..."
+BUNDLE_MACHO_COUNT=0
 BROKEN=""
-if BROKEN="$(printf '%s\n' "$MACHO_DEPENDENCIES" | awk 'NR > 1 && ($1 ~ /^\/opt\/homebrew\// || $1 ~ /^\/usr\/local\//) { print $1 }')"; then
-  :
-else
-  echo "ERROR: unable to scan PXTOOL Mach-O dependencies for external paths."
-  exit 1
-fi
+while IFS= read -r -d '' MACHO_FILE; do
+  MACHO_DESC=""
+  if ! MACHO_DESC="$(file -b "$MACHO_FILE" 2>&1)"; then
+    echo "ERROR: unable to inspect $MACHO_FILE"
+    printf '%s\n' "$MACHO_DESC"
+    exit 1
+  fi
+  case "$MACHO_DESC" in
+    *Mach-O*) ;;
+    *) continue ;;
+  esac
+  BUNDLE_MACHO_COUNT=$((BUNDLE_MACHO_COUNT + 1))
+
+  MACHO_DEPENDENCIES=""
+  if ! MACHO_DEPENDENCIES="$(otool -L "$MACHO_FILE" 2>&1)"; then
+    echo "ERROR: unable to inspect Mach-O dependencies: $MACHO_FILE"
+    printf '%s\n' "$MACHO_DEPENDENCIES"
+    exit 1
+  fi
+
+  MACHO_EXTERNAL="$(printf '%s\n' "$MACHO_DEPENDENCIES" \
+    | awk 'NR > 1 && ($1 ~ /^\/opt\/homebrew\// || $1 ~ /^\/usr\/local\// || $1 ~ /^\/Users\//) { print $1 }')"
+  if [ -n "$MACHO_EXTERNAL" ]; then
+    while IFS= read -r MACHO_DEP; do
+      BROKEN="${BROKEN}${MACHO_FILE#"$DIST_APP/"} -> ${MACHO_DEP}"$'\n'
+    done <<<"$MACHO_EXTERNAL"
+  fi
+done < <(find "$DIST_APP" -type f -print0)
 
 if [ -n "$BROKEN" ]; then
-  echo "ERROR: The following libs still reference external paths:"
-  echo "$BROKEN" | sed 's/^/    /'
+  echo "ERROR: these bundled Mach-O files still reference paths outside the app:"
+  printf '%s' "$BROKEN" | sed 's/^/    /'
+  echo "  The app would not run on a machine that lacks those paths."
   exit 1
-else
-  echo "  All external libs resolved."
 fi
+echo "  All external libs resolved ($BUNDLE_MACHO_COUNT Mach-O files checked)."
 
 # Step 6: Create DMG
 if [ $NO_DMG -eq 0 ]; then

@@ -831,33 +831,24 @@ endif()
 #===============================================================================
 #= Bundled C decoders (shipped inside the app bundle)
 #-------------------------------------------------------------------------------
-# Build the example SPI C decoder as a loadable module so it can be dlopen'd by
-# CDecoderRegistry at startup. Installing it into <bundle>/Contents/Resources/
-# share/PXTOOL/cdecoders/ (macOS) or <prefix>/share/PXTOOL/cdecoders/ (Linux)
-# makes it discoverable via GetBundledCDecodeDir() = GetAppDataDir()+"/cdecoders".
-add_library(spi MODULE pv/cdecoders/example_spi/spi_c_decoder.c)
-set_target_properties(spi PROPERTIES
-    PREFIX ""        # no "lib" prefix; produce spi.dylib / spi.so
-    C_STANDARD 99
-)
-if(APPLE)
-    set_target_properties(spi PROPERTIES SUFFIX ".dylib")
-endif()
-
-if(WIN32)
-    set_target_properties(spi PROPERTIES
-        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/build.windows"
-        LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/build.windows"
-    )
-elseif(APPLE)
-    set_target_properties(spi PROPERTIES
-        LIBRARY_OUTPUT_DIRECTORY "${MACOS_BUILD_OUTPUT_DIR}"
-    )
-else()
-    set_target_properties(spi PROPERTIES
-        LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/build.linux"
-    )
-endif()
+# pv/cdecoders/example_spi/ is deliberately NOT built or shipped. It is a
+# reference implementation of the CDecoderDef ABI, kept in the tree as
+# documentation for third parties writing their own C decoder plugin.
+#
+# It used to be built as spi.dylib and installed into share/PXTOOL/cdecoders/,
+# where CDecoderRegistry picked it up under id "spi" -- the same id as the
+# Python SPI decoder. That made has_c_decoder_for_id("spi") true, so the
+# protocol picker split the Python entry into "SPI(C)"/"SPI(Py)", while the
+# built-in native C decoder (libsigrokdecode/c_decoders/spi_c.c, id "spi_c")
+# already contributed an entry named "SPI(C)". Result: two identical "SPI(C)"
+# rows backed by different implementations, where the example one hardcodes
+# Mode 0 / active-low CS / MSB-first / 8-bit and exposes no options at all
+# against the built-in decoder's seven. Picking the wrong row decoded
+# non-Mode-0 traffic incorrectly with no indication anything was off.
+#
+# The built-in C decoders are unaffected: they register into pd_list via
+# srd_c_decoder_register() and execute through di->c_dec_inst->decode(), a path
+# independent of CDecoderRegistry.
 
 if(WIN32)
     set(C_DECODER_OUTPUT_DIR "${CMAKE_CURRENT_SOURCE_DIR}/build.windows/decoders/c_decoders")
@@ -939,12 +930,12 @@ if(APPLE)
         COMMAND ${CMAKE_COMMAND} -E copy_directory
             "${CMAKE_CURRENT_SOURCE_DIR}/lang"
             "${_BUNDLE_RES_DIR}/share/PXTOOL/lang"
-        # Bundled C decoders
+        # Bundled C decoder plugin directory. Created empty on purpose: the
+        # built-in C decoders live under share/libsigrokdecode/decoders/
+        # c_decoders/, and no CDecoderRegistry plugin is shipped (see the note
+        # next to pv/cdecoders/example_spi above).
         COMMAND ${CMAKE_COMMAND} -E make_directory
             "${_BUNDLE_RES_DIR}/share/PXTOOL/cdecoders"
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            "$<TARGET_FILE:spi>"
-            "${_BUNDLE_RES_DIR}/share/PXTOOL/cdecoders/spi.dylib"
         COMMENT "Stage resources (icon, Python decoders, res/, demo/, lang/, cdecoders/) into app bundle"
     )
 elseif(NOT WIN32)
@@ -960,9 +951,6 @@ elseif(NOT WIN32)
             "${CMAKE_CURRENT_SOURCE_DIR}/build.linux/lang"
         COMMAND ${CMAKE_COMMAND} -E make_directory
             "${CMAKE_CURRENT_SOURCE_DIR}/share/PXTOOL/cdecoders"
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            "$<TARGET_FILE:spi>"
-            "${CMAKE_CURRENT_SOURCE_DIR}/share/PXTOOL/cdecoders/spi.so"
         COMMENT "Stage lang/ resources into build output"
     )
 endif()
@@ -1038,10 +1026,9 @@ foreach(dec ${C_DECODERS})
 endforeach()
 install(DIRECTORY lang DESTINATION ${MAC_RES_PREFIX}share/PXTOOL)
 
-# Bundled C decoders go alongside res/, demo/, lang/ under share/PXTOOL.
-# On macOS MAC_RES_PREFIX expands to <bundle>/Contents/Resources/, on Linux it
-# is empty so the destination resolves to <prefix>/share/PXTOOL/cdecoders.
-install(TARGETS spi LIBRARY DESTINATION ${MAC_RES_PREFIX}share/PXTOOL/cdecoders)
+# The CDecoderRegistry plugin directory (share/PXTOOL/cdecoders) ships empty;
+# no example plugin is installed. See the note next to pv/cdecoders/example_spi.
+# Built-in C decoders are installed with libsigrokdecode/decoders instead.
 
 #===============================================================================
 #= Packaging (handled by CPack)
