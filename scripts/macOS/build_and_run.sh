@@ -115,7 +115,7 @@ cd "${ROOT_DIR}"
 
 require_qt6_tools_on_path "${ROOT_DIR}"
 
-echo "[1/4] Configure upstream-compat demo and build"
+echo "[1/5] Configure upstream-compat demo and build"
 CPU_COUNT="$(sysctl -n hw.ncpu 2>/dev/null || echo 8)"
 cmake . -DDSVIEW_ENABLE_UPSTREAM_COMPAT_DEMO=ON
 make -j"${CPU_COUNT}"
@@ -126,7 +126,7 @@ if [ ! -f "${APP_WEBUI_PATH}" ]; then
     exit 1
 fi
 
-echo "[2/4] Deploy built-in C decoders into the app bundle"
+echo "[2/5] Deploy built-in C decoders into the app bundle"
 if [ ! -d "${SRD_C_DECODER_BUILD_DIR}" ]; then
     echo "ERROR: built libsigrokdecode C decoder directory not found: ${SRD_C_DECODER_BUILD_DIR}"
     exit 1
@@ -136,7 +136,7 @@ mkdir -p "${SRD_C_DECODER_APP_DIR}"
 cp -R "${SRD_C_DECODER_BUILD_DIR}/." "${SRD_C_DECODER_APP_DIR}/"
 echo "Built-in C decoders deployed: $(find "${SRD_C_DECODER_APP_DIR}" -type f -name '*.so' | wc -l | tr -d ' ')"
 
-echo "[3/4] Restore local Qt imports and drop packaged Qt artifacts"
+echo "[3/5] Restore local Qt imports and drop packaged Qt artifacts"
 restore_local_qt_framework_imports
 cleanup_packaged_qt_artifacts
 
