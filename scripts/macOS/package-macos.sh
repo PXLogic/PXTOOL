@@ -245,6 +245,94 @@ rebind_dlopened_module_deps() {
   echo "  Rebound $rebound dependencies across $scanned dlopen'd C decoder modules"
 }
 
+# macdeployqt rewrites a dependency only when it can resolve the path the
+# dependency is written as. libbrotlidec names its companion
+# @rpath/libbrotlicommon.1.dylib rather than by an absolute Homebrew path, so
+# macdeployqt copied libbrotlicommon into Contents/Frameworks but never rewrote
+# its LC_ID_DYLIB -- the one stale identity among 35 bundled dylibs, still
+# reading /opt/homebrew/opt/brotli/lib/libbrotlicommon.1.dylib.
+#
+# This did not break the app on its own: libbrotlidec had already been rewritten
+# to @executable_path/../Frameworks/libbrotlicommon.1.dylib, so the bundled copy
+# is what dyld actually maps (confirmed with vmmap). An absolute identity is
+# still wrong to ship, because a linker records a library's install name in
+# whatever links against it -- so anything built later against the bundled
+# library would reference /opt/homebrew, and a Homebrew machine would end up
+# with two copies of it in one process. That is the failure mode the dlopen'd
+# decoders above already demonstrated for glib.
+#
+# Give every bundled Mach-O a bundle-relative identity. Also pin @rpath
+# references that name a plain dylib we ship: macdeployqt does not always rewrite
+# those (older output left libbrotlidec and the libwebp family pointing at
+# @rpath/...), and an @rpath reference is resolved against the run-path list of
+# the whole loading chain, where the main executable still lists /opt/homebrew/lib
+# ahead of @executable_path/../Frameworks. Pinning removes that ambiguity.
+# @executable_path is used rather than @loader_path because it does not depend on
+# how deep the file sits in the bundle.
+#
+# @rpath references naming a framework (@rpath/QtCore.framework/Versions/A/
+# QtCore) are deliberately left alone: those are macdeployqt's own convention
+# and resolve through the rpaths it and ensure_bundled_plugin_rpaths set up.
+normalize_bundled_macho_identities() {
+  local app="$1"
+  local frameworks="$app/Contents/Frameworks"
+  local macho file_description install_name base dep ids=0 pinned=0
+
+  [ -d "$frameworks" ] || return 0
+
+  while IFS= read -r -d '' macho; do
+    if ! file_description="$(file -b "$macho" 2>&1)"; then
+      echo "ERROR: file could not inspect bundled Mach-O: $macho"
+      printf '%s\n' "$file_description"
+      return 1
+    fi
+    [[ "$file_description" == *Mach-O* ]] || continue
+
+    # LC_ID_DYLIB. Empty for executables and bundle/module files, which have no
+    # identity to fix.
+    install_name="$(otool -D "$macho" 2>/dev/null | awk 'NR == 2 { print; exit }')"
+    case "$install_name" in
+      /opt/homebrew/*|/usr/local/*|/Users/*)
+        # Derive the identity from where the file actually sits, not from the
+        # basename of the stale name: a Mach-O inside a framework has to keep
+        # its full QtFoo.framework/Versions/A/QtFoo suffix, otherwise dyld
+        # looks for a bare QtFoo next to the other dylibs and finds nothing.
+        install_name="@executable_path/../${macho#"$app/Contents/"}"
+        if ! install_name_tool -id "$install_name" "$macho" 2>/dev/null; then
+          echo "ERROR: could not set a bundle-relative id on $macho"
+          return 1
+        fi
+        echo "  Bundle-relative id: ${macho#"$app/"} -> $install_name"
+        ids=$((ids + 1))
+        ;;
+    esac
+
+    while IFS= read -r dep; do
+      # otool -L lists LC_ID_DYLIB alongside the dependencies; skip it so the
+      # identity is not mistaken for a link against itself.
+      [ -n "$install_name" ] && [ "$dep" = "$install_name" ] && continue
+      case "$dep" in
+        @rpath/*) ;;
+        *) continue ;;
+      esac
+      base="${dep#@rpath/}"
+      case "$base" in
+        */*) continue ;;  # framework import, not a plain dylib
+      esac
+      [ -f "$frameworks/$base" ] || continue
+      if ! install_name_tool -change "$dep" \
+        "@executable_path/../Frameworks/$base" "$macho" 2>/dev/null; then
+        echo "ERROR: could not pin $dep in $macho"
+        return 1
+      fi
+      echo "  Pinned ${macho#"$app/"}: $dep -> @executable_path/../Frameworks/$base"
+      pinned=$((pinned + 1))
+    done < <(otool -L "$macho" 2>/dev/null | awk 'NR > 1 { print $1 }')
+  done < <(find "$app" -type f -print0)
+
+  echo "  Normalized $ids bundled dylib identities, pinned $pinned @rpath references"
+}
+
 ensure_bundled_plugin_rpaths() {
   local app="$1"
   local plugins_dir="$app/Contents/PlugIns"
@@ -859,6 +947,7 @@ done
 restore_macos_system_framework_imports "$DIST_APP"
 ensure_bundled_plugin_rpaths "$DIST_APP"
 rebind_dlopened_module_deps "$DIST_APP"
+normalize_bundled_macho_identities "$DIST_APP"
 
 # Step 4: Ensure rpath is set (macdeployqt handles Qt + most dylibs)
 echo "[4/6] Verifying rpath and macdeployqt-bundled dylibs..."
@@ -931,6 +1020,9 @@ while IFS= read -r -d '' MACHO_FILE; do
     exit 1
   fi
 
+  # NR > 1 also covers the LC_ID_DYLIB line that otool -L prints for a dylib, so
+  # a library whose own identity still points outside the bundle is caught too
+  # -- that is how the stale libbrotlicommon.1.dylib id surfaced.
   MACHO_EXTERNAL="$(printf '%s\n' "$MACHO_DEPENDENCIES" \
     | awk 'NR > 1 && ($1 ~ /^\/opt\/homebrew\// || $1 ~ /^\/usr\/local\// || $1 ~ /^\/Users\//) { print $1 }')"
   if [ -n "$MACHO_EXTERNAL" ]; then
@@ -941,7 +1033,7 @@ while IFS= read -r -d '' MACHO_FILE; do
 done < <(find "$DIST_APP" -type f -print0)
 
 if [ -n "$BROKEN" ]; then
-  echo "ERROR: these bundled Mach-O files still reference paths outside the app:"
+  echo "ERROR: these bundled Mach-O files still reference or declare paths outside the app:"
   printf '%s' "$BROKEN" | sed 's/^/    /'
   echo "  The app would not run on a machine that lacks those paths."
   exit 1
