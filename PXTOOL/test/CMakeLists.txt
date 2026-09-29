@@ -252,3 +252,29 @@ target_link_libraries(srd-c-decoder-lifetime-test
     ${PY_LIB}
     -lglib-2.0
 )
+
+# Reference-counting contract of pv::data::decode::Decoder's option maps.
+# Its own small target rather than a DSView-test case, so it can be run under
+# AddressSanitizer without instrumenting the whole DSView-test binary:
+#   clang++ -fsanitize=address ... test_decoder_options.cpp decoder.cpp xlog.c
+# The bug it guards against corrupted glib's GVariantTypeInfo refcount and only
+# aborted later, inside srd_decoder_unload_all() at exit.
+add_executable(decoder-options-test
+    test_decoder_options.cpp
+    ../pv/data/decode/decoder.cpp
+    ../../common/log/xlog.c
+)
+
+target_include_directories(decoder-options-test PRIVATE
+    ..
+    ../..
+    ../../common
+    ../../libsigrokdecode
+    ${GLIB_INCLUDE_DIRS}
+    ${QT_INCLUDE_DIRS}
+)
+
+target_link_libraries(decoder-options-test
+    ${QT_LIBRARIES}
+    -lglib-2.0
+)
