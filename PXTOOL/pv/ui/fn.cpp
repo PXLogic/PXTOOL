@@ -25,6 +25,7 @@
 #include <QApplication>
 #include <QFile>
 #include <QIcon>
+#include <QPixmap>
 #include <QPushButton>
 #include <QComboBox>
 #include <QLabel>
@@ -349,5 +350,38 @@ namespace ui
 
         return icon_from_ico(besideExe);
     }
+
+#ifdef Q_OS_MAC
+    QIcon macos_application_icon()
+    {
+        // Preferred source: the very file Launch Services already painted into
+        // the Dock for this bundle, so re-setting the application icon is a
+        // no-op visually.  Qt reads every representation out of the .icns
+        // through the qicns image plugin.
+        const QString icns =
+            QCoreApplication::applicationDirPath()
+            + QStringLiteral("/../Resources/PXTOOL.icns");
+        if (QFile::exists(icns)) {
+            const QIcon fromIcns(icns);
+            if (!fromIcns.availableSizes().isEmpty())
+                return fromIcns;
+        }
+
+        // Fallback (unbundled builds, or a stripped-down bundle): the 1024px
+        // master the .icns is generated from, pre-scaled to the sizes macOS
+        // asks for.  See scripts/misc/rebuild_px_tool_icns.sh.
+        const QPixmap master(QStringLiteral(":/icons/dock_app_icon.png"));
+        if (master.isNull())
+            return QIcon();
+
+        static const int kDockSizes[] = {16, 32, 64, 128, 256, 512, 1024};
+        QIcon scaled;
+        for (int sz : kDockSizes) {
+            scaled.addPixmap(master.scaled(sz, sz, Qt::KeepAspectRatio,
+                                           Qt::SmoothTransformation));
+        }
+        return scaled;
+    }
+#endif
 
 } // namespace ui

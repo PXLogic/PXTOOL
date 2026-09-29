@@ -22,6 +22,7 @@
 #ifndef _UI_FN_H
 #define _UI_FN_H
 
+#include <QtGlobal>
 #include <QFont>
 #include <QSize>
 #include <QLabel>
@@ -69,6 +70,20 @@ namespace ui
 
     /** Window / taskbar icon: win-app-logo.ico beside DSView.exe, else qrc fallback. */
     QIcon application_icon();
+
+#ifdef Q_OS_MAC
+    /**
+     * macOS application (Dock) icon: the rounded-square artwork that
+     * Contents/Resources/PXTOOL.icns is built from.
+     *
+     * Qt's cocoa plugin forwards QGuiApplication::setWindowIcon() to
+     * -[NSApplication setApplicationIconImage:], so the application icon and
+     * the Dock icon are the same thing on macOS.  Passing application_icon()
+     * there would swap the Dock icon for the transparent, background-less
+     * Windows artwork a moment after launch; this one keeps it unchanged.
+     */
+    QIcon macos_application_icon();
+#endif
 
 } // namespace ui
 

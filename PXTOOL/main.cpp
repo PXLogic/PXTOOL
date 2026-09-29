@@ -188,7 +188,17 @@ int main(int argc, char *argv[])
 #endif
     }
 
+    // On macOS the application icon *is* the Dock icon: Qt's cocoa plugin
+    // forwards this call to -[NSApplication setApplicationIconImage:].  Feeding
+    // it application_icon() (the transparent, background-less win-app-logo.ico)
+    // made the Dock icon lose its rounded-square background right after launch,
+    // so use the same artwork as Contents/Resources/PXTOOL.icns instead.  The
+    // transparent artwork stays in use inside the app (title bar logo button).
+#ifdef Q_OS_MAC
+    QApplication::setWindowIcon(ui::macos_application_icon());
+#else
     QApplication::setWindowIcon(ui::application_icon());
+#endif
 
     // Set some application metadata
     QApplication::setApplicationVersion(DS_VERSION_STRING);
