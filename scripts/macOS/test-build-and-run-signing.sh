@@ -94,6 +94,13 @@ if [ "${1:-}" = "-D" ]; then
   printf '%s:\n%s\n' "${2:-}" "$FAKE_QT_INSTALL_NAME"
   exit 0
 fi
+if [ "${1:-}" = "-l" ]; then
+  printf '%s:\n' "${2:-}"
+  for rpath in ${FAKE_EXISTING_RPATHS:-}; do
+    printf '          cmd LC_RPATH\n      cmdsize 48\n         path %s (offset 12)\n' "$rpath"
+  done
+  exit 0
+fi
 printf '%s:\n' "${2:-}"
 printf '\t@executable_path/../Frameworks/QtGui.framework/Versions/A/QtGui (compatibility version 6.0.0, current version 6.11.2)\n'
 STUB
@@ -196,6 +203,68 @@ fi
 if [ ! -d "$APP/Contents/Frameworks/Python.framework" ]; then
   echo "Expected build_and_run.sh to preserve non-Qt frameworks." >&2
   cat "$WORKDIR/run.log" >&2
+  exit 1
+fi
+
+# The run above covers Homebrew's Qt, whose frameworks have absolute install
+# names and are fixed up with install_name_tool -change. Qt from the official
+# online installer or aqtinstall is different: its frameworks carry @rpath
+# install names, so -change would rewrite @rpath to the identical @rpath and do
+# nothing. Those builds need an LC_RPATH pointing at the local Qt lib directory,
+# because cleanup_packaged_qt_artifacts removes the in-bundle Qt frameworks.
+#
+# That branch used to be untested, and it cost a real regression: a refactor
+# deleted ensure_local_qt_rpath() outright and every test here still passed,
+# because this stub reports an absolute install name. The runs below exercise it.
+run_build_and_run() { # run_build_and_run <qt_install_name> [existing_rpaths]
+  : >"$WORKDIR/install-name-tool.log"
+  : >"$WORKDIR/codesign.log"
+  touch "$PY_DYNLOAD/zlib.cpython-313-darwin.so"
+
+  FAKE_CODESIGN_LOG="$WORKDIR/codesign.log" \
+  FAKE_INSTALL_NAME_TOOL_LOG="$WORKDIR/install-name-tool.log" \
+  FAKE_OPEN_LOG="$WORKDIR/open.log" \
+  FAKE_QT_INSTALL_NAME="$1" \
+  FAKE_QT_LIBS_DIR="$QT_LIBS_DIR" \
+  FAKE_EXISTING_RPATHS="${2:-}" \
+  HOME="$WORKDIR/home" \
+  PATH="$FAKEBIN:$PATH" \
+  "$SCRIPT_UNDER_TEST" >"$WORKDIR/run.log" 2>&1
+}
+
+RPATH_INSTALL_NAME="@rpath/QtGui.framework/Versions/A/QtGui"
+
+if ! run_build_and_run "$RPATH_INSTALL_NAME"; then
+  echo "Expected build_and_run.sh to succeed for @rpath Qt install names." >&2
+  cat "$WORKDIR/run.log" >&2
+  exit 1
+fi
+
+if ! grep -Fq -- "-add_rpath $QT_LIBS_DIR $APP/Contents/MacOS/PXTOOL" \
+  "$WORKDIR/install-name-tool.log"; then
+  echo "Expected an LC_RPATH to the local Qt libs when Qt uses @rpath install names." >&2
+  cat "$WORKDIR/run.log" >&2
+  cat "$WORKDIR/install-name-tool.log" >&2
+  exit 1
+fi
+
+if grep -Fq -- "-change $RPATH_INSTALL_NAME $RPATH_INSTALL_NAME" \
+  "$WORKDIR/install-name-tool.log"; then
+  echo "Expected no no-op -change when the install name is already @rpath-relative." >&2
+  cat "$WORKDIR/install-name-tool.log" >&2
+  exit 1
+fi
+
+# Re-running must not stack a second copy of the same LC_RPATH.
+if ! run_build_and_run "$RPATH_INSTALL_NAME" "$QT_LIBS_DIR"; then
+  echo "Expected build_and_run.sh to succeed when the Qt rpath already exists." >&2
+  cat "$WORKDIR/run.log" >&2
+  exit 1
+fi
+
+if grep -Fq -- "-add_rpath $QT_LIBS_DIR" "$WORKDIR/install-name-tool.log"; then
+  echo "Expected no duplicate LC_RPATH when the Qt rpath is already present." >&2
+  cat "$WORKDIR/install-name-tool.log" >&2
   exit 1
 fi
 

@@ -21,6 +21,30 @@ CDECODER_RUNTIME_DIR="${HOME}/Library/Application Support/DreamSourceLab/PXTOOL/
 # shellcheck source=scripts/macOS/qt6_env.sh
 . "${SCRIPT_DIR}/qt6_env.sh"
 
+# Qt built by the official installer keeps @rpath-relative framework install
+# names, so rewriting the executable's imports is a no-op there. Those builds
+# instead need an LC_RPATH pointing at the local Qt library directory, because
+# cleanup_packaged_qt_artifacts removes the copies under Contents/Frameworks.
+ensure_local_qt_rpath() {
+    local executable="$1"
+    local qt_libs="$2"
+    local load_commands existing_rpaths
+
+    if ! load_commands="$(otool -l "${executable}" 2>&1)"; then
+        echo "ERROR: otool could not read load commands: ${executable}"
+        printf '%s\n' "${load_commands}"
+        return 1
+    fi
+    existing_rpaths="$(printf '%s\n' "${load_commands}" \
+        | awk '/LC_RPATH/ { in_rpath = 1; next }
+               in_rpath && $1 == "path" { print $2; in_rpath = 0 }')"
+    if printf '%s\n' "${existing_rpaths}" | grep -Fqx "${qt_libs}"; then
+        return 0
+    fi
+    install_name_tool -add_rpath "${qt_libs}" "${executable}"
+    echo "Added local Qt rpath: ${qt_libs}"
+}
+
 restore_local_qt_framework_imports() {
     local executable="${APP_PATH}/Contents/MacOS/${APP_NAME}"
     local qtpaths qt_libs dependencies dependency framework_suffix local_dependency install_name
