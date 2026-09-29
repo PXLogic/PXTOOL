@@ -53,8 +53,7 @@ touch "$QT_DYLIB"
 touch "$QT_LOCAL_BINARY"
 ln -s ../../../../../../lib/python3.13/site-packages "$BROKEN_SITE_PACKAGES"
 touch "$PYCACHE_DIR/__init__.cpython-313.pyc"
-touch "$WORKDIR/build.macOS/spi.dylib"
-touch "$SRD_C_DECODER_BUILD_DIR/spi.dylib"
+touch "$SRD_C_DECODER_BUILD_DIR/libspi_c.so"
 
 cat >"$FAKEBIN/sysctl" <<'STUB'
 #!/usr/bin/env bash
@@ -135,8 +134,8 @@ if ! grep -q -- 'zlib.cpython-313-darwin.so' "$FAKE_CODESIGN_LOG"; then
   exit 1
 fi
 
-if ! grep -q -- 'spi.dylib' "$FAKE_CODESIGN_LOG"; then
-  echo "Expected runtime C decoder dylibs to be re-signed before open." >&2
+if ! grep -q -- 'libspi_c.so' "$FAKE_CODESIGN_LOG"; then
+  echo "Expected built-in C decoders in the bundle to be re-signed before open." >&2
   exit 1
 fi
 
@@ -203,6 +202,27 @@ fi
 if [ ! -d "$APP/Contents/Frameworks/Python.framework" ]; then
   echo "Expected build_and_run.sh to preserve non-Qt frameworks." >&2
   cat "$WORKDIR/run.log" >&2
+  exit 1
+fi
+
+# The built-in C decoders are the ones that actually back the "(C)" entries in
+# the protocol picker; they must reach the bundle.
+if [ ! -f "$APP/Contents/Resources/share/libsigrokdecode/decoders/c_decoders/libspi_c.so" ]; then
+  echo "Expected built-in C decoders to be deployed into the app bundle." >&2
+  cat "$WORKDIR/run.log" >&2
+  exit 1
+fi
+
+# share/PXTOOL/cdecoders is the CDecoderRegistry plugin directory. No example
+# plugin is shipped any more: bundling one under the same id as a Python decoder
+# is what produced two indistinguishable "SPI(C)" rows.
+if [ -e "$APP/Contents/Resources/share/PXTOOL/cdecoders/spi.dylib" ]; then
+  echo "Expected no example C decoder plugin to be deployed." >&2
+  exit 1
+fi
+
+if [ -e "$WORKDIR/home/Library/Application Support/DreamSourceLab/PXTOOL/cdecoders/spi.dylib" ]; then
+  echo "Expected build_and_run.sh not to install a C decoder plugin into the user data dir." >&2
   exit 1
 fi
 

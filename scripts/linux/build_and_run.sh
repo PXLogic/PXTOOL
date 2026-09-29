@@ -10,8 +10,6 @@ BUILD_DIR="${ROOT_DIR}/build"
 OUTPUT_DIR="${ROOT_DIR}/build.linux"
 APP_PATH="${OUTPUT_DIR}/PXTOOL"
 SHARE_DIR="${ROOT_DIR}/share"
-SPI_OUTPUT_PATH="${OUTPUT_DIR}/spi.so"
-SPI_MODULE_PATH="${BUILD_DIR}/spi.so"
 C_DECODER_BUILD_DIR="${OUTPUT_DIR}/decoders/c_decoders"
 C_DECODER_RUNTIME_DIR="${SHARE_DIR}/libsigrokdecode/decoders/c_decoders"
 UDEV_RULES_PATH="/etc/udev/rules.d/60-dreamsourcelab.rules"
@@ -59,13 +57,10 @@ fi
 rm -rf "${C_DECODER_RUNTIME_DIR}"
 mkdir -p "${C_DECODER_RUNTIME_DIR}"
 cmake -E copy_directory "${C_DECODER_BUILD_DIR}" "${C_DECODER_RUNTIME_DIR}"
-if [ -f "${SPI_OUTPUT_PATH}" ]; then
-    mkdir -p "${SHARE_DIR}/PXTOOL/cdecoders"
-    cmake -E copy_if_different "${SPI_OUTPUT_PATH}" "${SHARE_DIR}/PXTOOL/cdecoders/spi.so"
-elif [ -f "${SPI_MODULE_PATH}" ]; then
-    mkdir -p "${SHARE_DIR}/PXTOOL/cdecoders"
-    cmake -E copy_if_different "${SPI_MODULE_PATH}" "${SHARE_DIR}/PXTOOL/cdecoders/spi.so"
-fi
+
+# CDecoderRegistry plugin directory; created empty on purpose, no example
+# plugin is shipped. Built-in C decoders were copied above.
+mkdir -p "${SHARE_DIR}/PXTOOL/cdecoders"
 
 if [ ! -f "${UDEV_RULES_PATH}" ]; then
     echo "WARNING: USB udev rules are not installed."

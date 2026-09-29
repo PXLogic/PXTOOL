@@ -809,15 +809,10 @@ for lib in libglib-2.0.0.dylib libusb-1.0.0.dylib libfftw3.3.dylib; do
   fi
 done
 
-# Confirm bundled C decoders survived the copy from package-root/.
-CDECODERS_DIR="$DIST_APP/Contents/Resources/share/PXTOOL/cdecoders"
-for dylib in spi.dylib; do
-  if [ -f "$CDECODERS_DIR/$dylib" ]; then
-    echo "  OK: cdecoders/$dylib"
-  else
-    echo "  WARNING: cdecoders/$dylib missing - did 'make install' populate package-root?"
-  fi
-done
+# share/PXTOOL/cdecoders is the CDecoderRegistry plugin directory. It ships
+# empty -- no example plugin is bundled, so there is nothing to verify here.
+# Built-in C decoders live under share/libsigrokdecode/decoders/c_decoders,
+# checked below.
 SRD_CDECODERS_DIR="$DIST_APP/Contents/Resources/share/libsigrokdecode/decoders/c_decoders"
 if [ -d "$SRD_CDECODERS_DIR" ]; then
   SRD_CDECODER_COUNT=$(find "$SRD_CDECODERS_DIR" -type f -name "*.dylib" -o -name "*.so" | wc -l | tr -d ' ')
