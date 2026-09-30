@@ -86,25 +86,13 @@ if %ERRORLEVEL% NEQ 0 (
 
 echo.
 echo [Package] Creating release zip...
-powershell -NoProfile -ExecutionPolicy Bypass -Command ^
-  "$ErrorActionPreference = 'Stop'; try { " ^
-  "$root = '%CD%'; " ^
-  "$cmake = Get-Content \"$root\CMakeLists.txt\" -Raw; " ^
-  "$major = [regex]::Match($cmake, 'set\(DS_VERSION_MAJOR\s+(\S+)\)').Groups[1].Value; " ^
-  "$minor = [regex]::Match($cmake, 'set\(DS_VERSION_MINOR\s+(\S+)\)').Groups[1].Value; " ^
-  "$micro = [regex]::Match($cmake, 'set\(DS_VERSION_MICRO\s+(\S+)\)').Groups[1].Value; " ^
-  "$ver = \"$major.$minor.$micro\"; " ^
-  "$zipName = \"PXTOOL-$ver-win64.zip\"; " ^
-  "$zipPath = \"$root\$zipName\"; " ^
-  "Write-Host \"  Version : $ver\"; " ^
-  "Write-Host \"  Output  : $zipPath\"; " ^
-  "Get-ChildItem \"$root\" -Filter 'PXTOOL-*-win64.zip' | ForEach-Object { Remove-Item $_.FullName -Force -ErrorAction Stop; Write-Host \"  Deleted : $($_.Name)\" }; " ^
-  "$buildDir = \"$root\build.windows\"; " ^
-  "if (-not (Test-Path $buildDir)) { Write-Host 'ERROR: build.windows not found'; exit 1 }; " ^
-  "if (-not (Test-Path \"$buildDir\webui\index.html\")) { Write-Host 'ERROR: build.windows\webui\index.html missing'; exit 1 }; " ^
-  "Compress-Archive -Path \"$buildDir\*\" -DestinationPath $zipPath -CompressionLevel Optimal -ErrorAction Stop; " ^
-  "Write-Host \"  Done: $zipName ($([math]::Round((Get-Item $zipPath).Length/1MB,1)) MB)\"; " ^
-  "} catch { exit 1 }"
+REM CPack stages the package through the install() rules in CMakeLists.txt, so
+REM the ZIP contains only the runtime tree. It deliberately does not archive
+REM build.windows: that directory also holds the CMake build tree (_deps with a
+REM full nlohmann/json git clone, CMakeFiles, moc/qrc output, test binaries) plus
+REM every DLL any previous deployment ever left behind.
+REM Run through MSYS2 so windeployqt6 and objdump are on PATH during install.
+C:\msys64\usr\bin\bash.exe --login -c "cd \"$(cygpath -u '%CD%')\" && bash scripts/windows/package_script.sh"
 
 if %ERRORLEVEL% NEQ 0 (
     echo.

@@ -975,6 +975,13 @@ endif()
 #= Installation
 #-------------------------------------------------------------------------------
 
+# The Windows package installs several things to "." (see PXTOOL_INSTALL_DATA_DIR
+# below), which CMake 3.31+ warns about unless DESTINATION normalization is
+# enabled. Normalizing does not change any of the other destinations here.
+if(POLICY CMP0177)
+    cmake_policy(SET CMP0177 NEW)
+endif()
+
 # Install the executable.
 if(APPLE)
     install(TARGETS ${PROJECT_NAME} BUNDLE DESTINATION .)
@@ -984,19 +991,40 @@ if(APPLE)
 
     # Adding icon via add_executable / target_sources does not work, hack around this
     install(FILES PXTOOL.icns DESTINATION ${MAC_RES_PREFIX})
+elseif(WIN32)
+    # PXTOOL.exe sits at the root of the package, not in bin/: it locates its
+    # data relative to its own directory (see PXTOOL_INSTALL_DATA_DIR below).
+    install(TARGETS ${PROJECT_NAME} RUNTIME DESTINATION .)
 else()
     install(TARGETS ${PROJECT_NAME} DESTINATION bin)
 endif()
-install(DIRECTORY PXTOOL/res DESTINATION ${MAC_RES_PREFIX}share/PXTOOL)
-install(DIRECTORY PXTOOL/demo DESTINATION ${MAC_RES_PREFIX}share/PXTOOL)
-if(APPLE)
-    install(DIRECTORY web/dist/ DESTINATION ${DS_TITLE}.app/Contents/MacOS/webui OPTIONAL)
+
+# Where the runtime data tree lands. On Windows GetAppDataDir()
+# (PXTOOL/pv/config/appconfig.cpp) returns applicationDirPath(), so res/,
+# decoders/, lang/ and friends have to sit flat beside PXTOOL.exe; a bin/ +
+# share/ split would leave the app unable to find any of them.
+if(WIN32)
+    set(PXTOOL_INSTALL_DATA_DIR ".")
+    set(PXTOOL_INSTALL_DECODE_DIR ".")
+    set(PXTOOL_INSTALL_WEBUI_DIR "webui")
 else()
-    install(DIRECTORY web/dist/ DESTINATION bin/webui OPTIONAL)
+    set(PXTOOL_INSTALL_DATA_DIR "${MAC_RES_PREFIX}share/PXTOOL")
+    set(PXTOOL_INSTALL_DECODE_DIR "${MAC_RES_PREFIX}share/libsigrokdecode")
+    if(APPLE)
+        set(PXTOOL_INSTALL_WEBUI_DIR "${DS_TITLE}.app/Contents/MacOS/webui")
+    else()
+        set(PXTOOL_INSTALL_WEBUI_DIR "bin/webui")
+    endif()
 endif()
-install(FILES PXTOOL/icons/logo.svg DESTINATION ${MAC_RES_PREFIX}share/PXTOOL RENAME logo.svg)
-install(FILES PXTOOL/icons/logo.svg DESTINATION ${MAC_RES_PREFIX}share/icons/hicolor/scalable/apps RENAME pxtool.svg)
-install(FILES PXTOOL/icons/logo.svg DESTINATION ${MAC_RES_PREFIX}share/pixmaps RENAME pxtool.svg)
+
+install(DIRECTORY PXTOOL/res DESTINATION ${PXTOOL_INSTALL_DATA_DIR})
+install(DIRECTORY PXTOOL/demo DESTINATION ${PXTOOL_INSTALL_DATA_DIR})
+install(DIRECTORY web/dist/ DESTINATION ${PXTOOL_INSTALL_WEBUI_DIR} OPTIONAL)
+install(FILES PXTOOL/icons/logo.svg DESTINATION ${PXTOOL_INSTALL_DATA_DIR} RENAME logo.svg)
+if(NOT WIN32)
+    install(FILES PXTOOL/icons/logo.svg DESTINATION ${MAC_RES_PREFIX}share/icons/hicolor/scalable/apps RENAME pxtool.svg)
+    install(FILES PXTOOL/icons/logo.svg DESTINATION ${MAC_RES_PREFIX}share/pixmaps RENAME pxtool.svg)
+endif()
 
 if(CMAKE_SYSTEM_NAME MATCHES "Linux")	
 	install(FILES PXTOOL/PXTOOL.desktop DESTINATION /usr/share/applications RENAME pxtool.desktop)
@@ -1013,22 +1041,90 @@ if(CMAKE_SYSTEM_NAME MATCHES "Linux")
 
 endif()
 
-install(FILES NEWS25 DESTINATION ${MAC_RES_PREFIX}share/PXTOOL RENAME NEWS25)
-install(FILES NEWS31 DESTINATION ${MAC_RES_PREFIX}share/PXTOOL RENAME NEWS31)
-install(FILES ug25.pdf DESTINATION ${MAC_RES_PREFIX}share/PXTOOL RENAME ug25.pdf)
-install(FILES ug31.pdf DESTINATION ${MAC_RES_PREFIX}share/PXTOOL RENAME ug31.pdf)
+# Upstream DSView documentation. Not installed on Windows: nothing in the code
+# opens these files, and the Windows package has never shipped them, so routing
+# them into the flat layout would only add ~7 MB of PDFs to the ZIP.
+if(NOT WIN32)
+    install(FILES NEWS25 DESTINATION ${MAC_RES_PREFIX}share/PXTOOL RENAME NEWS25)
+    install(FILES NEWS31 DESTINATION ${MAC_RES_PREFIX}share/PXTOOL RENAME NEWS31)
+    install(FILES ug25.pdf DESTINATION ${MAC_RES_PREFIX}share/PXTOOL RENAME ug25.pdf)
+    install(FILES ug31.pdf DESTINATION ${MAC_RES_PREFIX}share/PXTOOL RENAME ug31.pdf)
+endif()
 
-install(DIRECTORY libsigrokdecode/decoders DESTINATION ${MAC_RES_PREFIX}share/libsigrokdecode)
+# 文件夹.bat and subfolders_list.txt are not decoders; leaving them in place
+# makes libsigrokdecode report "Failed to load decoder" at startup.
+install(DIRECTORY libsigrokdecode/decoders DESTINATION ${PXTOOL_INSTALL_DECODE_DIR}
+    PATTERN "文件夹.bat" EXCLUDE
+    PATTERN "subfolders_list.txt" EXCLUDE
+)
 foreach(dec ${C_DECODERS})
     install(TARGETS decoder_${dec}
-        DESTINATION ${MAC_RES_PREFIX}share/libsigrokdecode/decoders/c_decoders
+        DESTINATION ${PXTOOL_INSTALL_DECODE_DIR}/decoders/c_decoders
     )
 endforeach()
-install(DIRECTORY lang DESTINATION ${MAC_RES_PREFIX}share/PXTOOL)
+install(DIRECTORY lang DESTINATION ${PXTOOL_INSTALL_DATA_DIR})
 
 # The CDecoderRegistry plugin directory (share/PXTOOL/cdecoders) ships empty;
 # no example plugin is installed. See the note next to pv/cdecoders/example_spi.
 # Built-in C decoders are installed with libsigrokdecode/decoders instead.
+install(DIRECTORY DESTINATION ${PXTOOL_INSTALL_DATA_DIR}/cdecoders)
+
+if(WIN32)
+    #===========================================================================
+    #= Windows runtime staging
+    #---------------------------------------------------------------------------
+    # These are the pieces scripts/windows/deploy_script.sh puts into
+    # build.windows so the app can be run straight from the build tree. They are
+    # repeated here because `cmake --install` / `cpack` must be able to produce a
+    # complete package without depending on whatever state build.windows is in.
+
+    # QApplication::setWindowIcon() loads this file from beside the executable.
+    install(FILES win-app-logo.ico DESTINATION .)
+    install(DIRECTORY PXTOOL/themes DESTINATION .)
+
+    # Bundle the Python standard library so no system-wide Python is needed.
+    # PYTHONHOME points at the app directory, so the stdlib must be at
+    # <app>/lib/pythonX.Y/ (see scripts/windows/deploy_script.sh step 6).
+    get_filename_component(_pxtool_toolchain_bin "${CMAKE_CXX_COMPILER}" DIRECTORY)
+    get_filename_component(PXTOOL_MINGW_PREFIX "${_pxtool_toolchain_bin}" DIRECTORY)
+
+    if(Python3_VERSION_MAJOR AND Python3_VERSION_MINOR)
+        set(PXTOOL_PYTHON_VERSION "${Python3_VERSION_MAJOR}.${Python3_VERSION_MINOR}")
+    else()
+        file(GLOB _pxtool_python_stdlib_dirs "${PXTOOL_MINGW_PREFIX}/lib/python3.*")
+        list(GET _pxtool_python_stdlib_dirs 0 _pxtool_python_stdlib_dir)
+        get_filename_component(_pxtool_python_stdlib_name "${_pxtool_python_stdlib_dir}" NAME)
+        string(REPLACE "python" "" PXTOOL_PYTHON_VERSION "${_pxtool_python_stdlib_name}")
+    endif()
+
+    if(NOT PXTOOL_PYTHON_VERSION)
+        message(FATAL_ERROR "Could not determine the Python version to bundle on Windows.")
+    endif()
+    message(STATUS "Windows package will bundle Python ${PXTOOL_PYTHON_VERSION} stdlib")
+
+    install(DIRECTORY "${PXTOOL_MINGW_PREFIX}/lib/python${PXTOOL_PYTHON_VERSION}/"
+        DESTINATION "lib/python${PXTOOL_PYTHON_VERSION}"
+        PATTERN "__pycache__" EXCLUDE
+        REGEX "/tests?$" EXCLUDE
+    )
+
+    find_program(PXTOOL_WINDEPLOYQT
+        NAMES windeployqt6 windeployqt
+        HINTS "${PXTOOL_MINGW_PREFIX}/bin"
+    )
+    if(NOT PXTOOL_WINDEPLOYQT)
+        message(WARNING "windeployqt6 was not found; `cmake --install` and `cpack` will fail for Windows packages.")
+    endif()
+
+    # Runs last: it scans what the rules above have already staged to work out
+    # the MinGW DLL closure, then hands the executable to windeployqt6.
+    configure_file(
+        "${CMAKE_CURRENT_SOURCE_DIR}/CMake/InstallWindowsRuntime.cmake.in"
+        "${CMAKE_CURRENT_BINARY_DIR}/InstallWindowsRuntime.cmake"
+        @ONLY
+    )
+    install(SCRIPT "${CMAKE_CURRENT_BINARY_DIR}/InstallWindowsRuntime.cmake")
+endif()
 
 #===============================================================================
 #= Packaging (handled by CPack)
@@ -1047,8 +1143,17 @@ set(CPACK_PACKAGE_CONTACT "913461865@qq.com")
 
 # Set the final package file name.
 if(WIN32)
-    # This will generate: PXTOOL-1.0.0-win64.exe and PXTOOL-1.0.0-win64.zip
+    # This will generate: PXTOOL-1.0.0-win64.zip
     set(CPACK_PACKAGE_FILE_NAME "PXTOOL-${DS_VERSION_MAJOR}.${DS_VERSION_MINOR}.${DS_VERSION_MICRO}-win64")
+    set(CPACK_GENERATOR "ZIP")
+    # Land the archive next to the sources, where scripts/windows/FULL_BUILD.bat
+    # has always written it.
+    set(CPACK_PACKAGE_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}")
+    # Keep PXTOOL.exe at the archive root instead of nesting it under a
+    # PXTOOL-<version>-win64/ directory, so the ZIP stays a drop-in replacement
+    # for the previous one.
+    set(CPACK_INCLUDE_TOPLEVEL_DIRECTORY 0)
+    set(CPACK_ARCHIVE_COMPONENT_INSTALL OFF)
 elseif(APPLE)
     set(CPACK_PACKAGE_FILE_NAME "PXTOOL-${DS_VERSION_MAJOR}.${DS_VERSION_MINOR}.${DS_VERSION_MICRO}-arm64-macOS")
     set(CPACK_PACKAGE_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/build.macOS")

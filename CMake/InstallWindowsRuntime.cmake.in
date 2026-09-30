@@ -1,0 +1,164 @@
+# Windows runtime deployment, executed during `cmake --install` / `cpack`.
+#
+# Everything the app loads at runtime is resolved here, from the toolchain
+# prefix, into CMAKE_INSTALL_PREFIX.  It is deliberately not copied out of
+# build.windows: that directory accumulates every DLL any past deployment ever
+# put there and nothing prunes it, so packaging it wholesale shipped ~150 DLLs
+# the app never loads (plus the CMake build tree itself).
+#
+# Configured from CMakeLists.txt; do not edit the generated copy in the build
+# directory.
+
+cmake_minimum_required(VERSION 3.16)
+
+# The exclude patterns below are written against forward-slash paths, which is
+# what CMake 3.31+ normalizes to before matching.
+if(POLICY CMP0207)
+    cmake_policy(SET CMP0207 NEW)
+endif()
+
+set(MINGW_PREFIX "@PXTOOL_MINGW_PREFIX@")
+set(PYTHON_VERSION "@PXTOOL_PYTHON_VERSION@")
+set(WINDEPLOYQT "@PXTOOL_WINDEPLOYQT@")
+set(CMAKE_OBJDUMP "@CMAKE_OBJDUMP@")
+
+set(APP_DIR "${CMAKE_INSTALL_PREFIX}")
+set(APP_EXE "${APP_DIR}/PXTOOL.exe")
+
+if(NOT EXISTS "${APP_EXE}")
+    message(FATAL_ERROR "PXTOOL.exe was not staged at ${APP_EXE}.")
+endif()
+
+# -----------------------------------------------------------------------------
+# Qt6 runtime and plugins.
+#
+# Runs before the MinGW closure below, because windeployqt6 stages plugins
+# (platforms/, imageformats/, tls/, ...) but not their non-Qt dependencies --
+# qjpeg.dll needs libjpeg, qglib.dll needs libgio/libgobject -- so those plugins
+# have to be on disk before the closure is computed.
+# -----------------------------------------------------------------------------
+if(NOT WINDEPLOYQT)
+    message(FATAL_ERROR "windeployqt6 was not found at configure time; cannot stage the Qt runtime.")
+endif()
+
+execute_process(
+    COMMAND "${WINDEPLOYQT}" --release --no-translations --no-compiler-runtime "${APP_EXE}"
+    RESULT_VARIABLE windeployqt_result
+    OUTPUT_VARIABLE windeployqt_output
+    ERROR_VARIABLE windeployqt_output
+)
+if(NOT windeployqt_result EQUAL 0)
+    message(FATAL_ERROR "windeployqt6 failed (${windeployqt_result}):\n${windeployqt_output}")
+endif()
+
+# Tells Qt to look for plugins beside the executable rather than in the
+# MSYS2 prefix baked into Qt6Core at build time.
+file(WRITE "${APP_DIR}/qt.conf" "[Paths]\nPrefix = .\nPlugins = .\n")
+
+# -----------------------------------------------------------------------------
+# MinGW runtime dependency closure.
+#
+# Scanning PXTOOL.exe alone is not enough: the C decoders, the bundled CPython
+# extension modules and the Qt plugins are all loaded at runtime, so their
+# imports (glib, sqlite3, ssl, bz2, lzma, jpeg, ...) never appear in the
+# executable's import table. Every PE already staged is therefore scanned, and
+# the scan is repeated until it stops finding new dependencies, so that a DLL
+# pulled in on one pass has its own imports satisfied on the next.
+# -----------------------------------------------------------------------------
+string(TOLOWER "${MINGW_PREFIX}" MINGW_PREFIX_LOWER)
+set(DEPLOYED_COUNT 0)
+
+foreach(pass RANGE 1 8)
+    file(GLOB_RECURSE STAGED_MODULES
+        "${APP_DIR}/*.dll" "${APP_DIR}/*.pyd"
+    )
+    # scripts/windows/deploy_script.sh runs this script with APP_DIR set to
+    # build.windows so that the build tree and the package get an identical
+    # runtime. There the glob above also reaches the CMake build tree, whose
+    # artifacts are not part of the runtime and must not drag dependencies in.
+    list(FILTER STAGED_MODULES EXCLUDE REGEX "/(_deps|CMakeFiles|Testing|PXTOOL|\\.[^/]+)/")
+
+    file(GET_RUNTIME_DEPENDENCIES
+        EXECUTABLES "${APP_EXE}"
+        MODULES ${STAGED_MODULES}
+        RESOLVED_DEPENDENCIES_VAR RESOLVED_DEPS
+        UNRESOLVED_DEPENDENCIES_VAR UNRESOLVED_DEPS
+        # Anything windeployqt6 already staged also exists in the toolchain's
+        # bin directory, which the resolver reports as a conflict. Collect those
+        # instead of erroring out: the staged copy is the one to keep, and the
+        # copy loop below skips whatever is already in place.
+        CONFLICTING_DEPENDENCIES_PREFIX STAGED_CONFLICT
+        DIRECTORIES "${MINGW_PREFIX}/bin"
+        PRE_EXCLUDE_REGEXES "api-ms-win-.*" "ext-ms-.*"
+        POST_EXCLUDE_REGEXES ".*[Ss]ystem32.*"
+    )
+
+    # Only the toolchain's own DLLs are ours to redistribute. Anything resolved
+    # elsewhere is a Windows system library and must keep coming from the OS.
+    set(NEW_THIS_PASS 0)
+    foreach(dep IN LISTS RESOLVED_DEPS)
+        string(TOLOWER "${dep}" dep_lower)
+        string(FIND "${dep_lower}" "${MINGW_PREFIX_LOWER}/" position)
+        if(NOT position EQUAL 0)
+            continue()
+        endif()
+        get_filename_component(dep_name "${dep}" NAME)
+        if(EXISTS "${APP_DIR}/${dep_name}")
+            continue()
+        endif()
+        file(COPY "${dep}" DESTINATION "${APP_DIR}")
+        math(EXPR NEW_THIS_PASS "${NEW_THIS_PASS} + 1")
+    endforeach()
+
+    math(EXPR DEPLOYED_COUNT "${DEPLOYED_COUNT} + ${NEW_THIS_PASS}")
+    if(NEW_THIS_PASS EQUAL 0)
+        break()
+    endif()
+    message(STATUS "PXTOOL: dependency pass ${pass} added ${NEW_THIS_PASS} DLLs")
+endforeach()
+
+if(NOT NEW_THIS_PASS EQUAL 0)
+    message(FATAL_ERROR
+        "Runtime dependency closure did not settle; the package may be incomplete.")
+endif()
+
+message(STATUS "PXTOOL: deployed ${DEPLOYED_COUNT} MinGW runtime DLLs")
+
+# Unresolved imports are expected for Windows' own DLLs (KERNEL32, USER32, ...)
+# which are not on the search path given above, so they are reported rather
+# than treated as an error.
+list(LENGTH UNRESOLVED_DEPS unresolved_count)
+if(unresolved_count GREATER 0)
+    message(STATUS "PXTOOL: ${unresolved_count} imports left to the OS (expected: Windows system DLLs)")
+endif()
+
+# -----------------------------------------------------------------------------
+# Guard rails. A package that is missing any of these looks fine until it is
+# started on a machine without MSYS2, so fail here instead.
+# -----------------------------------------------------------------------------
+foreach(required
+        "PXTOOL.exe"
+        "qt.conf"
+        "platforms/qwindows.dll"
+        "webui/index.html"
+        "res"
+        "lang/en"
+        "decoders/c_decoders"
+        "lib/python${PYTHON_VERSION}/encodings")
+    if(NOT EXISTS "${APP_DIR}/${required}")
+        message(FATAL_ERROR "PXTOOL package is incomplete: ${required} is missing from ${APP_DIR}.")
+    endif()
+endforeach()
+
+# The same check deploy_script.sh applies to build.windows: a stray Qt5 (or
+# other non-Qt6) artifact means a stale or mixed Qt is being shipped.
+file(GLOB_RECURSE STAGED_FILES LIST_DIRECTORIES false "${APP_DIR}/*")
+foreach(staged IN LISTS STAGED_FILES)
+    string(TOLOWER "${staged}" staged_lower)
+    if(staged_lower MATCHES "qt[0-9]" AND NOT staged_lower MATCHES "qt6")
+        message(FATAL_ERROR "Non-Qt6 artifact in package: ${staged}")
+    endif()
+endforeach()
+
+list(LENGTH STAGED_FILES staged_count)
+message(STATUS "PXTOOL: package staged with ${staged_count} files at ${APP_DIR}")

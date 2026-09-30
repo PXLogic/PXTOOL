@@ -23,6 +23,10 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SOURCE_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
 BUILD_DIR="$SOURCE_DIR/build.windows"
 CLEANUP_STALE_INSTALL_CHECKS="$SCRIPT_DIR/cleanup_stale_install_checks.sh"
+# Generated from CMake/InstallWindowsRuntime.cmake.in at configure time. Shared
+# with the release package (scripts/windows/package_script.sh) so that running
+# from build.windows exercises the same runtime that ships in the ZIP.
+INSTALL_RUNTIME_SCRIPT="$BUILD_DIR/InstallWindowsRuntime.cmake"
 
 cd "$BUILD_DIR" || { echo "ERROR: build.windows not found"; exit 1; }
 
@@ -37,6 +41,12 @@ if ! bash "$CLEANUP_STALE_INSTALL_CHECKS" "$BUILD_DIR"; then
     exit 1
 fi
 
+if [ ! -f "$INSTALL_RUNTIME_SCRIPT" ]; then
+    echo "ERROR: $INSTALL_RUNTIME_SCRIPT was not generated."
+    echo "       Re-run CMake configuration: scripts/windows/BUILD.bat"
+    exit 1
+fi
+
 echo ""
 echo "======================================"
 echo "PXTOOL Deploy - Runtime Dependencies"
@@ -44,20 +54,15 @@ echo "======================================"
 echo ""
 
 # --------------------------------------------------------------------------
-# Step 1: Runtime DLL dependencies (MinGW64)
-# Only copy exact dependencies. A full bin-directory fallback can deploy
-# legacy Qt merely because it remains installed in MSYS2.
+# Clean slate for everything the runtime staging step re-creates.
+#
+# Every DLL is removed, not just Qt's. Earlier revisions deployed the whole
+# MinGW bin directory, and the incremental copy that replaced it never pruned
+# what it no longer needed, so build.windows kept accumulating DLLs the app does
+# not load (155 of 186 at the time this was fixed, ~80 MB). Beyond the wasted
+# space, that residue silently satisfied dependencies the deployment itself was
+# failing to stage, so the build tree ran while a clean machine would not.
 # --------------------------------------------------------------------------
-WINDEPLOYQT="$MINGW_PREFIX/bin/windeployqt6.exe"
-if [ ! -x "$WINDEPLOYQT" ]; then
-    echo "ERROR: Qt6 deployment tool not found: $WINDEPLOYQT"
-    exit 1
-fi
-if ! ldd PXTOOL.exe >/dev/null 2>&1; then
-    echo "ERROR: ldd is required to identify MinGW runtime dependencies."
-    exit 1
-fi
-
 DEPLOYMENT_PLUGIN_DIRS=(
     plugins
     accessible
@@ -96,68 +101,8 @@ DEPLOYMENT_PLUGIN_DIRS=(
 for plugin_dir in "${DEPLOYMENT_PLUGIN_DIRS[@]}"; do
     rm -rf -- "$plugin_dir"
 done
-rm -f Qt*.dll Qt*.DLL qt.conf
-
-echo "[1/8] Copying runtime DLL dependencies..."
-COPIED=0
-if ! LDD_OUTPUT="$(ldd PXTOOL.exe 2>&1)"; then
-    echo "ERROR: ldd failed while identifying MinGW runtime dependencies."
-    printf '%s\n' "$LDD_OUTPUT"
-    exit 1
-fi
-while IFS= read -r dll_path; do
-    [ -n "$dll_path" ] || continue
-    dll_name=$(basename "$dll_path")
-    case "$dll_name" in
-        Qt[0-9]*.dll|Qt[0-9]*.DLL)
-            case "$dll_name" in
-                Qt6*.dll|Qt6*.DLL) ;;
-                *)
-                    echo "ERROR: non-Qt6 dependency reported by ldd: $dll_name"
-                    exit 1
-                    ;;
-            esac
-            ;;
-    esac
-    if ! cp -f "$dll_path" "./$dll_name"; then
-        echo "ERROR: failed to copy runtime dependency: $dll_path"
-        exit 1
-    fi
-    COPIED=$((COPIED + 1))
-done < <(
-    printf '%s\n' "$LDD_OUTPUT" \
-        | awk -v prefix="$MINGW_PREFIX" '
-            {
-                for (i = 1; i <= NF; i++) {
-                    if (index($i, prefix "/") == 1) {
-                        print $i
-                        next
-                    }
-                }
-            }
-        '
-)
-echo "  -> Copied: $COPIED non-Qt runtime DLLs"
-
-# --------------------------------------------------------------------------
-# Step 2: Qt6 runtime and plugins
-# --------------------------------------------------------------------------
-echo "[2/8] Deploying Qt6 runtime and plugins..."
-if ! "$WINDEPLOYQT" --release --no-translations --no-compiler-runtime ./PXTOOL.exe; then
-    echo "ERROR: Qt6 deployment tool failed: $WINDEPLOYQT"
-    exit 1
-fi
-
-# --------------------------------------------------------------------------
-# Step 3: qt.conf (tells Qt where to find plugins relative to exe)
-# --------------------------------------------------------------------------
-echo "[3/8] Writing qt.conf..."
-cat > qt.conf << 'EOF'
-[Paths]
-Prefix = .
-Plugins = .
-EOF
-echo "  -> qt.conf written."
+rm -f -- *.dll *.DLL qt.conf
+echo "  -> Removed previously deployed DLLs, Qt plugin directories and qt.conf"
 
 scan_for_legacy_qt_artifact() {
     local error_message="$1"
@@ -270,11 +215,11 @@ verify_staged_pe_tree() {
 verify_staged_pe_tree
 
 # --------------------------------------------------------------------------
-# Step 4: Resource directories (res, demo, themes)
+# Step 1: Resource directories (res, demo, themes)
 # Always sync with rsync (or cp -r --update as fallback) so that changes
 # in the source tree are reflected in build.windows without a full clean.
 # --------------------------------------------------------------------------
-echo "[4/8] Syncing resource directories..."
+echo "[1/6] Syncing resource directories..."
 
 # Helper: sync a source dir to a destination dir, always propagating updates.
 sync_dir() {
@@ -316,9 +261,9 @@ fi
 verify_staged_qt_artifacts
 
 # --------------------------------------------------------------------------
-# Step 5: Python protocol decoders (libsigrokdecode)
+# Step 2: Python protocol decoders (libsigrokdecode)
 # --------------------------------------------------------------------------
-echo "[5/8] Copying Python decoders..."
+echo "[2/6] Copying Python decoders..."
 if [ ! -d decoders ]; then
     cp -r "$SOURCE_DIR/libsigrokdecode/decoders" ./decoders
     # Remove non-Python files that cause "Failed to load decoder" errors
@@ -336,40 +281,56 @@ fi
 verify_staged_qt_artifacts
 
 # --------------------------------------------------------------------------
-# Step 6: Bundle Python standard library
+# Step 3: Bundle Python standard library
 # Python's stdlib must be present alongside the app so that no system-wide
 # Python installation is needed on the end-user's machine.
 # The app's PYTHONHOME is set to <app_dir> so Python looks for stdlib at
 # <app_dir>/lib/pythonX.Y/
 # --------------------------------------------------------------------------
-echo "[6/8] Bundling Python standard library..."
+echo "[3/6] Bundling Python standard library..."
 
-# Detect the Python version from the DLL already in build.windows
-PY_VER=$(ls libpython3.*.dll 2>/dev/null | grep -oP '3\.\d+' | head -1)
+# Detect the Python version from the toolchain, not from a libpython3.*.dll in
+# build.windows: the cleanup above removes every staged DLL, and the stdlib has
+# to match what the app will actually link against anyway.
+PY_VER=""
+for py_stdlib in "$MINGW_PREFIX"/lib/python3.*; do
+    if [ -d "$py_stdlib" ]; then
+        PY_VER="${py_stdlib##*/python}"
+        break
+    fi
+done
 
 if [ -z "$PY_VER" ]; then
-    echo "  -> WARNING: Could not detect Python version from libpython*.dll"
+    echo "ERROR: no Python 3 standard library found under $MINGW_PREFIX/lib."
+    exit 1
 else
     PY_SRC="$MINGW_PREFIX/lib/python${PY_VER}"
     PY_DST="./lib/python${PY_VER}"
 
     if [ ! -d "$PY_SRC" ]; then
-        echo "  -> WARNING: Python stdlib not found at $PY_SRC"
-    elif [ ! -d "$PY_DST/encodings" ]; then
-        # If encodings is missing, the previous copy was incomplete — redo it
-        echo "  -> lib/python${PY_VER}/ incomplete (encodings missing), re-copying..."
-        rm -rf "$PY_DST"
-        mkdir -p "$PY_DST"
-        cp -r "$PY_SRC"/* "$PY_DST/" 2>/dev/null || true
-        # Clean up test suites and cache to save space
-        find "$PY_DST" -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true
-        find "$PY_DST" -type d -name test -exec rm -rf {} + 2>/dev/null || true
-        find "$PY_DST" -type d -name tests -exec rm -rf {} + 2>/dev/null || true
-        PY_SIZE=$(du -sh "$PY_DST" 2>/dev/null | cut -f1)
-        echo "  -> Python ${PY_VER} stdlib bundled to lib/python${PY_VER}/ (${PY_SIZE})"
-    else
-        echo "  -> lib/python${PY_VER}/ already present and complete, skipping."
+        echo "ERROR: Python stdlib not found at $PY_SRC"
+        exit 1
     fi
+
+    # Re-staged from scratch rather than patched in place. An incremental copy
+    # keeps whatever MSYS2 has since removed or replaced (an old pip wheel, the
+    # dropped libxml2 bindings), which makes the build tree diverge from the
+    # release package. Removing lib/python3.* first also clears the stdlib of a
+    # previous Python version after an MSYS2 upgrade.
+    rm -rf ./lib/python3.*
+    mkdir -p "$PY_DST"
+    cp -r "$PY_SRC"/* "$PY_DST/" 2>/dev/null || true
+    # Same pruning the install rules apply: caches and test suites are not needed
+    # at runtime and roughly halve the stdlib size.
+    find "$PY_DST" -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true
+    find "$PY_DST" -type d -name test -exec rm -rf {} + 2>/dev/null || true
+    find "$PY_DST" -type d -name tests -exec rm -rf {} + 2>/dev/null || true
+    if [ ! -d "$PY_DST/encodings" ]; then
+        echo "ERROR: Python stdlib copy is incomplete, $PY_DST/encodings is missing."
+        exit 1
+    fi
+    PY_SIZE=$(du -sh "$PY_DST" 2>/dev/null | cut -f1)
+    echo "  -> Python ${PY_VER} stdlib bundled to lib/python${PY_VER}/ (${PY_SIZE})"
 fi
 
 # --------------------------------------------------------------------------
@@ -381,9 +342,9 @@ if [ -f "$SOURCE_DIR/win-app-logo.ico" ]; then
 fi
 
 # --------------------------------------------------------------------------
-# Step 7: MCP browser Web Console
+# Step 4: MCP browser Web Console
 # --------------------------------------------------------------------------
-echo "[7/8] Syncing MCP browser Web Console..."
+echo "[4/6] Syncing MCP browser Web Console..."
 if [ -d "$SOURCE_DIR/web/dist" ]; then
     sync_dir "$SOURCE_DIR/web/dist" ./webui "webui/ (MCP browser Web Console)"
 elif [ -f "./webui/index.html" ]; then
@@ -400,17 +361,36 @@ if [ ! -f "./webui/index.html" ]; then
 fi
 
 # --------------------------------------------------------------------------
-# Step 8: C decoders (compiled .dll files)
+# Step 5: C decoders (compiled .dll files)
 # --------------------------------------------------------------------------
-echo "[8/8] Setting up C decoders..."
+echo "[5/6] Setting up C decoders..."
+# cdecoders/ is the CDecoderRegistry plugin directory (pv/cdecoders ABI), which
+# is separate from libsigrokdecode's decoders/c_decoders modules staged above.
+# It ships empty on purpose: the example SPI plugin is no longer built, because
+# it claimed the Python SPI decoder's id and produced a second, option-less
+# "SPI(C)" row next to the built-in spi_c decoder. See the note next to
+# pv/cdecoders/example_spi in CMakeLists.txt.
 mkdir -p cdecoders
-# Copy the example CDecoderRegistry SPI engine. This uses the pv/cdecoders ABI,
-# which is separate from libsigrokdecode's decoders/c_decoders modules above.
-if [ -f spi.dll ]; then
-    cp -f spi.dll cdecoders/spi.dll
-    echo "  -> spi.dll -> cdecoders/spi.dll"
-else
-    echo "  -> WARNING: spi.dll not found in build.windows (C decoders may not show [C]/[Py] options)"
+# Drop plugins left behind by builds that still shipped the example.
+rm -f cdecoders/spi.dll spi.dll
+echo "  -> cdecoders/ created (empty; no example plugin is shipped)"
+
+# --------------------------------------------------------------------------
+# Step 6: Qt6 runtime, qt.conf and the MinGW dependency closure
+#
+# Delegated to the CMake install script so that build.windows and the release
+# ZIP are staged by one implementation. It runs last because it derives the
+# dependency closure from what is already on disk: the Qt plugins it deploys, the
+# C decoder modules from step 5 and the CPython extension modules from step 3 are
+# all loaded at runtime, so their imports (glib, jpeg, sqlite3, ssl, ...) are not
+# visible in PXTOOL.exe's own import table.
+# --------------------------------------------------------------------------
+echo "[6/6] Deploying Qt6 runtime and MinGW dependencies..."
+if ! "$MINGW_PREFIX/bin/cmake.exe" \
+        -DCMAKE_INSTALL_PREFIX="$(cygpath -m "$BUILD_DIR")" \
+        -P "$(cygpath -m "$INSTALL_RUNTIME_SCRIPT")"; then
+    echo "ERROR: runtime deployment failed."
+    exit 1
 fi
 
 echo "  Verifying final staged PE dependencies..."

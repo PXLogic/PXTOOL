@@ -704,14 +704,15 @@ QString GetCDecodeDir()
 
 QString GetBundledCDecodeDir()
 {
-    // C decoders shipped with the app live next to res/, demo/, lang/ under the
-    // resource share/PXTOOL directory. CMake installs them via:
-    //   install(TARGETS spi LIBRARY DESTINATION ${MAC_RES_PREFIX}share/PXTOOL/cdecoders)
-    // So on macOS the dylib ends up at:
-    //   <App>.app/Contents/Resources/share/PXTOOL/cdecoders/spi.dylib
-    // and on Linux at:
-    //   <prefix>/share/PXTOOL/cdecoders/spi.so
-    // Both paths are reachable as GetAppDataDir() + "/cdecoders".
+    // CDecoderRegistry plugins shipped with the app would live next to res/,
+    // demo/, lang/ under the resource share/PXTOOL directory, i.e.
+    //   macOS: <App>.app/Contents/Resources/share/PXTOOL/cdecoders
+    //   Linux: <prefix>/share/PXTOOL/cdecoders
+    //   Windows: <exe dir>/cdecoders
+    // all reachable as GetAppDataDir() + "/cdecoders". The build creates that
+    // directory but ships it empty: no plugin is bundled (see the note next to
+    // pv/cdecoders/example_spi in CMakeLists.txt). It stays as the drop-in
+    // location for third-party plugins, so the lookup below is still needed.
     QString path = GetAppDataDir() + "/cdecoders";
     if (QDir(path).exists())
         return path;
